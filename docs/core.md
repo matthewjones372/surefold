@@ -175,13 +175,16 @@ calling thread, and answers with every value or with the first failure; no
 element after it runs. `parTraverse` runs each element on a fork of its own,
 and the first to fail interrupts the rest.
 
+`Either.cond(condition, right = { value }, left = { error })` constructs one result from a Boolean;
+only the selected callback runs. Use `ensure` inside `attempt` for dependent checks, and accumulation
+for independent field validation. `cond` propagates callback exceptions. Available in the development
+snapshot for spec 0268, not the published 0.17.0 release.
+
 <!-- core-traverse -->
 ```kotlin
 import io.github.matthewjones372.surefold.Limit
 import io.github.matthewjones372.surefold.fail.Either
 import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
 import io.github.matthewjones372.surefold.fail.traverse
 import io.github.matthewjones372.surefold.parTraverse
 
@@ -189,7 +192,8 @@ data class User(val id: Int)
 
 data class NotFound(val id: Int)
 
-fun load(id: Int): Either<NotFound, User> = if (id > 0) User(id).right() else NotFound(id).left()
+fun load(id: Int): Either<NotFound, User> =
+    Either.cond(condition = id > 0, right = { User(id) }, left = { NotFound(id) })
 
 // One at a time; stops at the first NotFound.
 fun loadAll(ids: List<Int>): Either<NotFound, List<User>> = ids.traverse { id -> load(id).bind() }
