@@ -1,7 +1,7 @@
 # 0265 — Retained keys with revocable owned views
 
-Approved contract: identity/private material ownership (PR957) and terminal notices (PR958) are on main, unreleased.
-Checked main9e9aec92 / published0.17.0; R1 main41187438809 passed. Retention/release remain incomplete; no consumer adoption.
+Approved ownership/terminal/ledger/groups contracts are on main, unreleased; public cache delivery remains unimplemented.
+Checked mainb5aa070e / published0.17.0. B1 PR960/main41200432232 passed. Retention/release/adoption remain incomplete.
 
 ## Problem
 
@@ -104,6 +104,43 @@ Later lease returns fixed Denied; old internal get after close throws fixed Ille
 Use existing SingleFlight/Shared/Resource and scoped SurefoldLocal bindings; no effects in retryable Shared callbacks
 or new executor/scheduler.
 
+## Provisional delivery and early exact ownership
+
+The delivery entry requires a separately approved two-method core HandoffDecision<A:Any> (spec0269) (tryComplete/peek).
+It is proposed, NOT shipped; no Promise/Shared instrumentation is disabled. There is no waiting or wakeup API.
+Existing internal OwnedKeyMaterial.borrow(clock) keeps its descriptor/behavior. An additive INTERNAL overload
+borrow(clock,beforeAdmission:(closeExact:()->Unit)->Unit) allocates one exact token/close capability and registers
+local rollback BEFORE invoking that callback OUTSIDE Shared and BEFORE admitting token membership. The callback
+only registers ownership. A failed precommit registration admits no view; committed registration plus observer
+throw retains the exact capability. Admission commit plus failed rollback before commit leaves that SAME cap owned.
+Close removes only that token, idempotently, preserving all expiry/revoke/terminal-notice laws; never reopen it.
+A drainer NEVER executes a Preparing capability. Only its caller can Abort after its admission scope has ended,
+so cleanup cannot close before admission and then allow a resumed caller to add membership again.
+
+One ledger row owns a fresh private ID, quiet decision and preallocated exact release intent/capability. Pending
+is peek()==null; only the owning caller chooses Delivered/Abort. No caller-reusable ID, tombstone or second registry.
+For legacy copies, preregistered local Resource captures raw bytes immediately after copyOf and before wrappers;
+ordinary fill owns initial-registration failure. Qualified close needs the durable early capability above.
+One domain delivery method encloses enrol.use AND ALL receipt/loader/drain cleanup. Its outer Resource owns abort
+before acquisition. After normal inner return only, mark Delivered as the final effect and return the prebuilt value;
+its outer release only peeks/no-ops. Any earlier defect/cancellation marks Abort first, then attempts fallible cleanup.
+Keep original Throwable identity and distinct suppressed cleanup; CancellationException is not inferred from ExitCase.
+Typed Left never disarms abort as a successful delivery. No post-Delivered fallible bookkeeping is permitted.
+
+Bounded drain snapshots rows/pending intents ONCE. Preparing skips; Delivered reaps metadata ONLY. Abort transfers
+its exact cap/token atomically to pending and removes the row: that token is always owned in row OR pending.
+Precommit transfer failure retains the row; postcommit throw retains pending. Action precedes exact-token Ack;
+committed Ack never resurrects/replays, including after a metric throw. If transfer AND direct exact-close both fail
+before commit, the Abort row survives for later drain. Every snapshot action is tried once despite errors; new work
+waits for next drain. Idempotent fallback may repeat only its own close, never another handle's. Delivered never
+runs abort, even if metadata reap fails. Ordinary source revoke/expiry is separate; legacy copies stay unrevocable.
+Active/failed obligations retain records; no finite-memory promise under infinite faults/unbounded admissions.
+
+This marker does NOT solve accepted-caller join. BEFORE joined-release/R4 source, a separate concrete reviewed
+contract must track every accepted caller boundary (including enrolled callers before capability registration),
+fence admission, reject direct/indirect self-close before fencing, preserve interruption and complete all owed
+cleanup. SingleFlight joins its workers only. No await/latch/wakeup/polling design or caller-thread join is credited.
+
 ## Why this shape
 
 Extend KeyCache additively: its per-call loader/clock, selective stale and owner bound already fit (PR903).
@@ -115,8 +152,10 @@ Alternative: a general retained-resource cache; broader than this key requiremen
 - [x] **`codex/key-view-ownership`** — identity/private material/view guards, PR957/main e7af.
 - [x] **`codex/key-view-retention`** — terminal notices/acknowledgements, PR958/main9e9aec92; no cache/public activation.
 - [x] **`codex/key-view-retention-ledger`** — pending release intents/acknowledgements, PR959/main80f3873b; legacy class unchanged; ~78 main/spec lines.
-- [ ] **`codex/key-view-retention-groups`** — internal groups/outcomes/source anchors, NO deliveries; ~180 main/spec lines.
-- [ ] **`codex/key-view-retention-delivery`** — safe copy/view return owning ALL receipt cleanup and abort obligations; ~90 main/spec lines.
+- [x] **`codex/key-view-retention-groups`** — groups/outcomes/source anchors ONLY, PR960/main1d574300; no delivery.
+- [ ] **`codex/handoff-decision`** — separately numbered core spec/API, tryComplete/peek ONLY; no await/join.
+- [ ] **`codex/key-view-early-close`** — additive INTERNAL exact-capability registration before admission; old descriptor retained.
+- [ ] **`codex/key-view-retention-delivery`** — full provisional-return/abort protocol above; exact plan/count before source.
 - [ ] **`codex/key-view-retention-policy`** — shared owner LRU, modes, success tickets and epochs; no public lease; ~175 main lines.
 - [ ] **`codex/key-view-retention-legacy`** — old get/evict integration and protective Unavailable cutoff; ~185 changed main lines.
 - [ ] **`codex/key-view-retention-leases`** — lease/revoke/revokeAll, all caller handoffs and array exits; ~180 main lines.
@@ -147,4 +186,5 @@ Resolved after independent review: extend KeyCache rather than add a second cach
 not idle handles; material access is callback-bounded, with no escaped-copy/JVM-erasure guarantee. Tagged modes,
 one retained identity per slot, successful-ticket publication, original hard expiry and benign close versus
 revoke follow the Shape above. The delivery entry's pre-acquisition abort ownership needs its own reviewed
-implementation plan before code; the groups-only entry exposes no delivery.
+implementation plan before code; the groups-only entry exposes no delivery. Accepted-caller join remains an
+OPEN design obligation requiring a separate concrete contract before joined-release/R4 implementation.
