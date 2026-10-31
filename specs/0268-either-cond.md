@@ -9,8 +9,8 @@ A small constructor expresses that decision directly without opening an attempt 
 
 ## Not doing
 
-No exception capture, validation accumulation, retries, eager overloads, default Unit branch, new dependency,
-remote publication or stable release. `ensure` remains the check inside an attempt; independent field checks
+No exception capture, validation accumulation, retries, eager overloads, default Unit branch, new dependency
+or stable release. Owner approved source publication and checked main integration on 31 October 2026. `ensure` remains the check inside an attempt; independent field checks
 continue to accumulate. Existing APIs and consumer-specific policies stay unchanged.
 
 ## Shape
