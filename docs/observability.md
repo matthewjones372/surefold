@@ -132,6 +132,9 @@ before a `parMap` is the parent of the spans each branch opens. It registers a
 OpenTelemetry's context, such as an instrumented HTTP client, reads and writes
 the same context. That process-wide effect is why it is a separate module.
 
+For automatic JDBC query spans from one pool setup, see the [JDBC tracing guide](jdbc-tracing.md).
+That integration is unreleased; its privacy boundary and separate performance gate are described there.
+
 ```kotlin
 import io.github.matthewjones372.surefold.logInfo
 import io.github.matthewjones372.surefold.otel.span

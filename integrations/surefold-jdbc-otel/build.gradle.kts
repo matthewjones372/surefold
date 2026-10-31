@@ -7,6 +7,8 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
+    inputs.file(rootProject.layout.projectDirectory.file("docs/jdbc-tracing.md")).withPropertyName("guide")
+    systemProperty("surefold.jdbc.otel.repoRoot", rootProject.projectDir.absolutePath)
     listOf(
         "surefold.jdbc.diagnostics", "surefold.jdbc.diagnostic.iterations", "surefold.jdbc.diagnostic.sql.iterations",
     )
