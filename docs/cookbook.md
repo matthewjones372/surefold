@@ -26,6 +26,7 @@ and the same-cache layer reentry restriction.
 | Need | Use | Module |
 |---|---|---|
 | share one in-flight block per key | `SingleFlight.run` | `surefold` |
+| record a quiet final ownership decision (unreleased) | [`HandoffDecision.tryComplete` / `peek`](core.md#quiet-handoff-decisions) | `surefold` |
 | share a fixed lookup without retaining its result | `Cache(ttl = { Duration.ZERO })` | `surefold-cache` |
 | retain answers by capacity without expiry | `Cache(ttl = { Duration.INFINITE }, capacity = …)` | `surefold-cache` |
 | retain by result-specific expiry, with last-good fallback | `Cache(ttl = …, stale = …)` | `surefold-cache` |
