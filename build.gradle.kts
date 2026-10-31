@@ -97,6 +97,7 @@ val moduleDescriptions = mapOf(
     "surefold-app-pekko" to "surefold-app on Pekko: an actor is a node, spawned in order and stopped in reverse.",
     "surefold-otel" to "surefold on OpenTelemetry: a Context that crosses a fork, so a trace survives a parMap.",
     "surefold-jdbc-otel" to "JDBC tracing with automatic query names and protective OpenTelemetry metadata defaults.",
+    "surefold-jdbc-otel-bench" to "The reproducible JDBC tracing workload and telemetry pipeline for spec 0266.",
     "surefold-otel-test" to
         "For tests of a traced service: a tracer that keeps the spans it ends, beside surefold-otel's storage.",
     "surefold-slf4j" to "surefold's log lines through SLF4J, with a fork's annotations in the MDC.",
@@ -209,7 +210,10 @@ val surefoldJunitRunsOn =
 
 // Measured, not tested: a benchmark has no assertions for a coverage floor to count.
 val benchmarkModules =
-    setOf("surefold-stream-benchmarks", "surefold-actor-benchmarks", "surefold-kafka-benchmarks", "surefold-jobs-load")
+    setOf(
+        "surefold-stream-benchmarks", "surefold-actor-benchmarks", "surefold-kafka-benchmarks",
+        "surefold-jobs-load", "surefold-jdbc-otel-bench",
+    )
 
 // Built and tested, never published: surefold-structured calls StructuredTaskScope, a preview API until
 // JDK 28 (JEP 543), and a release must not promise an API the JDK has not. surefold-bank is an application

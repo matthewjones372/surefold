@@ -165,6 +165,7 @@ against; the library's own transitive dependencies come with it.
 | `surefold-otel` | OpenTelemetry context across forks, and spans ([guide](observability.md#traces)) | `surefold` | `opentelemetry-api` 1.67.0 (with `context` and `common`; no SDK) | yes |
 | `surefold-otel-test` | a tracer that keeps the spans it ends, for a service's own tests ([guide](observability.md#in-tests)) | `surefold-otel` | `opentelemetry-sdk` 1.67.0 | yes |
 | `surefold-jdbc-otel` | JDBC query tracing with a privacy boundary before OpenTelemetry observers (spec 0266) | `surefold-otel` | `opentelemetry-jdbc` 2.33.1-alpha (OpenTelemetry instrumentation/semantic-convention family; no SDK, driver or pool) | yes |
+| `surefold-jdbc-otel-bench` | Reproducible JDBC tracing workload for spec 0266 (`installDist`; gate launcher in the approved benchmark runner branch) | `surefold`, `surefold-jdbc-otel` | OpenTelemetry SDK 1.67.0, pgjdbc 42.7.7, HikariCP 7.1.0 | no |
 | `surefold-openfeature` | OpenFeature's evaluation context across forks and actor messages: `evaluatedFor`, `useSurefold()`, `Flag` ([guide](flags.md)) | `surefold` | `dev.openfeature:sdk` 1.23.0, `slf4j-api` | yes |
 | `surefold-arrow` | Surefold's `Either`, `NonEmptyList` and `Fail` to and from Arrow's | `surefold` | `arrow-core` 2.1.2 | yes |
 | `surefold-assert` | checks for tests, failing at the test's own line: `shouldBe`, `shouldBeRight` and `shouldBeLeft` for Surefold's `Either`, the string, collection and map matchers, and `withClue` ([guide](testing.md#assertions)) | `surefold` | `opentest4j` 1.3.0 | yes |
