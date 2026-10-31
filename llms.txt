@@ -94,6 +94,7 @@ Facts worth having before anything else:
   and warnings in the editor.
 - `surefold-otel`: an OpenTelemetry `Context` that crosses a fork; on the classpath
   and nothing else.
+- `surefold-jdbc-otel`: JDBC query tracing with a privacy boundary before OpenTelemetry observers.
 - `surefold-openfeature`: `evaluatedFor(key, …) { }` and `useSurefold()`, so a flag read
   in a fork or an actor handler answers for the request that started it.
 - `surefold-arrow`: Surefold's `Either`, `NonEmptyList` and `Fail` to and from

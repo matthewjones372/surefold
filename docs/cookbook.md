@@ -31,6 +31,7 @@ and the same-cache layer reentry restriction.
 | retain by result-specific expiry, with last-good fallback | `Cache(ttl = …, stale = …)` | `surefold-cache` |
 | finish shared cache work before releasing its dependencies | `Cache.closeAndJoin` in `onRelease` | `surefold-cache` |
 | explicit regional KMS roots, exact contexts and owned clients | [`KeyOperations`, `AwsKeyOperations`, `awsKeyOperations`](kms-operations.md) | `surefold-tenancy-crypto-aws` (unreleased) |
+| trace JDBC executions without per-query wrapping (unreleased) | `DataSource.traced(openTelemetry)` | [`surefold-jdbc-otel`](jdbc-tracing.md) |
 
 The types the recipes are written against:
 

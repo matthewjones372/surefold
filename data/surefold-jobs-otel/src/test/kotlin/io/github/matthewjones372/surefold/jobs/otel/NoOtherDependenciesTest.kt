@@ -8,8 +8,14 @@ import java.io.File
 /** What surefold-jobs-otel may put on a service's classpath: surefold-jobs', surefold-otel's, and nothing more. */
 object NoOtherDependenciesTest : Suite() {
 
-    private val allowed =
-        listOf("kotlin-stdlib", "annotations-", "surefold", "opentelemetry-api", "opentelemetry-context")
+    private val allowed = listOf(
+        "kotlin-stdlib",
+        "annotations-",
+        "surefold",
+        "opentelemetry-api",
+        "opentelemetry-context",
+        "opentelemetry-common-",
+    )
 
     init {
         test("the main runtime classpath is surefold-jobs and surefold-otel, and nothing else") {

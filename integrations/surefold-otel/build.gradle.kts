@@ -1,6 +1,6 @@
 // The API alone. A service brings its own SDK, exporter and agent; this module
 // decides where a Context lives, not what is done with one.
-val otelVersion = "1.51.0"
+val otelVersion = "1.67.0"
 
 dependencies {
     api(project(":surefold"))

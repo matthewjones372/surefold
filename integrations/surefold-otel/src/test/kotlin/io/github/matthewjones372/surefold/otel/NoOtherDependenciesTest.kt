@@ -13,10 +13,11 @@ class NoOtherDependenciesTest {
         "kotlin-stdlib",
         "annotations-",
         "surefold",
-        // The API and the context it defines. No SDK: a service brings its own,
+        // The API, context and shared types. No SDK: a service brings its own,
         // with the exporter and the agent it has chosen.
         "opentelemetry-api",
         "opentelemetry-context",
+        "opentelemetry-common-",
     )
 
     @Test

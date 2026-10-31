@@ -73,6 +73,7 @@ All on Maven Central as `io.github.matthewjones372:<module>`, on one version.
 - `surefold-app-gradle`: the wiring plugin, and the plugin that applies `surefold-compiler`.
 - `surefold-app-compiler`: the checker behind the wiring plugin.
 - `surefold-otel`: traces across forks.
+- `surefold-jdbc-otel`: JDBC query tracing with safe automatic names and metadata.
 - `surefold-otel-test`: a tracer that keeps the spans it ends, for a service's own tests.
 - `surefold-openfeature`: OpenFeature's evaluation context across forks and messages.
 - `surefold-arrow`: Surefold's types to and from Arrow's.
