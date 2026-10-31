@@ -96,6 +96,9 @@ Inspect sampler/processor/exporter inputs plus logs/metrics with markers in SQL,
 cover bulk attributes, name updates, exception-log mode and an enclosing span that still records the propagated error.
 Use `surefold-otel-test`, shared resources, fakes and real drivers where driver behaviour is the claim; no sleeps.
 
+Owner decision, 2026-10-31: defer qualified machine measurements for now; they do not block implementation.
+Performance remains unverified. Retain the following protocol for later evaluation, without a zero-overhead or <=2% claim.
+
 Gate workload: local Postgres 17 (resolve/commit an immutable image digest in the benchmark PR before measurements),
 pgjdbc 42.7.7, HikariCP 7.1.0 (16 fixed connections), JDK 25/G1/2 GiB heap. Dedicated Linux amd64 host, eight physical
 cores/16 GiB RAM minimum: pin client to four cores, Postgres to four others, disable SMT on those cores, no other load.
