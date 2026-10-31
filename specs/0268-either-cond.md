@@ -36,12 +36,12 @@ improving this simple case. The owner approved both required lazy branches and n
 
 ## Stack
 
-- [ ] **`codex/0268-either-cond`** - constructor, focused tests and compiled guide example.
+- [ ] **`codex/0268-either-cond-main`** - constructor, focused tests and compiled guide example.
       Done when: selection, laziness, identity, nullable payloads, inference and propagation pass all checks.
 
-Build from consumer snapshot source c6d5465d so a new local source-pinned snapshot retains its existing
-capabilities. Consumer adoption has its own approved committed spec and preserves its snapshot verification
-and bootstrap guarantees. No unrelated library source or provider operations are changed.
+Integrate the constructor on current main. The separately verified development snapshot c5cac385 retains
+its KMS ancestry on an immutable source-only branch; do not merge that unrelated feature stack. Consumer
+adoption has its own approved integration contract and preserves snapshot verification/bootstrap guarantees.
 
 ## Acceptance
 
@@ -57,5 +57,5 @@ propagation. Compile the core-guide example. Run formatting and the full build b
 
 ## Open questions
 
-Resolved by owner approval: use cond; require two lazy branches; no overloads; publish only a traceable local
-snapshot and adopt appropriate consumer constructors. No open behavior decision remains.
+Resolved by owner approval: use cond; require two lazy branches; no overloads; retain a traceable development
+snapshot, publish its source and integrate the checked API/consumer changes into main. No behavior decision remains.
