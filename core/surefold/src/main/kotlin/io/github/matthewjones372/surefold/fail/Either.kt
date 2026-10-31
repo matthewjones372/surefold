@@ -1,5 +1,7 @@
 package io.github.matthewjones372.surefold.fail
 
+import kotlin.reflect.KClass
+
 /** A value that is either the error [E] on the left or the result [A] on the right. */
 sealed interface Either<out E, out A> {
 
@@ -16,6 +18,24 @@ sealed interface Either<out E, out A> {
     fun leftOrNull(): E? = (this as? Left)?.value
 
     fun swap(): Either<A, E> = fold({ Right(it) }, { Left(it) })
+
+    /** Unmatched failures keep their identity and remain on the left. */
+    fun <T : Any> recover(
+        type: KClass<T>,
+        handler: Fail<@UnsafeVariance E>.(T) -> @UnsafeVariance A,
+    ): Either<E, A> = when (this) {
+        is Left -> {
+            val selected = type.javaObjectType
+            if (selected.isInstance(value)) {
+                val narrowed = selected.cast(value)
+                attempt { handler(narrowed) }
+            } else {
+                this
+            }
+        }
+
+        is Right -> this
+    }
 
     companion object {
         inline fun <E, A> cond(condition: Boolean, right: () -> A, left: () -> E): Either<E, A> =
@@ -71,3 +91,9 @@ fun <A> Either<A, A>.merge(): A = fold({ it }, { it })
 fun <E> E.left(): Either<E, Nothing> = Either.Left(this)
 
 fun <A> A.right(): Either<Nothing, A> = Either.Right(this)
+
+/** Recovery can bind an alternative or fail with a new declared error type. */
+fun <E, F, A> Either<E, A>.recover(handler: Fail<F>.(E) -> A): Either<F, A> = when (this) {
+    is Either.Left -> attempt { handler(value) }
+    is Either.Right -> this
+}
