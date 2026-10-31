@@ -124,7 +124,7 @@ private class SafeSpan(private val delegate: Span) : Span {
 }
 
 @Suppress("TooGenericExceptionCaught", "SwallowedException") // SDK failures must not fail database work.
-private inline fun <T> telemetryOr(fallback: T, action: () -> T): T = try {
+internal inline fun <T> telemetryOr(fallback: T, action: () -> T): T = try {
     action()
 } catch (cancelled: CancellationException) {
     throw cancelled

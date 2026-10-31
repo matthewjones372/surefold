@@ -41,7 +41,9 @@ internal class PrivacyRecorder(
                 parentLinks: List<LinkData>,
             ): SamplingResult {
                 if (samplingFailure != null) throw samplingFailure
-                sampled.update { it + SampledQuery(name, attributes.toBuilder().build(), parentLinks.toList()) }
+                sampled.update {
+                    it + SampledQuery(name, attributes.toBuilder().build(), parentLinks.toList(), spanKind)
+                }
                 return SamplingResult.recordAndSample()
             }
 
@@ -81,18 +83,28 @@ internal class PrivacyRecorder(
     val telemetry: OpenTelemetry = JdbcPrivacyTelemetry(sdk, identifiers)
     val tracer: Tracer = telemetry.getTracer("jdbc-test")
 
-    fun assertNoMarker() {
-        listOf(sampled.peek(), started.peek(), ended.peek(), exported.peek()).forEach {
+    fun assertNoMarker(onlyClients: Boolean = false) {
+        val samples = sampled.peek().filter { !onlyClients || it.kind == SpanKind.CLIENT }
+        val observations = (started.peek() + ended.peek() + exported.peek()).filter {
+            !onlyClients ||
+                it.kind == SpanKind.CLIENT
+        }
+        listOf(samples, observations).forEach {
             expect(!it.toString().contains(PRIVATE_MARKER))
         }
-        sampled.peek().forEach { assertSafeFields(it.name, it.attributes) }
-        (started.peek() + ended.peek() + exported.peek()).forEach { assertSafeFields(it.name, it.attributes) }
+        samples.forEach { assertSafeFields(it.name, it.attributes) }
+        observations.forEach { assertSafeFields(it.name, it.attributes) }
     }
 
     override fun close() = provider.close()
 }
 
-internal data class SampledQuery(val name: String, val attributes: Attributes, val links: List<LinkData>)
+internal data class SampledQuery(
+    val name: String,
+    val attributes: Attributes,
+    val links: List<LinkData>,
+    val kind: SpanKind,
+)
 
 internal const val PRIVATE_MARKER = "private-password-person@example.invalid"
 

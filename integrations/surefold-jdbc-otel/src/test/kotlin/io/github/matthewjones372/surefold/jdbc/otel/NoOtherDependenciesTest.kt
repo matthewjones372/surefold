@@ -13,6 +13,7 @@ object NoOtherDependenciesTest : Suite() {
             val allowed = listOf(
                 "surefold", "kotlin-stdlib", "annotations-",
                 "opentelemetry-api-", "opentelemetry-context-", "opentelemetry-common-",
+                "opentelemetry-jdbc-", "opentelemetry-instrumentation-api-", "opentelemetry-semconv-",
             )
             raw!!.split(File.pathSeparator)
                 .filter { entry -> allowed.none { entry.startsWith(it) } } shouldBe emptyList()
