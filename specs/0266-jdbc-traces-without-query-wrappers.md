@@ -83,7 +83,8 @@ provide `wrap`. Runtime compatibility/performance still require evidence, not a 
 - [ ] **`codex/0266-otel-alignment`** — telemetry version alignment; existing context/test suites pass.
 - [ ] **`codex/0266-jdbc-privacy`** — module/private facade; only the specified emissions reach SDK observers.
 - [ ] **`codex/0266-jdbc-tracing`** — extension/disabled identity; execution, fallback and JDBC behaviour tests pass.
-- [ ] **`codex/0266-jdbc-benchmark`** — reproducible harness/commands and raw measurements for the gate below.
+- [ ] **`codex/0266-jdbc-benchmark`** — workload, bounded pipeline/diagnostics and immutable Postgres image for the gate below.
+- [ ] **`codex/0266-jdbc-benchmark-runner`** — host qualification, reproducible commands, raw runs and the statistical gate below.
 - [ ] **`codex/0266-jdbc-evidence`** — compiled setup/pipeline guide, module/cookbook entries and passing gate evidence.
 
 ## Acceptance
