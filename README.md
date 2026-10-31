@@ -28,6 +28,10 @@ every artifact, package, plugin id and configuration key.
 
 [Explicit AWS KMS operations](docs/kms-operations.md) covers regional clients and the unreleased adapter.
 
+The spec 0268 development snapshot adds `Either.cond(condition, right = { value }, left = { error })`
+for lazy conditional construction. It is absent from release 0.17.0; [the core guide](docs/core.md)
+shows how it complements `attempt` and accumulating validation.
+
 ## Why virtual threads
 
 Since JDK 21, a blocked virtual thread parks without holding an OS thread, so

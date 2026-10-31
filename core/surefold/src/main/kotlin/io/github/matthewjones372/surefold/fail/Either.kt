@@ -18,6 +18,9 @@ sealed interface Either<out E, out A> {
     fun swap(): Either<A, E> = fold({ Right(it) }, { Left(it) })
 
     companion object {
+        inline fun <E, A> cond(condition: Boolean, right: () -> A, left: () -> E): Either<E, A> =
+            if (condition) Right(right()) else Left(left())
+
         /**
          * What [block] returned, or on the left what it threw that a caller may handle. Anything fatal, and a
          * [fail] on its way out of its block, goes on up: see [nonFatalOrThrow].
