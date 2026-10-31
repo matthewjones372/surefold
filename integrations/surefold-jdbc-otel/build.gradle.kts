@@ -7,6 +7,10 @@ dependencies {
 }
 
 tasks.withType<Test>().configureEach {
+    listOf(
+        "surefold.jdbc.diagnostics", "surefold.jdbc.diagnostic.iterations", "surefold.jdbc.diagnostic.sql.iterations",
+    )
+        .forEach { key -> providers.gradleProperty(key).orNull?.let { systemProperty(key, it) } }
     val mainRuntime = configurations.runtimeClasspath
     inputs.files(mainRuntime).withPropertyName("mainRuntimeClasspath")
     jvmArgumentProviders.add(

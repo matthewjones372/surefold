@@ -93,5 +93,6 @@ module("bench", "surefold-stream-benchmarks")
 module("bench", "surefold-actor-benchmarks")
 module("bench", "surefold-kafka-benchmarks")
 module("bench", "surefold-jobs-load")
+module("bench", "surefold-jdbc-otel-bench")
 
 module("examples", "surefold-bank")
