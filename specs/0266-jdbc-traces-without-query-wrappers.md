@@ -15,12 +15,17 @@ Whole-trace exception/log privacy is separate: an enclosing `Tracer.span` can st
 
 Optional `surefold-jdbc-otel` in `integrations/` composes `surefold-otel` and published
 `io.opentelemetry.instrumentation:opentelemetry-jdbc:2.33.1-alpha`; pin the alpha API. Align telemetry API/test SDK
-from 1.51.0 to 1.67.0 with compatibility checks. Core and existing data modules gain no dependency. Proposed setup:
+from 1.51.0 to 1.67.0 with compatibility checks. Core gains no dependency; existing data modules gain no JDBC integration. Proposed setup:
 
 ```kotlin
 val database: DataSource = pool.traced(openTelemetry, identifiers = setOf("bookings", "payments"))
 val disabled: DataSource = pool.traced(openTelemetry, enabled = false)
 ```
+
+Owner-approved dependency-contract amendment: OpenTelemetry 1.67.0's API runtime family includes exactly
+`opentelemetry-api`, `opentelemetry-context` and required `opentelemetry-common`. Permit common in the API integration
+and existing jobs integration's transitive classpath contracts; the API integration still prohibits the SDK.
+This explicit amendment authorises that addition only; every other dependency restriction remains unchanged.
 
 `DataSource.traced(OpenTelemetry, enabled: Boolean = true, identifiers: Set<String> = emptySet())` returns a DataSource.
 Disabled returns the original instance (`===`) before telemetry access, instrumentation initialization, connections,
