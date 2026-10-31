@@ -1,7 +1,7 @@
 # 0269 - Recover an Either without losing unmatched failures
 
 Owner approved 31 October 2026: total/selective recover with a Fail context, tests, committed spec and
-implementation, a local snapshot and appropriate Doorlist adoption; unexpected captured failures stay values.
+implementation, a local snapshot and appropriate consumer adoption; unexpected captured failures stay values.
 
 ## Problem
 
@@ -53,7 +53,7 @@ branching DSL, partial functions, repeated else/fail forwarding and separate val
       Done when the tests below and the full build pass. One review slice under 200 changed main/doc lines.
 
 Build from declared snapshot source 8891c816, retaining cond and existing KMS capabilities. Publish a new
-traceable 23-module local snapshot only after verification; Doorlist has its own committed adoption amendment.
+traceable 23-module local snapshot only after verification; the consumer has its own committed adoption amendment.
 
 ## Acceptance
 
