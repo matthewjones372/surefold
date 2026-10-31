@@ -162,8 +162,8 @@ against; the library's own transitive dependencies come with it.
 |---|---|---|---|---|
 | `surefold-slf4j` | log lines through SLF4J, annotations in the MDC ([guide](observability.md#logs)) | `surefold` | `slf4j-api` 1.7.36 | yes |
 | `surefold-micrometer` | metrics into a Micrometer registry ([guide](observability.md#metrics)) | `surefold` | `micrometer-core` 1.12.0 | yes |
-| `surefold-otel` | OpenTelemetry context across forks, and spans ([guide](observability.md#traces)) | `surefold` | `opentelemetry-api` 1.51.0 | yes |
-| `surefold-otel-test` | a tracer that keeps the spans it ends, for a service's own tests ([guide](observability.md#in-tests)) | `surefold-otel` | `opentelemetry-sdk` 1.51.0 | yes |
+| `surefold-otel` | OpenTelemetry context across forks, and spans ([guide](observability.md#traces)) | `surefold` | `opentelemetry-api` 1.67.0 (with `context` and `common`; no SDK) | yes |
+| `surefold-otel-test` | a tracer that keeps the spans it ends, for a service's own tests ([guide](observability.md#in-tests)) | `surefold-otel` | `opentelemetry-sdk` 1.67.0 | yes |
 | `surefold-openfeature` | OpenFeature's evaluation context across forks and actor messages: `evaluatedFor`, `useSurefold()`, `Flag` ([guide](flags.md)) | `surefold` | `dev.openfeature:sdk` 1.23.0, `slf4j-api` | yes |
 | `surefold-arrow` | Surefold's `Either`, `NonEmptyList` and `Fail` to and from Arrow's | `surefold` | `arrow-core` 2.1.2 | yes |
 | `surefold-assert` | checks for tests, failing at the test's own line: `shouldBe`, `shouldBeRight` and `shouldBeLeft` for Surefold's `Either`, the string, collection and map matchers, and `withClue` ([guide](testing.md#assertions)) | `surefold` | `opentest4j` 1.3.0 | yes |

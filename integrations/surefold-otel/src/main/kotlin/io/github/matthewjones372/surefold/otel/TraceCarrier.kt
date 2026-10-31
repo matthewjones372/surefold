@@ -38,8 +38,6 @@ class TraceCarrier : Carrier {
     }
 
     private object Getter : TextMapGetter<Map<String, String>> {
-        override fun keys(carrier: Map<String, String>): Iterable<String> = carrier.keys
-
         override fun get(carrier: Map<String, String>?, key: String): String? = carrier?.get(key)
     }
 
