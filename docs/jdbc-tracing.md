@@ -1,8 +1,8 @@
 # JDBC query traces
 
 Wrap the application's pool once and use the returned `DataSource` everywhere.
-This module is unreleased in this checkout (`0.17.1-SNAPSHOT`); publication and the
-performance gate remain pending. For a consumer subproject in this checkout:
+This module is unreleased in this checkout (`0.17.1-SNAPSHOT`); publication remains pending.
+Qualified performance measurements are deferred. For a consumer subproject in this checkout:
 
 ```kotlin
 dependencies {
@@ -91,4 +91,4 @@ Keep samplers and processor callbacks non-blocking and export asynchronously thr
 bounded queue, as above. Arbitrary supplied SDKs, including synchronous exporters, carry no
 non-blocking guarantee. A full queue can drop telemetry; monitor drops and exporter failures.
 The module installs no SDK or executor. No zero-overhead or <=2% claim is established:
-spec 0266's paired gate awaits its qualified dedicated Linux/Postgres machine and raw evidence.
+the owner deferred spec 0266's qualified paired measurements. The benchmark remains available for later evaluation.

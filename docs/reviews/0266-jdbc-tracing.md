@@ -12,4 +12,4 @@ The earlier complete implementation build passed in 13m 42s (1,442 tasks; 3,324 
 
 Reuse: public JdbcTelemetry interception plus Surefold context storage, SurefoldLocal, Shared, Promise, parMap and shared test resources. No application policy or extraction candidate remains outside Surefold. Source-only diagnostics stay outside the two-percent gate.
 
-Qualified ten-pair measurements remain pending the owner's dedicated Linux amd64 machine details. No zero-overhead, two-percent, publication or merge claim is made; retain every future attempt and raw artifact before reviewing that gate.
+The owner deferred qualified ten-pair measurements on 2026-10-31; machine setup is no longer blocking the requested implementation. Performance remains unverified. No zero-overhead, two-percent, publication or merge claim is made; retain every future attempt and raw artifact before reviewing that gate.

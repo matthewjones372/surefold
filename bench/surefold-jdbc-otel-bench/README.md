@@ -1,7 +1,7 @@
 # JDBC tracing performance gate
 
 This unpublished tool implements spec 0266. A functional smoke or diagnostic run is
-not a performance pass. Qualified measurements are still pending an owner-provided machine.
+not a performance pass. The owner deferred qualified measurements on 2026-10-31; performance remains unverified.
 
 Use a dedicated Linux amd64 host with at least eight physical cores and 16 GiB RAM,
 JDK 25, Python 3 and local Docker. Assign four distinct physical cores to the client
