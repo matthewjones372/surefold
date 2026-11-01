@@ -1,6 +1,7 @@
 package io.github.matthewjones372.surefold.tenancy.crypto
 
 import io.github.matthewjones372.surefold.Clock
+import io.github.matthewjones372.surefold.HandoffDecision
 import io.github.matthewjones372.surefold.Resource
 import io.github.matthewjones372.surefold.Shared
 import io.github.matthewjones372.surefold.SingleFlight
@@ -12,6 +13,7 @@ import io.github.matthewjones372.surefold.fail.right
 import io.github.matthewjones372.surefold.resource
 import io.github.matthewjones372.surefold.resourceScope
 import io.github.matthewjones372.surefold.surefoldLocal
+import io.github.matthewjones372.surefold.use
 import java.time.Instant
 import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
@@ -100,6 +102,12 @@ internal class KeyCacheLedger {
     private class ReleaseIntent(val action: () -> Unit)
     data class LoadKey(val slot: KeyCache.Slot, val identity: KeyIdentity?, val epoch: Any)
     class Receipt(val group: Any, val id: Any, val clock: Clock)
+    sealed interface Delivery {
+        class Copy(val key: DataKey) : Delivery
+        class View(val view: KeyView) : Delivery
+    }
+    private enum class ReturnDecision { Delivered, Abort }
+    private class Prepared(val id: Any, val decision: HandoffDecision<ReturnDecision>, val abort: ReleaseIntent)
     private sealed interface Source
     private class Legacy(val key: DataKey) : Source
     private class Qualified(val material: OwnedKeyMaterial) : Source
@@ -113,6 +121,7 @@ internal class KeyCacheLedger {
     )
     private data class State(
         val pending: List<ReleaseIntent> = emptyList(),
+        val prepared: List<Prepared> = emptyList(),
         val open: Map<LoadKey, Any> = emptyMap(),
         val groups: Map<Any, Group> = emptyMap(),
         val receipts: Map<Any, Any> = emptyMap(),
@@ -122,19 +131,100 @@ internal class KeyCacheLedger {
     private val state = Shared(State())
     private val active = surefoldLocal<Set<Any>> { emptySet() }
 
+    fun deliver(
+        key: LoadKey,
+        capturedClock: Clock,
+        deadline: Instant,
+        flights: SingleFlight<Any, KeyError, Unit>,
+        load: () -> Either<KeyError, DataKey>,
+    ): Either<KeyError, Delivery> {
+        val decision = HandoffDecision<ReturnDecision>()
+        var row: Prepared? = null
+        var raw: ByteArray? = null
+        return resourceScope {
+            onRelease { _ ->
+                if (decision.peek() != ReturnDecision.Delivered) {
+                    decision.tryComplete(ReturnDecision.Abort)
+                    resourceScope {
+                        onRelease { _ -> raw?.fill(0) }
+                        row?.let { abortPrepared(it) }
+                    }
+                }
+            }
+            val answer = enrol(key, capturedClock, deadline).use { receipt ->
+                flights.run(receipt.group) { settle(receipt, load) }.flatMap {
+                    replay(checkNotNull(state.peek().groups[receipt.group]?.outcome)).flatMap { ref ->
+                        when (val held = ref.source) {
+                            is Legacy -> {
+                                val bytes = held.key.material.copyOf()
+                                raw = bytes
+                                row = Prepared(Any(), decision, ReleaseIntent { bytes.fill(0) })
+                                registerPrepared(checkNotNull(row))
+                                Either.Right(
+                                    Delivery.Copy(DataKey(held.key.owner, held.key.purpose, held.key.version, bytes)),
+                                )
+                            }
+
+                            is Qualified -> held.material.borrow(capturedClock) { closeExact ->
+                                row = Prepared(Any(), decision, ReleaseIntent(closeExact))
+                                registerPrepared(checkNotNull(row))
+                            }.map { Delivery.View(it) }
+                        }
+                    }
+                }
+            }
+            if (answer is Either.Right) decision.tryComplete(ReturnDecision.Delivered)
+            answer
+        }
+    }
+
+    private fun registerPrepared(row: Prepared) = state.update { it.copy(prepared = it.prepared + row) }
+
+    private fun abortPrepared(row: Prepared) = resourceScope {
+        onRelease { _ ->
+            val current = state.peek()
+            if (current.prepared.any { it.id === row.id } || current.pending.any { it === row.abort }) {
+                row.abort.action()
+                acknowledge(row.abort)
+            }
+        }
+        state.update { current ->
+            if (current.prepared.none { it.id === row.id }) current
+            else current.copy(
+                prepared = current.prepared.filterNot { it.id === row.id }, pending = current.pending + row.abort,
+            )
+        }
+    }
+
+    private fun acknowledge(intent: ReleaseIntent) = state.update { current ->
+        current.copy(pending = current.pending.filterNot { it === intent })
+    }
+
     fun owe(action: () -> Unit) {
         val intent = ReleaseIntent(action)
         state.update { it.copy(pending = it.pending + intent) }
     }
 
     fun drain() = resourceScope {
-        val pending = state.peek().pending
-        pending.asReversed().forEach { intent ->
+        val snapshot = state.peek()
+        val rows = snapshot.prepared.map { it to it.decision.peek() }
+        rows.asReversed().forEach { (row, phase) ->
+            onRelease { _ ->
+                when (phase) {
+                    null -> Unit
+
+                    ReturnDecision.Delivered -> state.update { current ->
+                        current.copy(prepared = current.prepared.filterNot { it.id === row.id })
+                    }
+
+                    ReturnDecision.Abort -> abortPrepared(row)
+                }
+            }
+        }
+        snapshot.pending.asReversed().forEach { intent ->
             onRelease { _ ->
                 intent.action()
-                state.update { current ->
-                    current.copy(pending = current.pending.filterNot { it === intent })
-                }
+                acknowledge(intent)
             }
         }
     }
