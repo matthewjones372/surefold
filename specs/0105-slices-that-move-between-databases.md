@@ -74,11 +74,18 @@ data whenever the set changes, and hides from the operator which slices moved.
       Done when: under appends from 1,000 entities, a range moves from db-0 to db-2. No append is lost, every
       entity recovers its full history, and appends to other ranges never pause.
 
+- [ ] **`spec-0105-retention-test-routing`** — one fresh post-cleanup journal for the retention test's expected
+      source-feed set; keep every id, assertion, other case and the existing one-minute test deadline.
+
 ## Acceptance
 
 ```bash
 ./gradlew :surefold-actor:check :surefold-actor-journal-jdbc:check
 ```
+
+The retention test creates its expected routing view after cleanup, then shares that journal across all 1,000
+ids. Each new slice table owns an initially empty cache; constructing one per id repeats routing SQL without
+adding an independent assertion. This test-only change does not establish the cause of a prior timeout.
 
 ## Settled
 

@@ -140,8 +140,9 @@ object SliceMoveSuite : Suite() {
                 }
                 // Every id left on the source is still in its feed, which reads past the rows deleted rather
                 // than waiting.
+                val afterCleanup = journal()
                 source.after("till", 0, 10_000).map { it.id }.toSet() shouldBe
-                    ids.filter { journal().database(it) == "db-0" }.toSet()
+                    ids.filter { afterCleanup.database(it) == "db-0" }.toSet()
             }
         }
     }
