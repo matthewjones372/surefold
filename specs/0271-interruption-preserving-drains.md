@@ -17,7 +17,14 @@ Core exports inline `draining(block: () -> A): A` to clear an existing interrupt
 return, throw or non-local return. An InterruptedException escaping the block also restores the interrupt flag.
 Core exports inline `uninterruptible(block: () -> A): A` for repeatable interruptible waits: retry only
 InterruptedException until the wait returns, restore all observed interruption, propagate every other failure.
-A wait must be safe to repeat after interruption; this is not a general work-retry API.
+A wait must be safe to repeat after interruption; this is not a general work-retry API. An optional
+`onInterrupted: (InterruptedException) -> Unit` observes each interrupted wait before the next attempt.
+
+Core also exports inline `onThrow(action: (Throwable) -> Unit, block: () -> A): A` for an acquisition owner
+that must fail shared startup promises and release partial work for every escaping throw, including fatal,
+interrupt, cancellation and Fail unwinding. The original throwable is rethrown unchanged; observer failure is
+suppressed onto it. This is observation/cleanup, not exception-to-value capture or recovery. Resource ExitCase
+cannot supply CancellationException/Fail cause because those are intentionally classified Completed.
 
 ## Why this shape
 
