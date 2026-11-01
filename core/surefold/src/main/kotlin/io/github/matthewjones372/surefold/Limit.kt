@@ -36,7 +36,7 @@ class Limit private constructor(
      * cancelled, which says nothing about the dependency. Nor does a `fail` passing through: it is the call's own
      * answer, so a lookup that answers "not found" is not taken for overload.
      */
-    fun <A> withPermit(block: () -> A): A = measured(acquire(), block)
+    fun <A> withPermit(block: () -> A): A = measured(acquire(), block = block)
 
     /**
      * Room for one call if it comes within [wait], and how many calls are inside with it; null if none came. The
@@ -54,11 +54,15 @@ class Limit private constructor(
     }
 
     /** [block] run as a call let in with [found] calls inside: timed, learnt from, and its room given back. */
-    internal fun <A> measured(found: Int, block: () -> A): A {
+    internal fun <A> measured(
+        found: Int,
+        failedIf: (A) -> Boolean = { false },
+        block: () -> A,
+    ): A {
         val started = System.nanoTime()
         var outcome = Outcome.FAILED
         try {
-            return block().also { outcome = Outcome.ANSWERED }
+            return block().also { outcome = if (failedIf(it)) Outcome.FAILED else Outcome.ANSWERED }
         } catch (stopped: InterruptedException) {
             outcome = Outcome.UNMEASURED
             throw stopped

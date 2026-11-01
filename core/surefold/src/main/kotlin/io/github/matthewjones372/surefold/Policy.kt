@@ -5,8 +5,13 @@ import io.github.matthewjones372.surefold.CircuitBreaker.Admission.Refused
 import io.github.matthewjones372.surefold.Policy.Step
 import io.github.matthewjones372.surefold.Schedule.Decision.Continue
 import io.github.matthewjones372.surefold.Schedule.Decision.Done
+import io.github.matthewjones372.surefold.fail.Either
 import io.github.matthewjones372.surefold.fail.Fail
 import io.github.matthewjones372.surefold.fail.Failed
+import io.github.matthewjones372.surefold.fail.flatMap
+import io.github.matthewjones372.surefold.fail.fold
+import io.github.matthewjones372.surefold.fail.mapLeft
+import io.github.matthewjones372.surefold.fail.nonFatalOrThrow
 import java.time.Instant
 import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeoutException
@@ -112,6 +117,76 @@ fun <E, A> Fail<E>.guarded(policy: Policy, ifRejected: (Rejected) -> E, block: F
     } catch (rejected: Rejected) {
         fail(ifRejected(rejected))
     }
+
+/** Keeps captured SDK outcomes as values while selected failures still drive the policy's guards and retries. */
+fun <A> Policy.guardResult(
+    countsAsFailure: (Throwable) -> Boolean = { true },
+    block: () -> Either<Throwable, A>,
+): Either<Throwable, A> {
+    val result = Either.catch { Unraisable.fromResult(this, 0, Budget(null), countsAsFailure, block) }.flatMap { it }
+    val outcome = result.fold(
+        { error ->
+            if (error is Rejected || error is DeadlinePassed || countsAsFailure(error)) outcomeOf(error)
+            else "success" to "none"
+        },
+        { "success" to "none" },
+    )
+    outcome?.let { (answer, by) ->
+        counter("surefold.policy.calls", "policy" to name, "outcome" to answer, "refused_by" to by).increment()
+    }
+    return result
+}
+
+private fun <E, A> Fail<E>.fromResult(
+    policy: Policy,
+    at: Int,
+    budget: Budget,
+    selected: (Throwable) -> Boolean,
+    block: () -> Either<Throwable, A>,
+): Either<Throwable, A> {
+    if (at == policy.steps.size) {
+        val result = if (policy.cutsBeforeTheCall) cut(budget.remaining(), budget) { block() } else block()
+        return result.mapLeft { it.nonFatalOrThrow() }
+    }
+    val next = { Either.catch { fromResult(policy, at + 1, budget, selected, block) }.flatMap { it } }
+    return when (val step = policy.steps[at]) {
+        is Step.Deadline -> fromResult(
+            policy, at + 1, Budget(clock.get().now().plusNanos(step.total.inWholeNanoseconds)), selected, block,
+        )
+
+        is Step.Retry -> step.schedule.within(budget).retrying {
+            val result = next()
+            if (result is Either.Left && selected(result.value)) fail(result.value)
+            result
+        }.flatMap { it }
+
+        is Step.Breaker -> through(step.breaker, budget, { next() }) { result ->
+            when (result) {
+                is Either.Right -> CircuitBreaker.Result.SUCCESS
+
+                is Either.Left -> when {
+                    !selected(result.value) -> CircuitBreaker.Result.SUCCESS
+                    !step.breaker.countsAsFailure(result.value) -> CircuitBreaker.Result.UNCOUNTED
+                    else -> CircuitBreaker.Result.FAILURE
+                }
+            }
+        }
+
+        is Step.Limit -> paced(step.limiter, step.cost, budget, { next() }) { result ->
+            result is Either.Left && result.value is Rejected.BulkheadFull
+        }
+
+        is Step.Bulkhead -> inside(step.bulkhead, budget) { next() }
+
+        is Step.Concurrency -> inside(step.limit, step.maxWait, budget, { next() }) { result ->
+            result is Either.Left && selected(result.value)
+        }
+
+        is Step.AttemptTimeout -> cut(minOf(step.each, budget.remaining()), budget) { next() }
+
+        is Step.Custom -> with(step.guard) { guard { next() } }
+    }
+}
 
 // The order the runner reads a plan in. A guard Surefold cannot see into has no place in it.
 private enum class Kind(val label: String) {
@@ -224,11 +299,16 @@ private fun <E, A> Fail<E>.from(policy: Policy, at: Int, budget: Budget, block: 
     }
 }
 
-private fun <E, A> Fail<E>.through(breaker: CircuitBreaker, budget: Budget, block: Fail<E>.() -> A): A {
+private fun <E, A> Fail<E>.through(
+    breaker: CircuitBreaker,
+    budget: Budget,
+    block: Fail<E>.() -> A,
+    resultOf: (A) -> CircuitBreaker.Result = { CircuitBreaker.Result.SUCCESS },
+): A {
     val admitted = admitted(breaker, budget)
     var result = CircuitBreaker.Result.UNCOUNTED
     try {
-        return block().also { result = CircuitBreaker.Result.SUCCESS }
+        return block().also { result = resultOf(it) }
     } catch (thrown: Throwable) {
         // Not for a fail or an interrupt, nor for what the JVM cannot recover from.
         if (thrown.isNonFatal() && breaker.countsAsFailure(thrown)) result = CircuitBreaker.Result.FAILURE
@@ -257,7 +337,13 @@ private tailrec fun admitted(breaker: CircuitBreaker, budget: Budget): Admitted 
 
 // A token is waited for only when the wait fits the deadline. A call the bulkhead then refuses, or a wait an interrupt
 // ends, was never made, so its tokens go back.
-private fun <E, A> Fail<E>.paced(limiter: RateLimiter, cost: Int, budget: Budget, block: Fail<E>.() -> A): A {
+private fun <E, A> Fail<E>.paced(
+    limiter: RateLimiter,
+    cost: Int,
+    budget: Budget,
+    block: Fail<E>.() -> A,
+    refundIf: (A) -> Boolean = { false },
+): A {
     when (val reservation = limiter.reserve(cost, minOf(limiter.maxWait, budget.remaining()))) {
         is RateLimiter.Reservation.Refused -> throw Rejected.RateLimited(limiter.name, reservation.retryAfter)
 
@@ -270,7 +356,7 @@ private fun <E, A> Fail<E>.paced(limiter: RateLimiter, cost: Int, budget: Budget
             }
     }
     try {
-        return block()
+        return block().also { if (refundIf(it)) limiter.refund(cost) }
     } catch (full: Rejected.BulkheadFull) {
         limiter.refund(cost)
         throw full
@@ -288,9 +374,15 @@ private fun <E, A> Fail<E>.inside(bulkhead: Bulkhead, budget: Budget, block: Fai
 }
 
 // The same for a limit: its wait cut to what the deadline leaves, and the call timed for an adaptive limit to learn.
-private fun <E, A> Fail<E>.inside(limit: Limit, maxWait: Duration, budget: Budget, block: Fail<E>.() -> A): A {
+private fun <E, A> Fail<E>.inside(
+    limit: Limit,
+    maxWait: Duration,
+    budget: Budget,
+    block: Fail<E>.() -> A,
+    failedIf: (A) -> Boolean = { false },
+): A {
     val found = limit.admit(minOf(maxWait, budget.remaining())) ?: throw Rejected.BulkheadFull(limit.name)
-    return limit.measured(found) { block() }
+    return limit.measured(found, failedIf) { block() }
 }
 
 // One fork for an attempt, and none at all when nothing bounds it. A timeout that leaves no budget is the

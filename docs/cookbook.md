@@ -25,6 +25,7 @@ and the same-cache layer reentry restriction.
 
 | Need | Use | Module |
 |---|---|---|
+| apply breaker and retry policy to captured SDK outcomes | [`Policy.guardResult`](core.md) | `surefold` (spec 0272 development snapshot) |
 | recover selected typed failures without rethrowing unmatched errors | [`Either.recover`](core.md) | `surefold` (spec 0269 development snapshot) |
 | share one in-flight block per key | `SingleFlight.run` | `surefold` |
 | share a fixed lookup without retaining its result | `Cache(ttl = { Duration.ZERO })` | `surefold-cache` |

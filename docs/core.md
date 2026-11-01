@@ -554,6 +554,16 @@ built, not on the first call. Each step is optional.
 Called as `partner { … }`, a refusal throws its `Rejected`, which is a
 `RuntimeException`. `guarded(policy, ifRejected) { }` turns it into a fail.
 
+For an SDK boundary already captured by `Either.catch`, `policy.guardResult { capturedCall() }`
+keeps the `Either<Throwable, A>` through the same guards, retries and time budgets.
+Its `countsAsFailure` selector distinguishes infrastructure failures from provider refusals:
+selected failures are retried and counted, while an unselected refusal resets the breaker as a
+successful provider answer. The breaker's own predicate can additionally leave a selected error
+uncounted. Map to application errors after the policy. Fatal errors, interruption, cancellation
+and foreign `Fail` unwinding propagate, including when supplied on the left. This entry point is
+available in the spec 0272 development snapshot; legacy throwing and `Fail.guarded` behavior is unchanged.
+
+
 Each guard records metrics through surefold's [metrics](observability.md#metrics):
 
 | Metric | Kind | Tags |
