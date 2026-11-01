@@ -50,8 +50,10 @@ branching DSL, partial functions, repeated else/fail forwarding and separate val
 
 ## Stack
 
-- [ ] **`codex/0270-either-recover-main`** - both operators, runtime/compiler tests and core-guide example.
+- [x] **`codex/0270-either-recover-main`** - both operators, runtime/compiler tests and core-guide example.
       Done when the tests below and the full build pass. One review slice under 200 changed main/doc lines.
+      Delivered in [PR #974](https://github.com/matthewjones372/surefold/pull/974); [PR build](https://github.com/matthewjones372/surefold/actions/runs/41256391490)
+      and [merged-main build](https://github.com/matthewjones372/surefold/actions/runs/41257231877) passed.
 
 Integrate this API on current main after the approved cond spec/implementation. The separately verified original
 source-pinned snapshot c5cac385 retains its KMS ancestry; publish that source branch for reproducible consumer CI,
