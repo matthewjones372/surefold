@@ -25,6 +25,7 @@ and the same-cache layer reentry restriction.
 
 | Need | Use | Module |
 |---|---|---|
+| recover selected typed failures without rethrowing unmatched errors | [`Either.recover`](core.md) | `surefold` (spec 0270 development snapshot) |
 | share one in-flight block per key | `SingleFlight.run` | `surefold` |
 | record a quiet final ownership decision (unreleased) | [`HandoffDecision.tryComplete` / `peek`](core.md#quiet-handoff-decisions) | `surefold` |
 | share a fixed lookup without retaining its result | `Cache(ttl = { Duration.ZERO })` | `surefold-cache` |
