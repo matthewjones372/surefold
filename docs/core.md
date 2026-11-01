@@ -180,6 +180,31 @@ only the selected callback runs. Use `ensure` inside `attempt` for dependent che
 for independent field validation. `cond` propagates callback exceptions. Available in the development
 snapshot for spec 0268, not the published 0.17.0 release.
 
+`Either.recover` supplies a fallback only on failure. Its class-token member leaves unmatched Left values
+unchanged; matching handlers can return a value, bind an alternative or fail through the existing Fail scope.
+The selective form keeps E and A fixed; declare A nullable at capture when null is a valid fallback. The total
+extension can change E; supply its result type when a value-only handler gives the new error type no constraints.
+Recovery does not capture exceptions thrown by its handler: capture foreign calls explicitly.
+These overloads are in the spec 0270 development snapshot, not published 0.17.0.
+
+<!-- core-recover -->
+```kotlin
+import io.github.matthewjones372.surefold.fail.Either
+import io.github.matthewjones372.surefold.fail.bind
+import io.github.matthewjones372.surefold.fail.recover
+import java.io.IOException
+
+fun backup(): Either<Throwable, String?> = Either.catch { "backup" }
+
+fun recoverResponse(result: Either<Throwable, String?>): Either<Throwable, String?> =
+    result.recover(IOException::class) { backup().bind() }
+
+fun optionalResponse(result: Either<Throwable, String?>): Either<Throwable, String?> =
+    result.recover(IOException::class) { null }
+
+fun defaultResponse(result: Either<String, Int>): Either<Nothing, Int> = result.recover { it.length }
+```
+
 <!-- core-traverse -->
 ```kotlin
 import io.github.matthewjones372.surefold.Limit

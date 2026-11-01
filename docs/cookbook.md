@@ -25,6 +25,7 @@ and the same-cache layer reentry restriction.
 
 | Need | Use | Module |
 |---|---|---|
+| recover selected typed failures without rethrowing unmatched errors | [`Either.recover`](core.md) | `surefold` (spec 0270 development snapshot) |
 | share one in-flight block per key | `SingleFlight.run` | `surefold` |
 | share a fixed lookup without retaining its result | `Cache(ttl = { Duration.ZERO })` | `surefold-cache` |
 | retain answers by capacity without expiry | `Cache(ttl = { Duration.INFINITE }, capacity = …)` | `surefold-cache` |

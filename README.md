@@ -32,6 +32,9 @@ The spec 0268 development snapshot adds `Either.cond(condition, right = { value 
 for lazy conditional construction. It is absent from release 0.17.0; [the core guide](docs/core.md)
 shows how it complements `attempt` and accumulating validation.
 
+The spec 0270 development snapshot adds total and class-token `Either.recover` with Fail-context handlers;
+unmatched failures remain Left. See [recovery](docs/core.md) for the compiled examples.
+
 ## Why virtual threads
 
 Since JDK 21, a blocked virtual thread parks without holding an OS thread, so
