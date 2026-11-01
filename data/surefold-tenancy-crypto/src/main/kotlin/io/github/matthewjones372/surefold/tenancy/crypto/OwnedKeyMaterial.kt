@@ -24,13 +24,20 @@ internal class OwnedKeyMaterial private constructor(
 
     private val state = Shared(State())
 
-    fun borrow(clock: Clock): Either<KeyError, KeyView> = resourceScope {
+    fun borrow(clock: Clock): Either<KeyError, KeyView> = borrow(clock) {}
+
+    fun borrow(
+        clock: Clock,
+        beforeAdmission: (closeExact: () -> Unit) -> Unit,
+    ): Either<KeyError, KeyView> = resourceScope {
         refused(clock)?.let { return@resourceScope Either.Left(it) }
         val id = Any()
+        val closeExact = { change { it.copy(views = it.views - id) } }
         var handedOver = false
         onRelease { _ ->
-            if (!handedOver) change { it.copy(views = it.views - id) }
+            if (!handedOver) closeExact()
         }
+        beforeAdmission(closeExact)
         val admitted = modify {
             if (it.revoked || it.zeroed) it to false else it.copy(views = it.views + id) to true
         }
@@ -38,7 +45,7 @@ internal class OwnedKeyMaterial private constructor(
         val view = object : KeyView {
             override val identity: KeyIdentity = this@OwnedKeyMaterial.identity
             override fun <A> using(block: (ByteArray) -> A): Either<KeyError, A> = use(id, clock, block)
-            override fun close() = change { it.copy(views = it.views - id) }
+            override fun close() = closeExact()
         }
         handedOver = true
         Either.Right(view)
