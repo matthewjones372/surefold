@@ -1,6 +1,6 @@
 # 0269 — A quiet one-shot handoff decision
 
-Approved precode contract following Root and independent Privacy/KMS review. Source remains unimplemented/unreleased.
+Approved contract; source is on main via PR973/main46213a81. No stable release is recorded here.
 
 ## Problem
 
@@ -15,7 +15,7 @@ integration, resource policy, executor, scheduler, module, cryptography or depen
 
 ## Shape
 
-Proposed public API in core, package io.github.matthewjones372.surefold:
+Public API on main in core, package io.github.matthewjones372.surefold:
 ```kotlin
 class HandoffDecision<A : Any> {
     fun tryComplete(value: A): Boolean
@@ -48,7 +48,7 @@ SingleFlight.closeAndJoin covers its workers only, and a peek does not manufactu
 ## Stack
 
 - [x] **codex/handoff-decision-contract** — PR969/main6e5113d5: numbered spec and complete0265 ownership amendment.
-- [ ] **codex/handoff-decision** — class/tests, one core-guide paragraph/cookbook row; no existing API edits.
+- [x] **codex/handoff-decision** — PR973/main46213a81: class/tests, core-guide paragraph/cookbook row; no existing API edits.
       Main/docs estimate30–50, stop/review before190. Tests separately counted. Required full checks unchanged.
 
 ## Acceptance

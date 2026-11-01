@@ -1,7 +1,7 @@
 # 0265 — Retained keys with revocable owned views
 
 Approved ownership/terminal/ledger/groups contracts are on main, unreleased; public cache delivery remains unimplemented.
-Checked mainb5aa070e / published0.17.0. B1 PR960/main41200432232 passed. Retention/release/adoption remain incomplete.
+Checked main46213a81. B1 PR960/main41200432232 passed. Retention/release/adoption remain incomplete.
 
 ## Problem
 
@@ -107,11 +107,12 @@ or new executor/scheduler.
 ## Provisional delivery and early exact ownership
 
 The delivery entry requires a separately approved two-method core HandoffDecision<A:Any> (spec0269) (tryComplete/peek).
-It is proposed, NOT shipped; no Promise/Shared instrumentation is disabled. There is no waiting or wakeup API.
+Its source is on main via PR973/main46213a81, unreleased; no existing instrumentation is disabled. There is no wait/wakeup API.
 Existing internal OwnedKeyMaterial.borrow(clock) keeps its descriptor/behavior. An additive INTERNAL overload
 borrow(clock,beforeAdmission:(closeExact:()->Unit)->Unit) allocates one exact token/close capability and registers
 local rollback BEFORE invoking that callback OUTSIDE Shared and BEFORE admitting token membership. The callback
-only registers ownership. A failed precommit registration admits no view; committed registration plus observer
+only registers ownership; it does not invoke/drain the Preparing capability or recursively borrow the material.
+A failed precommit registration admits no view; committed registration plus observer
 throw retains the exact capability. Admission commit plus failed rollback before commit leaves that SAME cap owned.
 Close removes only that token, idempotently, preserving all expiry/revoke/terminal-notice laws; never reopen it.
 A drainer NEVER executes a Preparing capability. Only its caller can Abort after its admission scope has ended,
@@ -153,8 +154,9 @@ Alternative: a general retained-resource cache; broader than this key requiremen
 - [x] **`codex/key-view-retention`** — terminal notices/acknowledgements, PR958/main9e9aec92; no cache/public activation.
 - [x] **`codex/key-view-retention-ledger`** — pending release intents/acknowledgements, PR959/main80f3873b; legacy class unchanged; ~78 main/spec lines.
 - [x] **`codex/key-view-retention-groups`** — groups/outcomes/source anchors ONLY, PR960/main1d574300; no delivery.
-- [ ] **`codex/handoff-decision`** — separately numbered core spec/API, tryComplete/peek ONLY; no await/join.
-- [ ] **`codex/key-view-early-close`** — additive INTERNAL exact-capability registration before admission; old descriptor retained.
+- [x] **`codex/handoff-decision`** — PR973/main46213a81; tryComplete/peek ONLY, unreleased; no await/join.
+- [ ] **`codex/key-view-early-close`** — OwnedKeyMaterial/KeyViewSuite only; additive INTERNAL before-admission exact cap.
+      Retain old borrow descriptor/all36 cases; new registration/failure/token/terminal laws; estimate20–35 main lines.
 - [ ] **`codex/key-view-retention-delivery`** — full provisional-return/abort protocol above; exact plan/count before source.
 - [ ] **`codex/key-view-retention-policy`** — shared owner LRU, modes, success tickets and epochs; no public lease; ~175 main lines.
 - [ ] **`codex/key-view-retention-legacy`** — old get/evict integration and protective Unavailable cutoff; ~185 changed main lines.
