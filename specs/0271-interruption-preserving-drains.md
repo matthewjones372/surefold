@@ -26,6 +26,9 @@ interrupt, cancellation and Fail unwinding. The original throwable is rethrown u
 suppressed onto it. This is observation/cleanup, not exception-to-value capture or recovery. Resource ExitCase
 cannot supply CancellationException/Fail cause because those are intentionally classified Completed.
 
+Core exports `checkInterrupted(): Unit` as the cancellation checkpoint for synchronous adapter code. It throws
+InterruptedException when the current thread is interrupted, preserving its interrupt flag; otherwise returns.
+
 ## Why this shape
 
 These are resource/shutdown mechanisms without domain types; they belong beside Resource and Scope. Either.catch
