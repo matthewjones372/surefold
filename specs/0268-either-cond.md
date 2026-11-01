@@ -36,8 +36,10 @@ improving this simple case. The owner approved both required lazy branches and n
 
 ## Stack
 
-- [ ] **`codex/0268-either-cond-main`** - constructor, focused tests and compiled guide example.
+- [x] **`codex/0268-either-cond-main`** - constructor, focused tests and compiled guide example.
       Done when: selection, laziness, identity, nullable payloads, inference and propagation pass all checks.
+      Delivered in [PR #972](https://github.com/matthewjones372/surefold/pull/972); [PR build](https://github.com/matthewjones372/surefold/actions/runs/41252820882)
+      and [merged-main build](https://github.com/matthewjones372/surefold/actions/runs/41253597750/attempts/2) passed.
 
 Integrate the constructor on current main. The separately verified development snapshot c5cac385 retains
 its KMS ancestry on an immutable source-only branch; do not merge that unrelated feature stack. Consumer
