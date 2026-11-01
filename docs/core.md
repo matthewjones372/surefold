@@ -185,7 +185,7 @@ unchanged; matching handlers can return a value, bind an alternative or fail thr
 The selective form keeps E and A fixed; declare A nullable at capture when null is a valid fallback. The total
 extension can change E; supply its result type when a value-only handler gives the new error type no constraints.
 Recovery does not capture exceptions thrown by its handler: capture foreign calls explicitly.
-These overloads are in the spec 0269 development snapshot, not published 0.17.0.
+These overloads are in the spec 0270 development snapshot, not published 0.17.0.
 
 <!-- core-recover -->
 ```kotlin
