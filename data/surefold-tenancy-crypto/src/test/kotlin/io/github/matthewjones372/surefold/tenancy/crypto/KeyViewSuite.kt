@@ -216,6 +216,38 @@ object KeyViewSuite : Suite() {
             concurrentViews(revoke = true)
         }
 
+        test("early ownership registers once and closes the returned exact view") {
+            earlyRegistrationOwnsExactView()
+        }
+
+        test("a failed early registration leaves no admitted view") {
+            earlyRegistrationFailureAdmitsNothing()
+        }
+
+        test("a committed early registration keeps its capability when its observer throws") {
+            earlyRegistrationObserverRetainsCapability()
+        }
+
+        test("early ownership is recorded before admission instrumentation can throw") {
+            earlyOwnershipPrecedesAdmissionObserver()
+        }
+
+        test("early ownership survives admission and rollback observers throwing") {
+            earlyOwnershipSurvivesRollbackObserver()
+        }
+
+        test("an early capability closes only its independently held view") {
+            earlyCapabilityClosesOnlyItsView()
+        }
+
+        test("expired and revoked material refuses before early registration") {
+            earlyRefusalSkipsRegistration()
+        }
+
+        test("an early capability retries a failed terminal notice without repeating its acknowledgement") {
+            earlyCapabilityRetriesTerminalNotice()
+        }
+
         test("a committed borrow with throwing instrumentation releases its unpublished view") {
             val captured = TestClock(Instant.EPOCH)
             withView(captured) { material, view, source ->
@@ -650,4 +682,175 @@ private fun <A> onCommittedStep(target: Int, action: () -> Unit, block: () -> A)
         }
     }
     return metrics.locally(atCommit, block)
+}
+
+private fun <A> failingNamedCommits(target: String, failures: List<IllegalStateException>, block: () -> A): A {
+    val calls = Shared(0, "early-fault-count")
+    val failing = object : Metrics by NoMetrics {
+        override fun counter(name: String, tags: Map<String, String>): Counter = Counter {
+            if (name == "surefold.transact.runs" && tags["transact"] == target && tags["outcome"] == "committed") {
+                val index = metrics.locally(NoMetrics) { calls.modify { it + 1 to it } }
+                if (index < failures.size) throw failures[index]
+            }
+        }
+    }
+    return metrics.locally(failing, block)
+}
+
+private fun earlyRegistrationOwnsExactView() {
+    val captured = TestClock(Instant.EPOCH)
+    val owner = Shared<(() -> Unit)?>(null, "early-owner")
+    val calls = Shared(0, "early-registration-count")
+    withView(captured) { material, initial, source ->
+        initial.close()
+        resourceScope {
+            val view = material.borrow(captured) { closeExact ->
+                owner.update { closeExact }
+                calls.update { it + 1 }
+            }.required()
+            onRelease { view.close() }
+            calls.peek() shouldBe 1
+            view.using { it.contentEquals(source) } shouldBe Either.Right(true)
+            checkNotNull(owner.peek()).invoke()
+            view.using { Unit } shouldBe deniedView
+            material.forget()
+            source.all { it == 0.toByte() } shouldBe true
+            checkNotNull(owner.peek()).invoke()
+        }
+    }
+}
+
+private fun earlyRegistrationFailureAdmitsNothing() {
+    val captured = TestClock(Instant.EPOCH)
+    val marker = IllegalStateException("synthetic registration")
+    withView(captured) { material, initial, source ->
+        initial.close()
+        shouldThrow<IllegalStateException>({
+            material.borrow(captured) { throw marker }
+        }) { (it === marker) shouldBe true }
+        material.forget()
+        source.all { it == 0.toByte() } shouldBe true
+    }
+}
+
+private fun earlyRegistrationObserverRetainsCapability() {
+    val captured = TestClock(Instant.EPOCH)
+    val owner = Shared<(() -> Unit)?>(null, "early-owner")
+    val marker = IllegalStateException("synthetic ownership observer")
+    withView(captured) { material, initial, source ->
+        initial.close()
+        shouldThrow<IllegalStateException>({
+            failingNamedCommits("early-owner", listOf(marker)) {
+                material.borrow(captured) { closeExact -> owner.update { closeExact } }
+            }
+        }) { (it === marker) shouldBe true }
+        val closeExact = checkNotNull(owner.peek())
+        material.forget()
+        source.all { it == 0.toByte() } shouldBe true
+        closeExact()
+        closeExact()
+    }
+}
+
+private fun earlyOwnershipPrecedesAdmissionObserver() {
+    val captured = TestClock(Instant.EPOCH)
+    val owner = Shared<(() -> Unit)?>(null, "early-owner")
+    val marker = IllegalStateException("synthetic admission observer")
+    withView(captured) { material, initial, source ->
+        initial.close()
+        shouldThrow<IllegalStateException>({
+            failingNamedCommits("unnamed", listOf(marker)) {
+                material.borrow(captured) { closeExact -> owner.update { closeExact } }
+            }
+        }) { (it === marker) shouldBe true }
+        val closeExact = checkNotNull(owner.peek())
+        closeExact()
+        material.forget()
+        source.all { it == 0.toByte() } shouldBe true
+    }
+}
+
+private fun earlyOwnershipSurvivesRollbackObserver() {
+    val captured = TestClock(Instant.EPOCH)
+    val owner = Shared<(() -> Unit)?>(null, "early-owner")
+    val primary = IllegalStateException("synthetic admission observer")
+    val cleanup = IllegalStateException("synthetic rollback observer")
+    withView(captured) { material, initial, source ->
+        initial.close()
+        shouldThrow<IllegalStateException>({
+            failingNamedCommits("unnamed", listOf(primary, cleanup)) {
+                material.borrow(captured) { closeExact -> owner.update { closeExact } }
+            }
+        }) {
+            (it === primary) shouldBe true
+            it.suppressed.toList() shouldBe listOf(cleanup)
+        }
+        val closeExact = checkNotNull(owner.peek())
+        closeExact()
+        closeExact()
+        material.forget()
+        source.all { it == 0.toByte() } shouldBe true
+    }
+}
+
+private fun earlyCapabilityClosesOnlyItsView() {
+    val captured = TestClock(Instant.EPOCH)
+    val owner = Shared<(() -> Unit)?>(null, "early-owner")
+    withView(captured) { material, initial, source ->
+        initial.close()
+        resourceScope {
+            val first = material.borrow(captured) { closeExact -> owner.update { closeExact } }.required()
+            onRelease { first.close() }
+            val second = material.borrow(captured).required()
+            onRelease { second.close() }
+            checkNotNull(owner.peek()).invoke()
+            checkNotNull(owner.peek()).invoke()
+            first.using { Unit } shouldBe deniedView
+            second.using { it.contentEquals(source) } shouldBe Either.Right(true)
+            material.forget()
+            source.any { it != 0.toByte() } shouldBe true
+            second.close()
+            source.all { it == 0.toByte() } shouldBe true
+        }
+    }
+}
+
+private fun earlyRefusalSkipsRegistration() {
+    listOf(false, true).forEach { revoked ->
+        val captured = TestClock(Instant.EPOCH)
+        val calls = Shared(0, "early-registration-count")
+        withView(captured) { material, _, _ ->
+            if (revoked) material.revoke() else captured.adjust(10.seconds)
+            val answer = material.borrow(captured) { _ -> calls.update { it + 1 } }
+            answer shouldBe if (revoked) deniedView else expiredView
+            calls.peek() shouldBe 0
+        }
+    }
+}
+
+private fun earlyCapabilityRetriesTerminalNotice() {
+    val captured = TestClock(Instant.EPOCH)
+    val owner = Shared<(() -> Unit)?>(null, "early-owner")
+    val notices = Shared(0, "early-terminal-count")
+    val marker = IllegalStateException("synthetic terminal notice")
+    withView(captured, onTerminal = {
+        val attempt = notices.modify { it + 1 to it }
+        if (attempt == 0) throw marker
+    }) { material, initial, source ->
+        initial.close()
+        resourceScope {
+            val view = material.borrow(captured) { closeExact -> owner.update { closeExact } }.required()
+            onRelease { view.close() }
+            val closeExact = checkNotNull(owner.peek())
+            material.forget()
+            shouldThrow<IllegalStateException>({ closeExact() }) { (it === marker) shouldBe true }
+            source.all { it == 0.toByte() } shouldBe true
+            notices.peek() shouldBe 1
+            closeExact()
+            notices.peek() shouldBe 2
+            closeExact()
+            notices.peek() shouldBe 2
+            view.using { Unit } shouldBe deniedView
+        }
+    }
 }
