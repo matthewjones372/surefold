@@ -47,7 +47,7 @@ SingleFlight.closeAndJoin covers its workers only, and a peek does not manufactu
 
 ## Stack
 
-- [ ] **codex/handoff-decision-contract** — numbered spec and complete0265 early-owner/delivery amendment only.
+- [x] **codex/handoff-decision-contract** — PR969/main6e5113d5: numbered spec and complete0265 ownership amendment.
 - [ ] **codex/handoff-decision** — class/tests, one core-guide paragraph/cookbook row; no existing API edits.
       Main/docs estimate30–50, stop/review before190. Tests separately counted. Required full checks unchanged.
 

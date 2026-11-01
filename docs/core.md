@@ -567,6 +567,17 @@ Each guard records metrics through surefold's [metrics](observability.md#metrics
 | `surefold.ratelimiter.calls` | counter | `name`, `outcome` (`immediate`, `waited`, `rejected`) |
 | `surefold.ratelimiter.wait` | histogram, seconds | `name` |
 
+## Quiet handoff decisions
+
+`HandoffDecision<A : Any>` (unreleased) records one final ownership decision. Construct it before acquiring resources.
+`tryComplete(value)` publishes the first exact nonnull reference; later attempts return false. `peek()` returns it,
+or null while pending. A successful completion publishes prior writes to a reader that observes its value.
+The decision's ordinary path preserves interruption and uses no callbacks, metrics, turns, waiting or wakeup.
+Payloads are not copied or frozen; later mutation needs caller coordination. A visible decision can precede the
+completing method's return: it is not a caller/thread join or joined resource release. Retryable-transaction use is
+unsupported. Existing Promise/Shared instrumentation remains enabled; arbitrary agents or VM-fatal failures are not
+covered by this ordinary-path contract.
+
 ## Values changed together
 
 A `Shared<T>` is a value forks share, and `transact { }` changes several of them
