@@ -8,6 +8,8 @@ import io.github.matthewjones372.surefold.Shared
 import io.github.matthewjones372.surefold.SingleFlight
 import io.github.matthewjones372.surefold.SystemClock
 import io.github.matthewjones372.surefold.TestClock
+import io.github.matthewjones372.surefold.TurnSeam
+import io.github.matthewjones372.surefold.Turns
 import io.github.matthewjones372.surefold.awaitValue
 import io.github.matthewjones372.surefold.clock
 import io.github.matthewjones372.surefold.fail.Either
@@ -17,10 +19,14 @@ import io.github.matthewjones372.surefold.junit.shouldThrow
 import io.github.matthewjones372.surefold.metrics
 import io.github.matthewjones372.surefold.resourceScope
 import io.github.matthewjones372.surefold.scope
+import io.github.matthewjones372.surefold.takingTurns
+import io.github.matthewjones372.surefold.test.eventually
 import io.github.matthewjones372.surefold.timeout
+import io.github.matthewjones372.surefold.transact
 import io.github.matthewjones372.surefold.use
 import java.time.Instant
 import java.util.concurrent.CancellationException
+import java.util.concurrent.locks.LockSupport
 import kotlin.time.Duration.Companion.seconds
 
 object RetainedKeyCacheSuite : Suite() {
@@ -571,6 +577,38 @@ object RetainedKeyCacheSuite : Suite() {
     }
 }
 
+internal object RetainedKeyDeliverySuite : Suite(concurrent = false, isolated = true) {
+    init {
+        test("a returned copy survives release of its source") { returnedCopySurvives() }
+        test("a returned view survives forgetting its source") { returnedViewSurvives() }
+        test("receipt cleanup failure wipes a legacy copy that was never returned") { abandonedCopyWipes() }
+        test("receipt cleanup failure closes a qualified view that was never returned") { abandonedViewCloses() }
+        test("a preparing copy survives a drain before return") { preparingDrain(false) }
+        test("a preparing view survives a drain before admission") { preparingDrain(true) }
+        test("a delivered copy survives metadata reap failure") { deliveredReapFault(false) }
+        test("a delivered view survives metadata reap failure") { deliveredReapFault(true) }
+        test("a committed copy registration remains owned when its observer throws") {
+            registrationObserverFault(false)
+        }
+        test("a committed view registration remains owned when its observer throws") { registrationObserverFault(true) }
+        test("an admitted view remains owned when admission instrumentation throws") { admissionObserverFault() }
+        test("an abort transfer observer failure still releases its exact view") { abortObserverFault("transfer") }
+        test("an abort action observer failure stays pending for later drain") { abortObserverFault("action") }
+        test("a committed abort acknowledgement is never resurrected") { abortObserverFault("ack") }
+        test("stale prepared cleanup leaves a newer same-key delivery intact") { stalePreparedCleanup() }
+        test("a typed refusal never becomes a delivered value") { leftIsNotDelivery() }
+        test("receipt cancellation aborts the copy with its original identity") { cancellationAbortsCopy() }
+        test("failed abort transfer and close before commit keep the exact capability owned") {
+            bothAbortPrecommitFailures()
+        }
+        test("delivery supplier recursion refuses without orphaning another receipt") { deliveryRecursionRefuses() }
+        test("copy registration interruption before commit releases its local ownership") {
+            registrationPrecommitFault(false)
+        }
+        test("view registration interruption before commit admits no view") { registrationPrecommitFault(true) }
+    }
+}
+
 private fun <A> onLedgerCommit(target: Int, action: () -> Unit, block: () -> A): A {
     val calls = Shared(0)
     val atCommit = object : Metrics by NoMetrics {
@@ -658,5 +696,542 @@ private fun normalGroupSource(qualified: Boolean) {
             source.toList() shouldBe listOf<Byte>(3, 4, 5)
         }
         source.all { it == 0.toByte() } shouldBe true
+    }
+}
+
+private fun returnedCopySurvives() {
+    val source = byteArrayOf(3, 4, 5)
+    withLoadGroups(listOf(source)) { ledger, flights, key, captured ->
+        val answer = ledger.deliver(key, captured, groupDeadline, flights) {
+            Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+        }
+        val copy = ((answer as Either.Right).value as KeyCacheLedger.Delivery.Copy).key
+        resourceScope {
+            onRelease { _ -> copy.material.fill(0) }
+            source.all { it == 0.toByte() } shouldBe true
+            copy.material.toList() shouldBe listOf<Byte>(3, 4, 5)
+            ledger.drain()
+            copy.material.toList() shouldBe listOf<Byte>(3, 4, 5)
+        }
+    }
+}
+
+private fun returnedViewSurvives() {
+    val source = byteArrayOf(3, 4, 5)
+    withLoadGroups(listOf(source)) { ledger, flights, legacy, captured ->
+        val identity = KeyIdentity(KeyOwner.Platform, KeyPurpose.Enc, 1, byteArrayOf(1))
+        val answer = ledger.deliver(legacy.copy(identity = identity), captured, groupDeadline, flights) {
+            Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+        }
+        val view = ((answer as Either.Right).value as KeyCacheLedger.Delivery.View).view
+        resourceScope {
+            onRelease { _ -> view.close() }
+            view.using { it.toList() } shouldBe Either.Right(listOf<Byte>(3, 4, 5))
+            ledger.drain()
+            view.using { it.toList() } shouldBe Either.Right(listOf<Byte>(3, 4, 5))
+            view.close()
+            source.all { it == 0.toByte() } shouldBe true
+        }
+    }
+}
+
+private fun abandonedCopyWipes() {
+    val source = byteArrayOf(3, 4, 5)
+    var seen: ByteArray? = null
+    val marker = IllegalStateException("synthetic receipt cleanup")
+    withLoadGroups(listOf(source)) { ledger, flights, key, captured ->
+        resourceScope {
+            onRelease { _ -> seen?.fill(0) }
+            shouldThrow<IllegalStateException>({
+                failPreparedReceipt(ledger, marker, { seen = it }) {
+                    ledger.deliver(key, captured, groupDeadline, flights) {
+                        Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+                    }
+                }
+            }) { (it === marker) shouldBe true }
+            val copy = checkNotNull(seen)
+            (copy !== source) shouldBe true
+            copy.all { it == 0.toByte() } shouldBe true
+            source.all { it == 0.toByte() } shouldBe true
+        }
+    }
+}
+
+private fun abandonedViewCloses() {
+    val source = byteArrayOf(3, 4, 5)
+    val marker = IllegalStateException("synthetic receipt cleanup")
+    withLoadGroups(listOf(source)) { ledger, flights, legacy, captured ->
+        val identity = KeyIdentity(KeyOwner.Platform, KeyPurpose.Enc, 1, byteArrayOf(1))
+        shouldThrow<IllegalStateException>({
+            failPreparedReceipt(ledger, marker) {
+                ledger.deliver(legacy.copy(identity = identity), captured, groupDeadline, flights) {
+                    Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+                }
+            }
+        }) { (it === marker) shouldBe true }
+        source.all { it == 0.toByte() } shouldBe true
+    }
+}
+
+private fun <A> failPreparedReceipt(
+    ledger: KeyCacheLedger,
+    marker: Throwable,
+    observeCopy: ((ByteArray) -> Unit)? = null,
+    block: () -> A,
+): A {
+    val target = Thread.currentThread()
+    var captured = false
+    var fired = false
+    val previous = metrics.get()
+    val failing = object : Metrics by previous {
+        override fun counter(name: String, tags: Map<String, String>): Counter = Counter { count ->
+            previous.counter(name, tags).increment(count)
+            val committed = name == "surefold.transact.runs" && tags["outcome"] == "committed"
+            if (Thread.currentThread() === target && committed) {
+                val shared = privateField(ledger, "state") as? Shared<*> ?: throw DeliveryProbeSetupFailure()
+                val rows = privateField(shared.peek(), "prepared") as? List<*> ?: throw DeliveryProbeSetupFailure()
+                if (rows.isNotEmpty()) {
+                    if (!captured && observeCopy != null) {
+                        observeCopy(snapshotPreparedCopy(rows))
+                        captured = true
+                    }
+                    if (!fired && target.stackTrace.any { it.methodName == "finishReceipt" }) {
+                        fired = true
+                        throw marker
+                    }
+                }
+            }
+        }
+    }
+    return metrics.locally(failing, block)
+}
+
+private fun snapshotPreparedCopy(rows: List<*>): ByteArray {
+    if (rows.size != 1) throw DeliveryProbeSetupFailure()
+    val action = privateField(privateField(checkNotNull(rows.single()), "abort"), "action")
+    val captures = action.javaClass.declaredFields.filter {
+        it.type == ByteArray::class.java && !java.lang.reflect.Modifier.isStatic(it.modifiers)
+    }
+    if (captures.size != 1 || !captures.single().trySetAccessible()) throw DeliveryProbeSetupFailure()
+    val bytes = captures.single().get(action) as ByteArray
+    if (bytes.toList() != listOf<Byte>(3, 4, 5)) throw DeliveryProbeSetupFailure()
+    return bytes
+}
+
+private fun privateField(owner: Any?, name: String): Any = try {
+    if (owner == null) throw DeliveryProbeSetupFailure()
+    val field = owner.javaClass.getDeclaredField(name)
+    if (!field.trySetAccessible()) throw DeliveryProbeSetupFailure()
+    field.get(owner) ?: throw DeliveryProbeSetupFailure()
+} catch (_: ReflectiveOperationException) {
+    throw DeliveryProbeSetupFailure()
+}
+
+private class DeliveryProbeSetupFailure : IllegalStateException("synthetic delivery probe setup failed")
+
+private fun preparingDrain(qualified: Boolean) {
+    val source = byteArrayOf(3, 4, 5)
+    withLoadGroups(listOf(source)) { ledger, flights, legacy, captured ->
+        val key = deliveryKey(legacy, qualified)
+        var drained = false
+        val answer = atDeliveryCommit({ stack -> stack.any { it.methodName == "registerPrepared" } }, {
+            ledger.drain()
+            drained = true
+        }) {
+            ledger.deliver(key, captured, groupDeadline, flights) {
+                Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+            }
+        }
+        resourceScope {
+            val delivery = (answer as Either.Right).value
+            onRelease { _ -> discardDelivery(delivery) }
+            drained shouldBe true
+            deliveryBytes(delivery) shouldBe listOf<Byte>(3, 4, 5)
+        }
+    }
+}
+
+private fun deliveredReapFault(qualified: Boolean) {
+    val source = byteArrayOf(3, 4, 5)
+    val marker = IllegalStateException("synthetic delivered metadata")
+    withLoadGroups(listOf(source)) { ledger, flights, legacy, captured ->
+        val delivery = (
+            ledger.deliver(deliveryKey(legacy, qualified), captured, groupDeadline, flights) {
+                Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+            } as Either.Right
+            ).value
+        resourceScope {
+            onRelease { _ -> discardDelivery(delivery) }
+            shouldThrow<IllegalStateException>({
+                atDeliveryCommit({ stack -> stack.any { it.methodName == "drain" } }, { throw marker }) {
+                    ledger.drain()
+                }
+            }) { (it === marker) shouldBe true }
+            deliveryBytes(delivery) shouldBe listOf<Byte>(3, 4, 5)
+            ledger.drain()
+            deliveryBytes(delivery) shouldBe listOf<Byte>(3, 4, 5)
+        }
+    }
+}
+
+private fun registrationObserverFault(qualified: Boolean) {
+    val source = byteArrayOf(3, 4, 5)
+    val marker = IllegalStateException("synthetic prepared registration")
+    withLoadGroups(listOf(source)) { ledger, flights, legacy, captured ->
+        shouldThrow<IllegalStateException>({
+            atDeliveryCommit({ stack -> stack.any { it.methodName == "registerPrepared" } }, { throw marker }) {
+                ledger.deliver(deliveryKey(legacy, qualified), captured, groupDeadline, flights) {
+                    Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+                }
+            }
+        }) { (it === marker) shouldBe true }
+        source.all { it == 0.toByte() } shouldBe true
+        ledger.drain()
+    }
+}
+
+private fun admissionObserverFault() {
+    val source = byteArrayOf(3, 4, 5)
+    val marker = IllegalStateException("synthetic view admission")
+    withLoadGroups(listOf(source)) { ledger, flights, legacy, captured ->
+        shouldThrow<IllegalStateException>({
+            atDeliveryCommit({ stack ->
+                stack.any { it.className.endsWith("OwnedKeyMaterial") && it.methodName == "borrow" } &&
+                    stack.none { it.methodName == "registerPrepared" }
+            }, { throw marker }) {
+                ledger.deliver(deliveryKey(legacy, true), captured, groupDeadline, flights) {
+                    Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+                }
+            }
+        }) { (it === marker) shouldBe true }
+        source.all { it == 0.toByte() } shouldBe true
+        ledger.drain()
+    }
+}
+
+private fun abortObserverFault(stage: String) {
+    val source = byteArrayOf(3, 4, 5)
+    val original = IllegalStateException("synthetic receipt cleanup")
+    val cleanup = IllegalStateException("synthetic abort observer")
+    withLoadGroups(listOf(source)) { ledger, flights, legacy, captured ->
+        shouldThrow<IllegalStateException>({
+            atDeliveryCommit({ stack ->
+                val aborting = stack.any { it.methodName == "abortPrepared" }
+                val acknowledging = stack.any { it.methodName == "acknowledge" }
+                val material = stack.any { it.className.endsWith("OwnedKeyMaterial") }
+                when (stage) {
+                    "transfer" -> aborting && !acknowledging && !material
+                    "action" -> aborting && material
+                    "ack" -> aborting && acknowledging
+                    else -> throw DeliveryProbeSetupFailure()
+                }
+            }, { throw cleanup }) {
+                failPreparedReceipt(ledger, original) {
+                    ledger.deliver(deliveryKey(legacy, true), captured, groupDeadline, flights) {
+                        Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+                    }
+                }
+            }
+        }) {
+            (it === original) shouldBe true
+            it.suppressed.toList() shouldBe listOf(cleanup)
+        }
+        source.all { it == 0.toByte() } shouldBe true
+        ledger.drain()
+        val unexpected = IllegalStateException("synthetic replay after acknowledgement")
+        atDeliveryCommit({ true }, { throw unexpected }) { ledger.drain() }
+    }
+}
+
+private fun stalePreparedCleanup() {
+    val oldSource = byteArrayOf(3, 4, 5)
+    val newSource = byteArrayOf(6, 7, 8)
+    val marker = IllegalStateException("synthetic stale metadata cleanup")
+    withLoadGroups(listOf(oldSource, newSource)) { ledger, flights, key, captured ->
+        val old = (
+            ledger.deliver(key, captured, groupDeadline, flights) {
+                Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, oldSource))
+            } as Either.Right
+            ).value
+        var newer: KeyCacheLedger.Delivery? = null
+        resourceScope {
+            onRelease { _ -> discardDelivery(old) }
+            onRelease { _ -> newer?.let { discardDelivery(it) } }
+            shouldThrow<IllegalStateException>({
+                atDeliveryCommit({ stack -> stack.any { it.methodName == "drain" } }, {
+                    newer = (
+                        ledger.deliver(key, captured, groupDeadline, flights) {
+                            Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, newSource))
+                        } as Either.Right
+                        ).value
+                    throw marker
+                }) { ledger.drain() }
+            }) { (it === marker) shouldBe true }
+            ledger.drain()
+            deliveryBytes(old) shouldBe listOf<Byte>(3, 4, 5)
+            deliveryBytes(checkNotNull(newer)) shouldBe listOf<Byte>(6, 7, 8)
+        }
+    }
+}
+
+private fun leftIsNotDelivery() {
+    val refusal = KeyError.Denied("synthetic refused key")
+    withLoadGroups { ledger, flights, key, captured ->
+        ledger.deliver(key, captured, groupDeadline, flights) { Either.Left(refusal) } shouldBe Either.Left(refusal)
+        ledger.drain()
+    }
+}
+
+private fun cancellationAbortsCopy() {
+    val source = byteArrayOf(3, 4, 5)
+    var seen: ByteArray? = null
+    val original = CancellationException("synthetic receipt cancellation")
+    withLoadGroups(listOf(source)) { ledger, flights, key, captured ->
+        resourceScope {
+            onRelease { _ -> seen?.fill(0) }
+            shouldThrow<CancellationException>({
+                failPreparedReceipt(ledger, original, { seen = it }) {
+                    ledger.deliver(key, captured, groupDeadline, flights) {
+                        Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+                    }
+                }
+            }) { (it === original) shouldBe true }
+            checkNotNull(seen).all { it == 0.toByte() } shouldBe true
+        }
+    }
+}
+
+private fun deliveryKey(key: KeyCacheLedger.LoadKey, qualified: Boolean): KeyCacheLedger.LoadKey =
+    key.copy(identity = if (qualified) KeyIdentity(KeyOwner.Platform, KeyPurpose.Enc, 1, byteArrayOf(1)) else null)
+
+private fun deliveryBytes(delivery: KeyCacheLedger.Delivery): List<Byte> = when (delivery) {
+    is KeyCacheLedger.Delivery.Copy -> delivery.key.material.toList()
+    is KeyCacheLedger.Delivery.View -> (delivery.view.using { it.toList() } as Either.Right).value
+}
+
+private fun discardDelivery(delivery: KeyCacheLedger.Delivery) = when (delivery) {
+    is KeyCacheLedger.Delivery.Copy -> delivery.key.material.fill(0)
+    is KeyCacheLedger.Delivery.View -> delivery.view.close()
+}
+
+private fun <A> atDeliveryCommit(
+    matches: (Array<StackTraceElement>) -> Boolean,
+    action: () -> Unit,
+    block: () -> A,
+): A {
+    val target = Thread.currentThread()
+    var fired = false
+    val previous = metrics.get()
+    val observer = object : Metrics by previous {
+        override fun counter(name: String, tags: Map<String, String>): Counter = Counter { count ->
+            previous.counter(name, tags).increment(count)
+            val committed = name == "surefold.transact.runs" && tags["outcome"] == "committed"
+            val targetCommit = Thread.currentThread() === target && committed
+            if (!fired && targetCommit && matches(target.stackTrace)) {
+                fired = true
+                action()
+            }
+        }
+    }
+    return metrics.locally(observer, block)
+}
+
+private fun bothAbortPrecommitFailures() {
+    val source = byteArrayOf(3, 4, 5)
+    val original = IllegalStateException("synthetic committed group cleanup")
+    withLoadGroups(listOf(source)) { ledger, flights, legacy, captured ->
+        val (thrown, interruptions) = heldSoloDeliveryFault(false, original) {
+            ledger.deliver(deliveryKey(legacy, true), captured, groupDeadline, flights) {
+                Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+            }
+        }
+        (thrown === original) shouldBe true
+        interruptions shouldBe 2
+        val transfer = thrown.suppressed.single()
+        val close = transfer.suppressed.single()
+        (transfer is InterruptedException) shouldBe true
+        (close is InterruptedException) shouldBe true
+        (transfer !== close) shouldBe true
+        transfer.stackTrace.any { it.methodName == "awaitFree" } shouldBe true
+        close.stackTrace.any { it.methodName == "awaitFree" } shouldBe true
+        source.any { it != 0.toByte() } shouldBe true
+        val attempts = Shared(0)
+        val later = Shared(0)
+        val cleanup = IllegalStateException("synthetic other pending action")
+        ledger.owe {
+            if (attempts.modify { it + 1 to it + 1 } == 1) {
+                ledger.owe { later.update { it + 1 } }
+                throw cleanup
+            }
+        }
+        shouldThrow<IllegalStateException>({ ledger.drain() }) { (it === cleanup) shouldBe true }
+        source.all { it == 0.toByte() } shouldBe true
+        attempts.peek() shouldBe 1
+        later.peek() shouldBe 0
+        ledger.drain()
+        attempts.peek() shouldBe 2
+        later.peek() shouldBe 1
+        ledger.drain()
+    }
+}
+
+private fun registrationPrecommitFault(qualified: Boolean) {
+    val source = byteArrayOf(3, 4, 5)
+    val marker = IllegalStateException("synthetic registration gate")
+    withLoadGroups(listOf(source)) { ledger, flights, legacy, captured ->
+        val (thrown, interruptions) = heldSoloDeliveryFault(true, marker) {
+            ledger.deliver(deliveryKey(legacy, qualified), captured, groupDeadline, flights) {
+                Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+            }
+        }
+        (thrown is InterruptedException) shouldBe true
+        thrown.stackTrace.any { it.methodName == "awaitFree" } shouldBe true
+        thrown.stackTrace.any { it.methodName == "registerPrepared" } shouldBe true
+        interruptions shouldBe 1
+        source.all { it == 0.toByte() } shouldBe true
+        ledger.drain()
+    }
+}
+
+private fun heldSoloDeliveryFault(
+    registration: Boolean,
+    original: IllegalStateException,
+    invoke: () -> Unit,
+): Pair<Exception, Int> {
+    val fixture = SoloDeliveryFixture(registration, original)
+    val blockerClock = TestClock(Instant.EPOCH)
+    val startClock = TestClock(Instant.EPOCH)
+    val holderReady = Promise<Nothing, Thread>()
+    return clock.locally(SystemClock) {
+        timeout(10.seconds) {
+            scope {
+                val blocker = async { blockerClock.sleep(1.seconds) }
+                val holder = async {
+                    holderReady.succeed(Thread.currentThread())
+                    startClock.sleep(1.seconds)
+                    try {
+                        transact(soloAfter = 0) { blocker.await() }
+                    } catch (_: InterruptedException) {
+                        Unit
+                    }
+                }
+                resourceScope {
+                    onRelease { _ -> blocker.cancel() }
+                    val holderThread = holderReady.awaitValue()
+                    eventually(5.seconds) { blockerClock.sleepers() shouldBe 1 }
+                    eventually(5.seconds) { startClock.sleepers() shouldBe 1 }
+                    val target = async { fixture.run(invoke) }
+                    fixture.prepared.awaitValue()
+                    eventually(5.seconds) { fixture.pause.sleepers() shouldBe 1 }
+                    startClock.adjust(1.seconds)
+                    eventually(5.seconds) { (LockSupport.getBlocker(holderThread) === blocker) shouldBe true }
+                    fixture.pause.adjustWhenBlocked(1.seconds)
+                    val thrown = if (registration) {
+                        eventually(5.seconds) { fixture.interruptGate.sleepers() shouldBe 1 }
+                        blockerClock.adjust(1.seconds)
+                        holder.await()
+                        fixture.interruptGate.adjust(1.seconds)
+                        target.await()
+                    } else {
+                        val failure = target.await()
+                        blockerClock.adjust(1.seconds)
+                        holder.await()
+                        failure
+                    }
+                    thrown to fixture.interruptions
+                }
+            }
+        }
+    }
+}
+
+@OptIn(TurnSeam::class)
+private class SoloDeliveryFixture(private val registration: Boolean, private val original: IllegalStateException) {
+    val prepared = Promise<Nothing, Unit>()
+    val pause = TestClock(Instant.EPOCH)
+    val interruptGate = TestClock(Instant.EPOCH)
+    var interruptions = 0
+        private set
+
+    fun run(invoke: () -> Unit): Exception {
+        val current = Thread.currentThread()
+        try {
+            takingTurns(turns(current)) {
+                atDeliveryCommit({ stack ->
+                    if (registration) stack.any { it.className.endsWith(".Promise") && it.methodName == "await" }
+                    else stack.any { it.methodName == "releaseGroup" } &&
+                        stack.none { it.className.endsWith("OwnedKeyMaterial") }
+                }, ::pauseAtPrepared, invoke)
+            }
+            throw DeliveryProbeSetupFailure()
+        } catch (failure: InterruptedException) {
+            if (!registration) throw failure
+            return failure
+        } catch (failure: IllegalStateException) {
+            if (registration || failure !== original) throw failure
+            return failure
+        }
+    }
+
+    private fun pauseAtPrepared() {
+        prepared.succeed(Unit)
+        pause.sleep(1.seconds)
+        if (!registration) throw original
+    }
+
+    private fun turns(current: Thread): Turns = object : Turns {
+        private var insideGate = false
+        override fun forking(): Any = this
+        override fun started(ticket: Any) = Unit
+        override fun ended() = Unit
+        override fun woke() = Unit
+        override fun waking(thread: Thread) = Unit
+        override fun parking(): Boolean {
+            if (Thread.currentThread() !== current || insideGate) return true
+            val stack = current.stackTrace
+            if (stack.none { it.className.endsWith(".Solo") && it.methodName == "awaitFree" }) return true
+            val wanted = if (registration) "registerPrepared" else "abortPrepared"
+            if (interruptions >= (if (registration) 1 else 2) || stack.none { it.methodName == wanted }) {
+                throw DeliveryProbeSetupFailure()
+            }
+            interruptions++
+            if (registration) {
+                insideGate = true
+                try {
+                    interruptGate.sleep(1.seconds)
+                } finally {
+                    insideGate = false
+                }
+            }
+            current.interrupt()
+            return false
+        }
+    }
+}
+
+private fun deliveryRecursionRefuses() {
+    val source = byteArrayOf(3, 4, 5)
+    val nestedLoads = Shared(0)
+    withLoadGroups(listOf(source)) { ledger, flights, key, captured ->
+        clock.locally(SystemClock) {
+            timeout(2.seconds) {
+                val answer = ledger.deliver(key, captured, groupDeadline, flights) {
+                    shouldThrow<IllegalStateException>({
+                        ledger.deliver(key, captured, groupDeadline, flights) {
+                            nestedLoads.update { it + 1 }
+                            Either.Left(KeyError.Unavailable("synthetic recursive supplier"))
+                        }
+                    }) { it.message shouldBe "recursive key load" }
+                    Either.Right(DataKey(KeyOwner.Platform, KeyPurpose.Enc, 1, source))
+                }
+                val delivery = (answer as Either.Right).value
+                resourceScope {
+                    onRelease { _ -> discardDelivery(delivery) }
+                    nestedLoads.peek() shouldBe 0
+                    source.all { it == 0.toByte() } shouldBe true
+                    deliveryBytes(delivery) shouldBe listOf<Byte>(3, 4, 5)
+                }
+            }
+        }
     }
 }

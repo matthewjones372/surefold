@@ -1,7 +1,7 @@
 # 0265 — Retained keys with revocable owned views
 
 Approved ownership/terminal/ledger/groups contracts are on main, unreleased; public cache delivery remains unimplemented.
-Checked main46213a81. B1 PR960/main41200432232 passed. Retention/release/adoption remain incomplete.
+Checked main e47c38be: early-close PR977 and own-main41269590958 passed. Retention/release/adoption remain incomplete.
 
 ## Problem
 
@@ -122,8 +122,11 @@ One ledger row owns a fresh private ID, quiet decision and preallocated exact re
 is peek()==null; only the owning caller chooses Delivered/Abort. No caller-reusable ID, tombstone or second registry.
 For legacy copies, preregistered local Resource captures raw bytes immediately after copyOf and before wrappers;
 ordinary fill owns initial-registration failure. Qualified close needs the durable early capability above.
-One domain delivery method encloses enrol.use AND ALL receipt/loader/drain cleanup. Its outer Resource owns abort
-before acquisition. After normal inner return only, mark Delivered as the final effect and return the prebuilt value;
+Internal KeyCacheLedger.Delivery has Copy(key:DataKey) and View(view:KeyView).
+deliver(key:LoadKey,capturedClock:Clock,deadline:Instant,flights:SingleFlight<Any,KeyError,Unit>,
+load:()->Either<KeyError,DataKey>):Either<KeyError,Delivery> alone encloses enrol.use AND ALL receipt/loader/drain
+cleanup. SingleFlight is keyed by receipt.group, never a reusable load key; no unsafe handoff method escapes.
+Its outer Resource owns abort before acquisition. After normal inner return only, mark Delivered as the final effect and return the prebuilt value;
 its outer release only peeks/no-ops. Any earlier defect/cancellation marks Abort first, then attempts fallible cleanup.
 Keep original Throwable identity and distinct suppressed cleanup; CancellationException is not inferred from ExitCase.
 Typed Left never disarms abort as a successful delivery. No post-Delivered fallible bookkeeping is permitted.
@@ -155,15 +158,31 @@ Alternative: a general retained-resource cache; broader than this key requiremen
 - [x] **`codex/key-view-retention-ledger`** — pending release intents/acknowledgements, PR959/main80f3873b; legacy class unchanged; ~78 main/spec lines.
 - [x] **`codex/key-view-retention-groups`** — groups/outcomes/source anchors ONLY, PR960/main1d574300; no delivery.
 - [x] **`codex/handoff-decision`** — PR973/main46213a81; tryComplete/peek ONLY, unreleased; no await/join.
-- [ ] **`codex/key-view-early-close`** — OwnedKeyMaterial/KeyViewSuite only; additive INTERNAL before-admission exact cap.
-      Retain old borrow descriptor/all36 cases; new registration/failure/token/terminal laws; estimate20–35 main lines.
-- [ ] **`codex/key-view-retention-delivery`** — full provisional-return/abort protocol above; exact plan/count before source.
+- [x] **`codex/key-view-early-close`** — PR977/main e47c38be: additive INTERNAL before-admission exact cap; old descriptor retained.
+      All36 previous cases plus8 new ownership laws pass; existing expiry/revocation/terminal laws retained.
+- [ ] **`codex/key-view-retention-delivery`** — KeyCacheLedger/RetainedKeyCacheSuite only; the concrete delivery entry above.
+      One private prepared-row set in existing Shared state; exact-token transfer/close/Ack, Preparing skips/Delivered metadata only.
+      Estimate115–150 main; precode counted separately below190 combined; checkpoint170/180; tests separately counted.
 - [ ] **`codex/key-view-retention-policy`** — shared owner LRU, modes, success tickets and epochs; no public lease; ~175 main lines.
 - [ ] **`codex/key-view-retention-legacy`** — old get/evict integration and protective Unavailable cutoff; ~185 changed main lines.
 - [ ] **`codex/key-view-retention-leases`** — lease/revoke/revokeAll, all caller handoffs and array exits; ~180 main lines.
 - [ ] **`codex/key-view-release`** — joined close, old source/binary fixtures and compiled guide; no consumer pin yet.
 Each implementation entry stays under~200 changed main/build/docs lines; split/review scope before exceeding it.
 No snapshot consumer is enabled before the complete reviewed stack and required main checks pass.
+
+## B2 qualification boundaries
+
+Keep all25 existing ledger cases unchanged. Global-Solo fault cases use a SECOND same-file Suite(concurrent=false, isolated=true).
+A read-only Solo holder awaits an already-running virtual Deferred; never Promise.await inside that transaction.
+All Promise/Shared completions and diagnostics occur OUTSIDE the hold. Public TestClock gates, passive getBlocker
+and guarded Turns observations establish actual Solo contention and the TWO real precommit interrupt checks.
+Postcommit metrics failures or an interrupt flag alone cannot certify precommit failure. No production hook or hand-made synchronisation.
+For an unreturned Copy, a test-only snapshot follows exactly ONE Prepared row to its ReleaseIntent action's single
+NONSTATIC ByteArray capture. Confirm known exact close-action provenance, distinct source and nonzero bytes before fault.
+Assert that SAME alias is zero after abort; no heap walk, private mutation, allocator/observer API or unsafe handoff.
+These are reviewed test techniques, not runtime qualification. Actual meaningful RED and GREEN are required.
+Ambiguous layout/access/compilation/setup failure earns ZERO semantic credit and stops for review.
+No pre-registration allocation, VM-fatal, universal-agent or JIT-erasure guarantee is credited. R4 caller join remains separate.
 
 ## Acceptance
 
