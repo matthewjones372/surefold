@@ -824,3 +824,6 @@ Retries, timeouts, circuit breakers, rate limiters and bulkheads are in
 [Core](core.md#policies); logging, metrics and tracing in
 [Observability](observability.md); test clocks and captured logs in
 [Testing](testing.md).
+
+For shutdown waits see [interruption-preserving cleanup](core.md#interruption-preserving-cleanup):
+`draining`, `uninterruptible`, `onThrow` for partial acquisition, and `checkInterrupted` for synchronous adapters.

@@ -1219,3 +1219,17 @@ is same-cache layer reentry; existing non-reentrant callers keep their surface.
   dump and inherit `ScopedValue` bindings. It compiles against JDK 27, where
   that API is still a preview, and will not be published until the API is
   final.
+
+### Interruption-preserving cleanup
+
+`draining { cleanup() }` clears an existing interrupt for cleanup and restores it when the block returns,
+throws or returns non-locally. `uninterruptible { waitForCompletion() }` retries only InterruptedException
+and restores interruption after the wait finishes. Its block must be safe to repeat after interruption;
+use this for joins and completion waits, not ordinary work. `onInterrupted = { cause -> ... }` may observe
+an interrupted wait; an observer failure propagates with interruption restored.
+
+`onThrow(action = { cause -> ... }) { acquire() }` observes every escaping throw, including cancellation,
+fatal failure and Fail unwinding, for partial-acquisition cleanup. It rethrows the original object and
+suppresses any observer failure onto it. The observer cannot return non-locally and recover the failure.
+`checkInterrupted()` is a cancellation checkpoint for synchronous adapters; it preserves the interrupt flag.
+Prefer Resource/use for normal resource ownership and Either.catch/recover for ordinary failure values.
