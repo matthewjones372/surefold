@@ -38,7 +38,7 @@ class SurefoldCheckerPlugin : KotlinCompilerPluginSupportPlugin {
     }
 
     private companion object {
-        const val PLUGIN_ID = "io.github.matthewjones372.surefold.app"
+        const val PLUGIN_ID = "dev.surefold.app"
 
         /** Written into this jar by its own build, so the coordinates cannot drift from the release. */
         private val coordinates: Properties by lazy {
