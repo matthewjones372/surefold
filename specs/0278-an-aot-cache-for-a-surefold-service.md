@@ -73,6 +73,8 @@ the saving is large enough to bother with.
 
 ## Open questions
 
+Answered 2026-11-02, when the maintainer said "implement spec 0278": each taken as recommended.
+
 1. **A `surefold-app-gradle` task, or the example and documentation only?** Recommended: the
    example only for now. Revisit once the numbers are in.
 2. **What should training exercise: startup alone, or a workload too?** Recommended: a short
