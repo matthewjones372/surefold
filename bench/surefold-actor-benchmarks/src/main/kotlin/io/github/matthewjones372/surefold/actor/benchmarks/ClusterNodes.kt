@@ -10,12 +10,12 @@ import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.spawn
 import dev.surefold.actor.stay
+import dev.surefold.cluster.Cluster
+import dev.surefold.cluster.Discovery
+import dev.surefold.cluster.Gossiping
+import dev.surefold.cluster.MemberEvent
+import dev.surefold.cluster.cluster
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.cluster.Cluster
-import io.github.matthewjones372.surefold.cluster.Discovery
-import io.github.matthewjones372.surefold.cluster.Gossiping
-import io.github.matthewjones372.surefold.cluster.MemberEvent
-import io.github.matthewjones372.surefold.cluster.cluster
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.javadsl.Adapter
 import org.apache.pekko.actor.typed.javadsl.Behaviors

@@ -5,8 +5,8 @@ import dev.surefold.actor.InMemoryJournal
 import dev.surefold.actor.journal.jdbc.JdbcJournal
 import dev.surefold.actor.remote.Node
 import dev.surefold.awaitValue
+import dev.surefold.cluster.Discovery
 import dev.surefold.logInfo
-import io.github.matthewjones372.surefold.cluster.Discovery
 import kotlin.time.Duration.Companion.minutes
 
 /** The three nodes: each one's name, the port its cluster listens on, and the port it serves HTTP on. */

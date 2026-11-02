@@ -5,7 +5,7 @@ import dev.surefold.actor.Topic
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.spawn
 import dev.surefold.actor.stay
-import io.github.matthewjones372.surefold.cluster.topic
+import dev.surefold.cluster.topic
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.Props

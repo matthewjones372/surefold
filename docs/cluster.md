@@ -206,12 +206,12 @@ import dev.surefold.actor.behaviour
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.spawn
 import dev.surefold.actor.stay
+import dev.surefold.cluster.Cluster
+import dev.surefold.cluster.Discovery
+import dev.surefold.cluster.Downing
+import dev.surefold.cluster.MemberEvent
+import dev.surefold.cluster.cluster
 import dev.surefold.logInfo
-import io.github.matthewjones372.surefold.cluster.Cluster
-import io.github.matthewjones372.surefold.cluster.Discovery
-import io.github.matthewjones372.surefold.cluster.Downing
-import io.github.matthewjones372.surefold.cluster.MemberEvent
-import io.github.matthewjones372.surefold.cluster.cluster
 import kotlin.time.Duration.Companion.seconds
 
 /** A node of the shop's cluster, whose seeds are every address the headless service's name resolves to. */
@@ -335,11 +335,11 @@ import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.stay
-import io.github.matthewjones372.surefold.cluster.Discovery
-import io.github.matthewjones372.surefold.cluster.Sharded
-import io.github.matthewjones372.surefold.cluster.cluster
-import io.github.matthewjones372.surefold.cluster.sharding
-import io.github.matthewjones372.surefold.cluster.singleton
+import dev.surefold.cluster.Discovery
+import dev.surefold.cluster.Sharded
+import dev.surefold.cluster.cluster
+import dev.surefold.cluster.sharding
+import dev.surefold.cluster.singleton
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -444,10 +444,10 @@ import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.snapshots
-import io.github.matthewjones372.surefold.cluster.Discovery
-import io.github.matthewjones372.surefold.cluster.Sharded
-import io.github.matthewjones372.surefold.cluster.cluster
-import io.github.matthewjones372.surefold.cluster.sharding
+import dev.surefold.cluster.Discovery
+import dev.surefold.cluster.Sharded
+import dev.surefold.cluster.cluster
+import dev.surefold.cluster.sharding
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.minutes
 
@@ -641,9 +641,9 @@ import dev.surefold.actor.remote.MessageCodec
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
 import dev.surefold.actor.remote.delivery
+import dev.surefold.cluster.Cluster
+import dev.surefold.cluster.sharding
 import dev.surefold.fail.Either
-import io.github.matthewjones372.surefold.cluster.Cluster
-import io.github.matthewjones372.surefold.cluster.sharding
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -746,14 +746,14 @@ on `ready()`.
 <!-- cluster-operating -->
 ```kotlin
 import dev.surefold.actor.remote.node
+import dev.surefold.cluster.Cluster
+import dev.surefold.cluster.Discovery
+import dev.surefold.cluster.cluster
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.actor.Actors
 import io.github.matthewjones372.surefold.app.actor.actors
 import io.github.matthewjones372.surefold.app.probe
 import io.github.matthewjones372.surefold.app.single
-import io.github.matthewjones372.surefold.cluster.Cluster
-import io.github.matthewjones372.surefold.cluster.Discovery
-import io.github.matthewjones372.surefold.cluster.cluster
 import kotlin.time.Duration.Companion.seconds
 
 /** The cluster as a node of the application: in the actors' scope, left on release, and ready once it is in. */
@@ -822,8 +822,8 @@ import dev.surefold.actor.remote.MessageCodec
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
 import dev.surefold.actor.spawn
-import io.github.matthewjones372.surefold.cluster.Cluster
-import io.github.matthewjones372.surefold.cluster.topic
+import dev.surefold.cluster.Cluster
+import dev.surefold.cluster.topic
 
 data class PriceChanged(val sku: String, val pence: Long)
 

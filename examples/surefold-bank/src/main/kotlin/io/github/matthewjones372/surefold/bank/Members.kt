@@ -4,10 +4,10 @@ import dev.surefold.Shared
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.remote.Node
 import dev.surefold.actor.stay
+import dev.surefold.cluster.Member
+import dev.surefold.cluster.MemberEvent
+import dev.surefold.cluster.Status
 import dev.surefold.timeoutOrNull
-import io.github.matthewjones372.surefold.cluster.Member
-import io.github.matthewjones372.surefold.cluster.MemberEvent
-import io.github.matthewjones372.surefold.cluster.Status
 import kotlin.time.Duration
 
 /** The members one node has heard of, by their events: who is in, and who some member cannot reach. */

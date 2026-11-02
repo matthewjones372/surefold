@@ -4,6 +4,10 @@ import dev.surefold.actor.DeadLetter
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.remote.Codecs
 import dev.surefold.actor.stay
+import dev.surefold.cluster.Cluster
+import dev.surefold.cluster.Sharded
+import dev.surefold.cluster.Status
+import dev.surefold.cluster.sharding
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBeEmpty
 import dev.surefold.junit.shouldBeGreaterThan
@@ -12,10 +16,6 @@ import io.github.matthewjones372.surefold.app.actor.actors
 import io.github.matthewjones372.surefold.app.single
 import io.github.matthewjones372.surefold.app.testApp
 import io.github.matthewjones372.surefold.app.typesafe.configOf
-import io.github.matthewjones372.surefold.cluster.Cluster
-import io.github.matthewjones372.surefold.cluster.Sharded
-import io.github.matthewjones372.surefold.cluster.Status
-import io.github.matthewjones372.surefold.cluster.sharding
 import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
