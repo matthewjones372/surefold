@@ -13,6 +13,10 @@ What today's `surefold-stream` costs, measured by JMH. This is the baseline that
 [0276](../../specs/0276-compact-object-headers.md)). Without it, the numbers stay comparable with the
 baselines here.
 
+`-Pjfr` records each measured JVM with JFR into `build/jfr/<pid>.jfr`, with CPU-time sampling on Linux
+(spec [0279](../../specs/0279-jfr-profiles-on-demand.md)); `jfr view cpu-time-hot-methods` reads one. It works with
+`-PcompactHeaders` too.
+
 Results land in `build/jmh-result.json`. A new baseline is committed to `baseline/`,
 named by date and JDK. Compare numbers only against a baseline taken on the same machine.
 
