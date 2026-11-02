@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.kafka.benchmarks
 
-import io.github.matthewjones372.surefold.kafka.Kafka
-import io.github.matthewjones372.surefold.kafka.Topic
-import io.github.matthewjones372.surefold.kafka.consume
-import io.github.matthewjones372.surefold.kafka.mapParRecord
-import io.github.matthewjones372.surefold.kafka.mapRecord
-import io.github.matthewjones372.surefold.kafka.runCommitting
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.run
-import io.github.matthewjones372.surefold.stream.take
+import dev.surefold.kafka.Kafka
+import dev.surefold.kafka.Topic
+import dev.surefold.kafka.consume
+import dev.surefold.kafka.mapParRecord
+import dev.surefold.kafka.mapRecord
+import dev.surefold.kafka.runCommitting
+import dev.surefold.stream.Forks
+import dev.surefold.stream.run
+import dev.surefold.stream.take
 import org.apache.kafka.clients.consumer.ConsumerRecord
 import org.apache.kafka.clients.consumer.KafkaConsumer
 import org.apache.kafka.common.serialization.ByteArrayDeserializer

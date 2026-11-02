@@ -526,9 +526,9 @@ import dev.surefold.actor.journal.jdbc.JdbcOffsets
 import dev.surefold.actor.projection.Projection
 import dev.surefold.actor.projection.mapFollowed
 import dev.surefold.actor.projection.runProjecting
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.Running
-import io.github.matthewjones372.surefold.stream.start
+import dev.surefold.stream.Forks
+import dev.surefold.stream.Running
+import dev.surefold.stream.start
 import javax.sql.DataSource
 
 object Deposits : EventCodec<Long> {
@@ -581,9 +581,9 @@ import dev.surefold.actor.journal.jdbc.JdbcOffsets
 import dev.surefold.actor.journal.jdbc.JdbcSnapshots
 import dev.surefold.actor.projection.Projection
 import dev.surefold.actor.projection.runProjecting
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.Running
-import io.github.matthewjones372.surefold.stream.start
+import dev.surefold.stream.Forks
+import dev.surefold.stream.Running
+import dev.surefold.stream.start
 import javax.sql.DataSource
 
 object Paid : EventCodec<Long> {

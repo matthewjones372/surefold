@@ -10,7 +10,7 @@ import dev.surefold.app.Module
 import dev.surefold.app.Wiring
 import dev.surefold.app.probe
 import dev.surefold.app.single
-import io.github.matthewjones372.surefold.openfeature.useSurefold
+import dev.surefold.openfeature.useSurefold
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
 

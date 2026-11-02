@@ -13,13 +13,13 @@ import dev.surefold.cache.Cache
 import dev.surefold.cache.Invalidation
 import dev.surefold.fail.Either
 import dev.surefold.postgres.notify.Notice
+import dev.surefold.stream.Run
+import dev.surefold.stream.Stream
+import dev.surefold.stream.runFold
 import dev.surefold.tenancy.TenantId
 import dev.surefold.tenancy.TenantTransactions
 import dev.surefold.tenancy.currentTenant
 import dev.surefold.tenancy.withTenant
-import io.github.matthewjones372.surefold.stream.Run
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.runFold
 import java.sql.Connection
 import java.sql.SQLException
 import java.util.concurrent.atomic.AtomicBoolean

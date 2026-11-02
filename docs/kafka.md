@@ -5,7 +5,7 @@ subscription is a `Stream` of `Committed` elements, each carrying its record's
 offset, and the only way to run one is `runCommitting`. Forgetting to commit,
 or committing before the work, does not compile.
 
-Everything below is in `io.github.matthewjones372.surefold.kafka`. A Kafka
+Everything below is in `dev.surefold.kafka`. A Kafka
 pipeline is an ordinary [surefold-stream](stream.md) `Stream`, so the operators,
 backends and test support described there apply here too.
 
@@ -26,14 +26,14 @@ The pipeline is written once. Which backend runs it is named where the run
 starts, as for any other stream:
 
 ```kotlin
-import io.github.matthewjones372.surefold.kafka.Kafka
-import io.github.matthewjones372.surefold.kafka.Topic
-import io.github.matthewjones372.surefold.kafka.consume
-import io.github.matthewjones372.surefold.kafka.mapRecordOrFail
-import io.github.matthewjones372.surefold.kafka.runCommitting
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.PekkoStreams
-import io.github.matthewjones372.surefold.stream.start
+import dev.surefold.kafka.Kafka
+import dev.surefold.kafka.Topic
+import dev.surefold.kafka.consume
+import dev.surefold.kafka.mapRecordOrFail
+import dev.surefold.kafka.runCommitting
+import dev.surefold.stream.Forks
+import dev.surefold.stream.PekkoStreams
+import dev.surefold.stream.start
 import org.apache.kafka.common.serialization.StringDeserializer
 
 val placing = Kafka.consume(consumerProperties, Topic("orders"), key = StringDeserializer(), value = StringDeserializer())
@@ -141,7 +141,7 @@ its log lines.
 bulk, such as one insert for many rows:
 
 ```kotlin
-import io.github.matthewjones372.surefold.kafka.groupedRecord
+import dev.surefold.kafka.groupedRecord
 import kotlin.time.Duration.Companion.milliseconds
 
 Kafka.consume(consumerProperties, Topic("orders"), key = StringDeserializer(), value = StringDeserializer())
@@ -168,13 +168,13 @@ thread-safe, and it batches what every caller sends. Whoever opens it closes
 it, which sends what is pending.
 
 ```kotlin
-import io.github.matthewjones372.surefold.kafka.Kafka
-import io.github.matthewjones372.surefold.kafka.Topic
-import io.github.matthewjones372.surefold.kafka.deadLetters
-import io.github.matthewjones372.surefold.kafka.divertLefts
-import io.github.matthewjones372.surefold.kafka.producer
-import io.github.matthewjones372.surefold.kafka.publishRecord
-import io.github.matthewjones372.surefold.kafka.record
+import dev.surefold.kafka.Kafka
+import dev.surefold.kafka.Topic
+import dev.surefold.kafka.deadLetters
+import dev.surefold.kafka.divertLefts
+import dev.surefold.kafka.producer
+import dev.surefold.kafka.publishRecord
+import dev.surefold.kafka.record
 import org.apache.kafka.common.serialization.ByteArraySerializer
 import org.apache.kafka.common.serialization.StringSerializer
 
@@ -214,8 +214,8 @@ Kafka.consume(consumerProperties, Topic("carts"), key = Decoder.string(), value 
 what comes after picks what to do:
 
 ```kotlin
-import io.github.matthewjones372.surefold.kafka.absolve
-import io.github.matthewjones372.surefold.kafka.publishBatch
+import dev.surefold.kafka.absolve
+import dev.surefold.kafka.publishBatch
 
 Kafka.consume(consumerProperties, Topic("carts"), key = StringDeserializer(), value = carts)
     .mapRecord { cart -> cart.value().checkout() }
@@ -252,8 +252,8 @@ the outputs and the offset in one Kafka transaction instead, so a reader
 with `isolation.level=read_committed` sees each record's outputs once.
 
 ```kotlin
-import io.github.matthewjones372.surefold.kafka.transacted
-import io.github.matthewjones372.surefold.kafka.transactionalProducer
+import dev.surefold.kafka.transacted
+import dev.surefold.kafka.transactionalProducer
 
 val orders = Kafka.transactionalProducer(producerProperties, transactionalId = "checkout-1", StringSerializer(), orderSerializer)
 
@@ -329,9 +329,9 @@ answering 5xx throws a `RestClientException`, not an `IOException`, and a
 rule that missed it would send every record to the dead-letter topic.
 
 ```kotlin
+import dev.surefold.kafka.Decoder
 import io.confluent.kafka.schemaregistry.client.rest.exceptions.RestClientException
 import io.confluent.kafka.serializers.KafkaAvroDeserializer
-import io.github.matthewjones372.surefold.kafka.Decoder
 import java.io.IOException
 
 fun registryDown(thrown: Throwable): Boolean =
@@ -378,9 +378,9 @@ one broker across its tests as a `Resource`:
 ```kotlin
 import dev.surefold.junit.SharedSuite
 import dev.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.kafka.KafkaBroker
-import io.github.matthewjones372.surefold.kafka.Topic
-import io.github.matthewjones372.surefold.kafka.kafkaBroker
+import dev.surefold.kafka.KafkaBroker
+import dev.surefold.kafka.Topic
+import dev.surefold.kafka.kafkaBroker
 
 object OrdersSuite : SharedSuite<KafkaBroker>() {
     override val shared = kafkaBroker()

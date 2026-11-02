@@ -14,7 +14,7 @@ The backend is a value passed in where the run starts, so the same pipeline
 can run on a virtual thread in production, on Pekko Streams beside existing
 Pekko code, and on a test clock in a unit test.
 
-Everything on this page is in `io.github.matthewjones372.surefold.stream`,
+Everything on this page is in `dev.surefold.stream`,
 whichever module it ships in.
 
 1. [Modules and backends](#modules-and-backends)
@@ -67,17 +67,17 @@ backends. `ReadmeExampleSuite` compiles this against all three:
 <!-- backend-example -->
 ```kotlin
 import dev.surefold.TestClock
-import io.github.matthewjones372.surefold.stream.Exit
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.PekkoStreams
-import io.github.matthewjones372.surefold.stream.Run
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.TestStreams
-import io.github.matthewjones372.surefold.stream.filter
-import io.github.matthewjones372.surefold.stream.from
-import io.github.matthewjones372.surefold.stream.mapOrFail
-import io.github.matthewjones372.surefold.stream.run
-import io.github.matthewjones372.surefold.stream.runFold
+import dev.surefold.stream.Exit
+import dev.surefold.stream.Forks
+import dev.surefold.stream.PekkoStreams
+import dev.surefold.stream.Run
+import dev.surefold.stream.Stream
+import dev.surefold.stream.TestStreams
+import dev.surefold.stream.filter
+import dev.surefold.stream.from
+import dev.surefold.stream.mapOrFail
+import dev.surefold.stream.run
+import dev.surefold.stream.runFold
 import org.apache.pekko.actor.ActorSystem
 import java.util.concurrent.CompletionStage
 
@@ -248,9 +248,9 @@ returning. Each element in flight gets a virtual thread of its own, at most
 ```kotlin
 import dev.surefold.fail.Either
 import dev.surefold.fail.bind
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.from
-import io.github.matthewjones372.surefold.stream.mapParOrFail
+import dev.surefold.stream.Stream
+import dev.surefold.stream.from
+import dev.surefold.stream.mapParOrFail
 
 data class Row(val id: Int, val customer: String?)
 
@@ -292,9 +292,9 @@ independent writes or a fan-out to a sink, `mapParUnordered` and
 
 <!-- unordered-example -->
 ```kotlin
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.from
-import io.github.matthewjones372.surefold.stream.mapParUnordered
+import dev.surefold.stream.Stream
+import dev.surefold.stream.from
+import dev.surefold.stream.mapParUnordered
 
 data class Record(val id: Int)
 
@@ -326,9 +326,9 @@ caller of a dependency bounds them all together:
 <!-- limit-example -->
 ```kotlin
 import dev.surefold.Limit
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.from
-import io.github.matthewjones372.surefold.stream.mapPar
+import dev.surefold.stream.Stream
+import dev.surefold.stream.from
+import dev.surefold.stream.mapPar
 
 data class Order(val id: Int)
 
@@ -357,14 +357,14 @@ writes each chunk as it arrives:
 
 <!-- bytes-example -->
 ```kotlin
-import io.github.matthewjones372.surefold.stream.Run
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.decodeUtf8
-import io.github.matthewjones372.surefold.stream.drop
-import io.github.matthewjones372.surefold.stream.lines
-import io.github.matthewjones372.surefold.stream.read
-import io.github.matthewjones372.surefold.stream.runCollect
-import io.github.matthewjones372.surefold.stream.runInto
+import dev.surefold.stream.Run
+import dev.surefold.stream.Stream
+import dev.surefold.stream.decodeUtf8
+import dev.surefold.stream.drop
+import dev.surefold.stream.lines
+import dev.surefold.stream.read
+import dev.surefold.stream.runCollect
+import dev.surefold.stream.runInto
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Path
@@ -408,12 +408,12 @@ the absence a failure with a name instead:
 
 <!-- missing-example -->
 ```kotlin
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.fail
-import io.github.matthewjones372.surefold.stream.from
-import io.github.matthewjones372.surefold.stream.fromStage
-import io.github.matthewjones372.surefold.stream.orFailIfEmpty
-import io.github.matthewjones372.surefold.stream.single
+import dev.surefold.stream.Stream
+import dev.surefold.stream.fail
+import dev.surefold.stream.from
+import dev.surefold.stream.fromStage
+import dev.surefold.stream.orFailIfEmpty
+import dev.surefold.stream.single
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.javadsl.Source
 import java.util.concurrent.CompletableFuture
@@ -657,11 +657,11 @@ import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
 import dev.surefold.fail.fold
 import dev.surefold.fail.mapLeft
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.divertLefts
-import io.github.matthewjones372.surefold.stream.from
-import io.github.matthewjones372.surefold.stream.mapAsync
-import io.github.matthewjones372.surefold.stream.mapOrFail
+import dev.surefold.stream.Stream
+import dev.surefold.stream.divertLefts
+import dev.surefold.stream.from
+import dev.surefold.stream.mapAsync
+import dev.surefold.stream.mapOrFail
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.javadsl.Sink
 import org.apache.pekko.stream.javadsl.Source
@@ -745,14 +745,14 @@ turned back into an `Either` in the handler that started it:
 ```kotlin
 import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.awaitExit
-import io.github.matthewjones372.surefold.stream.divertLefts
-import io.github.matthewjones372.surefold.stream.from
-import io.github.matthewjones372.surefold.stream.mapAsync
-import io.github.matthewjones372.surefold.stream.mapOrFail
-import io.github.matthewjones372.surefold.stream.run
-import io.github.matthewjones372.surefold.stream.runWith
+import dev.surefold.stream.Stream
+import dev.surefold.stream.awaitExit
+import dev.surefold.stream.divertLefts
+import dev.surefold.stream.from
+import dev.surefold.stream.mapAsync
+import dev.surefold.stream.mapOrFail
+import dev.surefold.stream.run
+import dev.surefold.stream.runWith
 import org.apache.pekko.Done
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.stream.javadsl.Sink

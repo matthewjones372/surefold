@@ -11,8 +11,8 @@ import dev.surefold.junit.shouldBeInstanceOf
 import dev.surefold.junit.shouldContain
 import dev.surefold.junit.shouldNotBeNull
 import dev.surefold.junit.withClue
-import io.github.matthewjones372.surefold.openfeature.Flag
-import io.github.matthewjones372.surefold.openfeature.evaluatedFor
+import dev.surefold.openfeature.Flag
+import dev.surefold.openfeature.evaluatedFor
 import kotlin.time.Duration.Companion.seconds
 
 private enum class Checkout { Classic, Express }

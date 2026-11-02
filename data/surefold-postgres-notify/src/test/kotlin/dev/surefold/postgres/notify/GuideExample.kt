@@ -1,13 +1,13 @@
 package dev.surefold.postgres.notify
 
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.Hub
-import io.github.matthewjones372.surefold.stream.HubRefused
-import io.github.matthewjones372.surefold.stream.Running
-import io.github.matthewjones372.surefold.stream.map
-import io.github.matthewjones372.surefold.stream.publishTo
-import io.github.matthewjones372.surefold.stream.runFold
-import io.github.matthewjones372.surefold.stream.start
+import dev.surefold.stream.Forks
+import dev.surefold.stream.Hub
+import dev.surefold.stream.HubRefused
+import dev.surefold.stream.Running
+import dev.surefold.stream.map
+import dev.surefold.stream.publishTo
+import dev.surefold.stream.runFold
+import dev.surefold.stream.start
 import java.sql.Connection
 import javax.sql.DataSource
 

@@ -1002,7 +1002,7 @@ import dev.surefold.Logger
 import dev.surefold.Shared
 import dev.surefold.actor.ActorRef
 import dev.surefold.logInfo
-import io.github.matthewjones372.surefold.stream.Hub
+import dev.surefold.stream.Hub
 import dev.surefold.transact
 
 val free = Shared(10)

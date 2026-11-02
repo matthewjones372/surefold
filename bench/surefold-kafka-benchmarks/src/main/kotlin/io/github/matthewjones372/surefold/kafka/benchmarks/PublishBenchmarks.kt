@@ -1,16 +1,16 @@
 package io.github.matthewjones372.surefold.kafka.benchmarks
 
-import io.github.matthewjones372.surefold.kafka.Kafka
-import io.github.matthewjones372.surefold.kafka.Producer
-import io.github.matthewjones372.surefold.kafka.Topic
-import io.github.matthewjones372.surefold.kafka.producer
-import io.github.matthewjones372.surefold.kafka.publishTo
-import io.github.matthewjones372.surefold.kafka.record
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.from
-import io.github.matthewjones372.surefold.stream.run
-import io.github.matthewjones372.surefold.stream.runFold
+import dev.surefold.kafka.Kafka
+import dev.surefold.kafka.Producer
+import dev.surefold.kafka.Topic
+import dev.surefold.kafka.producer
+import dev.surefold.kafka.publishTo
+import dev.surefold.kafka.record
+import dev.surefold.stream.Forks
+import dev.surefold.stream.Stream
+import dev.surefold.stream.from
+import dev.surefold.stream.run
+import dev.surefold.stream.runFold
 import org.apache.kafka.clients.admin.Admin
 import org.apache.kafka.clients.admin.AdminClientConfig
 import org.apache.kafka.clients.admin.NewTopic

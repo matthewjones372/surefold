@@ -1,15 +1,15 @@
 package io.github.matthewjones372.surefold.stream.benchmarks
 
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.Run
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.StreamBackend
-import io.github.matthewjones372.surefold.stream.buffer
-import io.github.matthewjones372.surefold.stream.from
-import io.github.matthewjones372.surefold.stream.merge
-import io.github.matthewjones372.surefold.stream.run
-import io.github.matthewjones372.surefold.stream.runFold
-import io.github.matthewjones372.surefold.stream.start
+import dev.surefold.stream.Forks
+import dev.surefold.stream.Run
+import dev.surefold.stream.Stream
+import dev.surefold.stream.StreamBackend
+import dev.surefold.stream.buffer
+import dev.surefold.stream.from
+import dev.surefold.stream.merge
+import dev.surefold.stream.run
+import dev.surefold.stream.runFold
+import dev.surefold.stream.start
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode
 import org.openjdk.jmh.annotations.Fork

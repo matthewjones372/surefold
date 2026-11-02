@@ -22,7 +22,7 @@ when using this wrapper, and never wrap an already traced source again.
 
 <!-- jdbc-tracing -->
 ```kotlin
-import io.github.matthewjones372.surefold.jdbc.otel.traced
+import dev.surefold.jdbc.otel.traced
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.trace.SdkTracerProvider

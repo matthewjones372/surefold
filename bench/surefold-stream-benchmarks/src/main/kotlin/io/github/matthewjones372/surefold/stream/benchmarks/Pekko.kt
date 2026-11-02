@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.stream.benchmarks
 
-import io.github.matthewjones372.surefold.stream.Exit
+import dev.surefold.stream.Exit
 import org.apache.pekko.actor.ActorSystem
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Scope
