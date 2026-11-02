@@ -27,9 +27,10 @@ package `io.github.matthewjones372.lark`. Moving over is a rename: `lark` become
 every artifact, package, plugin id and configuration key.
 
 From 0.18.0 the group is `dev.surefold` and the packages are `dev.surefold.*`; up to 0.17.0 they were
-`io.github.matthewjones372` and `dev.surefold.*`. Moving over is a rename of each import's prefix,
+`io.github.matthewjones372` and `io.github.matthewjones372.surefold.*`. Moving over is a rename of each import's prefix,
 the dependency group, and the plugin ids, which become `dev.surefold.wiring` and `dev.surefold.compiler`. The old
-coordinates relocate to the new ones at 0.18.0.
+coordinates relocate to the new ones at 0.18.0. It is a source change only in the names, but not a binary one: code
+compiled against 0.17.0 or earlier names the old packages and has to be recompiled.
 
 [Explicit AWS KMS operations](docs/kms-operations.md) covers regional clients and the unreleased adapter.
 
