@@ -37,6 +37,11 @@ class Shared<T>(initial: T, val name: String? = null) {
     }
 }
 
+/** Refuses retryable steps before ownership effects can escape them. */
+fun checkNotInTransaction() {
+    check(running.get() == null) { "the operation cannot run inside a transaction" }
+}
+
 /**
  * Runs [block] as one step: its writes land together when it commits, or not at all if it throws or fails. A step whose
  * reads were changed by another commit first runs again, so [block] can run more than once. Inside another step, it

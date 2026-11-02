@@ -79,6 +79,11 @@ class CoreGuideTest {
     }
 
     @Test
+    fun `the core guide demonstrates a nontransactional ownership boundary`() {
+        fences("docs/core.md", "core").keys shouldContain "core-transaction-boundary"
+    }
+
+    @Test
     fun `the testing guide tells a story in a suite`() {
         fences("docs/testing.md", "testing").keys shouldContain "testing-junit-story"
     }
