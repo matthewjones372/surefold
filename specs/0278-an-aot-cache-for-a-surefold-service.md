@@ -55,14 +55,32 @@ the saving is large enough to bother with.
 
 ## Stack
 
-- [ ] **`spec-0278-train`**: `--train` and the time-to-ready log line in `surefold-bank`.
+- [x] **`spec-0278-train`**: `--train` and the time-to-ready log line in `surefold-bank`.
       Done when: a test runs `main` with `--train` and it returns, with no thread left keeping
       the JVM alive.
-- [ ] **`spec-0278-cache`**: the `aotCache` and `runCached` tasks, and the numbers in this spec.
+- [x] **`spec-0278-cache`**: the `aotCache` and `runCached` tasks, and the numbers in this spec.
       Done when: `runCached` starts with `-XX:AOTMode=on`, and time to ready is recorded with and
       without the cache.
-- [ ] **`spec-0278-docs`**: the `docs/app.md` section, linked from the README's "Try it".
+- [x] **`spec-0278-docs`**: the `docs/app.md` section, linked from the README's "Try it".
       Done when: the section's commands match the tasks.
+
+### Numbers (`spec-0278-cache`)
+
+2026-11-02, JDK 25.0.5 (Temurin), G1, 4 vCPU cloud container. `--train` on the installed jars, ten runs
+alternating cold and cached (`-XX:AOTCache`, `-XX:AOTMode=on`), medians. The cache is 37 MB.
+
+| | Cold | Cached | Change |
+|---|---|---|---|
+| Started: nodes and servers made (`started in`) | 204 ms | 150 ms | −26% |
+| Ready: the cluster formed (`ready in`) | 4,888 ms | 4,703 ms | within noise |
+| 300 transfers and close, after ready | 2,654 ms | 2,268 ms | −15% |
+| The whole run | 7,522 ms | 6,987 ms | −7% |
+
+The cache does what it should: the JVM starts about a quarter faster, and the first few hundred
+transfers run about 15% faster on the stored profiles. The bank's time to ready is mostly gossip
+forming the cluster, which waits on timers, so the cache barely moves it. `started in` was added
+to measure the part a cache can change. A service that is ready once its servers listen, with no
+cluster to form, would see the startup saving directly. Only G1 was measured (open question 4).
 
 ## Acceptance
 
