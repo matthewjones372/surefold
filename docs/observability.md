@@ -178,6 +178,54 @@ forks:
   record operator's body also runs with `kafka.topic`, `kafka.partition` and
   `kafka.offset` annotations.
 
+## Profiling with JFR
+
+Logs, metrics and traces say what a service did. A profile says where its CPU
+went. JFR ships with the JDK, and JDK 25 adds two kinds of recording that suit
+surefold, whose threads spend most of their time parked.
+
+**CPU-time sampling** ([JEP 509](https://openjdk.org/jeps/509), experimental
+and Linux-only) samples each thread by the CPU it used, not by wall-clock
+time, so parked virtual threads stop crowding out the threads doing the work:
+
+```bash
+java '-XX:StartFlightRecording:filename=app.jfr,settings=profile,jdk.CPUTimeSample#enabled=true,jdk.CPUTimeSample#throttle=10ms' ...
+jfr view cpu-time-hot-methods app.jfr
+jfr summary app.jfr    # jdk.CPUTimeSamplesLost counts the samples the JVM dropped
+```
+
+Quote the lost samples next to any percentage taken from the view: at a 10 ms
+throttle, a run of `surefold-bank --train` kept 382 samples and lost 107.
+
+**Method timing** ([JEP 520](https://openjdk.org/jeps/520)) counts and times
+named methods with no code change, which answers "how often, and how long?"
+about one call a profile only shows a share of:
+
+```bash
+java '-XX:StartFlightRecording:filename=app.jfr,method-timing=dev.surefold.TransactKt::transact' ...
+jfr view method-timing app.jfr
+```
+
+Name a concrete function, by the JVM class it compiles to (`TransactKt` for
+the top-level functions in `Transact.kt`). Two kinds of name time nothing:
+
+- **An `inline` function**, such as `parMap` or `logAnnotated`. It is compiled
+  into each caller, so no method of that name runs.
+- **An interface method**, such as `ActorRef::tell`. The filter does not reach
+  the classes that implement it.
+
+The benchmarks record the same way with `-Pjfr`, one file per measured JVM
+under their `build/jfr`:
+
+```bash
+./gradlew :surefold-core-benchmarks:jmh -PbenchmarkArgs="LocalsBenchmark.annotatedLogLine" -Pjfr
+jfr view cpu-time-hot-methods bench/surefold-core-benchmarks/build/jfr/<pid>.jfr
+```
+
+JDK 25 also takes samples cooperatively ([JEP 518](https://openjdk.org/jeps/518)),
+which removes much of the bias older execution samples had. A profile taken on
+an earlier JDK is not a like-for-like baseline.
+
 ## In tests
 
 `capturingLogs { logs -> … }` and `capturingMetrics { measured -> … }` bind an
