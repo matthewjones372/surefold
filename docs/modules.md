@@ -191,7 +191,7 @@ production use is known. Maturity is uneven: the core, `surefold-app` and
 `surefold-stream` have been in place longest and are used by the related projects
 listed in the README; the actor, cluster and Kafka modules are newer, and
 outside their own tests are exercised mainly by `surefold-bank` and
-[surefold-bank](https://github.com/matthewjones372/surefold-bank).
+[surefold-bank](https://github.com/surefold/surefold-bank).
 
 Some modules wrap APIs that are themselves experimental:
 `surefold-actor-remote-kotlinx` uses kotlinx.serialization's ProtoBuf format, which

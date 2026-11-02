@@ -442,13 +442,13 @@ toolchain support can download them.
 
 - [Proofload](https://github.com/matthewjones372/proofload): load testing on
   virtual threads.
-- [Pelican](https://github.com/matthewjones372/pelican): HTTP endpoints as
+- [Pelican](https://github.com/surefold/pelican): HTTP endpoints as
   values, served on Pekko HTTP.
-- [kimney](https://github.com/matthewjones372/kimney): compile-time mapping
+- [kimney](https://github.com/surefold/kimney): compile-time mapping
   between Kotlin types.
-- [petshop](https://github.com/matthewjones372/petshop): a small service that
+- [petshop](https://github.com/surefold/petshop): a small service that
   uses Surefold with Pelican and Proofload.
-- [surefold-bank](https://github.com/matthewjones372/surefold-bank): a bank in
+- [surefold-bank](https://github.com/surefold/surefold-bank): a bank in
   four services on a three-node Surefold cluster, with its journal in Postgres and
   its events on Kafka.
 
