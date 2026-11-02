@@ -17,20 +17,13 @@ interface Waiting {
     fun changed()
 
     companion object {
-        private val installed = ThreadLocal<Waiting?>()
+        private val installed: ScopedValue<Waiting> = ScopedValue.newInstance()
 
         /** The [Waiting] of the worker this thread is, or `null` where blocking the thread is right. */
-        fun here(): Waiting? = installed.get()
+        fun here(): Waiting? = if (installed.isBound) installed.get() else null
 
         /** [body] with [waiting] installed on this thread. */
-        fun <T> within(waiting: Waiting, body: () -> T): T {
-            val outer = installed.get()
-            installed.set(waiting)
-            return try {
-                body()
-            } finally {
-                installed.set(outer)
-            }
-        }
+        fun <T> within(waiting: Waiting, body: () -> T): T =
+            ScopedValue.where(installed, waiting).call(ScopedValue.CallableOp<T, RuntimeException> { body() })
     }
 }
