@@ -259,7 +259,7 @@ subprojects {
 
     // The namespace verified on the Central Portal, against the GitHub
     // account it names.
-    group = "io.github.matthewjones372"
+    group = "dev.surefold"
     version = scmVer
 
     extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
@@ -389,7 +389,7 @@ subprojects {
         pom {
             name.set(this@subprojects.name)
             description.set(moduleDescriptions[this@subprojects.name] ?: "Part of Surefold.")
-            url.set("https://github.com/matthewjones372/lark")
+            url.set("https://github.com/surefold/surefold")
             licenses {
                 license {
                     name.set("The Apache License, Version 2.0")
@@ -403,9 +403,9 @@ subprojects {
                 }
             }
             scm {
-                url.set("https://github.com/matthewjones372/lark")
-                connection.set("scm:git:https://github.com/matthewjones372/lark.git")
-                developerConnection.set("scm:git:ssh://git@github.com/matthewjones372/lark.git")
+                url.set("https://github.com/surefold/surefold")
+                connection.set("scm:git:https://github.com/surefold/surefold.git")
+                developerConnection.set("scm:git:ssh://git@github.com/surefold/surefold.git")
             }
         }
     }
