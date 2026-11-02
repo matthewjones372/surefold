@@ -144,7 +144,7 @@ Active/failed obligations retain records; no finite-memory promise under infinit
 
 ## R4 accepted-caller boundary (spec-only; no implementation credit)
 
-This amendment promotes independently Top-reviewed Doorlist proposal26595fcbd. Exact-spec review/main and a separate
+This amendment promotes independently Top-reviewed consumer proposal26595fcbd. Exact-spec review/main and a separate
 reviewed committed source plan precede source. SingleFlight joins workers, not accepted callers;0269 has no wake API.
 Call proposed0273 checkNotInTransaction before admission/close. No ownership effect runs inside ambient transactions.
 One private Shared per owner holds open/closed plus exact preallocated tickets, each with HandoffDecision<Unit> Finished.

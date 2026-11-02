@@ -1,6 +1,6 @@
 # 0273 — Nontransactional ownership boundaries
 
-Spec-only promotion of independently reviewed Doorlist proposal26595fcbd759975929ce1f050bbbca971f46b879.
+Spec-only promotion of independently reviewed consumer proposal26595fcbd759975929ce1f050bbbca971f46b879.
 Checked main91040b935a7ae84b7be9c6c89e5e268cb3b48899 and empty open-PR listing, 2 November2026; no source exists.
 
 ## Problem
