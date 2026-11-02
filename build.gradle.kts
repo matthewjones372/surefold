@@ -450,6 +450,18 @@ subprojects {
             publish.repository.name != "githubPackages" || publish.publication.groupId == "dev.surefold"
         }
     }
+    // The Central Portal refuses a deployment with files for two namespaces, and a Gradle run uploads one
+    // deployment, so release.yml publishes to Central once per namespace: `dev.surefold` by default, then the
+    // relocation POMs with `-PcentralNamespace=io.github.matthewjones372`.
+    val centralNamespace = providers.gradleProperty("centralNamespace").getOrElse("dev.surefold")
+    tasks.withType<PublishToMavenRepository>().configureEach {
+        onlyIf("only $centralNamespace goes to Central in this run") { task ->
+            val publish = task as PublishToMavenRepository
+            val group = publish.publication.groupId
+            val inNamespace = group == centralNamespace || group.startsWith("$centralNamespace.")
+            publish.repository.name != "mavenCentral" || inNamespace
+        }
+    }
 }
 
 /**
