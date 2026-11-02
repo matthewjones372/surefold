@@ -165,7 +165,7 @@ private val forks = listOf("scope", "parZip", "parMap", "raceN")
     .toSet() + member(surefold.asString(), "Scope", "async")
 
 // An actor's tell has its own after-commit form, which surefold-actor names tellAfterCommit.
-private val tell = member("io.github.matthewjones372.surefold.actor", "ActorRef", "tell")
+private val tell = member("${surefold.asString()}.actor", "ActorRef", "tell")
 
 // Surefold's own effects: what a step most often wants to happen once it has committed.
 private val surefoldEffects = listOf("logDebug", "logInfo", "logWarn", "logError", "increment")

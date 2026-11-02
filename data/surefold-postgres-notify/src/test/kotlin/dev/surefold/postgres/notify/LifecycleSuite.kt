@@ -5,6 +5,7 @@ import dev.surefold.Resource
 import dev.surefold.Schedule
 import dev.surefold.Shared
 import dev.surefold.TestClock
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.await
 import dev.surefold.awaitValue
 import dev.surefold.clock
@@ -15,7 +16,6 @@ import dev.surefold.resource
 import dev.surefold.scope
 import dev.surefold.test.eventually
 import dev.surefold.use
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.stream.Exit
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.runFold

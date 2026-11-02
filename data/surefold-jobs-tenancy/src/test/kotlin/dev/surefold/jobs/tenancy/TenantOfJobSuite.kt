@@ -1,5 +1,7 @@
 package dev.surefold.jobs.tenancy
 
+import dev.surefold.actor.journal.jdbc.Postgres
+import dev.surefold.actor.journal.jdbc.migrate
 import dev.surefold.jobs.JobCodec
 import dev.surefold.jobs.JobHandlers
 import dev.surefold.jobs.JobKind
@@ -13,8 +15,6 @@ import dev.surefold.tenancy.TenantId
 import dev.surefold.tenancy.currentTenant
 import dev.surefold.tenancy.withTenant
 import dev.surefold.test.eventually
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
-import io.github.matthewjones372.surefold.actor.journal.jdbc.migrate
 import java.util.ServiceLoader
 import java.util.concurrent.ConcurrentHashMap
 import javax.sql.DataSource

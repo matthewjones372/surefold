@@ -1,5 +1,12 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.actor.Journal
+import dev.surefold.actor.JournalConflict
+import dev.surefold.actor.JournalPruning
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.events
+import dev.surefold.actor.journal.jdbc.JdbcJournal
+import dev.surefold.actor.remote.Node
 import dev.surefold.fail.onLeft
 import dev.surefold.fail.right
 import dev.surefold.junit.Suite
@@ -7,13 +14,6 @@ import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeEmpty
 import dev.surefold.junit.withClue
-import io.github.matthewjones372.surefold.actor.Journal
-import io.github.matthewjones372.surefold.actor.JournalConflict
-import io.github.matthewjones372.surefold.actor.JournalPruning
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.events
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.actor.remote.Node
 import java.net.ServerSocket
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration

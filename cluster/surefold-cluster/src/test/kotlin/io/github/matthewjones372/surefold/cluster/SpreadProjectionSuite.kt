@@ -1,5 +1,15 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.InMemoryJournal
+import dev.surefold.actor.InMemoryOffsets
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.Slices
+import dev.surefold.actor.projection.Projection
+import dev.surefold.actor.projection.mapFollowed
+import dev.surefold.actor.projection.runProjecting
+import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.node
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
@@ -8,16 +18,6 @@ import dev.surefold.junit.shouldBeLessThanOrEqual
 import dev.surefold.junit.shouldContainAll
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.actor.EventCodec
-import io.github.matthewjones372.surefold.actor.InMemoryJournal
-import io.github.matthewjones372.surefold.actor.InMemoryOffsets
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.Slices
-import io.github.matthewjones372.surefold.actor.projection.Projection
-import io.github.matthewjones372.surefold.actor.projection.mapFollowed
-import io.github.matthewjones372.surefold.actor.projection.runProjecting
-import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.actor.remote.node
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.start
 import java.net.ServerSocket

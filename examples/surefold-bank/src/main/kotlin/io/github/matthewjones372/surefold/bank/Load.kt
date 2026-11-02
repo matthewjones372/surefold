@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.bank
 
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.stay
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.stay
 import java.util.UUID
 import kotlin.random.Random
 import kotlin.time.Duration

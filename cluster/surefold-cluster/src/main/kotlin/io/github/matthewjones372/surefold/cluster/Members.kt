@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.actor.remote.Node
+import dev.surefold.actor.remote.Node
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds

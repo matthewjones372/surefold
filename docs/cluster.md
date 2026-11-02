@@ -69,21 +69,21 @@ build codecs from classes you already have instead:
 <!-- cluster-remote -->
 ```kotlin
 import dev.surefold.Scope
+import dev.surefold.actor.Address
+import dev.surefold.actor.AskFailure
+import dev.surefold.actor.Reply
+import dev.surefold.actor.ask
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.node
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
 import dev.surefold.fail.Either
-import io.github.matthewjones372.surefold.actor.Address
-import io.github.matthewjones372.surefold.actor.AskFailure
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.ask
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.remote.Codecs
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.actor.remote.WireIn
-import io.github.matthewjones372.surefold.actor.remote.WireOut
-import io.github.matthewjones372.surefold.actor.remote.node
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
 import kotlin.time.Duration.Companion.seconds
 
 sealed interface Stock
@@ -152,9 +152,9 @@ before it can send anything.
 <!-- cluster-tls -->
 ```kotlin
 import dev.surefold.Scope
-import io.github.matthewjones372.surefold.actor.remote.RemoteNode
-import io.github.matthewjones372.surefold.actor.remote.Tls
-import io.github.matthewjones372.surefold.actor.remote.node
+import dev.surefold.actor.remote.RemoteNode
+import dev.surefold.actor.remote.Tls
+import dev.surefold.actor.remote.node
 import java.io.File
 import java.security.KeyStore
 
@@ -202,11 +202,11 @@ seed and nobody answers. Membership is agreed by gossip, with no coordinator.
 <!-- cluster-membership -->
 ```kotlin
 import dev.surefold.Scope
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.remote.node
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
 import dev.surefold.logInfo
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.remote.node
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.cluster.Cluster
 import io.github.matthewjones372.surefold.cluster.Discovery
 import io.github.matthewjones372.surefold.cluster.Downing
@@ -324,17 +324,17 @@ the others lack, and place by it.
 <!-- cluster-entities -->
 ```kotlin
 import dev.surefold.Scope
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.ask
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.remote.Codecs
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.WireIn
-import io.github.matthewjones372.surefold.actor.remote.WireOut
-import io.github.matthewjones372.surefold.actor.remote.node
-import io.github.matthewjones372.surefold.actor.stay
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.Reply
+import dev.surefold.actor.ask
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.node
+import dev.surefold.actor.stay
 import io.github.matthewjones372.surefold.cluster.Discovery
 import io.github.matthewjones372.surefold.cluster.Sharded
 import io.github.matthewjones372.surefold.cluster.cluster
@@ -427,23 +427,23 @@ for your changelog to include (or `surefold-app-liquibase`'s
 <!-- cluster-persistent -->
 ```kotlin
 import dev.surefold.Scope
-import io.github.matthewjones372.surefold.actor.EventCodec
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.Prune
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.StateCodec
-import io.github.matthewjones372.surefold.actor.every
-import io.github.matthewjones372.surefold.actor.journal
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcOffsets
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcSnapshots
-import io.github.matthewjones372.surefold.actor.persistent
-import io.github.matthewjones372.surefold.actor.remote.Codecs
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.WireIn
-import io.github.matthewjones372.surefold.actor.remote.WireOut
-import io.github.matthewjones372.surefold.actor.remote.node
-import io.github.matthewjones372.surefold.actor.snapshots
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.Prune
+import dev.surefold.actor.Reply
+import dev.surefold.actor.StateCodec
+import dev.surefold.actor.every
+import dev.surefold.actor.journal
+import dev.surefold.actor.journal.jdbc.JdbcJournal
+import dev.surefold.actor.journal.jdbc.JdbcOffsets
+import dev.surefold.actor.journal.jdbc.JdbcSnapshots
+import dev.surefold.actor.persistent
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.node
+import dev.surefold.actor.snapshots
 import io.github.matthewjones372.surefold.cluster.Discovery
 import io.github.matthewjones372.surefold.cluster.Sharded
 import io.github.matthewjones372.surefold.cluster.cluster
@@ -520,12 +520,12 @@ by one node, a singleton being the natural place to start it.
 
 <!-- cluster-read-model -->
 ```kotlin
-import io.github.matthewjones372.surefold.actor.EventCodec
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcOffsets
-import io.github.matthewjones372.surefold.actor.projection.Projection
-import io.github.matthewjones372.surefold.actor.projection.mapFollowed
-import io.github.matthewjones372.surefold.actor.projection.runProjecting
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.journal.jdbc.JdbcJournal
+import dev.surefold.actor.journal.jdbc.JdbcOffsets
+import dev.surefold.actor.projection.Projection
+import dev.surefold.actor.projection.mapFollowed
+import dev.surefold.actor.projection.runProjecting
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.Running
 import io.github.matthewjones372.surefold.stream.start
@@ -573,14 +573,14 @@ the journal by entity across several:
 
 <!-- cluster-sharded -->
 ```kotlin
-import io.github.matthewjones372.surefold.actor.EventCodec
-import io.github.matthewjones372.surefold.actor.ShardedJournal
-import io.github.matthewjones372.surefold.actor.ShardedSnapshots
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcOffsets
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcSnapshots
-import io.github.matthewjones372.surefold.actor.projection.Projection
-import io.github.matthewjones372.surefold.actor.projection.runProjecting
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.ShardedJournal
+import dev.surefold.actor.ShardedSnapshots
+import dev.surefold.actor.journal.jdbc.JdbcJournal
+import dev.surefold.actor.journal.jdbc.JdbcOffsets
+import dev.surefold.actor.journal.jdbc.JdbcSnapshots
+import dev.surefold.actor.projection.Projection
+import dev.surefold.actor.projection.runProjecting
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.Running
 import io.github.matthewjones372.surefold.stream.start
@@ -630,18 +630,18 @@ such as a payment, send it reliably:
 
 <!-- cluster-reliable -->
 ```kotlin
+import dev.surefold.actor.Delivered
+import dev.surefold.actor.Delivery
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.NotSent
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.delivered
+import dev.surefold.actor.persistent
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.delivery
 import dev.surefold.fail.Either
-import io.github.matthewjones372.surefold.actor.Delivered
-import io.github.matthewjones372.surefold.actor.Delivery
-import io.github.matthewjones372.surefold.actor.EventCodec
-import io.github.matthewjones372.surefold.actor.NotSent
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.delivered
-import io.github.matthewjones372.surefold.actor.persistent
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.WireIn
-import io.github.matthewjones372.surefold.actor.remote.WireOut
-import io.github.matthewjones372.surefold.actor.remote.delivery
 import io.github.matthewjones372.surefold.cluster.Cluster
 import io.github.matthewjones372.surefold.cluster.sharding
 import kotlin.time.Duration.Companion.minutes
@@ -707,10 +707,10 @@ down" from "unavailable" by matching on `NotSent`:
 
 <!-- cluster-reliable-answers -->
 ```kotlin
+import dev.surefold.actor.Full
+import dev.surefold.actor.NotSent
+import dev.surefold.actor.Unwritten
 import dev.surefold.fail.Either
-import io.github.matthewjones372.surefold.actor.Full
-import io.github.matthewjones372.surefold.actor.NotSent
-import io.github.matthewjones372.surefold.actor.Unwritten
 
 /** The HTTP status a checkout answers for a payment it sent, or did not. */
 fun status(sent: Either<NotSent, Unit>): Int = when (sent) {
@@ -745,7 +745,7 @@ on `ready()`.
 
 <!-- cluster-operating -->
 ```kotlin
-import io.github.matthewjones372.surefold.actor.remote.node
+import dev.surefold.actor.remote.node
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.actor.Actors
 import io.github.matthewjones372.surefold.app.actor.actors
@@ -815,13 +815,13 @@ same name and codec.
 <!-- cluster-topic -->
 ```kotlin
 import dev.surefold.Scope
-import io.github.matthewjones372.surefold.actor.Topic
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.WireIn
-import io.github.matthewjones372.surefold.actor.remote.WireOut
-import io.github.matthewjones372.surefold.actor.spawn
+import dev.surefold.actor.Topic
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.spawn
 import io.github.matthewjones372.surefold.cluster.Cluster
 import io.github.matthewjones372.surefold.cluster.topic
 

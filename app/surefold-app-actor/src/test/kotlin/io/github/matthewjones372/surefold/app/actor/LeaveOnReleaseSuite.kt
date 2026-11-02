@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.app.actor
 
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.node
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeLessThan
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.actor.remote.node
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.app.single
 import io.github.matthewjones372.surefold.app.testApp
 import io.github.matthewjones372.surefold.cluster.Cluster

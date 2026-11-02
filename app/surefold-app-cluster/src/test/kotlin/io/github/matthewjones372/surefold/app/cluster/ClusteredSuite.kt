@@ -1,5 +1,6 @@
 package io.github.matthewjones372.surefold.app.cluster
 
+import dev.surefold.actor.remote.Node
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
@@ -7,7 +8,6 @@ import dev.surefold.junit.shouldBeInstanceOf
 import dev.surefold.junit.shouldContain
 import dev.surefold.junit.shouldNotBe
 import dev.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.app.StartupError
 import io.github.matthewjones372.surefold.app.actor.actors
 import io.github.matthewjones372.surefold.app.single

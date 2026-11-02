@@ -1,6 +1,15 @@
 package io.github.matthewjones372.surefold.cluster
 
 import dev.surefold.Scope
+import dev.surefold.actor.Address
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.RemoteNode
+import dev.surefold.actor.remote.node
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
+import dev.surefold.actor.watch
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
@@ -8,15 +17,6 @@ import dev.surefold.junit.shouldBeGreaterThanOrEqual
 import dev.surefold.junit.shouldBeLessThan
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.actor.Address
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.remote.Codecs
-import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.actor.remote.RemoteNode
-import io.github.matthewjones372.surefold.actor.remote.node
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.actor.watch
 import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch

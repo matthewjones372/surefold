@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariDataSource
 import dev.surefold.Promise
 import dev.surefold.Resource
 import dev.surefold.Shared
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.awaitValue
 import dev.surefold.junit.SharedSuite
 import dev.surefold.junit.expect
@@ -11,7 +12,6 @@ import dev.surefold.junit.shouldBe
 import dev.surefold.parMap
 import dev.surefold.resource
 import dev.surefold.timeoutOrNull
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.common.CompletableResultCode

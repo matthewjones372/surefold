@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.actor.benchmarks
 
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.EventCodec
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.journal
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.actor.persistent
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.journal
+import dev.surefold.actor.journal.jdbc.JdbcJournal
+import dev.surefold.actor.persistent
 import io.github.matthewjones372.surefold.app.liquibase.migrate
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode

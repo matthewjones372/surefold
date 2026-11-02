@@ -1,7 +1,7 @@
 package dev.surefold.ratelimit
 
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
-import io.github.matthewjones372.surefold.actor.journal.jdbc.migrate
+import dev.surefold.actor.journal.jdbc.Postgres
+import dev.surefold.actor.journal.jdbc.migrate
 
 /** The Postgres buckets keep the contract the in-memory ones keep. */
 object PostgresRateLimitsSuite : RateLimitsContract() {

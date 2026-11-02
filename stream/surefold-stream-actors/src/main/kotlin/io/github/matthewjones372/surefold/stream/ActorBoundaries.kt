@@ -1,15 +1,15 @@
 package io.github.matthewjones372.surefold.stream
 
 import dev.surefold.VirtualThreads
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.Behaviour
+import dev.surefold.actor.Ctx
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.stay
 import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
 import dev.surefold.fail.fold
 import dev.surefold.fail.nonFatalOrThrow
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.Behaviour
-import io.github.matthewjones372.surefold.actor.Ctx
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.stay
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 

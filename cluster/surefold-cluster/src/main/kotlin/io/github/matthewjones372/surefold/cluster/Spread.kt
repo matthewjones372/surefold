@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.actor.Behaviour
-import io.github.matthewjones372.surefold.actor.remote.Codecs
+import dev.surefold.actor.Behaviour
+import dev.surefold.actor.remote.Codecs
 
 /**
  * [count] actors named [name], worker 0 to worker `count - 1`, spread over the `Up` members as evenly as they go

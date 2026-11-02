@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.app.flyway
 
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldContain
 import dev.surefold.junit.shouldNotBeNull
 import dev.surefold.junit.shouldThrow
 import dev.surefold.junit.withClue
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.app.Migrated
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.render

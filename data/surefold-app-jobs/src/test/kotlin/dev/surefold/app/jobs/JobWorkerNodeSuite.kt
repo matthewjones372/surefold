@@ -1,5 +1,6 @@
 package dev.surefold.app.jobs
 
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.jobs.JobCodec
 import dev.surefold.jobs.JobHandlers
 import dev.surefold.jobs.JobKind
@@ -10,7 +11,6 @@ import dev.surefold.jobs.Jobs
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.test.eventually
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.liquibase.migrations
 import io.github.matthewjones372.surefold.app.singleOf

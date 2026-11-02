@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.actor.Address
-import io.github.matthewjones372.surefold.actor.Topic
-import io.github.matthewjones372.surefold.actor.TopicMessage
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.WireIn
-import io.github.matthewjones372.surefold.actor.remote.WireOut
-import io.github.matthewjones372.surefold.actor.topic
+import dev.surefold.actor.Address
+import dev.surefold.actor.Topic
+import dev.surefold.actor.TopicMessage
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.topic
 
 /**
  * The topic [name] across the cluster (spec 0082): a publish on any member reaches the subscribers of every member,

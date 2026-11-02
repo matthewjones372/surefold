@@ -1,16 +1,16 @@
 package io.github.matthewjones372.surefold.bank
 
-import io.github.matthewjones372.surefold.actor.Delivered
-import io.github.matthewjones372.surefold.actor.Delivery
-import io.github.matthewjones372.surefold.actor.EventCodec
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.persistent
-import io.github.matthewjones372.surefold.actor.remote.Codecs
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.WireIn
-import io.github.matthewjones372.surefold.actor.remote.WireOut
-import io.github.matthewjones372.surefold.actor.remote.delivery
+import dev.surefold.actor.Delivered
+import dev.surefold.actor.Delivery
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.Reply
+import dev.surefold.actor.persistent
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.delivery
 
 internal sealed interface TransferMsg
 

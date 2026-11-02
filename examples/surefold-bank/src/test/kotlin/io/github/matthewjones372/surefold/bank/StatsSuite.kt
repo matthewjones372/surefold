@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.bank
 
+import dev.surefold.actor.remote.outbox
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.actor.remote.outbox
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import java.net.URI

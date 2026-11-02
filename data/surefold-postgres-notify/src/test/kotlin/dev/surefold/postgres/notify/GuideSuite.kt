@@ -1,10 +1,10 @@
 package dev.surefold.postgres.notify
 
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.junit.Suite
 import dev.surefold.junit.expect
 import dev.surefold.junit.shouldBe
 import dev.surefold.test.eventually
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.stream.Exit
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.Hub

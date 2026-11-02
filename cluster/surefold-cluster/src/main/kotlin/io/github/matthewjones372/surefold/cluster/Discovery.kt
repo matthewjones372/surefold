@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.actor.remote.Node
+import dev.surefold.actor.remote.Node
 import java.net.InetAddress
 import java.net.UnknownHostException
 import java.util.Hashtable

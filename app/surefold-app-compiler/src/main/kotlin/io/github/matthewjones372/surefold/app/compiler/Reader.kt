@@ -397,7 +397,7 @@ private val RUNTIME_PROVIDED = setOf("$APP.HealthRegistry")
 
 private const val ACTOR_REF = "org.apache.pekko.actor.typed.ActorRef"
 private const val ACTOR_SYSTEM = "org.apache.pekko.actor.ActorSystem"
-private const val SUREFOLD_ACTOR_REF = "io.github.matthewjones372.surefold.actor.ActorRef"
+private const val SUREFOLD_ACTOR_REF = "dev.surefold.actor.ActorRef"
 private const val SUREFOLD_ACTORS = "$APP.actor.Actors"
 private const val TYPESAFE_CONFIG = "com.typesafe.config.Config"
 private const val LAYERED = "$APP.typesafe.Layered"

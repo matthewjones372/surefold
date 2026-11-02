@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.actor.remote.Node
+import dev.surefold.actor.remote.Node
 import java.util.zip.CRC32
 
 /** One life of a node: a node that restarts is a new incarnation at the same address. */

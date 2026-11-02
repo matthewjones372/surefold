@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.cluster.kubernetes
 
+import dev.surefold.actor.remote.Node
 import dev.surefold.clock
 import io.fabric8.kubernetes.api.model.coordination.v1.LeaseBuilder
 import io.fabric8.kubernetes.api.model.coordination.v1.LeaseSpecBuilder
 import io.fabric8.kubernetes.client.KubernetesClient
 import io.fabric8.kubernetes.client.KubernetesClientBuilder
 import io.fabric8.kubernetes.client.KubernetesClientException
-import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.cluster.Discovery
 import io.github.matthewjones372.surefold.cluster.Downing
 import io.github.matthewjones372.surefold.cluster.JoinOptions

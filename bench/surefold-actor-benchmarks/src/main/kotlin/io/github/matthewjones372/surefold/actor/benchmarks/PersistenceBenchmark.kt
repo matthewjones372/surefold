@@ -2,16 +2,16 @@ package io.github.matthewjones372.surefold.actor.benchmarks
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.Producer
-import io.github.matthewjones372.surefold.actor.ask
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.delivered
-import io.github.matthewjones372.surefold.actor.journal
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.actor.persistent
-import io.github.matthewjones372.surefold.actor.stay
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.Producer
+import dev.surefold.actor.ask
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.delivered
+import dev.surefold.actor.journal
+import dev.surefold.actor.journal.jdbc.JdbcJournal
+import dev.surefold.actor.persistent
+import dev.surefold.actor.stay
 import io.github.matthewjones372.surefold.app.liquibase.migrate
 import io.github.matthewjones372.surefold.cluster.Sharded
 import io.github.matthewjones372.surefold.cluster.sharding

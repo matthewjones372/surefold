@@ -58,15 +58,15 @@ and a turn that tells a full mailbox fails. `ask` sends a message carrying a
 
 <!-- actors-actor -->
 ```kotlin
+import dev.surefold.actor.Reply
+import dev.surefold.actor.ask
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
+import dev.surefold.actor.stop
+import dev.surefold.actor.unhandled
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.ask
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.actor.stop
-import io.github.matthewjones372.surefold.actor.unhandled
 import kotlin.time.Duration.Companion.seconds
 
 sealed interface Till
@@ -140,18 +140,18 @@ not; `watch` on the scope gives the same as a `Deferred` to await.
 ```kotlin
 import dev.surefold.Schedule
 import dev.surefold.Scope
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.Failure
+import dev.surefold.actor.Reply
+import dev.surefold.actor.Signal
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.onSignal
+import dev.surefold.actor.onStart
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
+import dev.surefold.actor.watch
 import dev.surefold.logInfo
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.Failure
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.Signal
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.onSignal
-import io.github.matthewjones372.surefold.actor.onStart
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.actor.watch
 import kotlin.time.Duration.Companion.milliseconds
 
 sealed interface Feed
@@ -216,18 +216,18 @@ fire in no time at all.
 <!-- actors-time -->
 ```kotlin
 import dev.surefold.TestClock
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.awaitIdle
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.onStart
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
+import dev.surefold.actor.stop
+import dev.surefold.actor.unhandled
+import dev.surefold.actor.watch
 import dev.surefold.clock
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.awaitIdle
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.onStart
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.actor.stop
-import io.github.matthewjones372.surefold.actor.unhandled
-import io.github.matthewjones372.surefold.actor.watch
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
@@ -311,20 +311,20 @@ many.
 <!-- actors-routing -->
 ```kotlin
 import dev.surefold.Scope
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.ServiceKey
-import io.github.matthewjones372.surefold.actor.awaitIdle
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.entities
-import io.github.matthewjones372.surefold.actor.entity
-import io.github.matthewjones372.surefold.actor.find
-import io.github.matthewjones372.surefold.actor.group
-import io.github.matthewjones372.surefold.actor.hashing
-import io.github.matthewjones372.surefold.actor.onStart
-import io.github.matthewjones372.surefold.actor.pool
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.ServiceKey
+import dev.surefold.actor.awaitIdle
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.entities
+import dev.surefold.actor.entity
+import dev.surefold.actor.find
+import dev.surefold.actor.group
+import dev.surefold.actor.hashing
+import dev.surefold.actor.onStart
+import dev.surefold.actor.pool
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
 import kotlin.time.Duration.Companion.minutes
 
 data class Job(val owner: String, val document: String)
@@ -407,20 +407,20 @@ are the [cluster guide](cluster.md#state-that-survives)'s.
 
 <!-- actors-persistent -->
 ```kotlin
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.InMemoryJournal
+import dev.surefold.actor.InMemorySnapshots
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.Reply
+import dev.surefold.actor.StateCodec
+import dev.surefold.actor.ask
+import dev.surefold.actor.every
+import dev.surefold.actor.journal
+import dev.surefold.actor.persistent
+import dev.surefold.actor.snapshots
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stop
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.actor.EventCodec
-import io.github.matthewjones372.surefold.actor.InMemoryJournal
-import io.github.matthewjones372.surefold.actor.InMemorySnapshots
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.StateCodec
-import io.github.matthewjones372.surefold.actor.ask
-import io.github.matthewjones372.surefold.actor.every
-import io.github.matthewjones372.surefold.actor.journal
-import io.github.matthewjones372.surefold.actor.persistent
-import io.github.matthewjones372.surefold.actor.snapshots
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stop
 import java.nio.ByteBuffer
 import kotlin.time.Duration.Companion.seconds
 
@@ -502,11 +502,11 @@ is refused when the codec is built, not when an old event is replayed.
 
 <!-- actors-versioned -->
 ```kotlin
-import io.github.matthewjones372.surefold.actor.EventCodec
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.Upgrade
-import io.github.matthewjones372.surefold.actor.persistent
-import io.github.matthewjones372.surefold.actor.versioned
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.Upgrade
+import dev.surefold.actor.persistent
+import dev.surefold.actor.versioned
 
 /** Version 1: an order paid in one go. */
 data class PaidV1(val pence: Long)
@@ -565,13 +565,13 @@ failure fails the whole run.
 
 <!-- actors-batching -->
 ```kotlin
+import dev.surefold.actor.Reply
+import dev.surefold.actor.ask
+import dev.surefold.actor.batching
+import dev.surefold.actor.become
+import dev.surefold.actor.spawn
 import dev.surefold.logAnnotated
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.ask
-import io.github.matthewjones372.surefold.actor.batching
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.spawn
 import kotlin.time.Duration.Companion.seconds
 
 data class Admit(val name: String, val reply: Reply<Int>)
@@ -641,18 +641,18 @@ The tests below are run by the build, as well as compiled, so each passes.
 <!-- actors-testing -->
 ```kotlin
 import dev.surefold.Schedule
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.Failure
+import dev.surefold.actor.Reply
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.stay
+import dev.surefold.actor.stop
+import dev.surefold.actor.test
+import dev.surefold.actor.testActors
+import dev.surefold.actor.unhandled
 import dev.surefold.assert.shouldBe
 import dev.surefold.fail.right
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.Failure
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.actor.stop
-import io.github.matthewjones372.surefold.actor.test
-import io.github.matthewjones372.surefold.actor.testActors
-import io.github.matthewjones372.surefold.actor.unhandled
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
