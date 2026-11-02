@@ -49,11 +49,18 @@ internal object Bindings {
     private val frame: ScopedValue<Frame> = ScopedValue.newInstance()
     private val root = ThreadLocal<Map<SurefoldLocal<*>, Any?>>()
 
-    fun snapshot(): Map<SurefoldLocal<*>, Any?> = if (frame.isBound) frame.get().bound else root.get() ?: emptyMap()
+    // What orElse answers where no frame is bound: one lookup rather than isBound and then get. Never written.
+    private val unbound = Frame(emptyMap())
+
+    fun snapshot(): Map<SurefoldLocal<*>, Any?> {
+        val bound = frame.orElse(unbound)
+        return if (bound !== unbound) bound.bound else root.get() ?: emptyMap()
+    }
 
     fun rebind(bound: Map<SurefoldLocal<*>, Any?>) {
+        val current = frame.orElse(unbound)
         when {
-            frame.isBound -> frame.get().bound = bound
+            current !== unbound -> current.bound = bound
             bound.isEmpty() -> root.remove()
             else -> root.set(bound)
         }

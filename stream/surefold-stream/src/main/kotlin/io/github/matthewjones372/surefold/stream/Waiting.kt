@@ -20,7 +20,14 @@ interface Waiting {
         private val installed: ScopedValue<Waiting> = ScopedValue.newInstance()
 
         /** The [Waiting] of the worker this thread is, or `null` where blocking the thread is right. */
-        fun here(): Waiting? = if (installed.isBound) installed.get() else null
+        fun here(): Waiting? = installed.orElse(Blocking).takeUnless { it === Blocking }
+
+        /** What [installed] answers on a thread no backend installed one on: compared by identity, never waited on. */
+        private object Blocking : Waiting {
+            override fun until(ready: () -> Boolean) = error("Blocking is a marker, not a Waiting")
+
+            override fun changed() = error("Blocking is a marker, not a Waiting")
+        }
 
         /** [body] with [waiting] installed on this thread. */
         fun <T> within(waiting: Waiting, body: () -> T): T =

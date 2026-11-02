@@ -48,7 +48,7 @@ class Shared<T>(initial: T, val name: String? = null) {
  */
 fun <A> transact(name: String? = null, soloAfter: Int = SOLO_AFTER, block: Transaction.() -> A): A {
     require(soloAfter >= 0) { "A step cannot run alone after $soloAfter lost runs." }
-    if (running.isBound) return running.get().block()
+    (running.orElse(NotRunning) as? Transaction)?.let { return it.block() }
     val (step, answer) = untilCommitted(name ?: UNNAMED, soloAfter, block)
     // Outside the step, so an effect that calls transact starts a step of its own; and after the run is counted
     // committed, so an effect that throws does not count it failed.
@@ -133,7 +133,11 @@ private const val RETRIES = "surefold.transact.retries"
 private const val ATTEMPTS = "surefold.transact.attempts"
 
 // Not a SurefoldLocal: a fork must not inherit the step it was started in (spec 0275).
-private val running: ScopedValue<Transaction> = ScopedValue.newInstance()
+// Typed Any so that one orElse answers both whether a step is running and which: a Transaction reads the commit clock
+// as it is made, so it cannot be the marker.
+private val running: ScopedValue<Any> = ScopedValue.newInstance()
+
+private val NotRunning = Any()
 
 /** The step a [transact] block runs in. A [Shared] is read and written only through it. */
 class Transaction internal constructor(private var solo: Any?) {

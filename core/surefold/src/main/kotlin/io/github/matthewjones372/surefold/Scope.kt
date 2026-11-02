@@ -500,7 +500,7 @@ internal class Fork<E, T>(
     private fun settled(): Outcome<E, T> = checkNotNull(outcome()) { "a joined fork always has an outcome" }
 
     /** Whether this thread is running a fork body for [on], and so is one of its threads. */
-    private fun onOwnExecutor() = runningFor.isBound && runningFor.get() === on
+    private fun onOwnExecutor() = runningFor.orElse(NoExecutor) === on
 
     private fun wake(waiters: Waiter?) =
         generateSequence(waiters) { it.next }.forEach { Waiting.unpark(it.thread) }
@@ -510,6 +510,9 @@ internal class Fork<E, T>(
 
 /** The executor whose fork body this thread is running, if any: where an `await` on it may help (spec 0037). */
 private val runningFor: ScopedValue<Executor> = ScopedValue.newInstance()
+
+/** What [runningFor] answers on a thread running no fork body: no fork is ever on it. */
+private val NoExecutor = Executor { error("nothing runs on the executor a thread outside any fork body reads") }
 
 /** A thread parked until a fork is [ForkState.Done], and the one parked before it. */
 private data class Waiter(val thread: Thread, val next: Waiter?)

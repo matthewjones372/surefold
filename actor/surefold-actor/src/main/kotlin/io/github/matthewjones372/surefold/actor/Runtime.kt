@@ -278,7 +278,12 @@ private val PARALLELISM =
     Integer.getInteger("jdk.virtualThreadScheduler.parallelism", Runtime.getRuntime().availableProcessors())
 
 /** The actor whose turn this thread is running, so a `tell` from inside one can refuse to wait. */
-private val stepping: ScopedValue<Cell<*, *, *>> = ScopedValue.newInstance()
+// Typed Any so that one orElse answers both whether a turn is running and whose: a Cell has no spare instance.
+private val stepping: ScopedValue<Any> = ScopedValue.newInstance()
+
+private val NotStepping = Any()
+
+private fun steppingNow(): Cell<*, *, *>? = stepping.orElse(NotStepping) as? Cell<*, *, *>
 
 /**
  * One guardian per scope: a single parked fork that the scope interrupts on close, which then stops its actors.
@@ -710,7 +715,7 @@ private class Cell<M : Any, S, E>(
      */
     override fun tell(message: M) {
         if (stopped) return dead(message, DeadLetter.Why.Stopped)
-        val sender = if (stepping.isBound) stepping.get() else null
+        val sender = steppingNow()
         sender?.told = true
         if (sender == null) {
             acquireRoom()
@@ -723,7 +728,7 @@ private class Cell<M : Any, S, E>(
 
     fun offer(message: M): Boolean {
         if (stopped) return false
-        if (stepping.isBound) stepping.get().told = true
+        steppingNow()?.told = true
         if (!tryAcquireRoom()) return false
         if (stopped) return false
         enqueue(carrying(message))

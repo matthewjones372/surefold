@@ -317,6 +317,9 @@ class RemoteNode internal constructor(
     // The replies written while one frame's payload is encoded, on the thread encoding it.
     private val written: ScopedValue<MutableList<String>> = ScopedValue.newInstance()
 
+    // What written answers outside writingReplies: compared by identity, never added to.
+    private val notWriting = ArrayList<String>(0)
+
     /** [encode] run, with the paths of the replies it wrote for asks on this node. */
     private fun writingReplies(encode: () -> ByteArray): Pair<ByteArray, List<String>> {
         val mine = mutableListOf<String>()
@@ -343,7 +346,8 @@ class RemoteNode internal constructor(
                 if (count % SWEEP_EVERY == 0L) forgetOldReplies()
                 val path = "$REPLIES$count"
                 pending[path] = Pending(reply, answers, System.nanoTime())
-                if (written.isBound) written.get().add(path)
+                val replies = written.orElse(notWriting)
+                if (replies !== notWriting) replies.add(path)
                 Address(self.toString(), path, 0)
             }
 
