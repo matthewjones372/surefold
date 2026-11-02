@@ -1,7 +1,7 @@
 [
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.javaParallelBatch",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.javaParallelBatch",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -218,7 +218,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.javaParallelBatch",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.javaParallelBatch",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -436,7 +436,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.javaParallelBatch",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.javaParallelBatch",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -651,7 +651,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.javaParallelBatch",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.javaParallelBatch",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -866,7 +866,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapPar",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapPar",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1086,7 +1086,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapPar",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapPar",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1304,7 +1304,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapPar",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapPar",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1525,7 +1525,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapPar",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapPar",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1742,7 +1742,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapParPartitioned",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapParPartitioned",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1963,7 +1963,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapParPartitioned",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapParPartitioned",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -2182,7 +2182,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapParPartitioned",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapParPartitioned",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -2403,7 +2403,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapParPartitioned",
+        "benchmark" : "dev.surefold.kafka.benchmarks.SkewBenchmarks.surefoldMapParPartitioned",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,

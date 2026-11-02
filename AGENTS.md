@@ -149,7 +149,7 @@ Before saying it is done:
 ### Issue tracker
 
 Specs are the tickets: a spec's Stack entries are its work items, in blocking
-order. Other issues live in GitHub Issues for `matthewjones372/lark`, via the
+order. Other issues live in GitHub Issues for `surefold/surefold`, via the
 `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels

@@ -11,14 +11,14 @@ transitive dependency fails the build.
 - **JDK 25 or newer** at runtime. The libraries are compiled for 25; see
   [why](core.md#requirements-and-limitations).
 - **Kotlin**: built with Kotlin 2.4.10.
-- **Group**: `io.github.matthewjones372`. Every published module shares one
-  version.
+- **Group**: `dev.surefold` (`io.github.matthewjones372` up to 0.17.0). Every
+  published module shares one version.
 
 ```kotlin
 dependencies {
-    implementation("io.github.matthewjones372:surefold:0.17.0")
-    implementation("io.github.matthewjones372:surefold-app:0.17.0")
-    testImplementation("io.github.matthewjones372:surefold-test:0.17.0")
+    implementation("dev.surefold:surefold:0.17.0")
+    implementation("dev.surefold:surefold-app:0.17.0")
+    testImplementation("dev.surefold:surefold-test:0.17.0")
 }
 ```
 

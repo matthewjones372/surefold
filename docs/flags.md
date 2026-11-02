@@ -9,7 +9,7 @@ key, its type and its default, and read with no client passed in.
 ```kotlin
 dependencies {
     // brings surefold, the OpenFeature SDK and the slf4j-api it logs through
-    implementation("io.github.matthewjones372:surefold-openfeature:0.17.0")
+    implementation("dev.surefold:surefold-openfeature:0.17.0")
 }
 ```
 
@@ -59,7 +59,7 @@ a tenant never sees another tenant's rows.
 ```kotlin
 dependencies {
     // brings surefold-openfeature, surefold-tenancy, surefold-cache and surefold-postgres-notify
-    implementation("io.github.matthewjones372:surefold-openfeature-postgres:0.17.0")
+    implementation("dev.surefold:surefold-openfeature-postgres:0.17.0")
 }
 ```
 
@@ -87,13 +87,13 @@ grant select, insert, update, delete on surefold_feature_flags to app_admin;
 ```kotlin
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.providers.memory.InMemoryProvider
+import dev.surefold.openfeature.Flag
 import dev.surefold.openfeature.postgres.FLAGS_CHANNEL
 import dev.surefold.openfeature.postgres.PostgresFlags
 import dev.surefold.postgres.notify.PostgresNotifications
+import dev.surefold.stream.Run
 import dev.surefold.tenancy.TenantId
 import dev.surefold.tenancy.withTenant
-import io.github.matthewjones372.surefold.openfeature.Flag
-import io.github.matthewjones372.surefold.stream.Run
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -136,9 +136,9 @@ fun pause(provider: PostgresFlags, admin: DataSource, tenant: TenantId, operator
 <!-- flags-declare -->
 ```kotlin
 import dev.openfeature.sdk.FlagEvaluationDetails
+import dev.surefold.openfeature.Flag
+import dev.surefold.openfeature.evaluatedFor
 import dev.surefold.parZip
-import io.github.matthewjones372.surefold.openfeature.Flag
-import io.github.matthewjones372.surefold.openfeature.evaluatedFor
 
 object AdoptionFlags {
     val registryCheck = Flag.boolean("adoption.registry-check", default = true)
@@ -177,7 +177,7 @@ type the code wants, and decoded once, beside the key and the default:
 <!-- flags-types -->
 ```kotlin
 import dev.openfeature.sdk.Value
-import io.github.matthewjones372.surefold.openfeature.Flag
+import dev.surefold.openfeature.Flag
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
 
@@ -259,9 +259,9 @@ provider of its own, and the forks it opens read the same one:
 ```kotlin
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.providers.memory.InMemoryProvider
-import io.github.matthewjones372.surefold.openfeature.Flag
-import io.github.matthewjones372.surefold.openfeature.featureClient
-import io.github.matthewjones372.surefold.openfeature.useSurefold
+import dev.surefold.openfeature.Flag
+import dev.surefold.openfeature.featureClient
+import dev.surefold.openfeature.useSurefold
 import dev.openfeature.sdk.providers.memory.Flag as MemoryFlag
 
 val perAdopterLimit = Flag.int("adoption.per-customer-limit", default = 3)

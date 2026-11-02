@@ -176,7 +176,7 @@ private val surefoldEffects = listOf("logDebug", "logInfo", "logWarn", "logError
         member(surefold.asString(), "Counter", "increment"),
         member(surefold.asString(), "Gauge", "set"),
         member(surefold.asString(), "Histogram", "record"),
-        member("io.github.matthewjones372.surefold.stream", "Hub", "publish"),
+        member("${surefold.asString()}.stream", "Hub", "publish"),
     )
 
 // Kotlin's own print and println. A PrintStream's are refused with the rest of java.io.

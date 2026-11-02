@@ -1,12 +1,12 @@
 package dev.surefold.app.pekko
 
+import dev.surefold.actor.pekko.answer
+import dev.surefold.actor.pekko.ask
+import dev.surefold.actor.pekko.receive
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeEmpty
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.withClue
-import io.github.matthewjones372.surefold.actor.pekko.answer
-import io.github.matthewjones372.surefold.actor.pekko.ask
-import io.github.matthewjones372.surefold.actor.pekko.receive
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.actor.typed.Behavior
@@ -65,9 +65,9 @@ class AskTest {
     @Test
     fun `a nullable reply does not compile`() {
         val fixture = """
-            import io.github.matthewjones372.surefold.actor.pekko.answer
-import io.github.matthewjones372.surefold.actor.pekko.ask
-import io.github.matthewjones372.surefold.actor.pekko.receive
+            import dev.surefold.actor.pekko.answer
+import dev.surefold.actor.pekko.ask
+import dev.surefold.actor.pekko.receive
             import org.apache.pekko.actor.ActorSystem
             import org.apache.pekko.actor.typed.ActorRef
             import kotlin.time.Duration.Companion.seconds
@@ -93,9 +93,9 @@ import io.github.matthewjones372.surefold.actor.pekko.receive
     fun `the ask fixture is the only thing stopping it`() {
         val working = """
             import java.util.Optional
-            import io.github.matthewjones372.surefold.actor.pekko.answer
-import io.github.matthewjones372.surefold.actor.pekko.ask
-import io.github.matthewjones372.surefold.actor.pekko.receive
+            import dev.surefold.actor.pekko.answer
+import dev.surefold.actor.pekko.ask
+import dev.surefold.actor.pekko.receive
             import org.apache.pekko.actor.ActorSystem
             import org.apache.pekko.actor.typed.ActorRef
             import kotlin.time.Duration.Companion.seconds
@@ -115,8 +115,8 @@ import io.github.matthewjones372.surefold.actor.pekko.receive
     @Test
     fun `a sealed protocol a receive leaves a message out of does not compile`() {
         val fixture = """
-            import io.github.matthewjones372.surefold.actor.pekko.receive
-            import io.github.matthewjones372.surefold.actor.pekko.same
+            import dev.surefold.actor.pekko.receive
+            import dev.surefold.actor.pekko.same
             import org.apache.pekko.actor.typed.Behavior
 
             sealed interface Shop
@@ -141,8 +141,8 @@ import io.github.matthewjones372.surefold.actor.pekko.receive
     @Test
     fun `a nullable answer does not compile`() {
         val fixture = """
-            import io.github.matthewjones372.surefold.actor.pekko.answer
-            import io.github.matthewjones372.surefold.actor.pekko.receive
+            import dev.surefold.actor.pekko.answer
+            import dev.surefold.actor.pekko.receive
             import org.apache.pekko.actor.typed.ActorRef
             import org.apache.pekko.actor.typed.Behavior
 
@@ -165,10 +165,10 @@ import io.github.matthewjones372.surefold.actor.pekko.receive
     @Test
     fun `an actor in receive, same, stopped and answer compiles with its context`() {
         val working = """
-            import io.github.matthewjones372.surefold.actor.pekko.answer
-            import io.github.matthewjones372.surefold.actor.pekko.receive
-            import io.github.matthewjones372.surefold.actor.pekko.same
-            import io.github.matthewjones372.surefold.actor.pekko.stopped
+            import dev.surefold.actor.pekko.answer
+            import dev.surefold.actor.pekko.receive
+            import dev.surefold.actor.pekko.same
+            import dev.surefold.actor.pekko.stopped
             import org.apache.pekko.actor.typed.ActorRef
             import org.apache.pekko.actor.typed.Behavior
 

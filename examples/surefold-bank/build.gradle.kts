@@ -23,7 +23,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("io.github.matthewjones372.surefold.bank.MainKt")
+    mainClass.set("dev.surefold.bank.MainKt")
 }
 
 // Where the environment names its installed browsers, Playwright uses that Chromium and downloads none. Where it

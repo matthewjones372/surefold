@@ -6,12 +6,12 @@ import dev.surefold.gauge
 import dev.surefold.logInfo
 import dev.surefold.logWarn
 import dev.surefold.postgres.notify.PostgresNotifications
+import dev.surefold.stream.Exit
+import dev.surefold.stream.Forks
+import dev.surefold.stream.Running
+import dev.surefold.stream.runFold
+import dev.surefold.stream.start
 import dev.surefold.surefoldFuture
-import io.github.matthewjones372.surefold.stream.Exit
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.Running
-import io.github.matthewjones372.surefold.stream.runFold
-import io.github.matthewjones372.surefold.stream.start
 import java.sql.SQLException
 import java.util.UUID
 import java.util.concurrent.CancellationException

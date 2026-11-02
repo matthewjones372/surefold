@@ -21,7 +21,7 @@ import dev.surefold.junit.shouldContain
 import dev.surefold.junit.shouldNotBeNull
 import dev.surefold.junit.shouldThrow
 import dev.surefold.junit.withClue
-import io.github.matthewjones372.surefold.openfeature.Flag
+import dev.surefold.openfeature.Flag
 
 /** A provider that answers every flag with `true`, and can be made to fail its init or go stale. */
 private class Switchable(private val failsInit: Boolean = false) : EventProvider() {

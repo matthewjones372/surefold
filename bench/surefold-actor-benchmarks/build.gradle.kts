@@ -135,7 +135,7 @@ tasks.register<JavaExec>("jmh") {
 tasks.register<JavaExec>("footprint") {
     group = "verification"
     description = "Prints the heap each idle actor costs, on surefold and on Pekko"
-    mainClass.set("io.github.matthewjones372.surefold.actor.benchmarks.FootprintKt")
+    mainClass.set("dev.surefold.actor.benchmarks.FootprintKt")
     classpath(benchmarkRuntimeClasspath)
     javaLauncher.set(toolchainLauncher)
     jvmArgs(measuredJvmArgs)
@@ -147,7 +147,7 @@ tasks.register<JavaExec>("askCpu") {
     group = "verification"
     description =
         "Prints the process CPU each ask costs, closed loop and paced to 50,000 a second, on surefold and on Pekko"
-    mainClass.set("io.github.matthewjones372.surefold.actor.benchmarks.AskCpuKt")
+    mainClass.set("dev.surefold.actor.benchmarks.AskCpuKt")
     classpath(benchmarkRuntimeClasspath)
     javaLauncher.set(toolchainLauncher)
     jvmArgs(measuredJvmArgs)
