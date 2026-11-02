@@ -26,6 +26,7 @@ import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 private const val READS = 100
+private const val LINES = 10
 
 /** A logger that keeps nothing, so a line costs what surefold does to build it and no more. */
 private val quiet = Logger { }
@@ -100,6 +101,16 @@ open class LocalsBenchmark {
     @Benchmark
     fun annotatedLogLineUnderABoundLogger(@Suppress("UNUSED_PARAMETER") bound: BoundLogger) =
         logAnnotated("request_id" to "r-1", "tenant" to "acme") { logInfo("handled") }
+
+    /** A block annotated and nothing logged in it, as a request is on its happy path (spec 0282). */
+    @Benchmark
+    fun annotatedWithoutALine(@Suppress("UNUSED_PARAMETER") bound: BoundLogger): Int =
+        logAnnotated("request_id" to "r-1", "tenant" to "acme") { READS }
+
+    /** Ten lines in one annotated block: what reading the annotations once and keeping them must not slow. */
+    @Benchmark
+    fun manyLinesUnderOneAnnotation(@Suppress("UNUSED_PARAMETER") bound: BoundLogger) =
+        logAnnotated("request_id" to "r-1", "tenant" to "acme") { repeat(LINES) { logInfo("handled") } }
 
     @Benchmark
     fun forkInheritsABinding(): Int = local.locally(1) { scope { async { local.get() }.await() } }
