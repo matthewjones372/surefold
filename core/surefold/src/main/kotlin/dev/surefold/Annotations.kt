@@ -15,7 +15,7 @@ internal class Annotated(
     // contents it does not yet see; two threads building it at once build equal maps.
     @Volatile private var built: Map<String, String>? = null,
 ) {
-    fun map(): Map<String, String> = built ?: (outer?.map().orEmpty() + pairs).also { built = it }
+    fun map(): Map<String, String> = built ?: SmallMap.of(outer?.map().orEmpty(), pairs).also { built = it }
 }
 
 internal val annotations: SurefoldLocal<Annotated?> = surefoldLocal { null }
