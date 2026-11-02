@@ -47,6 +47,7 @@ fun main(args: Array<String>) {
         BankNode(name, port, seeds, journal).let { it to Api(it, http, crash = crash) }
     }
     started.succeed(running)
+    logStarted()
     Runtime.getRuntime().addShutdownHook(
         Thread {
             running.forEach { (node, api) ->

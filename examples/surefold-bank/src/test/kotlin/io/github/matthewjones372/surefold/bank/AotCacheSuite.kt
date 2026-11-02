@@ -33,6 +33,7 @@ object AotCacheSuite : Suite() {
                 logs.all().map { it.message }
             }
 
+            lines.any { it.startsWith("started in ") } shouldBe true
             lines.any { it.startsWith("ready in ") } shouldBe true
             lines.last() shouldBe "trained on $TRAINING_TRANSFERS transfers"
         }

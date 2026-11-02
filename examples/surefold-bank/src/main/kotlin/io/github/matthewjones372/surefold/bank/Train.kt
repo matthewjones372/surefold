@@ -24,7 +24,16 @@ private const val TRAINING_ACCOUNTS = 10
 private const val TRAINING_BALANCE = 1_000_000L
 private const val TRAINING_MOST = 500L
 
-/** How long this JVM took to get here: what an AOT cache is measured against (spec 0278). */
+/** The HTTP statuses that say a request was taken. */
+private val SUCCESSFUL = 200..299
+
+/**
+ * How long this JVM took to have its nodes and servers made: what an AOT cache shortens (spec 0278). Ready comes
+ * later, once gossip has formed the cluster, which waits on timers a cache does not touch.
+ */
+internal fun logStarted() = logInfo("started in ${ManagementFactory.getRuntimeMXBean().uptime} ms")
+
+/** How long this JVM took to have every node up in the cluster. */
 internal fun logReady() = logInfo("ready in ${ManagementFactory.getRuntimeMXBean().uptime} ms")
 
 /**
@@ -50,6 +59,7 @@ internal fun train(transfers: Int) {
         }
         node to Api(node, 0)
     }
+    logStarted()
     try {
         running.forEach { (node) ->
             check(node.members.await(1.minutes) { it.up.size == nodes.size }) { "${node.name} never saw the others" }
@@ -86,6 +96,6 @@ private fun HttpClient.post(api: Api, path: String, body: String): String {
         .POST(HttpRequest.BodyPublishers.ofString(body))
         .build()
     val response = send(request, HttpResponse.BodyHandlers.ofString())
-    check(response.statusCode() in 200..299) { "$path answered ${response.statusCode()}: ${response.body()}" }
+    check(response.statusCode() in SUCCESSFUL) { "$path answered ${response.statusCode()}: ${response.body()}" }
     return response.body()
 }
