@@ -12,6 +12,7 @@ data class LogLine(
     val message: String,
     val at: Instant,
     val cause: Throwable? = null,
+    /** Read-only: it may be the very map bound around the line, which later lines read too. */
     val annotations: Map<String, String> = emptyMap(),
     /** The top-level class the line was written from. */
     val origin: String? = null,
@@ -76,6 +77,9 @@ private val topLevel = object : ClassValue<String>() {
 @PublishedApi
 internal fun logAt(level: LogLevel, message: String, cause: Throwable?, caller: Class<*>) {
     val at = clock.get().now()
-    val line = LogLine(level, message, at, cause, annotations.get() + spans.get().elapsedAt(at), topLevel.get(caller))
+    // With no span open, the bound map is the line's as it stands: nothing is added, so nothing is copied (spec 0280).
+    val open = spans.get()
+    val annotated = if (open.isEmpty()) annotations.get() else annotations.get() + open.elapsedAt(at)
+    val line = LogLine(level, message, at, cause, annotated, topLevel.get(caller))
     logger.get().log(line)
 }

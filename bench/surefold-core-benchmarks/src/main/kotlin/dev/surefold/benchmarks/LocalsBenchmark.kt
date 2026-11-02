@@ -1,5 +1,6 @@
 package dev.surefold.benchmarks
 
+import dev.surefold.Detach
 import dev.surefold.Logger
 import dev.surefold.Shared
 import dev.surefold.logAnnotated
@@ -28,6 +29,23 @@ private const val READS = 100
 
 /** A logger that keeps nothing, so a line costs what surefold does to build it and no more. */
 private val quiet = Logger { }
+
+/**
+ * The quiet logger bound once for the whole trial, as a service binds its logger at start (spec 0280). Bound by the
+ * benchmark thread itself, which is the one a [Scope.Thread] state's setup runs on.
+ */
+@State(Scope.Thread)
+open class BoundLogger {
+    private lateinit var detach: Detach
+
+    @Setup(Level.Trial)
+    fun bind() {
+        detach = logger.attach(quiet)
+    }
+
+    @TearDown(Level.Trial)
+    fun unbind() = detach.detach()
+}
 
 /**
  * What spec 0274 and 0275 change: a `SurefoldLocal` read, a binding, a log line with annotations, a fork that
@@ -73,6 +91,15 @@ open class LocalsBenchmark {
     fun annotatedLogLine() = logger.locally(quiet) {
         logAnnotated("request_id" to "r-1", "tenant" to "acme") { logInfo("handled") }
     }
+
+    /** A line under a logger bound once, with nothing annotated: what each line of a service costs (spec 0280). */
+    @Benchmark
+    fun logLine(@Suppress("UNUSED_PARAMETER") bound: BoundLogger) = logInfo("handled")
+
+    /** The same line with two annotations bound around it, the logger still bound once. */
+    @Benchmark
+    fun annotatedLogLineUnderABoundLogger(@Suppress("UNUSED_PARAMETER") bound: BoundLogger) =
+        logAnnotated("request_id" to "r-1", "tenant" to "acme") { logInfo("handled") }
 
     @Benchmark
     fun forkInheritsABinding(): Int = local.locally(1) { scope { async { local.get() }.await() } }

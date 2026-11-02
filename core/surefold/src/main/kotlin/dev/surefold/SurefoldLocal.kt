@@ -8,17 +8,21 @@ package dev.surefold
 class SurefoldLocal<A> internal constructor(private val initial: () -> A) {
 
     fun get(): A {
-        val bound = Bindings.snapshot()
-        // Only `locally` writes the map, and it writes an A under this key.
-        @Suppress("UNCHECKED_CAST")
-        return if (bound.containsKey(this)) bound[this] as A else unbound()
+        var link = Bindings.snapshot()
+        while (link != null) {
+            // Only `locally` and `attach` make a link for this local, and each holds an A.
+            @Suppress("UNCHECKED_CAST")
+            if (link.local === this) return link.value as A
+            link = link.next
+        }
+        return unbound()
     }
 
     /** What [get] answers where nothing is bound, which is what `main` reads, whatever is bound around the call. */
     fun unbound(): A = initial()
 
     /** Runs [block] with [value] bound, and puts back what was bound before on the way out. */
-    fun <B> locally(value: A, block: () -> B): B = Bindings.under(Bindings.snapshot() + (this to value), block)
+    fun <B> locally(value: A, block: () -> B): B = Bindings.under(Bound(this, value, Bindings.snapshot()), block)
 
     /**
      * [locally] as a pair, for an integration whose own API attaches and detaches rather than taking a
@@ -26,7 +30,9 @@ class SurefoldLocal<A> internal constructor(private val initial: () -> A) {
      */
     fun attach(value: A): Detach {
         val before = Bindings.snapshot()
-        Bindings.rebind(before + (this to value))
+        // An attach that is never detached, as OpenFeature's propagator does once per request, replaces this
+        // local's link rather than stacking another on a thread that lives for the whole process.
+        Bindings.rebind(Bound(this, value, before.without(this)))
         return Detach { Bindings.rebind(before) }
     }
 }
@@ -39,17 +45,35 @@ fun interface Detach {
 /** A [SurefoldLocal] answering with [initial] wherever nothing has been bound. */
 fun <A> surefoldLocal(initial: () -> A): SurefoldLocal<A> = SurefoldLocal(initial)
 
+/**
+ * One binding, and the ones made before it (spec 0280). Binding pushes a link rather than copying every bound local,
+ * and a fork captures the head. The first link for a local is its value; any further down are shadowed.
+ */
+internal class Bound(val local: SurefoldLocal<*>, val value: Any?, val next: Bound?)
+
+/** This chain with every link for [local] left out: what an `attach` replaces. */
+private fun Bound?.without(local: SurefoldLocal<*>): Bound? = when {
+    this == null -> null
+
+    this.local === local -> next.without(local)
+
+    else -> {
+        val rest = next.without(local)
+        if (rest === next) this else Bound(this.local, value, rest)
+    }
+}
+
 internal object Bindings {
 
-    private val current = ThreadLocal<Map<SurefoldLocal<*>, Any?>>()
+    private val current = ThreadLocal<Bound?>()
 
-    fun snapshot(): Map<SurefoldLocal<*>, Any?> = current.get() ?: emptyMap()
+    fun snapshot(): Bound? = current.get()
 
-    fun rebind(bound: Map<SurefoldLocal<*>, Any?>) {
-        if (bound.isEmpty()) current.remove() else current.set(bound)
+    fun rebind(bound: Bound?) {
+        if (bound == null) current.remove() else current.set(bound)
     }
 
-    fun <B> under(bound: Map<SurefoldLocal<*>, Any?>, block: () -> B): B {
+    fun <B> under(bound: Bound?, block: () -> B): B {
         val before = current.get()
         current.set(bound)
         return try {
