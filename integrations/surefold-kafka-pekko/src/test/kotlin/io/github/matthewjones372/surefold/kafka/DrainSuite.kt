@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.withClue
 import io.github.matthewjones372.surefold.stream.Exit
 import io.github.matthewjones372.surefold.stream.start
 import org.apache.kafka.clients.consumer.ConsumerConfig

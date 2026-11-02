@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.benchmarks
 
-import io.github.matthewjones372.surefold.Detach
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.logAnnotated
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.logger
-import io.github.matthewjones372.surefold.scope
-import io.github.matthewjones372.surefold.surefoldLocal
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.Detach
+import dev.surefold.Logger
+import dev.surefold.Shared
+import dev.surefold.logAnnotated
+import dev.surefold.logInfo
+import dev.surefold.logger
+import dev.surefold.scope
+import dev.surefold.surefoldLocal
+import dev.surefold.transact
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode
 import org.openjdk.jmh.annotations.Fork

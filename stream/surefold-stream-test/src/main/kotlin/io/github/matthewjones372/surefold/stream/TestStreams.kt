@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.TestClock
+import dev.surefold.TestClock
 
 /**
  * A backend for tests, on time the test owns: `tick`, `groupedWithin` and `restartOnDefect`'s delays wait

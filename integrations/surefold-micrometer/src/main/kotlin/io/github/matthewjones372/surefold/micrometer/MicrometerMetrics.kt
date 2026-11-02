@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.micrometer
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Histogram
-import io.github.matthewjones372.surefold.Metrics
-import io.github.matthewjones372.surefold.Reading
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Histogram
+import dev.surefold.Metrics
+import dev.surefold.Reading
 import io.micrometer.core.instrument.DistributionSummary
 import io.micrometer.core.instrument.MeterRegistry
 import io.micrometer.core.instrument.Tag

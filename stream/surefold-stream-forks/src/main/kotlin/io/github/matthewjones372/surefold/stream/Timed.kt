@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.Schedule
+import dev.surefold.LogLevel
+import dev.surefold.LogLine
+import dev.surefold.Schedule
 import java.lang.invoke.MethodHandles
 import java.time.Instant
 import java.util.concurrent.ArrayBlockingQueue

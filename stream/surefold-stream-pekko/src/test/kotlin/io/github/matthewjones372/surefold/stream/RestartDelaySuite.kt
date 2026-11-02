@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.Resource
+import dev.surefold.Schedule
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
 import org.apache.pekko.actor.testkit.typed.javadsl.ManualTime
 import org.apache.pekko.stream.testkit.javadsl.TestSink
 import scala.jdk.javaapi.CollectionConverters.asJava

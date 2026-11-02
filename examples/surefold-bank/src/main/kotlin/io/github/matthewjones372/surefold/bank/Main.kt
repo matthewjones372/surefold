@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.bank
 
-import io.github.matthewjones372.surefold.Promise
-import io.github.matthewjones372.surefold.actor.InMemoryJournal
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.awaitValue
-import io.github.matthewjones372.surefold.cluster.Discovery
-import io.github.matthewjones372.surefold.logInfo
+import dev.surefold.Promise
+import dev.surefold.actor.InMemoryJournal
+import dev.surefold.actor.journal.jdbc.JdbcJournal
+import dev.surefold.actor.remote.Node
+import dev.surefold.awaitValue
+import dev.surefold.cluster.Discovery
+import dev.surefold.logInfo
 import kotlin.time.Duration.Companion.minutes
 
 /** The three nodes: each one's name, the port its cluster listens on, and the port it serves HTTP on. */

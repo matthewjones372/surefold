@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.VirtualThreads
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.fold
+import dev.surefold.Clock
+import dev.surefold.VirtualThreads
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.fold
 import java.lang.invoke.MethodHandles
 import java.lang.invoke.VarHandle
 import java.util.concurrent.BlockingQueue

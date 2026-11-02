@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.actor.benchmarks
 
 import com.typesafe.config.ConfigFactory
-import io.github.matthewjones372.surefold.Scope
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.Behaviour
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.Scope
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.Behaviour
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
+import dev.surefold.scope
 import org.apache.pekko.actor.ActorSystem
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Setup

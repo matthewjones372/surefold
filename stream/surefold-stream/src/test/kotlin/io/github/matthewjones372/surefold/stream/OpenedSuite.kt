@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.capturingLogs
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeLessThan
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldHaveSize
+import dev.surefold.LogLevel
+import dev.surefold.capturingLogs
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeLessThan
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldHaveSize
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean

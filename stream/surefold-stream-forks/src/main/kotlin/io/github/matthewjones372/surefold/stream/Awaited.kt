@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.VirtualThreads
+import dev.surefold.VirtualThreads
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ExecutionException

@@ -4,9 +4,9 @@ import dev.openfeature.sdk.ErrorCode
 import dev.openfeature.sdk.FlagEvaluationDetails
 import dev.openfeature.sdk.Hook
 import dev.openfeature.sdk.HookContext
-import io.github.matthewjones372.surefold.counter
-import io.github.matthewjones372.surefold.increment
-import io.github.matthewjones372.surefold.logWarn
+import dev.surefold.counter
+import dev.surefold.increment
+import dev.surefold.logWarn
 
 /**
  * Every evaluation counted under `openfeature.evaluations`, by flag, variant and reason, and every one

@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.fail.Fail
+import dev.surefold.fail.Fail
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import kotlin.time.Duration

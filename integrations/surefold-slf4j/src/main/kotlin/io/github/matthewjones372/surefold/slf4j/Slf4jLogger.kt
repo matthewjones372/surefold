@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.slf4j
 
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.Logger
+import dev.surefold.LogLevel
+import dev.surefold.LogLine
+import dev.surefold.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.MDC
 

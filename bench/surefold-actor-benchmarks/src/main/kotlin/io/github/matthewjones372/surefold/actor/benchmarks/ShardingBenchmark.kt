@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.actor.benchmarks
 
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.Behaviour
-import io.github.matthewjones372.surefold.actor.ask
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.cluster.sharding
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.Behaviour
+import dev.surefold.actor.ask
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.stay
+import dev.surefold.cluster.sharding
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.javadsl.Behaviors
 import org.apache.pekko.cluster.sharding.typed.javadsl.ClusterSharding

@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor.pekko
 
-import io.github.matthewjones372.surefold.VirtualThreads
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.Fail
-import io.github.matthewjones372.surefold.fail.attempt
+import dev.surefold.VirtualThreads
+import dev.surefold.fail.Either
+import dev.surefold.fail.Fail
+import dev.surefold.fail.attempt
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.javadsl.ActorContext
 import org.apache.pekko.actor.typed.javadsl.Behaviors

@@ -72,7 +72,7 @@ against; the library's own transitive dependencies come with it.
 | `surefold` | forks, errors, resources, schedules, policies, context, logs, metrics, `await` on any future ([guide](core.md)) | none | nothing | yes |
 | `surefold-pekko` | a Pekko dispatcher as the executor; `await` on Pekko's Scala futures ([guide](core.md#running-forks-on-pekko)) | `surefold` | `pekko-actor` 1.2.1 | yes |
 | `surefold-replay` | a test's forks in seeded orders: `explore` finds the one that breaks it, `replay` runs it again (spec 0042) | `surefold` | none | yes |
-| `surefold-compiler` | a K2 checker: a `Deferred`, `Channel` or `Scope` returned from a scope or kept in a property is an error (spec 0041); applied by `io.github.matthewjones372.surefold.compiler` | none | the Kotlin compiler, already present | yes |
+| `surefold-compiler` | a K2 checker: a `Deferred`, `Channel` or `Scope` returned from a scope or kept in a property is an error (spec 0041); applied by `dev.surefold.compiler` | none | the Kotlin compiler, already present | yes |
 | `surefold-cache` | `Cache`: one lookup per key, a ttl by result, the last good value while the source fails (spec 0246) | `surefold` | none | yes |
 | `surefold-structured` | `parZip`, `parMap`, `raceN`, `timeout` on the JDK's `StructuredTaskScope` (preview in JDK 27) | `surefold` | none | no |
 | `surefold-core-benchmarks` | JMH benchmarks of locals, log lines, forks and `transact` ([results](../bench/surefold-core-benchmarks/README.md)) | | JMH | no |
@@ -92,7 +92,7 @@ against; the library's own transitive dependencies come with it.
 | `surefold-app-pekko` | a Pekko typed actor as a node ([cookbook](cookbook.md#spawn-a-pekko-actor)) | `surefold-app`, `surefold-actor-pekko` | `pekko-actor-typed` 1.2.1 | yes |
 | `surefold-app-actor` | a `surefold-actor` scope and actors as nodes ([cookbook](cookbook.md#spawn-a-surefold-actor)) | `surefold-app`, `surefold-actor` | none | yes |
 | `surefold-app-cluster` | a cluster membership as a node, joined from HOCON ([guide](cluster.md#joined-from-config)) | `surefold-app-actor`, `surefold-app-typesafe`, `surefold-cluster` | none beyond Typesafe Config | yes |
-| `surefold-app-gradle` | the Gradle plugins `io.github.matthewjones372.surefold.wiring` ([guide](app.md#checking-the-graph-in-the-build)) and `io.github.matthewjones372.surefold.compiler`, which applies `surefold-compiler` | none | Gradle API | yes |
+| `surefold-app-gradle` | the Gradle plugins `dev.surefold.wiring` ([guide](app.md#checking-the-graph-in-the-build)) and `dev.surefold.compiler`, which applies `surefold-compiler` | none | Gradle API | yes |
 | `surefold-app-compiler` | the K2 compiler checker the plugin applies ([guide](app.md#checking-the-graph-in-the-editor)) | none | the Kotlin compiler, already present | yes |
 
 ### Streams

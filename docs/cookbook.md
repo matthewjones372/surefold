@@ -41,29 +41,29 @@ The types the recipes are written against:
 ```kotlin
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import io.github.matthewjones372.surefold.ExitCase
-import io.github.matthewjones372.surefold.app.HealthRegistry
-import io.github.matthewjones372.surefold.app.Module
-import io.github.matthewjones372.surefold.app.RealSys
-import io.github.matthewjones372.surefold.app.SurefoldApp
-import io.github.matthewjones372.surefold.app.Sys
-import io.github.matthewjones372.surefold.app.boundTo
-import io.github.matthewjones372.surefold.app.closingOf
-import io.github.matthewjones372.surefold.app.findings
-import io.github.matthewjones372.surefold.app.kotlinx.Naming
-import io.github.matthewjones372.surefold.app.kotlinx.Secret
-import io.github.matthewjones372.surefold.app.kotlinx.config
-import io.github.matthewjones372.surefold.app.overriding
-import io.github.matthewjones372.surefold.app.pekko.actor
-import io.github.matthewjones372.surefold.app.probe
-import io.github.matthewjones372.surefold.app.render
-import io.github.matthewjones372.surefold.app.report
-import io.github.matthewjones372.surefold.app.runApp
-import io.github.matthewjones372.surefold.app.single
-import io.github.matthewjones372.surefold.app.singleOf
-import io.github.matthewjones372.surefold.app.subgraph
-import io.github.matthewjones372.surefold.app.testApp
-import io.github.matthewjones372.surefold.app.validate
+import dev.surefold.ExitCase
+import dev.surefold.app.HealthRegistry
+import dev.surefold.app.Module
+import dev.surefold.app.RealSys
+import dev.surefold.app.SurefoldApp
+import dev.surefold.app.Sys
+import dev.surefold.app.boundTo
+import dev.surefold.app.closingOf
+import dev.surefold.app.findings
+import dev.surefold.app.kotlinx.Naming
+import dev.surefold.app.kotlinx.Secret
+import dev.surefold.app.kotlinx.config
+import dev.surefold.app.overriding
+import dev.surefold.app.pekko.actor
+import dev.surefold.app.probe
+import dev.surefold.app.render
+import dev.surefold.app.report
+import dev.surefold.app.runApp
+import dev.surefold.app.single
+import dev.surefold.app.singleOf
+import dev.surefold.app.subgraph
+import dev.surefold.app.testApp
+import dev.surefold.app.validate
 import kotlinx.serialization.Serializable
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.typed.ActorRef
@@ -406,7 +406,7 @@ surefold-app wiring
 ❯ warning: nothing reaches Metrics          Telemetry.kt:9
 ```
 
-Applying the `io.github.matthewjones372.surefold.wiring` Gradle plugin runs this on
+Applying the `dev.surefold.wiring` Gradle plugin runs this on
 every build and draws each graph; see
 [Checking the graph in the build](app.md#checking-the-graph-in-the-build).
 
@@ -512,7 +512,7 @@ dependencies {
 ```kotlin
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import io.github.matthewjones372.surefold.app.typesafe.config
+import dev.surefold.app.typesafe.config
 
 data class DbSettings(val url: String, val poolSize: Int, val idle: kotlin.time.Duration)
 
@@ -562,8 +562,8 @@ A hierarchy of files resolves to one document. `origins()` says which file each
 value came from and what it overrode:
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.typesafe.layeredConfig
-import io.github.matthewjones372.surefold.app.typesafe.origins
+import dev.surefold.app.typesafe.layeredConfig
+import dev.surefold.app.typesafe.origins
 
 layeredConfig().origins().report()
 ```
@@ -595,7 +595,7 @@ the graph beside the `Config` it merges to. `config.origins()` on an already mer
 paths:
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.typesafe.Secrets
+import dev.surefold.app.typesafe.Secrets
 
 config.origins(Secrets.default.and("petshop.db.url")).report()   // jdbc:…//user:pass@host
 ```
@@ -605,7 +605,7 @@ through `toString` and gives its value only to `reveal()`, so a log line or an
 exception message cannot leak it:
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.typesafe.Secret
+import dev.surefold.app.typesafe.Secret
 
 data class Credentials(val url: Secret, val poolSize: Int)
 
@@ -622,10 +622,10 @@ value to it.
 ### Configuration in a test
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.typesafe.configFromResource
-import io.github.matthewjones372.surefold.app.typesafe.configOf
-import io.github.matthewjones372.surefold.app.typesafe.loadedConfig
-import io.github.matthewjones372.surefold.app.typesafe.overridingConfig
+import dev.surefold.app.typesafe.configFromResource
+import dev.surefold.app.typesafe.configOf
+import dev.surefold.app.typesafe.loadedConfig
+import dev.surefold.app.typesafe.overridingConfig
 
 loadedConfig()                              // what the service reads: application.conf and its reference
 configFromResource("test.conf")             // a file beside the test
@@ -654,9 +654,9 @@ provides. Its value is the module Surefold builds into the graph once the settin
 is built.
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.choice
-import io.github.matthewjones372.surefold.app.typesafe.config
-import io.github.matthewjones372.surefold.app.typesafe.loadedConfig
+import dev.surefold.app.choice
+import dev.surefold.app.typesafe.config
+import dev.surefold.app.typesafe.loadedConfig
 
 data class RepoSettings(val useCache: Boolean, val ttl: kotlin.time.Duration)
 
@@ -700,8 +700,8 @@ dependencies {
 ```
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.Migrated
-import io.github.matthewjones372.surefold.app.liquibase.migrations
+import dev.surefold.app.Migrated
+import dev.surefold.app.liquibase.migrations
 
 val database: Module =
     closingOf { cfg: DbConfig -> HikariDataSource(cfg) }.boundTo<DataSource>() +
@@ -782,9 +782,9 @@ node providing `Actors`, a scope that lives as long as the application, and
 `actor` spawns a behaviour in it, keyed by Surefold's own `ActorRef<M>`:
 
 ```kotlin
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.app.actor.actor
-import io.github.matthewjones372.surefold.app.actor.actors
+import dev.surefold.actor.ActorRef
+import dev.surefold.app.actor.actor
+import dev.surefold.app.actor.actors
 
 val tills: Module =
     actors() +

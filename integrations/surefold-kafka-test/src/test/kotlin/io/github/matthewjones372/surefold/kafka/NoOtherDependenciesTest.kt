@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.assert.shouldBeEmpty
-import io.github.matthewjones372.surefold.assert.shouldNotBeEmpty
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBeEmpty
+import dev.surefold.assert.shouldNotBeEmpty
+import dev.surefold.assert.withClue
 import org.junit.jupiter.api.Test
 import java.io.File
 

@@ -1,15 +1,15 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Limit
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.Limit
+import dev.surefold.Resource
+import dev.surefold.Schedule
+import dev.surefold.fail.left
+import dev.surefold.fail.right
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.withClue
 import org.apache.pekko.actor.ActorSystem
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage

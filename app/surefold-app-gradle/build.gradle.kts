@@ -6,13 +6,13 @@ gradlePlugin {
     plugins {
         create("surefoldWiring") {
             id = "dev.surefold.wiring"
-            implementationClass = "io.github.matthewjones372.surefold.app.gradle.SurefoldWiringPlugin"
+            implementationClass = "dev.surefold.app.gradle.SurefoldWiringPlugin"
             displayName = "surefold-app wiring"
             description = "Checks a project's surefold-app graphs as it compiles, and renders each one."
         }
         create("surefoldForks") {
             id = "dev.surefold.compiler"
-            implementationClass = "io.github.matthewjones372.surefold.app.gradle.SurefoldForksPlugin"
+            implementationClass = "dev.surefold.app.gradle.SurefoldForksPlugin"
             displayName = "surefold compiler checks"
             description = "Fails a compile where a Deferred, Channel or Scope outlives the scope that ends it."
         }
@@ -78,7 +78,7 @@ val checkerRepo: Provider<Directory> = rootProject.layout.buildDirectory.dir("re
 tasks.test {
     inputs.files(surefoldAppUnderTest).withPropertyName("surefoldAppUnderTest")
     val reader = rootProject.file(
-        "app/surefold-app-compiler/src/main/kotlin/io/github/matthewjones372/surefold/app/compiler/Reader.kt",
+        "app/surefold-app-compiler/src/main/kotlin/dev/surefold/app/compiler/Reader.kt",
     )
     inputs.file(reader).withPropertyName("reader")
     // Both halves, resolved by a TestKit build the way a consumer's build resolves them. Injecting

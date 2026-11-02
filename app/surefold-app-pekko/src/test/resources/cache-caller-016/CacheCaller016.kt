@@ -1,8 +1,8 @@
 package compatibility.cache016
 
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.cache.Invalidation
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.cache.Cache
+import dev.surefold.cache.Invalidation
+import dev.surefold.fail.right
 import kotlin.time.Duration.Companion.minutes
 
 object CacheCaller016 {

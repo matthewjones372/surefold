@@ -45,10 +45,10 @@ timers and the time-based stream operators.
 
 <!-- testing-clock -->
 ```kotlin
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.fixedClock
-import io.github.matthewjones372.surefold.retry
+import dev.surefold.Schedule
+import dev.surefold.clock
+import dev.surefold.fixedClock
+import dev.surefold.retry
 import kotlin.time.Duration.Companion.seconds
 
 val backoff = Schedule.exponential<Throwable>(1.seconds) and Schedule.recurs(5)
@@ -68,16 +68,16 @@ values:
 
 <!-- testing-capture -->
 ```kotlin
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.capturingLogs
-import io.github.matthewjones372.surefold.capturingMetrics
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.counter
-import io.github.matthewjones372.surefold.fixedClock
-import io.github.matthewjones372.surefold.increment
-import io.github.matthewjones372.surefold.logAnnotated
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.parMap
+import dev.surefold.LogLine
+import dev.surefold.capturingLogs
+import dev.surefold.capturingMetrics
+import dev.surefold.clock
+import dev.surefold.counter
+import dev.surefold.fixedClock
+import dev.surefold.increment
+import dev.surefold.logAnnotated
+import dev.surefold.logInfo
+import dev.surefold.parMap
 
 fun linesLogged(): List<LogLine> = capturingLogs { logs ->
     logAnnotated("correlation_id" to "abc-123") { logInfo("registered") }
@@ -129,8 +129,8 @@ dependencies {
 ```
 
 ```kotlin
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.test.story
+import dev.surefold.assert.shouldBe
+import dev.surefold.test.story
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.seconds
 
@@ -226,13 +226,13 @@ tasks.test { useJUnitPlatform() }
 
 <!-- testing-junit-suite -->
 ```kotlin
-import io.github.matthewjones372.surefold.Limit
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.alone
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Limit
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.alone
+import dev.surefold.junit.expect
+import dev.surefold.logInfo
+import dev.surefold.resource
 import java.util.concurrent.ConcurrentHashMap
 
 // Stands in for the service under test.
@@ -276,11 +276,11 @@ when the test ends.
 
 <!-- testing-junit-resources -->
 ```kotlin
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.resource
-import io.github.matthewjones372.surefold.use
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.resource
+import dev.surefold.use
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -376,12 +376,12 @@ must not also `use` it, or with one permit left it would wait for itself.
 
 <!-- testing-junit-guarded -->
 ```kotlin
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.Guarded
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.junit.Guarded
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.resource
 import java.util.concurrent.ConcurrentHashMap
 
 // Stands in for a database: started once for the whole run, closed after its last suite.
@@ -468,9 +468,9 @@ Kotlin values; a data class keeps each one readable.
 
 <!-- testing-junit-each -->
 ```kotlin
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.tag
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.tag
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -545,16 +545,16 @@ test: it stops the test, which is reported as an error.
 
 <!-- testing-junit-expect -->
 ```kotlin
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.not
-import io.github.matthewjones372.surefold.junit.shouldBeLeft
-import io.github.matthewjones372.surefold.junit.shouldBeRight
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.fail.Either
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.expect
+import dev.surefold.junit.not
+import dev.surefold.junit.shouldBeLeft
+import dev.surefold.junit.shouldBeRight
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldThrow
+import dev.surefold.resource
 
 data class NotFound(val id: String)
 
@@ -609,7 +609,7 @@ plugins {
 
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 powerAssert {
-    functions.add("io.github.matthewjones372.surefold.junit.expect")
+    functions.add("dev.surefold.junit.expect")
     includedSourceSets.add("test")
 }
 ```
@@ -633,11 +633,11 @@ with a `StoryFailed`.
 
 <!-- testing-junit-story -->
 ```kotlin
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.story
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.story
+import dev.surefold.resource
 import java.util.concurrent.ConcurrentHashMap
 
 // Stands in for the service under test.
@@ -703,16 +703,16 @@ to 60 seconds.
 
 <!-- testing-junit-aspects -->
 ```kotlin
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.alone
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.flaky
-import io.github.matthewjones372.surefold.junit.ignore
-import io.github.matthewjones372.surefold.junit.nonFlaky
-import io.github.matthewjones372.surefold.junit.tag
-import io.github.matthewjones372.surefold.junit.timeout
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.alone
+import dev.surefold.junit.expect
+import dev.surefold.junit.flaky
+import dev.surefold.junit.ignore
+import dev.surefold.junit.nonFlaky
+import dev.surefold.junit.tag
+import dev.surefold.junit.timeout
+import dev.surefold.resource
 import kotlin.time.Duration.Companion.seconds
 
 // Stands in for a connection to the service under test.

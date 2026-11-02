@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeRight
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.test.eventually
+import dev.surefold.Resource
+import dev.surefold.fail.left
+import dev.surefold.fail.right
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeRight
+import dev.surefold.junit.shouldThrow
+import dev.surefold.test.eventually
 import org.apache.kafka.clients.admin.AdminClientConfig
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds

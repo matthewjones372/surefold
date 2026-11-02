@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.resource
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.PekkoStreams
 import io.github.matthewjones372.surefold.stream.StreamBackend

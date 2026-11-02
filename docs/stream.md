@@ -66,7 +66,7 @@ backends. `ReadmeExampleSuite` compiles this against all three:
 
 <!-- backend-example -->
 ```kotlin
-import io.github.matthewjones372.surefold.TestClock
+import dev.surefold.TestClock
 import io.github.matthewjones372.surefold.stream.Exit
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.PekkoStreams
@@ -246,8 +246,8 @@ returning. Each element in flight gets a virtual thread of its own, at most
 
 <!-- mappar-example -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.bind
+import dev.surefold.fail.Either
+import dev.surefold.fail.bind
 import io.github.matthewjones372.surefold.stream.Stream
 import io.github.matthewjones372.surefold.stream.from
 import io.github.matthewjones372.surefold.stream.mapParOrFail
@@ -325,7 +325,7 @@ caller of a dependency bounds them all together:
 
 <!-- limit-example -->
 ```kotlin
-import io.github.matthewjones372.surefold.Limit
+import dev.surefold.Limit
 import io.github.matthewjones372.surefold.stream.Stream
 import io.github.matthewjones372.surefold.stream.from
 import io.github.matthewjones372.surefold.stream.mapPar
@@ -653,10 +653,10 @@ The same ingest written both ways, from shared fixtures:
 
 <!-- example-fixtures -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.fold
-import io.github.matthewjones372.surefold.fail.mapLeft
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.fold
+import dev.surefold.fail.mapLeft
 import io.github.matthewjones372.surefold.stream.Stream
 import io.github.matthewjones372.surefold.stream.divertLefts
 import io.github.matthewjones372.surefold.stream.from
@@ -743,8 +743,8 @@ turned back into an `Either` in the handler that started it:
 
 <!-- readme-example -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
 import io.github.matthewjones372.surefold.stream.Stream
 import io.github.matthewjones372.surefold.stream.awaitExit
 import io.github.matthewjones372.surefold.stream.divertLefts

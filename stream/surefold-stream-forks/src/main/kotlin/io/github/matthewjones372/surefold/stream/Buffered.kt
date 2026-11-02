@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.VirtualThreads
+import dev.surefold.VirtualThreads
 
 /** How the stream a buffer holds for ended: marked in the queue after its last element. */
 private sealed interface Ended {

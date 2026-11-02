@@ -3,20 +3,20 @@ package io.github.matthewjones372.surefold.openfeature
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.ask
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.parZip
-import io.github.matthewjones372.surefold.resource
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.Resource
+import dev.surefold.actor.Reply
+import dev.surefold.actor.ask
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldThrow
+import dev.surefold.junit.withClue
+import dev.surefold.parZip
+import dev.surefold.resource
+import dev.surefold.scope
 import kotlin.time.Duration.Companion.minutes
 
 private data class Who(val reply: Reply<Pair<String, Int>>)

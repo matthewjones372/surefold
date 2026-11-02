@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldThrow
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldThrow
 import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.clients.producer.ProducerRecord

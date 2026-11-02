@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeGreaterThan
-import io.github.matthewjones372.surefold.junit.shouldBeLessThanOrEqual
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeGreaterThan
+import dev.surefold.junit.shouldBeLessThanOrEqual
+import dev.surefold.junit.withClue
 import org.apache.pekko.actor.ActorSystem
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger

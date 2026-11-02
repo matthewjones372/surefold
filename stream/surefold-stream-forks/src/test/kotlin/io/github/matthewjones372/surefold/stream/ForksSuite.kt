@@ -1,22 +1,22 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldBeLessThan
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.logger
+import dev.surefold.LogLevel
+import dev.surefold.LogLine
+import dev.surefold.Logger
+import dev.surefold.fail.Either
+import dev.surefold.fail.bind
+import dev.surefold.fail.left
+import dev.surefold.fail.right
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldBeLessThan
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldThrow
+import dev.surefold.junit.withClue
+import dev.surefold.logger
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -468,7 +468,7 @@ object ForksSuite : Suite() {
                     check(!(n == 2 && attempts.incrementAndGet() == 1)) { "first time" }
                     n
                 }
-                .restartOnDefect(io.github.matthewjones372.surefold.Schedule.spaced(50.milliseconds))
+                .restartOnDefect(dev.surefold.Schedule.spaced(50.milliseconds))
                 .collected()
 
             val waited = System.nanoTime() - started

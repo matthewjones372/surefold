@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.ScheduleStep
+import dev.surefold.Clock
+import dev.surefold.LogLevel
+import dev.surefold.LogLine
+import dev.surefold.Logger
+import dev.surefold.Schedule
+import dev.surefold.ScheduleStep
 import org.apache.pekko.NotUsed
 import org.apache.pekko.japi.pf.PFBuilder
 import org.apache.pekko.stream.Graph

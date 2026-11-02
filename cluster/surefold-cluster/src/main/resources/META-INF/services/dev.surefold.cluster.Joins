@@ -1,0 +1,3 @@
+dev.surefold.cluster.StaticJoins
+dev.surefold.cluster.DnsJoins
+dev.surefold.cluster.SrvJoins

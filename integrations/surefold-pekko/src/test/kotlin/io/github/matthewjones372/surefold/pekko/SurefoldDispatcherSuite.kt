@@ -1,15 +1,15 @@
 package io.github.matthewjones372.surefold.pekko
 
 import com.typesafe.config.ConfigFactory
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeSameInstanceAs
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.parZip
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.expect
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeSameInstanceAs
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldThrow
+import dev.surefold.parZip
+import dev.surefold.resource
 import org.apache.pekko.ConfigurationException
 import org.apache.pekko.actor.ActorSystem
 import scala.concurrent.Await

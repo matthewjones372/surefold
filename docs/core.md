@@ -4,7 +4,7 @@
 concurrency on virtual threads, typed errors through Surefold's own `Fail`, resource
 safety, schedules, timeouts and call policies, and the context that forks
 inherit. Everything on this page is in the package
-`io.github.matthewjones372.surefold`.
+`dev.surefold`.
 
 ```kotlin
 dependencies {
@@ -38,13 +38,13 @@ or `fail` with an error, and the first failure becomes the block's `Left`:
 
 <!-- core-forking -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.parMap
-import io.github.matthewjones372.surefold.parZip
-import io.github.matthewjones372.surefold.raceN
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bind
+import dev.surefold.parMap
+import dev.surefold.parZip
+import dev.surefold.raceN
+import dev.surefold.scope
 
 data class Err(val why: String)
 
@@ -139,7 +139,7 @@ still running.
 
 <!-- core-cancel -->
 ```kotlin
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.scope
 
 data class Credit(val hasCredit: Boolean)
 
@@ -189,9 +189,9 @@ These overloads are in the spec 0270 development snapshot, not published 0.17.0.
 
 <!-- core-recover -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.fail.recover
+import dev.surefold.fail.Either
+import dev.surefold.fail.bind
+import dev.surefold.fail.recover
 import java.io.IOException
 
 fun backup(): Either<Throwable, String?> = Either.catch { "backup" }
@@ -207,11 +207,11 @@ fun defaultResponse(result: Either<String, Int>): Either<Nothing, Int> = result.
 
 <!-- core-traverse -->
 ```kotlin
-import io.github.matthewjones372.surefold.Limit
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.fail.traverse
-import io.github.matthewjones372.surefold.parTraverse
+import dev.surefold.Limit
+import dev.surefold.fail.Either
+import dev.surefold.fail.bind
+import dev.surefold.fail.traverse
+import dev.surefold.parTraverse
 
 data class User(val id: Int)
 
@@ -258,13 +258,13 @@ suits validation:
 
 <!-- core-accumulate -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.NonEmptyList
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bindAll
-import io.github.matthewjones372.surefold.fail.ensure
-import io.github.matthewjones372.surefold.mapOrAccumulate
-import io.github.matthewjones372.surefold.zipOrAccumulate
+import dev.surefold.fail.Either
+import dev.surefold.fail.NonEmptyList
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bindAll
+import dev.surefold.fail.ensure
+import dev.surefold.mapOrAccumulate
+import dev.surefold.zipOrAccumulate
 
 data class Form(val name: String, val email: String)
 
@@ -297,11 +297,11 @@ with all of it once the block is over:
 
 <!-- core-accumulate-block -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.NonEmptyList
-import io.github.matthewjones372.surefold.fail.accumulate
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.ensureOrAccumulate
+import dev.surefold.fail.Either
+import dev.surefold.fail.NonEmptyList
+import dev.surefold.fail.accumulate
+import dev.surefold.fail.attempt
+import dev.surefold.fail.ensureOrAccumulate
 
 data class Line(val sku: String, val qty: Int)
 
@@ -325,11 +325,11 @@ I/O; for checks that only compute, the sequential forms avoid the forks.
 
 <!-- core-accumulate-par -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.NonEmptyList
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.parZipOrAccumulate
+import dev.surefold.fail.Either
+import dev.surefold.fail.NonEmptyList
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bind
+import dev.surefold.parZipOrAccumulate
 
 data class Invalid(val field: String)
 
@@ -352,13 +352,13 @@ release is told how the scope ended:
 
 <!-- core-resources -->
 ```kotlin
-import io.github.matthewjones372.surefold.ExitCase
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.resource
-import io.github.matthewjones372.surefold.resourceScope
-import io.github.matthewjones372.surefold.use
+import dev.surefold.ExitCase
+import dev.surefold.Resource
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.resource
+import dev.surefold.resourceScope
+import dev.surefold.use
 
 class Connection {
     fun rows(id: Int): List<String> = listOf("row-$id")
@@ -419,14 +419,14 @@ an interrupt ends the schedule where it is and a test can skip the waiting.
 
 <!-- core-schedule -->
 ```kotlin
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.retry
-import io.github.matthewjones372.surefold.retrying
-import io.github.matthewjones372.surefold.timeout
-import io.github.matthewjones372.surefold.timeoutOrNull
+import dev.surefold.Schedule
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bind
+import dev.surefold.retry
+import dev.surefold.retrying
+import dev.surefold.timeout
+import dev.surefold.timeoutOrNull
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -482,14 +482,14 @@ one value. It is checked when it is built and applied as a whole on every call:
 
 <!-- core-policy -->
 ```kotlin
-import io.github.matthewjones372.surefold.Bulkhead
-import io.github.matthewjones372.surefold.CircuitBreaker
-import io.github.matthewjones372.surefold.RateLimiter
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.guarded
-import io.github.matthewjones372.surefold.policy
+import dev.surefold.Bulkhead
+import dev.surefold.CircuitBreaker
+import dev.surefold.RateLimiter
+import dev.surefold.Schedule
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.guarded
+import dev.surefold.policy
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -592,11 +592,11 @@ half-held:
 
 <!-- core-transact -->
 ```kotlin
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.fail.Fail
-import io.github.matthewjones372.surefold.parMap
-import io.github.matthewjones372.surefold.timeoutOrNull
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.Shared
+import dev.surefold.fail.Fail
+import dev.surefold.parMap
+import dev.surefold.timeoutOrNull
+import dev.surefold.transact
 import kotlin.time.Duration.Companion.seconds
 
 data class SoldOut(val section: String)
@@ -690,9 +690,9 @@ with `afterCommit { }`, it happens once the step has committed, and only then:
 
 <!-- core-after-commit -->
 ```kotlin
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.Shared
+import dev.surefold.logInfo
+import dev.surefold.transact
 
 class Seats(count: Int) {
     private val free = Shared(count)
@@ -752,8 +752,8 @@ steps that try to commit meanwhile wait for it, then carry on.
 
 <!-- core-solo -->
 ```kotlin
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.Shared
+import dev.surefold.transact
 
 val sections = List(1_000) { Shared(120) }
 
@@ -774,8 +774,8 @@ bound again inside the fork, whichever executor the fork runs on.
 
 <!-- core-local -->
 ```kotlin
-import io.github.matthewjones372.surefold.parMap
-import io.github.matthewjones372.surefold.surefoldLocal
+import dev.surefold.parMap
+import dev.surefold.surefoldLocal
 
 val requestId = surefoldLocal { "none" }
 
@@ -826,11 +826,11 @@ pekko.actor.surefold {
 
 <!-- core-pekko -->
 ```kotlin
-import io.github.matthewjones372.surefold.await
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.parZip
+import dev.surefold.await
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bind
+import dev.surefold.parZip
 import io.github.matthewjones372.surefold.pekko.surefoldDispatcher
 import org.apache.pekko.actor.ActorSystem
 import java.util.concurrent.CompletableFuture
@@ -878,7 +878,7 @@ wants one with `surefoldFuture { }`. Both are in `surefold`.
 
 <!-- core-await -->
 ```kotlin
-import io.github.matthewjones372.surefold.await
+import dev.surefold.await
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -902,8 +902,8 @@ A fork cancelled while it waits cancels the future too.
 
 <!-- core-surefold-future -->
 ```kotlin
-import io.github.matthewjones372.surefold.parMap
-import io.github.matthewjones372.surefold.surefoldFuture
+import dev.surefold.parMap
+import dev.surefold.surefoldFuture
 import java.util.concurrent.CompletableFuture
 
 class Profiles(private val find: (Long) -> String?) {
@@ -963,8 +963,8 @@ out first, then fail.
 
 <!-- core-from-coroutines -->
 ```kotlin
-import io.github.matthewjones372.surefold.parZip
-import io.github.matthewjones372.surefold.surefoldFuture
+import dev.surefold.parZip
+import dev.surefold.surefoldFuture
 import kotlinx.coroutines.future.await
 
 class Dashboard(private val users: (Long) -> String, private val orders: (Long) -> List<String>) {
@@ -1008,8 +1008,8 @@ needed by its waiters.
 
 <!-- core-cache-zero -->
 ```kotlin
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.cache.Cache
+import dev.surefold.fail.right
 import kotlin.time.Duration
 
 fun noRetention() {
@@ -1040,12 +1040,12 @@ admission or reserve a slot for every key.
 
 <!-- core-cache-infinite -->
 ```kotlin
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.cache.Invalidation
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.Shared
+import dev.surefold.TestClock
+import dev.surefold.cache.Cache
+import dev.surefold.cache.Invalidation
+import dev.surefold.clock
+import dev.surefold.fail.right
 import java.time.Instant
 import kotlin.time.Duration
 
@@ -1089,11 +1089,11 @@ it is younger than `stale`; that fallback does not retain the new zero result.
 
 <!-- core-cache-finite -->
 ```kotlin
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.Shared
+import dev.surefold.TestClock
+import dev.surefold.cache.Cache
+import dev.surefold.clock
+import dev.surefold.fail.Either
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
@@ -1158,10 +1158,10 @@ must not be the owner releasing the surrounding scope.
 
 <!-- core-cache-release -->
 ```kotlin
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.resourceScope
+import dev.surefold.cache.Cache
+import dev.surefold.fail.Either
+import dev.surefold.fail.right
+import dev.surefold.resourceScope
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest

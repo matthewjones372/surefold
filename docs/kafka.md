@@ -376,8 +376,8 @@ serializers the service already has. A surefold-junit suite shares
 one broker across its tests as a `Resource`:
 
 ```kotlin
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.kafka.KafkaBroker
 import io.github.matthewjones372.surefold.kafka.Topic
 import io.github.matthewjones372.surefold.kafka.kafkaBroker

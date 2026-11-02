@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.otel
 
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.Shared
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.transact
 import io.opentelemetry.api.common.AttributeKey
 
 private const val RETRIES = 3

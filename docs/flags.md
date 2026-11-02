@@ -87,13 +87,13 @@ grant select, insert, update, delete on surefold_feature_flags to app_admin;
 ```kotlin
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.providers.memory.InMemoryProvider
+import dev.surefold.openfeature.postgres.FLAGS_CHANNEL
+import dev.surefold.openfeature.postgres.PostgresFlags
+import dev.surefold.postgres.notify.PostgresNotifications
+import dev.surefold.tenancy.TenantId
+import dev.surefold.tenancy.withTenant
 import io.github.matthewjones372.surefold.openfeature.Flag
-import io.github.matthewjones372.surefold.openfeature.postgres.FLAGS_CHANNEL
-import io.github.matthewjones372.surefold.openfeature.postgres.PostgresFlags
-import io.github.matthewjones372.surefold.postgres.notify.PostgresNotifications
 import io.github.matthewjones372.surefold.stream.Run
-import io.github.matthewjones372.surefold.tenancy.TenantId
-import io.github.matthewjones372.surefold.tenancy.withTenant
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -136,9 +136,9 @@ fun pause(provider: PostgresFlags, admin: DataSource, tenant: TenantId, operator
 <!-- flags-declare -->
 ```kotlin
 import dev.openfeature.sdk.FlagEvaluationDetails
+import dev.surefold.parZip
 import io.github.matthewjones372.surefold.openfeature.Flag
 import io.github.matthewjones372.surefold.openfeature.evaluatedFor
-import io.github.matthewjones372.surefold.parZip
 
 object AdoptionFlags {
     val registryCheck = Flag.boolean("adoption.registry-check", default = true)

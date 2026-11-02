@@ -2,7 +2,7 @@
 
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.await
+import dev.surefold.await
 import org.apache.pekko.actor.ClassicActorSystemProvider
 import org.apache.pekko.stream.Attributes
 import org.apache.pekko.stream.UniqueKillSwitch

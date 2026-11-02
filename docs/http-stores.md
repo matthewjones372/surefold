@@ -17,10 +17,10 @@ HTTP framework: a framework built on Surefold, such as Pelican, puts its own int
 
 <!-- http-stores -->
 ```kotlin
-import io.github.matthewjones372.surefold.ByteChunk
-import io.github.matthewjones372.surefold.ratelimit.Decision
-import io.github.matthewjones372.surefold.ratelimit.RateLimits
-import io.github.matthewjones372.surefold.ratelimit.TokenBucket
+import dev.surefold.ByteChunk
+import dev.surefold.ratelimit.Decision
+import dev.surefold.ratelimit.RateLimits
+import dev.surefold.ratelimit.TokenBucket
 import kotlin.time.Duration.Companion.seconds
 
 /** What an endpoint answers: a status and a body, as an HTTP layer would send them. */

@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.kafka.benchmarks
 
-import io.github.matthewjones372.surefold.capturingMetrics
+import dev.surefold.capturingMetrics
 import io.github.matthewjones372.surefold.kafka.From
 import io.github.matthewjones372.surefold.kafka.Kafka
 import io.github.matthewjones372.surefold.kafka.Topic

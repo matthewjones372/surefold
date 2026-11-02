@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Histogram
-import io.github.matthewjones372.surefold.Metrics
-import io.github.matthewjones372.surefold.NoMetrics
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Histogram
+import dev.surefold.Metrics
+import dev.surefold.NoMetrics
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.DoubleAdder
 import java.util.concurrent.atomic.LongAdder

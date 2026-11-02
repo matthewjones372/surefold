@@ -1,16 +1,16 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldBeLessThan
-import io.github.matthewjones372.surefold.junit.shouldBeSameInstanceAs
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.Resource
+import dev.surefold.fail.Either
+import dev.surefold.fail.bind
+import dev.surefold.fail.left
+import dev.surefold.fail.right
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldBeLessThan
+import dev.surefold.junit.shouldBeSameInstanceAs
+import dev.surefold.junit.withClue
 import org.apache.pekko.stream.javadsl.Sink
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.ConcurrentLinkedQueue

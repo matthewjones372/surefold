@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.assert.shouldContain
-import io.github.matthewjones372.surefold.logger
+import dev.surefold.LogLine
+import dev.surefold.Logger
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeInstanceOf
+import dev.surefold.assert.shouldContain
+import dev.surefold.logger
 import org.apache.pekko.stream.javadsl.Flow
 import org.apache.pekko.stream.javadsl.Sink
 import org.apache.pekko.stream.javadsl.Source

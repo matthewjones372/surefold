@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.ScheduleStep
+import dev.surefold.Clock
+import dev.surefold.Logger
+import dev.surefold.ScheduleStep
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.Executor
 import kotlin.time.Duration
@@ -210,7 +210,7 @@ sealed interface Node {
         override val upstream: Node,
         val parallelism: Int,
         val on: Executor,
-        val f: io.github.matthewjones372.surefold.fail.Fail<Any?>.(Any) -> Any,
+        val f: dev.surefold.fail.Fail<Any?>.(Any) -> Any,
         val at: String,
         /** Null keeps the input's order; otherwise only elements with the same key keep theirs. */
         val key: ((Any) -> Any)? = null,

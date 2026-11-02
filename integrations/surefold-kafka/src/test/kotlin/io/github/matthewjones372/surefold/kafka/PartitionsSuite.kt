@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
 import org.apache.kafka.clients.consumer.ConsumerConfig
 
 object PartitionsSuite : SharedSuite<KafkaBroker>() {

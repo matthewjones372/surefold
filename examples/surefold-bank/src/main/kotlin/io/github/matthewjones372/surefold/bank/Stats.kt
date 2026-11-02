@@ -1,16 +1,16 @@
 package io.github.matthewjones372.surefold.bank
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Histogram
-import io.github.matthewjones372.surefold.Metrics
-import io.github.matthewjones372.surefold.actor.Topic
-import io.github.matthewjones372.surefold.actor.become
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.onStart
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.WireIn
-import io.github.matthewjones372.surefold.actor.remote.WireOut
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Histogram
+import dev.surefold.Metrics
+import dev.surefold.actor.Topic
+import dev.surefold.actor.become
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.onStart
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import java.time.Instant
