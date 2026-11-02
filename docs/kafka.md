@@ -93,9 +93,9 @@ that drains. Pekko runs it and nothing else does, and it ends on
 ```kotlin
 dependencies {
     // Any backend: surefold-stream and kafka-clients come with it, and the backend is the service's own choice.
-    implementation("io.github.matthewjones372:surefold-kafka:0.17.0")
+    implementation("dev.surefold:surefold-kafka:0.17.0")
     // Or Pekko's connector: surefold-kafka, surefold-stream-pekko and pekko-connectors-kafka come with it.
-    implementation("io.github.matthewjones372:surefold-kafka-pekko:0.17.0")
+    implementation("dev.surefold:surefold-kafka-pekko:0.17.0")
 }
 ```
 

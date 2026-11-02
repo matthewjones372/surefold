@@ -2,7 +2,7 @@
 
 Unreleased (specs [0260](../specs/0260-explicit-kms-operations.md) and
 [0261](../specs/0261-aws-explicit-kms-operations.md)). Build the coordinated commit locally;
-`io.github.matthewjones372:surefold-tenancy-crypto-aws:0.17.1-SNAPSHOT` is the current snapshot coordinate,
+`dev.surefold:surefold-tenancy-crypto-aws:0.17.1-SNAPSHOT` is the current snapshot coordinate,
 not evidence that a stable version contains these APIs. Existing `Kms` and `AwsKms` remain unchanged.
 
 Construct `AwsKeyOperations(clients, creationClients, preferredDataRegion)` and use it as `KeyOperations`.
