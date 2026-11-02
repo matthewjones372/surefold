@@ -48,7 +48,7 @@ class SurefoldWiringPluginTest {
             """
             plugins {
                 kotlin("jvm") version "2.4.10"
-                id("io.github.matthewjones372.surefold.wiring") version "$version"
+                id("dev.surefold.wiring") version "$version"
             }
 
             // Where the compiler plugin comes from; the Kotlin plugin resolves it by coordinates.

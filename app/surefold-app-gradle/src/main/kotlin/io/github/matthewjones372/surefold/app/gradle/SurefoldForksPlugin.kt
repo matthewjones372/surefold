@@ -28,7 +28,7 @@ class SurefoldForksPlugin : KotlinCompilerPluginSupportPlugin {
         kotlinCompilation.target.project.provider { emptyList() }
 
     private companion object {
-        const val PLUGIN_ID = "io.github.matthewjones372.surefold.compiler"
+        const val PLUGIN_ID = "dev.surefold.compiler"
 
         /** Written into this jar by its own build, so the coordinates cannot drift from the release. */
         private val coordinates: Properties by lazy {

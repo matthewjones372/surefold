@@ -18,7 +18,7 @@ import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrar
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrarAdapter
 
 /** What the plugin is called wherever the compiler names one: the CLI, and the Gradle plugin. */
-const val PLUGIN_ID: String = "io.github.matthewjones372.surefold.compiler"
+const val PLUGIN_ID: String = "dev.surefold.compiler"
 
 /** The plugin takes no options; the compiler still asks a plugin it loads by id for a processor. */
 @OptIn(ExperimentalCompilerApi::class)
