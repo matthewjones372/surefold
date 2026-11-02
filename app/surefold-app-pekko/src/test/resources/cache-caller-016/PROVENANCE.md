@@ -24,7 +24,7 @@ Only the nested fixture directory enters the child loader; old Surefold JARs are
 Exercises default constructor bridge, finite get/Right, stats/loads before refresh, refresh, Key/All invalidation, Kotlin use and AutoCloseable.close.
 No post-refresh timing assertion, reentrant layer, retention extreme, interruption, awaited release or all-API compatibility is claimed.
 
-Retired at 0.18.0 (spec 0277): the package moved from `dev.surefold` to `dev.surefold`, so bytecode
+Retired at 0.18.0 (spec 0277): the package moved from `io.github.matthewjones372.surefold` to `dev.surefold`, so bytecode
 compiled against 0.16.0 cannot link to current classes. The bytecode fixture and the test that ran it were removed;
 `CacheCaller016.kt` remains, with its imports moved to `dev.surefold`, and the tests still compile and run it against the
 current classes. The SHA-256 values above describe the files as they were generated, before that change.
