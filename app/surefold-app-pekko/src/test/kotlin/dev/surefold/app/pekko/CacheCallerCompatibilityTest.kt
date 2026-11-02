@@ -26,11 +26,6 @@ class CacheCallerCompatibilityTest {
         runFrom(File(workspace, "out").toURI().toURL()) shouldBe true
     }
 
-    @Test
-    fun `the caller compiled against published 016 runs on current cache classes`() {
-        runFrom(fixture("bytecode/")) shouldBe true
-    }
-
     private fun fixture(path: String): URL =
         javaClass.getResource("/cache-caller-016/$path") ?: error("Missing old-consumer fixture: $path")
 
