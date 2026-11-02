@@ -30,7 +30,7 @@ object CallSiteSuite : Suite() {
 
                 withClue("the package is there to resolve a link, not for a person to read past") {
                     report shouldContain "CallSiteSuite.kt:"
-                    report shouldNotContain "io/github/matthewjones372"
+                    report shouldNotContain "dev/surefold"
                 }
             }
         }

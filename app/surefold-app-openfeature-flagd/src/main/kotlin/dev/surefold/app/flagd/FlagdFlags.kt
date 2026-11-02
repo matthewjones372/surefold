@@ -13,7 +13,7 @@ import dev.openfeature.contrib.tools.flagd.core.model.FlagParser
 import dev.openfeature.sdk.Value
 import dev.surefold.app.Module
 import dev.surefold.app.openfeature.openFeature
-import io.github.matthewjones372.surefold.openfeature.Flag
+import dev.surefold.openfeature.Flag
 import java.math.BigInteger
 import java.util.concurrent.BlockingQueue
 import java.util.concurrent.LinkedBlockingQueue

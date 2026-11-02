@@ -11,7 +11,7 @@ dependencies {
 // The suite asks each backend which operators it runs, which is the node tree the opt-in covers.
 kotlin {
     compilerOptions {
-        optIn.add("io.github.matthewjones372.surefold.stream.StreamSpi")
+        optIn.add("dev.surefold.stream.StreamSpi")
     }
 }
 

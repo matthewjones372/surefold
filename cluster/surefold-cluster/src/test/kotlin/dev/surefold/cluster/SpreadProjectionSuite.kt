@@ -18,8 +18,8 @@ import dev.surefold.junit.shouldBeLessThanOrEqual
 import dev.surefold.junit.shouldContainAll
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.start
+import dev.surefold.stream.Forks
+import dev.surefold.stream.start
 import java.net.ServerSocket
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue

@@ -36,6 +36,6 @@ tasks.test {
 // The node tree is this module's own, so it opts in to the annotation it puts on it everywhere.
 kotlin {
     compilerOptions {
-        optIn.add("io.github.matthewjones372.surefold.stream.StreamSpi")
+        optIn.add("dev.surefold.stream.StreamSpi")
     }
 }

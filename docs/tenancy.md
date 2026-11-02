@@ -6,8 +6,8 @@ before it reaches the database. Work that must cross tenants takes a separate, a
 
 ```kotlin
 dependencies {
-    implementation("io.github.matthewjones372:surefold-tenancy:0.17.0")
-    testImplementation("io.github.matthewjones372:surefold-tenancy-test:0.17.0")
+    implementation("dev.surefold:surefold-tenancy:0.17.0")
+    testImplementation("dev.surefold:surefold-tenancy-test:0.17.0")
 }
 ```
 

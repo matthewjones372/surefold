@@ -14,8 +14,8 @@ import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldContainExactlyInAnyOrder
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.start
+import dev.surefold.stream.Forks
+import dev.surefold.stream.start
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch

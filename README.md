@@ -1,7 +1,7 @@
 # Surefold
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.matthewjones372/surefold?label=maven%20central)](https://central.sonatype.com/artifact/io.github.matthewjones372/surefold)
-[![Build](https://github.com/matthewjones372/lark/actions/workflows/build.yml/badge.svg)](https://github.com/matthewjones372/lark/actions/workflows/build.yml)
+[![Maven Central](https://img.shields.io/maven-central/v/dev.surefold/surefold?label=maven%20central)](https://central.sonatype.com/artifact/dev.surefold/surefold)
+[![Build](https://github.com/surefold/surefold/actions/workflows/build.yml/badge.svg)](https://github.com/surefold/surefold/actions/workflows/build.yml)
 [![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20enforced-brightgreen)](AGENTS.md#verifying)
 [![Kotlin](https://img.shields.io/badge/kotlin-2.4.10-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![JDK](https://img.shields.io/badge/jdk-25%2B-brightgreen)](https://openjdk.org/projects/jdk/25/)
@@ -25,6 +25,12 @@ changes between releases. See [Status](#status).
 Surefold was published as Lark up to 0.11.0, under `io.github.matthewjones372:lark*` and the
 package `io.github.matthewjones372.lark`. Moving over is a rename: `lark` becomes `surefold` in
 every artifact, package, plugin id and configuration key.
+
+From 0.18.0 the group is `dev.surefold` and the packages are `dev.surefold.*`; up to 0.17.0 they were
+`io.github.matthewjones372` and `io.github.matthewjones372.surefold.*`. Moving over is a rename of each import's prefix,
+the dependency group, and the plugin ids, which become `dev.surefold.wiring` and `dev.surefold.compiler`. The old
+coordinates relocate to the new ones at 0.18.0. It is a source change only in the names, but not a binary one: code
+compiled against 0.17.0 or earlier names the old packages and has to be recompiled.
 
 [Explicit AWS KMS operations](docs/kms-operations.md) covers regional clients and the unreleased adapter.
 
@@ -169,7 +175,7 @@ coroutine dispatcher.
 Each module sits in its family's folder: `core/`, `stream/`, `actor/`, `cluster/`, `app/`,
 `integrations/`, with the benchmarks in `bench/` and an example service in `examples/`.
 
-The main modules, all under the group `io.github.matthewjones372`. The
+The main modules, all under the group `dev.surefold`. The
 [module guide](docs/modules.md) lists every module, what each one adds to
 your classpath, and which are unpublished.
 
@@ -230,7 +236,7 @@ kotlin { jvmToolchain(25) }
 
 dependencies {
     // brings nothing but the Kotlin standard library
-    implementation("io.github.matthewjones372:surefold:0.17.0")
+    implementation("dev.surefold:surefold:0.17.0")
 }
 ```
 
@@ -283,7 +289,7 @@ than 200.
 
 Every published module uses the same group and version, so adding another is
 one more line, for example
-`implementation("io.github.matthewjones372:surefold-app:0.17.0")`. The
+`implementation("dev.surefold:surefold-app:0.17.0")`. The
 [module guide](docs/modules.md) has the coordinates, what each module brings,
 and how to use a snapshot or a local build.
 
@@ -327,7 +333,7 @@ read the results unchanged.
 ```kotlin
 // build.gradle.kts
 dependencies {
-    testImplementation("io.github.matthewjones372:surefold-junit:0.17.0")
+    testImplementation("dev.surefold:surefold-junit:0.17.0")
 }
 
 tasks.test { useJUnitPlatform() }
@@ -426,7 +432,7 @@ ships and which call to use for a task. In Claude Code, the Surefold plugin load
 the same guidance whenever code uses Surefold:
 
 ```
-/plugin marketplace add matthewjones372/lark
+/plugin marketplace add surefold/surefold
 /plugin install surefold@surefold
 ```
 

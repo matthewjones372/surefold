@@ -11,8 +11,8 @@ import dev.surefold.actor.persistent
 import dev.surefold.actor.testActors
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.stream.Forks
-import io.github.matthewjones372.surefold.stream.start
+import dev.surefold.stream.Forks
+import dev.surefold.stream.start
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger

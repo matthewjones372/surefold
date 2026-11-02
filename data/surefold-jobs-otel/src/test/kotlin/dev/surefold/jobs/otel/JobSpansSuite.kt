@@ -11,9 +11,9 @@ import dev.surefold.jobs.JobWorker
 import dev.surefold.jobs.Jobs
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
+import dev.surefold.otel.Spans
+import dev.surefold.otel.span
 import dev.surefold.test.eventually
-import io.github.matthewjones372.surefold.otel.Spans
-import io.github.matthewjones372.surefold.otel.span
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanKind
 import io.opentelemetry.api.trace.StatusCode

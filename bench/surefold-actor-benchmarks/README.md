@@ -1,7 +1,7 @@
 # surefold-actor-benchmarks
 
 What `surefold-actor` costs, measured by JMH against the same actors written by hand on Pekko Typed. Each actor
-is written once per runtime doing the same work, in [`Actors.kt`](src/main/kotlin/io/github/matthewjones372/surefold/actor/benchmarks/Actors.kt).
+is written once per runtime doing the same work, in [`Actors.kt`](src/main/kotlin/dev/surefold/actor/benchmarks/Actors.kt).
 This is the baseline spec [0059](../../specs/0059-an-actor-without-an-actor-system.md) asked for.
 
 ```bash

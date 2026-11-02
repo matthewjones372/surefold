@@ -1,6 +1,6 @@
 ---
 name: surefold
-description: Use whenever code depends on surefold (io.github.matthewjones372:surefold* in a build file, or an dev.surefold import) before writing a scheduler, a background job, a retry or backoff, a circuit breaker, a test wait, a config read, a secret, a resource's close, a database migration, a SurefoldApp's run, logging, metrics or tracing. surefold already ships each of these; this says which call to use instead of writing it again.
+description: Use whenever code depends on surefold (dev.surefold:surefold* in a build file, or a dev.surefold import) before writing a scheduler, a background job, a retry or backoff, a circuit breaker, a test wait, a config read, a secret, a resource's close, a database migration, a SurefoldApp's run, logging, metrics or tracing. surefold already ships each of these; this says which call to use instead of writing it again.
 ---
 
 # surefold
@@ -44,7 +44,7 @@ suppressing one, unless the call really means it.
 
 ## Modules
 
-All on Maven Central as `io.github.matthewjones372:<module>`, on one version.
+All on Maven Central as `dev.surefold:<module>`, on one version.
 
 - `surefold`: forks, resources, `Schedule`, `timeout`, `policy`, `Clock`, `TestClock`, logs and metrics, `capturingLogs`, `capturingMetrics`, `logger.unbound()` for what `main` reads.
 - `surefold-replay`: `explore` and `replay`, a test's forks in seeded orders.
@@ -115,7 +115,7 @@ All on Maven Central as `io.github.matthewjones372:<module>`, on one version.
 
 ## More
 
-`llms.txt` at https://github.com/matthewjones372/lark/blob/main/llms.txt has the
+`llms.txt` at https://github.com/surefold/surefold/blob/main/llms.txt has the
 facts, the full table and links to every guide; `docs/cookbook.md` has one
 recipe per application task, and `docs/core.md` covers retries, timeouts and
 policies.

@@ -13,7 +13,7 @@
 - Modify `integrations/surefold-otel/build.gradle.kts`: API version only.
 - Modify `integrations/surefold-otel-test/build.gradle.kts`: matching SDK version only.
 - Modify `docs/modules.md`: published dependency versions.
-- Modify `integrations/surefold-otel/src/main/kotlin/io/github/matthewjones372/surefold/otel/TraceCarrier.kt`: remove the deprecated `keys` override; the released getter now defaults it and recommends reading known fields through `get`.
+- Modify `integrations/surefold-otel/src/main/kotlin/dev/surefold/otel/TraceCarrier.kt`: remove the deprecated `keys` override; the released getter now defaults it and recommends reading known fields through `get`.
 - Reuse existing tests in both integrations and `data/surefold-jobs-otel`; no new behaviour or version-mirroring test.
 - Record validation in `docs/reviews/0266-otel-alignment.md`.
 

@@ -23,6 +23,6 @@ tasks.test {
 // A backend answers to the SPI's key and runs, which is what the opt-in is for.
 kotlin {
     compilerOptions {
-        optIn.add("io.github.matthewjones372.surefold.stream.StreamSpi")
+        optIn.add("dev.surefold.stream.StreamSpi")
     }
 }

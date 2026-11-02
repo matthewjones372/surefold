@@ -1,7 +1,7 @@
 [
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ComparisonBenchmarks.kafkaClients",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ComparisonBenchmarks.kafkaClients",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 5,
@@ -443,7 +443,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ComparisonBenchmarks.kafkaClientsCommitting",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ComparisonBenchmarks.kafkaClientsCommitting",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 5,
@@ -883,7 +883,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ComparisonBenchmarks.kafkaClientsFreshConsumer",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ComparisonBenchmarks.kafkaClientsFreshConsumer",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 5,
@@ -1314,7 +1314,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ComparisonBenchmarks.surefoldForks",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ComparisonBenchmarks.surefoldForks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 5,
@@ -1759,7 +1759,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ComparisonBenchmarks.surefoldPekko",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ComparisonBenchmarks.surefoldPekko",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 5,
@@ -2205,7 +2205,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ComparisonBenchmarks.surefoldPekkoConnector",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ComparisonBenchmarks.surefoldPekkoConnector",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 5,
@@ -2644,7 +2644,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ComparisonBenchmarks.manualKafkaClients",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ComparisonBenchmarks.manualKafkaClients",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 5,
@@ -3084,7 +3084,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ComparisonBenchmarks.manualSurefoldForks",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ComparisonBenchmarks.manualSurefoldForks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 5,

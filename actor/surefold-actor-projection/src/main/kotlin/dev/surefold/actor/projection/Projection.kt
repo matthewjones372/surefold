@@ -16,13 +16,13 @@ import dev.surefold.actor.onSignal
 import dev.surefold.actor.onStart
 import dev.surefold.actor.stay
 import dev.surefold.clock
-import io.github.matthewjones372.surefold.stream.Failing
-import io.github.matthewjones372.surefold.stream.Run
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.blocking
-import io.github.matthewjones372.surefold.stream.map
-import io.github.matthewjones372.surefold.stream.mapOrFail
-import io.github.matthewjones372.surefold.stream.runFold
+import dev.surefold.stream.Failing
+import dev.surefold.stream.Run
+import dev.surefold.stream.Stream
+import dev.surefold.stream.blocking
+import dev.surefold.stream.map
+import dev.surefold.stream.mapOrFail
+import dev.surefold.stream.runFold
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
