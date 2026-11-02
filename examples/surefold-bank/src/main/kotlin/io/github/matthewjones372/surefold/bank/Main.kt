@@ -16,8 +16,12 @@ internal val nodes = listOf(Triple("n1", 25521, 8081), Triple("n2", 25522, 8082)
  * `surefold-bank` runs the three nodes in this JVM, with the journal in memory. `--jdbc URL` keeps the journal in the
  * Postgres database at URL instead, and `--node n2` runs only that node, for a process of its own: separate
  * processes share one journal, so it needs `--jdbc`. The nodes run until the JVM is stopped.
+ *
+ * `--train` is the run an AOT cache is made from instead (spec 0278): it starts the bank, moves money through it,
+ * and returns once everything is closed.
  */
 fun main(args: Array<String>) {
+    if (args.toList() == listOf("--train")) return train(TRAINING_TRANSFERS)
     require(args.size % 2 == 0) { "usage: surefold-bank [--node n1|n2|n3] [--jdbc URL]" }
     val options = args.toList().chunked(2).associate { it[0] to it[1] }
     val jdbc = options["--jdbc"]
@@ -56,4 +60,5 @@ fun main(args: Array<String>) {
         node.members.await(1.minutes) { seen -> seen.up.any { it.node.name == node.name } }
         logInfo("${node.name} is up: http://localhost:${api.port}")
     }
+    logReady()
 }
