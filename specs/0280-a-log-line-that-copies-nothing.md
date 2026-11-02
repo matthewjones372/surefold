@@ -69,6 +69,8 @@ finished tests. Not recommended.
 
 ## Open questions
 
+Answered 2026-11-02, when the maintainer said "implement spec 0280": each taken as recommended.
+
 1. **May `LogLine.annotations` be the bound map itself, not a copy?** The map is never written
    after it is made. A backend that casts it to `MutableMap` and writes to it would change what
    later lines see. Recommended: yes, and say in `LogLine`'s KDoc that the map is read-only.
