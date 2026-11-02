@@ -1,7 +1,7 @@
 [
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.BlockingBenchmark.surefold",
+        "benchmark" : "dev.surefold.actor.benchmarks.BlockingBenchmark.surefold",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -211,7 +211,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.BlockingBenchmark.pekkoBlocking",
+        "benchmark" : "dev.surefold.actor.benchmarks.BlockingBenchmark.pekkoBlocking",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -391,7 +391,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.BlockingBenchmark.pekkoDefault",
+        "benchmark" : "dev.surefold.actor.benchmarks.BlockingBenchmark.pekkoDefault",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -571,7 +571,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.TellBenchmark.surefoldManyToOne",
+        "benchmark" : "dev.surefold.actor.benchmarks.TellBenchmark.surefoldManyToOne",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -788,7 +788,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.TellBenchmark.surefoldOneToOne",
+        "benchmark" : "dev.surefold.actor.benchmarks.TellBenchmark.surefoldOneToOne",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1005,7 +1005,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.TellBenchmark.pekkoManyToOne",
+        "benchmark" : "dev.surefold.actor.benchmarks.TellBenchmark.pekkoManyToOne",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1222,7 +1222,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.TellBenchmark.pekkoOneToOne",
+        "benchmark" : "dev.surefold.actor.benchmarks.TellBenchmark.pekkoOneToOne",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1439,7 +1439,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.PingPongBenchmark.surefold",
+        "benchmark" : "dev.surefold.actor.benchmarks.PingPongBenchmark.surefold",
         "mode" : "sample",
         "threads" : 1,
         "forks" : 2,
@@ -6332,7 +6332,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.PingPongBenchmark.pekko",
+        "benchmark" : "dev.surefold.actor.benchmarks.PingPongBenchmark.pekko",
         "mode" : "sample",
         "threads" : 1,
         "forks" : 2,

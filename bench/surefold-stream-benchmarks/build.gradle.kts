@@ -202,7 +202,7 @@ fun compared(name: String, rounds: List<Pair<Score?, Score?>>, tolerance: Double
 tasks.register<JavaExec>("profiles") {
     group = "verification"
     description = "Draws each benchmark's pipeline with its profile, as Mermaid and as text"
-    mainClass.set("io.github.matthewjones372.surefold.stream.benchmarks.ProfilesKt")
+    mainClass.set("dev.surefold.stream.benchmarks.ProfilesKt")
     classpath(benchmarkRuntimeClasspath)
     javaLauncher.set(toolchainLauncher)
     val out = layout.buildDirectory.dir("profiles")

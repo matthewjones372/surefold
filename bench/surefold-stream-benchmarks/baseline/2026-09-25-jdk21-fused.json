@@ -1,7 +1,7 @@
 [
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.ChainBenchmark.forks",
+        "benchmark" : "dev.surefold.stream.benchmarks.ChainBenchmark.forks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -218,7 +218,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.ChainBenchmark.surefold",
+        "benchmark" : "dev.surefold.stream.benchmarks.ChainBenchmark.surefold",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -435,7 +435,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.ChainBenchmark.pekko",
+        "benchmark" : "dev.surefold.stream.benchmarks.ChainBenchmark.pekko",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -652,7 +652,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.GroupedWithinBenchmark.surefold",
+        "benchmark" : "dev.surefold.stream.benchmarks.GroupedWithinBenchmark.surefold",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -869,7 +869,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.MapParBenchmark.surefold",
+        "benchmark" : "dev.surefold.stream.benchmarks.MapParBenchmark.surefold",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1086,7 +1086,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.RunManyBenchmark.describedEachTime",
+        "benchmark" : "dev.surefold.stream.benchmarks.RunManyBenchmark.describedEachTime",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1303,7 +1303,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.RunManyBenchmark.describedOnce",
+        "benchmark" : "dev.surefold.stream.benchmarks.RunManyBenchmark.describedOnce",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1520,7 +1520,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.RunManyBenchmark.describedOnceForks",
+        "benchmark" : "dev.surefold.stream.benchmarks.RunManyBenchmark.describedOnceForks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
