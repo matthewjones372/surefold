@@ -36,5 +36,5 @@ private fun directoryOf(className: String): String =
 internal fun shortly(site: String): String = site.substringAfterLast('/')
 
 private fun surefoldFactory(className: String): Boolean =
-    className.startsWith("dev.surefold.") &&
+    className.startsWith("io.github.matthewjones372.surefold.") &&
         className.substringAfterLast('.').endsWith("Kt")
