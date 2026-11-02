@@ -202,7 +202,7 @@ named methods with no code change, which answers "how often, and how long?"
 about one call a profile only shows a share of:
 
 ```bash
-java '-XX:StartFlightRecording:filename=app.jfr,method-timing=io.github.matthewjones372.surefold.TransactKt::transact' ...
+java '-XX:StartFlightRecording:filename=app.jfr,method-timing=dev.surefold.TransactKt::transact' ...
 jfr view method-timing app.jfr
 ```
 
