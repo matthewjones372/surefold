@@ -53,13 +53,14 @@ object Carriers {
 /** `logAnnotated`'s annotations, under a prefix of their own so a trace's keys never meet them. */
 internal class AnnotationCarrier : Carrier {
     override fun capture(): Map<String, String> {
-        val held = annotations.get()
+        val held = boundAnnotations()
         return if (held.isEmpty()) emptyMap() else held.mapKeys { (key, _) -> PREFIX + key }
     }
 
     override fun <A> within(carried: Map<String, String>, block: () -> A): A {
         val sent = carried.filterKeys { it.startsWith(PREFIX) }.mapKeys { (key, _) -> key.removePrefix(PREFIX) }
-        return if (sent.isEmpty()) block() else annotations.locally(sent, block)
+        // What was sent replaces what was bound here rather than adding to it, so the link has nothing outside it.
+        return if (sent.isEmpty()) block() else annotations.locally(Annotated(emptyArray(), null, sent), block)
     }
 
     private companion object {

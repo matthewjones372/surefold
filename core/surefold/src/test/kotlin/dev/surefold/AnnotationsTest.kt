@@ -1,6 +1,7 @@
 package dev.surefold
 
 import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeSameInstanceAs
 import dev.surefold.assert.shouldContainExactly
 import dev.surefold.assert.shouldHaveSize
 import org.junit.jupiter.api.Test
@@ -77,5 +78,34 @@ class AnnotationsTest {
         }
 
         outer.map { it.message } shouldBe listOf("mine")
+    }
+
+    @Test
+    fun `an inner pair with an outer key keeps the outer key's place and takes the inner value`() {
+        val lines = capturingLogs { logs ->
+            logAnnotated("tenant" to "acme", "request_id" to "r-1") {
+                logAnnotated("tenant" to "globex", "step" to "pay") { logInfo("paid") }
+            }
+            logs.all()
+        }
+
+        lines.single().annotations.toList() shouldBe
+            listOf("tenant" to "globex", "request_id" to "r-1", "step" to "pay")
+    }
+
+    @Test
+    fun `the lines of one block, and its forks, share one map built once`() {
+        val lines = capturingLogs { logs ->
+            logAnnotated("request_id" to "r-1") {
+                logInfo("first")
+                logInfo("second")
+                parMap(listOf(1)) { logInfo("forked") }
+            }
+            logs.all()
+        }
+
+        val (first, second, forked) = lines.map { it.annotations }
+        second shouldBeSameInstanceAs first
+        forked shouldBeSameInstanceAs first
     }
 }
