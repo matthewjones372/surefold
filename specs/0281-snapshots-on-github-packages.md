@@ -3,9 +3,8 @@
 ## Problem
 
 surefold, pelican, kotlin-golden-testing and proofload publish snapshots to Central's snapshot repository from a
-`snapshot.yml` dispatched by hand; kimney publishes none. Central drops a snapshot after 90 days, so the snapshots
-doorlist pins in its handoffs (`1.2.1-native-decoration-7e6d6124-SNAPSHOT`, `0.17.1-kms-s2-c6d5465d-SNAPSHOT`) stop
-resolving within a quarter, and whether snapshots count against the Portal's monthly limits is unknown, which is why
+`snapshot.yml` dispatched by hand; kimney publishes none. Central drops a snapshot after 90 days, so a snapshot a
+private service pins in a handoff stops resolving within a quarter, and whether snapshots count against the Portal's monthly limits is unknown, which is why
 nothing publishes one automatically. The libraries now live in the `surefold` organisation, which has a registry of
 its own. Releases stay on Central: this is only about snapshots.
 
@@ -14,7 +13,7 @@ its own. Releases stay on Central: this is only about snapshots.
 - Not moving releases, signing or the Central namespace (`dev.surefold`).
 - Not changing how a snapshot version is named (`<next>-SNAPSHOT`, or a branch's `<next>-<label>-SNAPSHOT`).
 - Not deleting snapshots already on Central; they expire on their own.
-- Not migrating doorlist in this spec: it changes its repositories after its merge pause, in its own change.
+- Not migrating the private services that read snapshots: each changes its repositories in its own change.
 
 ## Shape
 
