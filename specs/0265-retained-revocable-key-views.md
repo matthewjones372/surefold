@@ -1,7 +1,8 @@
 # 0265 — Retained keys with revocable owned views
 
-Approved ownership/terminal/ledger/groups contracts are on main, unreleased; public cache delivery remains unimplemented.
-Checked main e47c38be: early-close PR977 and own-main41269590958 passed. Retention/release/adoption remain incomplete.
+Internal ownership/terminal/ledger/groups/B2 delivery are on main, unreleased; public cache delivery remains unimplemented.
+B2 PR979 headfa41c4d89f57fc77afadffa3879727fbf118b9a5 merged91040b935a7ae84b7be9c6c89e5e268cb3b48899;
+own-main41281917030 succeeded at that merge. R4/retention/public release/adoption remain incomplete.
 
 ## Problem
 
@@ -126,8 +127,9 @@ Internal KeyCacheLedger.Delivery has Copy(key:DataKey) and View(view:KeyView).
 deliver(key:LoadKey,capturedClock:Clock,deadline:Instant,flights:SingleFlight<Any,KeyError,Unit>,
 load:()->Either<KeyError,DataKey>):Either<KeyError,Delivery> alone encloses enrol.use AND ALL receipt/loader/drain
 cleanup. SingleFlight is keyed by receipt.group, never a reusable load key; no unsafe handoff method escapes.
-Its outer Resource owns abort before acquisition. After normal inner return only, mark Delivered as the final effect and return the prebuilt value;
-its outer release only peeks/no-ops. Any earlier defect/cancellation marks Abort first, then attempts fallible cleanup.
+B2's outer Resource owns abort before acquisition; delivered source marks Delivered after normal inner return.
+R4 below moves that publication beyond ALL owned Resource/binding unwind. Earlier defect/cancellation marks Abort
+first, then attempts exact cleanup. No implemented R4 caller join is inferred from B2's existing outer release.
 Keep original Throwable identity and distinct suppressed cleanup; CancellationException is not inferred from ExitCase.
 Typed Left never disarms abort as a successful delivery. No post-Delivered fallible bookkeeping is permitted.
 
@@ -135,15 +137,122 @@ Bounded drain snapshots rows/pending intents ONCE. Preparing skips; Delivered re
 its exact cap/token atomically to pending and removes the row: that token is always owned in row OR pending.
 Precommit transfer failure retains the row; postcommit throw retains pending. Action precedes exact-token Ack;
 committed Ack never resurrects/replays, including after a metric throw. If transfer AND direct exact-close both fail
-before commit, the Abort row survives for later drain. Every snapshot action is tried once despite errors; new work
-waits for next drain. Idempotent fallback may repeat only its own close, never another handle's. Delivered never
+before commit, the Abort row survives for later drain. Ordinary drain tries every snapshot action once despite errors;
+R4 close alone has the exact-phase interruption retry exception below. New work waits for next drain. Idempotent fallback may repeat only its own close, never another handle's. Delivered never
 runs abort, even if metadata reap fails. Ordinary source revoke/expiry is separate; legacy copies stay unrevocable.
 Active/failed obligations retain records; no finite-memory promise under infinite faults/unbounded admissions.
 
-This marker does NOT solve accepted-caller join. BEFORE joined-release/R4 source, a separate concrete reviewed
-contract must track every accepted caller boundary (including enrolled callers before capability registration),
-fence admission, reject direct/indirect self-close before fencing, preserve interruption and complete all owed
-cleanup. SingleFlight joins its workers only. No await/latch/wakeup/polling design or caller-thread join is credited.
+## R4 accepted-caller boundary (spec-only; no implementation credit)
+
+This amendment promotes independently Top-reviewed Doorlist proposal26595fcbd. Exact-spec review/main and a separate
+reviewed committed source plan precede source. SingleFlight joins workers, not accepted callers;0269 has no wake API.
+Call proposed0273 checkNotInTransaction before admission/close. No ownership effect runs inside ambient transactions.
+One private Shared per owner holds open/closed plus exact preallocated tickets, each with HandoffDecision<Unit> Finished.
+Atomic ticket registration while open is acceptance, BEFORE enrolment, hits, capability registration or using entry.
+A thrown admission reconciles exact identity through committed state.peek(); postcommit throw still owns its ticket.
+Precommit refusal runs no body; outer plain finally publishes Finished even if acquisition failed. Retryable callbacks
+contain no effects, binding changes, cleanup or quiet-marker operations. Observe Finished outside Shared and remove
+only those exact observed terminal identities in later admission/drain/close; never remove a pending ticket.
+The owner identity covers admission and its observers/reconciliation, body and resource cleanup, and every outer
+abort attempt. No fallible owner cleanup runs with that identity absent. Every binding restoration precedes Finished;
+only quiet terminal publication and plain return/rethrow follow. Direct/inherited indirect self-close throws fixed
+IllegalStateException("a key cache caller cannot close its owner") BEFORE fencing, even if already closed.
+Finished is distinct from Delivered/Abort: Abort precedes exact fallible cleanup; Finished follows all unwind/attempts,
+not successful discharge of every obligation. Delivered occurs only after normal completion of ALL owned Resource
+and binding scopes, using a prebuilt answer; only quiet Finished and plain return follow. Any unwind failure selects
+Abort. No Resource/binding wrapper surrounds this final tail. No physical caller-thread join or idle-handle wait.
+A generic wrapper around today's deliver is insufficient: it still publishes Delivered before wrapper restoration.
+The final boundary owns both markers; carry a preallocated internal disposition/value packet, no finalizer callback.
+Capture original body failure INSIDE the bound block before Bindings.under's finally can mask it. Reconcile outside:
+original wins, distinct restoration/abort failures are suppressed. Re-establish identity before outer exact abort,
+capturing its failure before that binding restores too. Failed binding installation runs no unowned cleanup; retain
+the exact obligation/failure. Restore every acquired binding before Finished. This is no reproduced ThreadLocal leak.
+After inherited self-close refusal, close establishes its own owner identity through fence observers/reconciliation
+and stop/observe/drain; preserve failures across its restoration too. A closer is not a ticket waiting on itself.
+Close atomically sets closed and captures accepted tickets. Closed is monotonic; concurrent/repeated close reconciles
+committed state, never a previous return/throw. Postcommit fence error still triggers cleanup. Precommit interruption
+is remembered/cleared and retried; noninterrupt failure is retained and cannot produce successful close. Even failed
+fencing independently attempts stop, a fresh committed ticket snapshot observation and drain, then reports failure.
+Independently attempt owner worker stop/join, every captured caller's Finished, and ledger cleanup in that order;
+no earlier noninterrupt failure skips later stages/items. Success requires confirmed fence, joined workers, all
+accepted boundaries Finished and successful owed cleanup. Public wiring independently attempts revocation and stop.
+For each incomplete full ticket scan, call existing SystemClock.sleep(10.milliseconds) DIRECTLY outside transactions;
+retain owner identity. Do not use injected clock/fixedClock, yield or timeout. Waiting.sleep uses monotonic timed
+parking, including spurious-wake rechecks; fixedClock.sleep does not wait. Key expiry retains its captured Clock.
+This10ms observation cadence is selected, not a measured optimum or latency guarantee; no caller notification.
+Remember/clear interruption at entry and after EVERY stop/wait/transfer/action/Ack attempt, normal or throwing.
+Normally returning SingleFlight.closeAndJoin restores its flag: remember/clear it, do not repeat successful stop,
+then observe/drain. Restore interruption once at outer exit. Finite interruption must not defer owed cleanup.
+Close's explicit exception to ordinary once-per-snapshot drain retries INTERRUPTION-ONLY unresolved captured phases.
+Freeze exact IDs once after applicable fence/worker/caller stages; never resnapshot or recruit new/restored IDs.
+An Abort row's transfer and resulting pending intent are ONE captured obligation, not a new ID. Reconcile exact
+row/intent/Ack after errors. Interrupted stop retries the SAME owner workers. Interrupted transfer retries only the
+unresolved transfer; interrupted action may repeat only its exact idempotent action if still unacknowledged.
+After an action returns normally, retain action-completed phase: an interrupted precommit Ack retries Ack ONLY.
+Committed Ack never replays/resurrects, even if its observer throws interruption or a noninterrupt failure.
+Any mixed/noninterrupt fault stops retries for that item, retains only unresolved obligations, and permits attempts
+of other items/stages. Inspect the complete carried failures: interruption with suppressed noninterrupt is MIXED.
+An existing caller/body failure wins, including InterruptedException/CancellationException/Fail. Otherwise first
+noninterrupt close failure wins; all other distinct throws, including remembered interruptions, are suppressed by
+identity in observation order. Interruption alone becomes restored status after cleanup, not a replacement throw.
+No invented throwable for a flag-only interrupt; no self-suppression, defect retry or cancellation/Fail misclassification.
+No finite completion under unbounded interruption/unresponsive callers, no forced timeout or VM-fatal guarantee.
+
+### Required source-plan gate
+
+Keep the internal owner in existing KeyCache.kt (provisional name KeyCallers); no new public crypto API in these
+internal entries, second flight pool, per-call thread, generic helper or changes to Bindings/SurefoldLocal/Resource.
+Before source, independently review and commit exact packet/ticket fields and frame nesting: identity installed
+before admission; original failure capture inside EACH relevant binding; restoration reconciliation/rebound abort;
+failed-install ownership retention; each Resource owner; every restoration before the compiled quiet terminal tail.
+Expose exact transfer/action/Ack phases to close's fixed-snapshot driver: opaque whole-drain retries are insufficient.
+Show retained action-completed phase and concurrent close/drain committed-Ack reconciliation without reused IDs,
+new tombstones or resurrected intents. If existing APIs cannot express it, stop for exact contract/scope amendment.
+Public get/lease/using/close wiring waits for retention predecessors, then attaches ONE owner to every path and
+ALL owner workers, including cache hits and forgotten views; an arbitrary supplied flight is not public close proof.
+Revocation still rejects normally returning revoked uses. New IDs outside the fixed snapshot cannot earn completion:
+public plan proves none remain after quiescence or specifies fixed incomplete-cleanup failure before source. That
+question cannot defer interruption-only cleanup or weaken the full public close guarantee. Pins remain prohibited.
+
+### R4 acceptance and negative controls
+
+Each row needs meaningful RED then GREEN; missing-API compile is separate. Preserve all B2 cases and gates.
+
+| Required acceptance | Negative control that must fail |
+|---|---|
+| Accepted caller paused BEFORE enrol/capability keeps close waiting | Tracking Prepared/workers alone returns early. |
+| Atomic admission/fence race includes earlier ticket, refuses later body/load | Separate snapshot/check misses a caller. |
+| Admission commit then observer throw preserves identity, reconciles ticket, runs no body, reaches Finished | Treat thrown modify as uncommitted. |
+| Fence commit then observer throw still refuses admissions and attempts all cleanup | Return early from fence error. |
+| Precommit fence interruption retries with cleared flag, restores at exit | Restore too early or return prematurely. |
+| Noninterrupt precommit fence fault attempts later cleanup but cannot succeed | Swallow fault/credit unconfirmed fence. |
+| Captured action precommit interrupt retries exact action this close, completes other IDs | Once-only deferral/whole-drain resnapshot. |
+| Normal action, interrupted precommit Ack retries Ack only | Composite retry repeats the action. |
+| Committed Ack then interrupt never replays, other IDs attempted | Reconstruct acknowledged obligation. |
+| Normal SingleFlight stop with restored interrupt permits drain commit and final restored flag | Pass restored flag into drain. |
+| Interrupt with suppressed noninterrupt; noninterrupt after earlier interrupt | Mixed failure retried/spun or primary replaced. |
+| Direct/inherited caller/load/using self-close refused before fence; other owner may close | Worker-identity-only guard. |
+| Admission observer/reconciliation recursively closes: refusal, no fence, ticket reconciled | Bind identity only around body. |
+| Outer abort after restored/failed binding recursively closes: refusal under rebound identity | Abort without owner identity. |
+| Body failure plus restoration failure preserves original; failed abort binding retains obligation | Outside-only catch loses body error/unowned cleanup. |
+| Paused Resource/binding unwind keeps Finished pending | Publish inside release/before restoration. |
+| Prepared value then unwind throw: no Delivered, exact Copy wiped/View abort owned | Keep B2 early Delivered. |
+| Callback interrupt/cancellation/Fail plus cleanup failure preserves original; later actions run | Classify from Completed/stop early. |
+| fixedClock closer genuinely TIMED_WAITING/parked; released caller finishes | Injected fixedClock polls without park. |
+| Spurious wake/interrupt waits for all Finished, clears before next park, restores flag | Treat wake as completion/spin. |
+| Stop throws while caller held: still observe it, then attempt drain | Fail-fast stop/observe/drain chain. |
+| Repeated/concurrent closers, terminal reaping, no-work close | Forget/remove pending ticket. |
+| Noninterrupt abort fault survives Finished for later drain; committed Ack stays final | Equate Finished with wiped/released. |
+| Ordinary/nested/forced-solo transaction refuses before any ownership/body/fence | Omit0273 guard. |
+
+Own/release all Promise gates and join workers even on failure; public Surefold primitives, TestClock expiry,
+passive getBlocker/thread-state parking observations, outer real-clock eventually deadline with closer fixedClock.
+No test sleeps/hooks/raw latches/threads; observe the actual closer, not a helper's park. Global-Solo faults use
+reviewed isolated suite admission. A synthetic unwind failure is not a ThreadLocal leak reproduction; actual trace
+concern remains source-level on earlier Temurin25.0.4.1+1, not new CI25.0.5+8 proof. Resource self-suppression
+concern stays withdrawn. Either.catch filters interrupt/fatal/Fail, so terminal lifecycle catches require exact
+sites/reasons/identity tests in the source plan; no capture helper or throw-in-mapLeft workaround. No erasure or
+performance/check-saving claim. Preserve typed detekt, Kover90%, dependencies, formatting and full PR/main gates.
 
 ## Why this shape
 
@@ -160,13 +269,17 @@ Alternative: a general retained-resource cache; broader than this key requiremen
 - [x] **`codex/handoff-decision`** — PR973/main46213a81; tryComplete/peek ONLY, unreleased; no await/join.
 - [x] **`codex/key-view-early-close`** — PR977/main e47c38be: additive INTERNAL before-admission exact cap; old descriptor retained.
       All36 previous cases plus8 new ownership laws pass; existing expiry/revocation/terminal laws retained.
-- [ ] **`codex/key-view-retention-delivery`** — KeyCacheLedger/RetainedKeyCacheSuite only; the concrete delivery entry above.
-      One private prepared-row set in existing Shared state; exact-token transfer/close/Ack, Preparing skips/Delivered metadata only.
-      Estimate115–150 main; precode counted separately below190 combined; checkpoint170/180; tests separately counted.
+- [x] **`codex/key-view-retention-delivery`** — B2 PR979/main91040b93, own-main41281917030 SUCCESS; internal only.
+- [ ] **`codex/key-callers-precode-20261102`** —0273 guard plus this R4 amendment, exact-spec review/spec-only main.
+- [ ] **`codex/transaction-boundary-guard`** —0273's one-method prerequisite; target<60 main/docs lines.
+- [ ] **`codex/key-callers-boundary`** —internal tickets/fence/wait and tests; target<170 main lines, no activation.
+- [ ] **`codex/key-callers-delivery`** —B2 outer packet/return/unwind integration; target<140 main lines.
+- [ ] **`codex/key-callers-close-drain`** —exact-phase interruption retries/Ack reconciliation; target<160 main lines.
 - [ ] **`codex/key-view-retention-policy`** — shared owner LRU, modes, success tickets and epochs; no public lease; ~175 main lines.
 - [ ] **`codex/key-view-retention-legacy`** — old get/evict integration and protective Unavailable cutoff; ~185 changed main lines.
 - [ ] **`codex/key-view-retention-leases`** — lease/revoke/revokeAll, all caller handoffs and array exits; ~180 main lines.
-- [ ] **`codex/key-view-release`** — joined close, old source/binary fixtures and compiled guide; no consumer pin yet.
+- [ ] **`codex/key-callers-release`** —after retention predecessors: complete public caller/using/close wiring,
+      old source/binary fixtures and compiled guide; exact source/path/line-budget review first, no consumer pin.
 Each implementation entry stays under~200 changed main/build/docs lines; split/review scope before exceeding it.
 No snapshot consumer is enabled before the complete reviewed stack and required main checks pass.
 
@@ -187,7 +300,7 @@ No pre-registration allocation, VM-fatal, universal-agent or JIT-erasure guarant
 ## Acceptance
 
 ```bash
-./gradlew :surefold-tenancy-crypto:check :surefold-app:check
+./gradlew :surefold:check :surefold-tenancy-crypto:check :surefold-app:check
 ./gradlew spotlessApply && ./gradlew build
 ```
 Old copies survive evict; new views survive forget, refuse revoke before/during use and across a paused load.
@@ -197,7 +310,7 @@ Denied/Invalid/NoTenant never degrade; changed identity never degrades; old-epoc
 SAME-identity retention. Benign close admits normal callback result only before expiry and absent revocation.
 Pin Denied→Unavailable without stale reuse; stale failure must preserve newer success. A new caller cannot join a frozen
 failed group; a delayed enrolled caller replays original CancellationException. Assert action-failure Pending versus
-committed-Ack/no-replay, and all snapshot cleanup actions attempted once even when preceding ones fail.
+committed-Ack/no-replay, ordinary snapshot attempts despite preceding failures, and R4's close-only interrupt retries.
 Assert one load, owner LRU, every transferred/working array wiped, defects/cancellation identity and joined close;
 owned Promise gates always release/join. No sleeps, lowered coverage/dependency gates or algorithm/provider change.
 
@@ -206,6 +319,8 @@ owned Promise gates always release/join. No sleeps, lowered coverage/dependency 
 Resolved after independent review: extend KeyCache rather than add a second cache; close joins accepted work,
 not idle handles; material access is callback-bounded, with no escaped-copy/JVM-erasure guarantee. Tagged modes,
 one retained identity per slot, successful-ticket publication, original hard expiry and benign close versus
-revoke follow the Shape above. The delivery entry's pre-acquisition abort ownership needs its own reviewed
-implementation plan before code; the groups-only entry exposes no delivery. Accepted-caller join remains an
-OPEN design obligation requiring a separate concrete contract before joined-release/R4 implementation.
+revoke follow the Shape above. R4 choices resolved by independent Top review of26595fcbd:0273 refusal,
+direct SystemClock10ms observation, interruption-only exact-phase close retries and full inherited owner coverage.
+Source-plan questions remain GATES, not implementer discretion: exact packet/binding/phase representation and
+compiled tail; later public wiring/residual-cleanup failure. Commit independent reviews before each source entry.
+This spec-only promotion needs exact-document review/main proof; no caller-join implementation is credited.
