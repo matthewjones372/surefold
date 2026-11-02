@@ -438,5 +438,35 @@ subprojects {
                 credentials(PasswordCredentials::class)
             }
         }
+        relocatedFromOldGroup(this@subprojects.name, version.toString())
+    }
+    // The relocation POMs are for Central: GitHub Packages, which keeps snapshots, takes `dev.surefold` only.
+    tasks.withType<PublishToMavenRepository>().configureEach {
+        onlyIf("only dev.surefold goes to GitHub Packages") { task ->
+            val publish = task as PublishToMavenRepository
+            publish.repository.name != "githubPackages" || publish.publication.groupId == "dev.surefold"
+        }
+    }
+}
+
+/**
+ * A POM-only publication at the coordinates surefold had up to 0.17, relocating to the same module under
+ * `dev.surefold` (spec 0277). Maven and Gradle follow it, so a build still on `io.github.matthewjones372` resolves
+ * the new module.
+ */
+fun PublishingExtension.relocatedFromOldGroup(module: String, version: String) {
+    publications.register<MavenPublication>("relocation") {
+        groupId = "io.github.matthewjones372"
+        artifactId = module
+        this.version = version
+        pom {
+            packaging = "pom"
+            distributionManagement {
+                relocation {
+                    groupId.set("dev.surefold")
+                    message.set("surefold moved to dev.surefold in 0.18.0; packages and plugin IDs moved with it.")
+                }
+            }
+        }
     }
 }
