@@ -7,8 +7,8 @@ the web layer's.
 
 ```kotlin
 dependencies {
-    implementation("io.github.matthewjones372:surefold-auth:0.17.0")
-    implementation("io.github.matthewjones372:surefold-auth-oidc:0.17.0") // only to sign in with another provider
+    implementation("dev.surefold:surefold-auth:0.17.0")
+    implementation("dev.surefold:surefold-auth-oidc:0.17.0") // only to sign in with another provider
 }
 ```
 

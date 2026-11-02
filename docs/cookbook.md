@@ -12,8 +12,8 @@ write each piece.
 
 ```kotlin
 dependencies {
-    implementation("io.github.matthewjones372:surefold-app:0.17.0")
-    implementation("io.github.matthewjones372:surefold-app-pekko:0.17.0")  // Pekko actors only
+    implementation("dev.surefold:surefold-app:0.17.0")
+    implementation("dev.surefold:surefold-app-pekko:0.17.0")  // Pekko actors only
 }
 ```
 
@@ -472,7 +472,7 @@ plugins {
 }
 
 dependencies {
-    implementation("io.github.matthewjones372:surefold-app-kotlinx:0.17.0")
+    implementation("dev.surefold:surefold-app-kotlinx:0.17.0")
 }
 ```
 
@@ -505,7 +505,7 @@ substitution, merging, `getDuration` and `getMemorySize` all still work.
 
 ```kotlin
 dependencies {
-    implementation("io.github.matthewjones372:surefold-app-typesafe:0.17.0")
+    implementation("dev.surefold:surefold-app-typesafe:0.17.0")
 }
 ```
 
@@ -695,7 +695,7 @@ the graph enforces and `render()` draws:
 
 ```kotlin
 dependencies {
-    implementation("io.github.matthewjones372:surefold-app-liquibase:0.17.0")
+    implementation("dev.surefold:surefold-app-liquibase:0.17.0")
 }
 ```
 

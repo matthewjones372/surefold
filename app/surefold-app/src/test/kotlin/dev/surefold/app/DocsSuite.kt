@@ -56,7 +56,7 @@ object DocsSuite : Suite() {
     }
 }
 
-private val COORDINATE = Regex("""io\.github\.matthewjones372:([A-Za-z0-9._-]+):([A-Za-z0-9._-]+)""")
+private val COORDINATE = Regex("""dev\.surefold:([A-Za-z0-9._-]+):([A-Za-z0-9._-]+)""")
 
 /** The version docs/modules.md installs. */
 internal fun installedVersion(modules: String): String =
