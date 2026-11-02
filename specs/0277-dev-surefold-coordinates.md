@@ -69,13 +69,13 @@ grep -rn "io.github.matthewjones372" --include=*.kt --include=*.kts --include=*.
 ## Open questions
 
 1. The package rename entries run to thousands of changed lines, far over the ~200-line cap, because every file in a
-   family moves. **Recommended:** allow it for these mechanical entries, review the script and a sample of files
+   family moves. **Answered (owner, 2 Nov 2026):** allow it for these mechanical entries, review the script and a sample of files
    rather than every line, and keep one family per PR.
 2. surefold's packages drop the repeated name: `dev.surefold.stream`, not `dev.surefold.surefold.stream`.
-   **Recommended:** yes, because the namespace already says surefold and sibling libraries sit beside it as
+   **Answered (owner, 2 Nov 2026):** yes, because the namespace already says surefold and sibling libraries sit beside it as
    `dev.surefold.pelican` and `dev.surefold.kimney`. The cost is that a future library cannot be called `stream`,
    `actor` and so on.
-3. Version for the move. **Recommended:** the next minor, 0.18.0, for both the first `dev.surefold` release and the
+3. Version for the move. **Answered (owner, 2 Nov 2026):** the next minor, 0.18.0, for both the first `dev.surefold` release and the
    relocation POMs.
-4. Should the relocation release also go out for older versions? **Recommended:** no. One relocation at the new
+4. Should the relocation release also go out for older versions? **Answered (owner, 2 Nov 2026):** no. One relocation at the new
    version is enough for resolvers to follow.
