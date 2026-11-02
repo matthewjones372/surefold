@@ -21,7 +21,10 @@ internal class Annotated(
 internal val annotations: SurefoldLocal<Annotated?> = surefoldLocal { null }
 
 /** The pairs every line written here carries, outermost first. */
-internal fun boundAnnotations(): Map<String, String> = annotations.get()?.map().orEmpty()
+internal fun boundAnnotations(): Map<String, String> = boundAnnotations(Bindings.snapshot())
+
+/** [boundAnnotations] from a chain already in hand (spec 0284). */
+internal fun boundAnnotations(head: Bound?): Map<String, String> = annotations.from(head)?.map().orEmpty()
 
 internal val spans: SurefoldLocal<List<Span>> = surefoldLocal { emptyList() }
 
