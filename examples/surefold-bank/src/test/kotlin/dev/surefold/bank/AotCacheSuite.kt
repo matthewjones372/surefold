@@ -1,4 +1,4 @@
-package io.github.matthewjones372.surefold.bank
+package dev.surefold.bank
 
 import dev.surefold.capturingLogs
 import dev.surefold.junit.Suite
@@ -18,7 +18,7 @@ private fun bankJvm(vararg jvmArgs: String): Pair<Int, String> {
         classpath.shouldNotBeNull()
     }
     val java = ProcessHandle.current().info().command().orElseThrow()
-    val command = listOf(java, *jvmArgs, "-cp", classpath, "io.github.matthewjones372.surefold.bank.MainKt", "--train")
+    val command = listOf(java, *jvmArgs, "-cp", classpath, "dev.surefold.bank.MainKt", "--train")
     val process = ProcessBuilder(command).redirectErrorStream(true).start()
     val output = process.inputStream.bufferedReader().readText()
     check(process.waitFor(2, TimeUnit.MINUTES)) { "the bank's JVM never left: $output" }
