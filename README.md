@@ -226,6 +226,8 @@ it blocks inside `synchronized`, which can exhaust the carriers when a library
 such as a JDBC driver or JSON serializer synchronizes internally. JDK 24 removed
 that limitation ([JEP 491](https://openjdk.org/jeps/491)), and 25 is the first
 long-term-support release with the fix.
+JDK 25 can also start a service warm from an AOT cache; see
+[Starting warm with an AOT cache](docs/app.md#starting-warm-with-an-aot-cache).
 
 ```kotlin
 // build.gradle.kts
