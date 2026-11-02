@@ -76,10 +76,13 @@ private val topLevel = object : ClassValue<String>() {
 
 @PublishedApi
 internal fun logAt(level: LogLevel, message: String, cause: Throwable?, caller: Class<*>) {
-    val at = clock.get().now()
+    // One lookup of this thread's bindings for the whole line, not one for each local it reads (spec 0284).
+    val bound = Bindings.snapshot()
+    val at = clock.from(bound).now()
     // With no span open, the bound map is the line's as it stands: nothing is added, so nothing is copied (spec 0280).
-    val open = spans.get()
-    val annotated = if (open.isEmpty()) boundAnnotations() else boundAnnotations() + open.elapsedAt(at)
+    val open = spans.from(bound)
+    val pairs = boundAnnotations(bound)
+    val annotated = if (open.isEmpty()) pairs else pairs + open.elapsedAt(at)
     val line = LogLine(level, message, at, cause, annotated, topLevel.get(caller))
-    logger.get().log(line)
+    logger.from(bound).log(line)
 }

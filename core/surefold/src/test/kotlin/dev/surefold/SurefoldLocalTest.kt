@@ -189,4 +189,18 @@ class SurefoldLocalTest {
         local.get() shouldBe 1
         first.detach()
     }
+
+    @Test
+    fun `a local read from a snapshot answers what get answers, bound or not`() {
+        val local = surefoldLocal { "initial" }
+        val other = surefoldLocal { 0 }
+
+        val unboundRead = local.from(Bindings.snapshot()) to local.get()
+        val boundRead = local.locally("bound") {
+            other.locally(1) { local.from(Bindings.snapshot()) to local.get() }
+        }
+
+        unboundRead shouldBe ("initial" to "initial")
+        boundRead shouldBe ("bound" to "bound")
+    }
 }
