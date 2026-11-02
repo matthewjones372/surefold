@@ -7,8 +7,14 @@ package dev.surefold
  */
 class SurefoldLocal<A> internal constructor(private val initial: () -> A) {
 
-    fun get(): A {
-        var link = Bindings.snapshot()
+    fun get(): A = from(Bindings.snapshot())
+
+    /**
+     * What [get] answers, read from a chain already in hand: `logAt` reads several locals from one snapshot rather
+     * than looking the thread's chain up once for each (spec 0284).
+     */
+    internal fun from(head: Bound?): A {
+        var link = head
         while (link != null) {
             // Only `locally` and `attach` make a link for this local, and each holds an A.
             @Suppress("UNCHECKED_CAST")
