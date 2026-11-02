@@ -677,6 +677,24 @@ fun holdAtEither(east: BoxOffice, west: BoxOffice, order: Order) =
   from outside the step or a `peek()` inside a step is a compile error. See
   [what the plugin refuses inside a step](app.md#what-the-compiler-plugin-refuses-inside-a-step).
 
+### Nontransactional ownership boundaries
+
+Unreleased: `checkNotInTransaction()` uses the existing `surefold` core dependency.
+Call it before admission, callbacks or ownership publication that cannot be retried.
+It returns `Unit` outside a step, including `afterCommit`, and throws
+`IllegalStateException("the operation cannot run inside a transaction")` inside
+ordinary, nested and solo steps. It does not detach work from a transaction.
+
+<!-- core-transaction-boundary -->
+```kotlin
+import dev.surefold.checkNotInTransaction
+
+fun <A> withOwnership(callback: () -> A): A {
+    checkNotInTransaction()
+    return callback()
+}
+```
+
 The commit takes no lock, so a thread interrupted halfway through one holds
 nobody up. Every commit does go through one shared counter, though, and a long
 step that reads many values can keep losing to short ones that write them. Keep
