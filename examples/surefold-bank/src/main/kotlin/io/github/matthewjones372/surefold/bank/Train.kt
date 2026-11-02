@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.bank
 
+import dev.surefold.actor.InMemoryJournal
+import dev.surefold.actor.remote.Node
 import dev.surefold.logInfo
-import io.github.matthewjones372.surefold.actor.InMemoryJournal
-import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.cluster.Discovery
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
