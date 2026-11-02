@@ -32,7 +32,7 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
       cancel-in-progress: true
-    runs-on: namespace-profile-mattjones372
+    runs-on: ubuntu-24.04
     timeout-minutes: 60
 
     steps:

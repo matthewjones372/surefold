@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   snapshot:
-    runs-on: namespace-profile-mattjones372
+    runs-on: ubuntu-24.04
 
     # No signing key: a snapshot does not have to be signed, and a job that does
     # not hold the key cannot sign a release by mistake.
