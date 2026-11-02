@@ -1,5 +1,9 @@
 # 0275 — Block bindings on ScopedValue
 
+**Stopped (maintainer, 2026-11-02),** with 0274. Its benchmark measured a `ScopedValue` binding
+at about 17 ns and 40 bytes more than a `ThreadLocal` set and restore, and
+`forkOnAPool` and `transact` showed no gain. All five stay on `ThreadLocal`.
+
 ## Problem
 
 Besides `Bindings` (0274), five `ThreadLocal`s in surefold do what `ScopedValue` was made for.
@@ -55,9 +59,9 @@ the actor benchmarks show a loss.
 
 ## Stack
 
-- [ ] **`spec-0275-core`**: `runningFor` and `Transact.running`.
+- ~~**`spec-0275-core`**: `runningFor` and `Transact.running`.~~ Built and reverted.
       Done when: the core suites pass unchanged.
-- [ ] **`spec-0275-modules`**: `stepping`, `Waiting.installed`, `Remote.written`.
+- ~~**`spec-0275-modules`**: `stepping`, `Waiting.installed`, `Remote.written`.~~ Built and reverted.
       Done when: the actor, actor-remote and stream suites pass unchanged.
 
 ## Acceptance

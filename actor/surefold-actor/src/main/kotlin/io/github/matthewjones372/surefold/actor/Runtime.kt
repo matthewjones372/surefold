@@ -278,12 +278,7 @@ private val PARALLELISM =
     Integer.getInteger("jdk.virtualThreadScheduler.parallelism", Runtime.getRuntime().availableProcessors())
 
 /** The actor whose turn this thread is running, so a `tell` from inside one can refuse to wait. */
-// Typed Any so that one orElse answers both whether a turn is running and whose: a Cell has no spare instance.
-private val stepping: ScopedValue<Any> = ScopedValue.newInstance()
-
-private val NotStepping = Any()
-
-private fun steppingNow(): Cell<*, *, *>? = stepping.orElse(NotStepping) as? Cell<*, *, *>
+private val stepping = ThreadLocal<Cell<*, *, *>>()
 
 /**
  * One guardian per scope: a single parked fork that the scope interrupts on close, which then stops its actors.
@@ -715,7 +710,7 @@ private class Cell<M : Any, S, E>(
      */
     override fun tell(message: M) {
         if (stopped) return dead(message, DeadLetter.Why.Stopped)
-        val sender = steppingNow()
+        val sender = stepping.get()
         sender?.told = true
         if (sender == null) {
             acquireRoom()
@@ -728,7 +723,7 @@ private class Cell<M : Any, S, E>(
 
     fun offer(message: M): Boolean {
         if (stopped) return false
-        steppingNow()?.told = true
+        stepping.get()?.told = true
         if (!tryAcquireRoom()) return false
         if (stopped) return false
         enqueue(carrying(message))
@@ -843,8 +838,9 @@ private class Cell<M : Any, S, E>(
     override fun activate() {
         var returned = false
         try {
+            stepping.set(this)
             synchronized(this) { running = Thread.currentThread() }
-            ScopedValue.where(stepping, this).call(ScopedValue.CallableOp<Unit, RuntimeException> { run() })
+            run()
             returned = true
         } catch (interrupted: InterruptedException) {
             // The interrupt a stop sends to a running turn: the stop is the outcome, not a failure to report.
@@ -857,6 +853,7 @@ private class Cell<M : Any, S, E>(
                 if (running === Thread.currentThread()) running = null
                 Thread.interrupted()
             }
+            stepping.remove()
             // A throw stops the actor, and still reaches the thread's own handler.
             if (!returned) {
                 stopped = true

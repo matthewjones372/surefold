@@ -1,5 +1,9 @@
 # 0274 — SurefoldLocal on ScopedValue
 
+**Stopped (maintainer, 2026-11-02).** The benchmark below showed the swap loses, so it was built,
+measured and reverted. `Bindings` stays on `ThreadLocal`. The benchmark and `SurefoldLocalTest`'s
+`attach` cases stay.
+
 ## Problem
 
 Every `SurefoldLocal` (log annotations, spans, the bound logger and clock, OpenTelemetry's
@@ -62,11 +66,12 @@ first stack entry shows less than 10% on a log line.
 
 ## Stack
 
-- [ ] **`spec-0274-bench`**: a JMH benchmark of `annotations.get()`, `logAnnotated { }` and
+- [x] **`spec-0274-bench`**: a JMH benchmark of `annotations.get()`, `logAnnotated { }` and
       one fork's inheritance, plus a line through `Slf4jLogger`. Today's `Bindings` vs a
       `ScopedValue` prototype.
       Done when: the numbers are in this spec and the maintainer says go or stop.
-- [ ] **`spec-0274-bindings`**: `Bindings` on `ScopedValue` with a `Frame`, root fallback.
+- ~~**`spec-0274-bindings`**: `Bindings` on `ScopedValue` with a `Frame`, root fallback.~~
+      Built, measured and reverted: see Numbers.
       Done when: `SurefoldLocalTest`, `AnnotationsTest`, `ContextAcrossAForkSuite`,
       `FeatureContextSuite` and the cache suites pass unchanged, and a new test shows a
       forked branch reading the opener's `attach`ed value.
@@ -92,8 +97,8 @@ the times as direction, and the bytes per operation, which barely vary, as the f
 The swap loses. A binding costs about 17 ns and 40 bytes more, a read about 1 ns more, a log line
 112 bytes more, and a fork 136 to 320 bytes more. A fork does not allocate less, as Problem expected.
 `ScopedValue`'s `where(...).call` allocates more than the `ThreadLocalMap` a new virtual thread
-used to need. Fork and `transact` times are within noise. Recommended: stop. Keep `Bindings` on
-`ThreadLocal`, revert `spec-0274-bindings`, and keep the benchmark as the record of why.
+used to need. Fork and `transact` times are within noise. Recommended, and taken: stop. `Bindings` stays on
+`ThreadLocal`, `spec-0274-bindings` is reverted, and the benchmark stays as the record of why.
 
 ## Acceptance
 

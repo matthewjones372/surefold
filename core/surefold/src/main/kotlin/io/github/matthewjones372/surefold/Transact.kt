@@ -48,7 +48,7 @@ class Shared<T>(initial: T, val name: String? = null) {
  */
 fun <A> transact(name: String? = null, soloAfter: Int = SOLO_AFTER, block: Transaction.() -> A): A {
     require(soloAfter >= 0) { "A step cannot run alone after $soloAfter lost runs." }
-    (running.orElse(NotRunning) as? Transaction)?.let { return it.block() }
+    running.get()?.let { return it.block() }
     val (step, answer) = untilCommitted(name ?: UNNAMED, soloAfter, block)
     // Outside the step, so an effect that calls transact starts a step of its own; and after the run is counted
     // committed, so an effect that throws does not count it failed.
@@ -89,25 +89,24 @@ private fun <A> untilCommitted(name: String, soloAfter: Int, block: Transaction.
 }
 
 // One run of the step: the block's answer once it has committed, or Again.
-private fun <A> Transaction.attempt(block: Transaction.() -> A): Any? =
-    ScopedValue.where(running, this).call(
-        ScopedValue.CallableOp<Any?, RuntimeException> {
-            try {
-                val answer = block()
-                if (commit()) answer else Again
-            } catch (_: Conflict) {
-                Again
-            } catch (_: Wait) {
-                cause = WAITED
-                // A solo run that waits gives the word up first: the commit it waits for could not land otherwise.
-                giveUpSolo()
-                awaitChange()
-                Again
-            } finally {
-                giveUpSolo()
-            }
-        },
-    )
+private fun <A> Transaction.attempt(block: Transaction.() -> A): Any? {
+    running.set(this)
+    return try {
+        val answer = block()
+        if (commit()) answer else Again
+    } catch (_: Conflict) {
+        Again
+    } catch (_: Wait) {
+        cause = WAITED
+        // A solo run that waits gives the word up first: the commit it waits for could not land otherwise.
+        giveUpSolo()
+        awaitChange()
+        Again
+    } finally {
+        giveUpSolo()
+        running.remove()
+    }
+}
 
 private object Again
 
@@ -132,12 +131,8 @@ private const val RETRIES = "surefold.transact.retries"
 
 private const val ATTEMPTS = "surefold.transact.attempts"
 
-// Not a SurefoldLocal: a fork must not inherit the step it was started in (spec 0275).
-// Typed Any so that one orElse answers both whether a step is running and which: a Transaction reads the commit clock
-// as it is made, so it cannot be the marker.
-private val running: ScopedValue<Any> = ScopedValue.newInstance()
-
-private val NotRunning = Any()
+// A thread local rather than a SurefoldLocal: a fork must not inherit the step it was started in.
+private val running = ThreadLocal<Transaction?>()
 
 /** The step a [transact] block runs in. A [Shared] is read and written only through it. */
 class Transaction internal constructor(private var solo: Any?) {

@@ -39,36 +39,23 @@ fun interface Detach {
 /** A [SurefoldLocal] answering with [initial] wherever nothing has been bound. */
 fun <A> surefoldLocal(initial: () -> A): SurefoldLocal<A> = SurefoldLocal(initial)
 
-/**
- * Every [SurefoldLocal]'s value on this thread (spec 0274). A block binds a [Frame] as a `ScopedValue`; `attach`,
- * which has no block, replaces the map in the frame bound around it. A thread nothing has bound on keeps what it
- * attached in [root].
- */
 internal object Bindings {
 
-    private val frame: ScopedValue<Frame> = ScopedValue.newInstance()
-    private val root = ThreadLocal<Map<SurefoldLocal<*>, Any?>>()
+    private val current = ThreadLocal<Map<SurefoldLocal<*>, Any?>>()
 
-    // What orElse answers where no frame is bound: one lookup rather than isBound and then get. Never written.
-    private val unbound = Frame(emptyMap())
-
-    fun snapshot(): Map<SurefoldLocal<*>, Any?> {
-        val bound = frame.orElse(unbound)
-        return if (bound !== unbound) bound.bound else root.get() ?: emptyMap()
-    }
+    fun snapshot(): Map<SurefoldLocal<*>, Any?> = current.get() ?: emptyMap()
 
     fun rebind(bound: Map<SurefoldLocal<*>, Any?>) {
-        val current = frame.orElse(unbound)
-        when {
-            current !== unbound -> current.bound = bound
-            bound.isEmpty() -> root.remove()
-            else -> root.set(bound)
-        }
+        if (bound.isEmpty()) current.remove() else current.set(bound)
     }
 
-    fun <B> under(bound: Map<SurefoldLocal<*>, Any?>, block: () -> B): B =
-        ScopedValue.where(frame, Frame(bound)).call(ScopedValue.CallableOp<B, RuntimeException> { block() })
-
-    /** One block's bindings. Only the thread that bound it reads or writes it: a fork binds a frame of its own. */
-    private class Frame(var bound: Map<SurefoldLocal<*>, Any?>)
+    fun <B> under(bound: Map<SurefoldLocal<*>, Any?>, block: () -> B): B {
+        val before = current.get()
+        current.set(bound)
+        return try {
+            block()
+        } finally {
+            if (before == null) current.remove() else current.set(before)
+        }
+    }
 }

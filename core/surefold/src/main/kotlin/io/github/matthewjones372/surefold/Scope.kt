@@ -285,7 +285,13 @@ internal class Fork<E, T>(
     /** The executor's turn: runs the body, unless an `await` claimed it first or a cancel ended it in the queue. */
     private fun run() {
         if (!claim(Thread.currentThread(), own = on === VirtualThreads)) return
-        ScopedValue.where(runningFor, on).call(ScopedValue.CallableOp<Boolean, RuntimeException> { body() })
+        val outer = runningFor.get()
+        runningFor.set(on)
+        try {
+            body()
+        } finally {
+            runningFor.set(outer)
+        }
     }
 
     /**
@@ -354,7 +360,7 @@ internal class Fork<E, T>(
      */
     private fun help() {
         val me = Thread.currentThread()
-        if (on === VirtualThreads || !onOwnExecutor() || me.isInterrupted) return
+        if (on === VirtualThreads || runningFor.get() !== on || me.isInterrupted) return
         if (!claim(me, own = false)) return
         val interrupted = Bindings.under(inherited) { body() }
         if (interrupted && !cancelled.get()) me.interrupt()
@@ -499,9 +505,6 @@ internal class Fork<E, T>(
 
     private fun settled(): Outcome<E, T> = checkNotNull(outcome()) { "a joined fork always has an outcome" }
 
-    /** Whether this thread is running a fork body for [on], and so is one of its threads. */
-    private fun onOwnExecutor() = runningFor.orElse(NoExecutor) === on
-
     private fun wake(waiters: Waiter?) =
         generateSequence(waiters) { it.next }.forEach { Waiting.unpark(it.thread) }
 
@@ -509,10 +512,7 @@ internal class Fork<E, T>(
 }
 
 /** The executor whose fork body this thread is running, if any: where an `await` on it may help (spec 0037). */
-private val runningFor: ScopedValue<Executor> = ScopedValue.newInstance()
-
-/** What [runningFor] answers on a thread running no fork body: no fork is ever on it. */
-private val NoExecutor = Executor { error("nothing runs on the executor a thread outside any fork body reads") }
+private val runningFor = ThreadLocal<Executor?>()
 
 /** A thread parked until a fork is [ForkState.Done], and the one parked before it. */
 private data class Waiter(val thread: Thread, val next: Waiter?)
