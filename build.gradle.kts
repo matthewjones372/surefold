@@ -430,6 +430,13 @@ subprojects {
                 name = "local"
                 url = rootProject.layout.buildDirectory.dir("repo").get().asFile.toURI()
             }
+            // Snapshots (spec 0281): snapshot.yml runs `publishAllPublicationsToGithubPackagesRepository` with the
+            // workflow's token as `githubPackagesUsername`/`githubPackagesPassword`. Releases stay on Central.
+            maven {
+                name = "githubPackages"
+                url = uri("https://maven.pkg.github.com/surefold/surefold")
+                credentials(PasswordCredentials::class)
+            }
         }
     }
 }

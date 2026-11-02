@@ -1,29 +1,37 @@
 name: snapshot
 
-# What a release candidate used to be for: something to try before it is a
-# release. A candidate tag put every module on Central for good and counted
-# against the Portal's monthly limits; a snapshot goes to Central's snapshot
-# repository, which drops it after 90 days. Dispatched by hand, from the branch
-# whose next version should be tried, rather than on every push: whether
-# snapshots count against the limits is something the Portal does not say.
+# A snapshot of every push to main, and of a branch when dispatched from it, on
+# GitHub Packages (spec 0281): https://maven.pkg.github.com/surefold/surefold.
+# It does not expire, unlike Central's snapshot repository, so a version pinned
+# in a handoff keeps resolving. Releases stay on Central (release.yml).
 #
-# Consumers add https://central.sonatype.com/repository/maven-snapshots/ and
-# depend on the version this prints, e.g. `1.2.1-SNAPSHOT`.
+# Consumers add that repository with a classic personal access token holding
+# only read:packages, since GitHub Packages asks for one even to read a public
+# package, and depend on the version this prints, e.g. `1.2.1-SNAPSHOT`.
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions:
   contents: read
+  packages: write
+
+# One publish at a time, in push order: a later snapshot never lands under an earlier one.
+concurrency:
+  group: snapshot-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   snapshot:
     runs-on: ubuntu-24.04
 
     # No signing key: a snapshot does not have to be signed, and a job that does
-    # not hold the key cannot sign a release by mistake.
+    # not hold the key cannot sign a release by mistake. The token is the
+    # workflow's own, which can write this repository's packages and no others.
     env:
-      ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
-      ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
+      ORG_GRADLE_PROJECT_githubPackagesUsername: ${{ github.actor }}
+      ORG_GRADLE_PROJECT_githubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
@@ -42,17 +50,22 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      # Dispatched on a tag, axion would give a release version, and the plugin
-      # would stage it for Central rather than send it to the snapshot repository.
-      - name: Refuse anything but a snapshot
+      # On a tagged commit axion gives a release version, which is release.yml's
+      # to publish. A push of one is skipped; a dispatch of one is a mistake.
+      - name: Only a snapshot
+        id: version
         run: |
           version=$(./gradlew -q currentVersion | awk 'NF { last = $NF } END { print last }')
           echo "version: $version"
           case "$version" in
-            *-SNAPSHOT) ;;
-            *) echo "$version is not a snapshot; dispatch this from a branch"; exit 1 ;;
+            *-SNAPSHOT) echo "publish=true" >> "$GITHUB_OUTPUT" ;;
+            *) if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
+                 echo "$version is not a snapshot; dispatch this from a branch"; exit 1
+               fi
+               echo "$version is a release; release.yml publishes it" ;;
           esac
 
-      - run: ./gradlew build
-
-      - run: ./gradlew publishToMavenCentral --no-configuration-cache
+      # A push to main has already passed the pull request's build, so this
+      # publishes without running the tests again.
+      - if: steps.version.outputs.publish == 'true'
+        run: ./gradlew publishAllPublicationsToGithubPackagesRepository --no-configuration-cache
