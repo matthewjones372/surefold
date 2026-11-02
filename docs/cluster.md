@@ -69,6 +69,7 @@ build codecs from classes you already have instead:
 <!-- cluster-remote -->
 ```kotlin
 import dev.surefold.Scope
+import dev.surefold.fail.Either
 import io.github.matthewjones372.surefold.actor.Address
 import io.github.matthewjones372.surefold.actor.AskFailure
 import io.github.matthewjones372.surefold.actor.Reply
@@ -83,7 +84,6 @@ import io.github.matthewjones372.surefold.actor.remote.WireOut
 import io.github.matthewjones372.surefold.actor.remote.node
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
-import dev.surefold.fail.Either
 import kotlin.time.Duration.Companion.seconds
 
 sealed interface Stock
@@ -202,6 +202,7 @@ seed and nobody answers. Membership is agreed by gossip, with no coordinator.
 <!-- cluster-membership -->
 ```kotlin
 import dev.surefold.Scope
+import dev.surefold.logInfo
 import io.github.matthewjones372.surefold.actor.behaviour
 import io.github.matthewjones372.surefold.actor.remote.node
 import io.github.matthewjones372.surefold.actor.spawn
@@ -211,7 +212,6 @@ import io.github.matthewjones372.surefold.cluster.Discovery
 import io.github.matthewjones372.surefold.cluster.Downing
 import io.github.matthewjones372.surefold.cluster.MemberEvent
 import io.github.matthewjones372.surefold.cluster.cluster
-import dev.surefold.logInfo
 import kotlin.time.Duration.Companion.seconds
 
 /** A node of the shop's cluster, whose seeds are every address the headless service's name resolves to. */
@@ -630,6 +630,7 @@ such as a payment, send it reliably:
 
 <!-- cluster-reliable -->
 ```kotlin
+import dev.surefold.fail.Either
 import io.github.matthewjones372.surefold.actor.Delivered
 import io.github.matthewjones372.surefold.actor.Delivery
 import io.github.matthewjones372.surefold.actor.EventCodec
@@ -643,7 +644,6 @@ import io.github.matthewjones372.surefold.actor.remote.WireOut
 import io.github.matthewjones372.surefold.actor.remote.delivery
 import io.github.matthewjones372.surefold.cluster.Cluster
 import io.github.matthewjones372.surefold.cluster.sharding
-import dev.surefold.fail.Either
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -707,10 +707,10 @@ down" from "unavailable" by matching on `NotSent`:
 
 <!-- cluster-reliable-answers -->
 ```kotlin
+import dev.surefold.fail.Either
 import io.github.matthewjones372.surefold.actor.Full
 import io.github.matthewjones372.surefold.actor.NotSent
 import io.github.matthewjones372.surefold.actor.Unwritten
-import dev.surefold.fail.Either
 
 /** The HTTP status a checkout answers for a payment it sent, or did not. */
 fun status(sent: Either<NotSent, Unit>): Int = when (sent) {

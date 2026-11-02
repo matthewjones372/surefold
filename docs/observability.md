@@ -137,9 +137,9 @@ That integration is unreleased; its privacy boundary and separate performance ga
 
 ```kotlin
 import dev.surefold.logInfo
+import dev.surefold.parMap
 import io.github.matthewjones372.surefold.otel.span
 import io.github.matthewjones372.surefold.otel.tracedSpan
-import dev.surefold.parMap
 import io.opentelemetry.api.trace.Tracer
 
 fun pricing(tracer: Tracer, orders: List<Order>): List<Price> =
