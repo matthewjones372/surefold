@@ -412,6 +412,51 @@ because the plugin cannot see where that object came from. Calls into
 functions from other modules are trusted. One finding is silenced with
 `@Suppress("SUREFOLD_EFFECT_IN_TRANSACT")`.
 
+## Starting warm with an AOT cache
+
+A JVM starts cold: it loads and links every class the graph needs, then runs
+the code in its interpreter until the JIT has watched it long enough to compile
+it. JDK 25 can save that work in an AOT cache, made by one training run of the
+application ([JEP 514](https://openjdk.org/jeps/514)). The cache holds the
+classes already loaded and linked ([JEP 483](https://openjdk.org/jeps/483)),
+and the method profiles the training run gathered
+([JEP 515](https://openjdk.org/jeps/515)), so the JIT starts with them. This
+needs no surefold code: the cache belongs to whatever launches the
+application.
+
+`surefold-bank` is the worked example (spec 0278). Its `--train` run starts
+the bank, moves money through its HTTP API, closes everything and returns. The
+JVM writes the cache as it leaves:
+
+```bash
+./gradlew :surefold-bank:aotCache                          # writes build/aot/bank.aot
+./gradlew :surefold-bank:runCached                         # the bank, started on that cache
+./gradlew :surefold-bank:runCached -PbankArgs="--train"    # a timed start: it logs "ready in N ms"
+```
+
+Outside Gradle, both runs use the same jars in the same order:
+
+```bash
+java -XX:AOTCacheOutput=app.aot -cp 'lib/*' com.example.MainKt --train
+java -XX:AOTCache=app.aot -XX:AOTMode=on -cp 'lib/*' com.example.MainKt
+```
+
+The JVM uses a cache only when all of these hold:
+
+- **The same JDK build and platform** made it. A cache from another JDK
+  update, OS or CPU architecture is refused.
+- **The classpath is JARs only.** A directory of classes on the classpath
+  rules the cache out, so train on the installed distribution, not on
+  `build/classes`.
+- **The classpath starts with the training one.** Jars may be added after it,
+  but not removed or reordered before it.
+
+By default, a cache the JVM cannot use is skipped without a word, and the
+application starts cold. `-XX:AOTMode=on` makes that an error at start
+instead, which is what a deployment wants to find out. The profiles only cover
+what the training run did, so it should exercise the routes production will be
+busiest on, not just start and stop.
+
 ## Limitations
 
 - **One instance per key.** There are no scopes or named instances; use a
