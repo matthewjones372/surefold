@@ -73,14 +73,14 @@ curl -sf -u "$USER:$PAT" https://maven.pkg.github.com/surefold/surefold/dev/sure
 
 ## Open questions
 
-1. Every push to `main`, or by hand as now? Recommended: every push; it is free for public packages and removes the
+1. Every push to `main`, or by hand as now? **Answered (owner, 2 Nov 2026):** every push; it is free for public packages and removes the
    "which snapshot is current" question.
-2. Who owns the read PAT: a person's account or a machine account in the organisation? Recommended: a machine
+2. Who owns the read PAT: a person's account or a machine account in the organisation? **Answered (owner, 2 Nov 2026):** a machine
    account, so the secret survives one person leaving and its scope stays `read:packages` only.
 3. Publish to Central's snapshot repository as well, for one release, so external readers have time to move?
-   Recommended: no, nobody outside the organisation reads snapshots today.
+   **Answered (owner, 2 Nov 2026):** no, nobody outside the organisation reads snapshots today.
 4. kotlin-golden-testing and proofload are still in `matthewjones372`: move them into the organisation first, or
-   publish to `maven.pkg.github.com/matthewjones372/<repo>`? Recommended: move them first, so every snapshot
+   publish to `maven.pkg.github.com/matthewjones372/<repo>`? **Answered (owner, 2 Nov 2026):** move them first, so every snapshot
    repository is under `surefold/` and one organisation secret reads them all.
 5. Keep every snapshot version forever, or prune to the last N with `actions/delete-package-versions`?
-   Recommended: keep all; storage for public packages is free and pinned handoffs are the point.
+   **Answered (owner, 2 Nov 2026):** keep all; storage for public packages is free and pinned handoffs are the point.
