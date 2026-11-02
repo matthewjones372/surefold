@@ -69,7 +69,7 @@ jobs:
       - id: already
         run: |
           version="${{ steps.version.outputs.value }}"
-          url="https://repo1.maven.org/maven2/io/github/matthewjones372/surefold/$version/surefold-$version.pom"
+          url="https://repo1.maven.org/maven2/dev/surefold/surefold/$version/surefold-$version.pom"
           code=$(curl -s -o /dev/null -w '%{http_code}' "$url")
           echo "released=$([ "$code" = "200" ] && echo yes || echo no)" >> "$GITHUB_OUTPUT"
           echo "$version is $([ "$code" = "200" ] && echo 'already on Central' || echo 'not on Central yet')"

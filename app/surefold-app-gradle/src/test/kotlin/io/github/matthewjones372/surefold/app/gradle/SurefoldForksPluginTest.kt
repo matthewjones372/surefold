@@ -42,7 +42,7 @@ class SurefoldForksPluginTest {
             """
             plugins {
                 kotlin("jvm") version "2.4.10"
-                id("io.github.matthewjones372.surefold.compiler") version "$version"
+                id("dev.surefold.compiler") version "$version"
             }
 
             repositories {

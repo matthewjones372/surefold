@@ -5,13 +5,13 @@ plugins {
 gradlePlugin {
     plugins {
         create("surefoldWiring") {
-            id = "io.github.matthewjones372.surefold.wiring"
+            id = "dev.surefold.wiring"
             implementationClass = "io.github.matthewjones372.surefold.app.gradle.SurefoldWiringPlugin"
             displayName = "surefold-app wiring"
             description = "Checks a project's surefold-app graphs as it compiles, and renders each one."
         }
         create("surefoldForks") {
-            id = "io.github.matthewjones372.surefold.compiler"
+            id = "dev.surefold.compiler"
             implementationClass = "io.github.matthewjones372.surefold.app.gradle.SurefoldForksPlugin"
             displayName = "surefold compiler checks"
             description = "Fails a compile where a Deferred, Channel or Scope outlives the scope that ends it."

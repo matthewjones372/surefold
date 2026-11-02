@@ -10,7 +10,7 @@ import org.jetbrains.kotlin.config.CompilerConfigurationKey
 import org.jetbrains.kotlin.fir.extensions.FirExtensionRegistrarAdapter
 
 /** What the plugin is called wherever the compiler names one: the CLI, and the Gradle plugin. */
-const val PLUGIN_ID: String = "io.github.matthewjones372.surefold.app"
+const val PLUGIN_ID: String = "dev.surefold.app"
 
 internal val VERBOSE = CompilerConfigurationKey.create<Boolean>("say which applications were found")
 
