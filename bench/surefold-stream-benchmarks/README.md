@@ -9,6 +9,10 @@ What today's `surefold-stream` costs, measured by JMH. This is the baseline that
 ./gradlew :surefold-stream-benchmarks:jmh -PbenchmarkArgs="ChainBenchmark"   # one class
 ```
 
+`-PcompactHeaders` runs the measured JVMs with `-XX:+UseCompactObjectHeaders` (JEP 519, spec
+[0276](../../specs/0276-compact-object-headers.md)). Without it, the numbers stay comparable with the
+baselines here.
+
 Results land in `build/jmh-result.json`. A new baseline is committed to `baseline/`,
 named by date and JDK. Compare numbers only against a baseline taken on the same machine.
 

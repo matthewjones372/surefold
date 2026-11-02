@@ -10,5 +10,9 @@ annotations, a fork that inherits its opener's bindings, and `transact`. Spec
 ./gradlew :surefold-core-benchmarks:jmh -PbenchmarkArgs="LocalsBenchmark.read"
 ```
 
+`-PcompactHeaders` runs the measured JVMs with `-XX:+UseCompactObjectHeaders` (JEP 519, spec
+[0276](../../specs/0276-compact-object-headers.md)). Without it, the numbers stay comparable with the
+baselines here.
+
 Results land in `build/jmh-result.json`. Compare numbers only against a baseline taken on
 the same machine. Results go in spec 0274.
