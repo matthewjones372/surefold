@@ -43,13 +43,36 @@ benchmark, would quietly move every number against its baseline. Not recommended
 
 ## Stack
 
-- [ ] **`spec-0276-property`**: `-PcompactHeaders` on the core, actor and stream
+- [x] **`spec-0276-property`**: `-PcompactHeaders` on the core, actor and stream
       benchmark tasks.
       Done when: `footprint` prints a different per-actor figure with the property than without.
 - [ ] **`spec-0276-numbers`**: `footprint`, `TellBenchmark`, `LocalsBenchmark` and one
       stream benchmark, each with and without the flag, in their READMEs. A README
       paragraph saying what the numbers suggest.
       Done when: the README links to the numbers.
+
+### Provisional numbers (`spec-0276-property`)
+
+Taken 2026-11-02 to check that the property works, not for publishing: this container's numbers are
+too noisy (open question 3). JDK 25.0.5 (Temurin), 4 vCPU. `LocalsBenchmark` used 1 fork, 3 warmup
+and 5 measured iterations of 1 s, with `-prof gc`.
+
+`footprint`, 100,000 idle actors: surefold 742 → **664 B** per actor (−10.5%), Pekko 1,056 → 908 B (−14%).
+
+| `LocalsBenchmark` | Off ns | On ns | Off B/op | On B/op | B/op |
+|---|---|---|---|---|---|
+| `annotatedLogLine` | 595 ± 977 | 432 ± 496 | 968 | 776 | −20% |
+| `forkInheritsABinding` | 45,073 ± 21,176 | 44,200 ± 10,210 | 1394 | 1239 | −11% |
+| `forkOnAPool` | 48,054 ± 3,796 | 48,281 ± 4,459 | 854 | 727 | −15% |
+| `transactOnce` | 852 ± 181 | 808 ± 313 | 1848 | 1640 | −11% |
+| `transactNested` | 1,112 ± 2,705 | 769 ± 284 | 1880 | 1640 | −13% |
+| `bindAndRead` | 38.5 ± 19.5 | 36.5 ± 10.2 | 88 | 88 | 0% |
+| `readsInsideABinding` | 405 ± 182 | 462 ± 264 | 88 | 88 | 0% |
+| `readUnbound` | 3.2 ± 1.8 | 2.7 ± 0.5 | 0 | 0 | — |
+
+Bytes per operation fall 11–20% everywhere one allocates more than a small map, and footprint by
+about 10%. That meets open question 1's bar on this machine. Times are within noise. Whether the
+README recommends the flag waits for `spec-0276-numbers` on the maintainer's machine.
 
 ## Acceptance
 
@@ -59,6 +82,8 @@ benchmark, would quietly move every number against its baseline. Not recommended
 ```
 
 ## Open questions
+
+Answered 2026-11-02, when the maintainer said "implement spec 0276": each taken as recommended.
 
 1. **Recommend the flag in the README, or only report the numbers?** Recommended: report,
    and recommend only if allocation rate and footprint both fall by 10% or more.
