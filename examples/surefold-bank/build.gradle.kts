@@ -43,3 +43,51 @@ tasks.test {
         },
     )
 }
+
+// An AOT cache (spec 0278) is made from the installed jars and used with the same ones, in the same order. The JVM
+// refuses one for a classpath with directories on it, and for one that does not start with the classpath it was
+// made from.
+val installedLib = tasks.named<Sync>("installDist").map { it.destinationDir.resolve("lib") }
+val bankJar = tasks.named<Jar>("jar").flatMap { it.archiveFileName }
+val aotClasspath = installedLib.zip(bankJar) { lib, jar ->
+    listOf(lib.resolve(jar)) + configurations.runtimeClasspath.get().map { lib.resolve(it.name) }
+}
+val aotCacheFile = layout.buildDirectory.file("aot/bank.aot")
+
+/** One `--train` run on the installed jars, which writes the cache as the JVM leaves. */
+val aotCache = tasks.register<JavaExec>("aotCache") {
+    group = "application"
+    description = "Makes the bank's AOT cache from a training run (spec 0278)"
+    dependsOn("installDist")
+    mainClass.set(application.mainClass)
+    classpath(aotClasspath)
+    inputs.files(aotClasspath).withPropertyName("aotClasspath")
+    outputs.file(aotCacheFile)
+    args("--train")
+    jvmArgumentProviders.add(CommandLineArgumentProvider { listOf("-XX:AOTCacheOutput=${aotCacheFile.get().asFile}") })
+    doFirst { aotCacheFile.get().asFile.parentFile.mkdirs() }
+}
+
+/** The bank on the installed jars and its cache, which it will not start without. `-PbankArgs="--train"` times it. */
+tasks.register<JavaExec>("runCached") {
+    group = "application"
+    description = "Runs the bank with its AOT cache, failing if the JVM cannot use it (spec 0278)"
+    dependsOn(aotCache)
+    mainClass.set(application.mainClass)
+    classpath(aotClasspath)
+    args(providers.gradleProperty("bankArgs").getOrElse("").split(" ").filter { it.isNotBlank() })
+    jvmArgumentProviders.add(
+        CommandLineArgumentProvider { listOf("-XX:AOTCache=${aotCacheFile.get().asFile}", "-XX:AOTMode=on") },
+    )
+}
+
+// AotCacheSuite trains a JVM of its own and starts another on its cache, both on the installed jars.
+tasks.test {
+    dependsOn("installDist")
+    inputs.files(aotClasspath).withPropertyName("aotClasspath")
+    jvmArgumentProviders.add(
+        CommandLineArgumentProvider {
+            listOf("-Dsurefold.bank.aotClasspath=" + aotClasspath.get().joinToString(File.pathSeparator))
+        },
+    )
+}
