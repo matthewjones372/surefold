@@ -14,6 +14,10 @@ This is the baseline spec [0059](../../specs/0059-an-actor-without-an-actor-syst
 [0276](../../specs/0276-compact-object-headers.md)). Without it, the numbers stay comparable with the
 baselines here.
 
+`-Pjfr` records each measured JVM with JFR into `build/jfr/<pid>.jfr`, with CPU-time sampling on Linux
+(spec [0279](../../specs/0279-jfr-profiles-on-demand.md)); `jfr view cpu-time-hot-methods` reads one. It works with
+`-PcompactHeaders` too.
+
 Results land in `build/jmh-result.json`. Compare numbers only against a baseline taken on the same machine.
 
 ## A cluster, to be measured

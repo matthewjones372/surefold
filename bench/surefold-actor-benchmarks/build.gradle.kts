@@ -58,6 +58,24 @@ val toolchainLauncher = toolchains.launcherFor { languageVersion.set(benchmarkJd
 // comparable with the baselines already recorded.
 val compactHeaders = providers.gradleProperty("compactHeaders").isPresent
 
+// `-Pjfr` records each measured JVM with JFR's profile settings into build/jfr, one file per process (spec 0279).
+// CPU-time sampling (JEP 509) is experimental and Linux-only, so it is added only there.
+val jfr = providers.gradleProperty("jfr").isPresent
+val jfrDir = layout.buildDirectory.dir("jfr")
+val cpuTimeSampling = when (System.getProperty("os.name")) {
+    "Linux" -> ",jdk.CPUTimeSample#enabled=true,jdk.CPUTimeSample#throttle=10ms"
+    else -> ""
+}
+
+/** What every measured JVM is started with on top of its own options: one list, so JMH is handed it once. */
+val measuredJvmArgs: List<String> = buildList {
+    if (compactHeaders) add("-XX:+UseCompactObjectHeaders")
+    if (jfr) {
+        val recording = "filename=${jfrDir.get().asFile}/%p.jfr,settings=profile$cpuTimeSampling"
+        add("-XX:StartFlightRecording:$recording")
+    }
+}
+
 val generateBenchmarkStubs = tasks.register<JavaExec>("generateBenchmarkStubs") {
     description = "Generates JMH's benchmark stubs from the compiled Kotlin"
     mainClass.set("org.openjdk.jmh.generators.bytecode.JmhBytecodeGenerator")
@@ -109,7 +127,8 @@ tasks.register<JavaExec>("jmh") {
     args("-prof", "gc", "-rf", "json", "-rff", results.path)
     args(providers.gradleProperty("benchmarkArgs").getOrElse("").split(" ").filter { it.isNotBlank() })
     // To JMH's forked JVMs, which are the ones measured, not to the launcher.
-    if (compactHeaders) args("-jvmArgsAppend", "-XX:+UseCompactObjectHeaders")
+    if (measuredJvmArgs.isNotEmpty()) args("-jvmArgsAppend", measuredJvmArgs.joinToString(" "))
+    if (jfr) doFirst { jfrDir.get().asFile.mkdirs() }
 }
 
 /** Heap per idle actor, which JMH cannot measure: many actors spawned, each run once, then left idle. */
@@ -119,7 +138,8 @@ tasks.register<JavaExec>("footprint") {
     mainClass.set("dev.surefold.actor.benchmarks.FootprintKt")
     classpath(benchmarkRuntimeClasspath)
     javaLauncher.set(toolchainLauncher)
-    if (compactHeaders) jvmArgs("-XX:+UseCompactObjectHeaders")
+    jvmArgs(measuredJvmArgs)
+    if (jfr) doFirst { jfrDir.get().asFile.mkdirs() }
 }
 
 /** Process CPU per ask, closed loop and paced, which JMH cannot show (spec 0144). */
@@ -130,5 +150,6 @@ tasks.register<JavaExec>("askCpu") {
     mainClass.set("dev.surefold.actor.benchmarks.AskCpuKt")
     classpath(benchmarkRuntimeClasspath)
     javaLauncher.set(toolchainLauncher)
-    if (compactHeaders) jvmArgs("-XX:+UseCompactObjectHeaders")
+    jvmArgs(measuredJvmArgs)
+    if (jfr) doFirst { jfrDir.get().asFile.mkdirs() }
 }

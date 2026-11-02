@@ -60,13 +60,24 @@ used together.
 
 ## Stack
 
-- [ ] **`spec-0279-property`**: `-Pjfr` on the core, stream and actor benchmarks (JMH forks,
+- [x] **`spec-0279-property`**: `-Pjfr` on the core, stream and actor benchmarks (JMH forks,
       `footprint`, `askCpu`), with `build/jfr` and each README's line.
       Done when: one `LocalsBenchmark` run with `-Pjfr` leaves a recording whose
       `cpu-time-hot-methods` view names surefold code.
-- [ ] **`spec-0279-docs`**: "Profiling with JFR" in `docs/observability.md`: CPU-time sampling,
+- [x] **`spec-0279-docs`**: "Profiling with JFR" in `docs/observability.md`: CPU-time sampling,
       method timing, the views to read them, and the caveats.
       Done when: every command in the section was run on `surefold-bank --train`.
+
+### Found while building it
+
+- `-PcompactHeaders -Pjfr` together reach the measured JVM as one `-jvmArgsAppend`. JMH keeps only one,
+  so both modules gather their flags into a single list.
+- `LocalsBenchmark.annotatedLogLine` with `-Pjfr`: 455 CPU-time samples kept, 46 lost.
+  `HashMap.putMapEntries` takes 21% and `HashMap.resize` 10%. Building the annotation map in
+  `logAnnotated` and `logAt` is about half a log line's CPU, more than `Bindings.snapshot` (10.6%),
+  which spec 0274 looked at.
+- A method-timing filter on the interface method `ActorRef::tell` timed nothing, while `TransactKt::transact`
+  was timed in the same run (1,849 calls). This answers open question 4.
 
 ## Acceptance
 
@@ -76,6 +87,9 @@ used together.
 ```
 
 ## Open questions
+
+Answered 2026-11-02, when the maintainer said "implement spec 0279": each taken as recommended. On 4,
+`ActorRef::tell` was checked and times nothing, so the docs name no interface methods.
 
 1. **CPU-time sampling is experimental and Linux-only. Should `-Pjfr` turn it on everywhere?**
    Recommended: on Linux, add it; elsewhere, record without it and say so. The alternative is
