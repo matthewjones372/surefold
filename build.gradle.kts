@@ -438,7 +438,10 @@ subprojects {
                 credentials(PasswordCredentials::class)
             }
         }
-        relocatedFromOldGroup(this@subprojects.name, version.toString())
+        // Not for the Gradle plugin: vanniktech's GradlePlugin platform with a Dokka javadoc jar makes that jar for
+        // every publication, so a second one fails to configure; a plugin is found by its ID's marker anyway.
+        val module = this@subprojects.name
+        if (module !in gradlePluginModules) relocatedFromOldGroup(module, version.toString())
     }
     // The relocation POMs are for Central: GitHub Packages, which keeps snapshots, takes `dev.surefold` only.
     tasks.withType<PublishToMavenRepository>().configureEach {
