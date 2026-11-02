@@ -14,6 +14,8 @@ a personal namespace on an organisation's library suggests one maintainer's side
 - Not moving pelican, kimney or kotlin-golden-testing here. Each has its own change; pelican's follows this one,
   because it depends on `surefold-stream`.
 - Not deleting or rewriting anything already on Central: old versions stay where they are.
+- Not keeping binary compatibility with callers compiled against 0.17.0 or earlier: their bytecode names the old
+  packages. `CacheCallerCompatibilityTest`'s 0.16.0 bytecode case is retired; its source case stays.
 - Not changing specs' text. Specs keep the names they were written with.
 
 ## Shape
