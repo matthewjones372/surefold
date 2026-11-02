@@ -71,6 +71,30 @@ first stack entry shows less than 10% on a log line.
       `FeatureContextSuite` and the cache suites pass unchanged, and a new test shows a
       forked branch reading the opener's `attach`ed value.
 
+### Numbers (`spec-0274-bench`)
+
+`LocalsBenchmark`, 2026-11-02, JDK 25.0.5 (Temurin), 4 vCPU cloud container, 1 fork, 3 warmup and 5
+measured iterations of 1 s, `-prof gc`. Before is `main`'s `SurefoldLocal.kt`, `Scope.kt` and `Transact.kt` on
+this branch; after is this branch. The container is noisy (`surefold-actor-benchmarks/README.md`): read
+the times as direction, and the bytes per operation, which barely vary, as the firmer number.
+
+| Benchmark | Before ns | After ns | Change | Before B/op | After B/op |
+|---|---|---|---|---|---|
+| `readUnbound` | 2.3 ± 0.2 | 2.6 ± 0.4 | +14% | 0 | 0 |
+| `bindAndRead` | 33.3 ± 4.2 | 49.9 ± 2.8 | +50% | 88 | 128 |
+| `readsInsideABinding` (100 reads) | 382.8 ± 141.4 | 509.9 ± 126.6 | +33% | 88 | 128 |
+| `annotatedLogLine` | 449.5 ± 833.2 | 449.7 ± 98.7 | 0% | 904 | 1016 |
+| `forkInheritsABinding` | 43,822 ± 12,878 | 44,791 ± 8,049 | +2% | 1394 | 1714 |
+| `forkOnAPool` | 48,843 ± 11,594 | 45,432 ± 11,958 | −7% | 854 | 990 |
+| `transactOnce` | 650.7 ± 83.7 | 679.6 ± 123.0 | +4% | 1864 | 1888 |
+| `transactNested` | 636.7 ± 102.8 | 655.9 ± 77.6 | +3% | 1880 | 1888 |
+
+The swap loses. A binding costs about 17 ns and 40 bytes more, a read about 1 ns more, a log line
+112 bytes more, and a fork 136 to 320 bytes more. A fork does not allocate less, as Problem expected.
+`ScopedValue`'s `where(...).call` allocates more than the `ThreadLocalMap` a new virtual thread
+used to need. Fork and `transact` times are within noise. Recommended: stop. Keep `Bindings` on
+`ThreadLocal`, revert `spec-0274-bindings`, and keep the benchmark as the record of why.
+
 ## Acceptance
 
 ```bash
