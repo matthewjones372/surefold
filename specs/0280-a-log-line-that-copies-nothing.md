@@ -53,12 +53,31 @@ finished tests. Not recommended.
 
 ## Stack
 
-- [ ] **`spec-0280-line`**: `logAt` without the spans copy.
+- [x] **`spec-0280-line`**: `logAt` without the spans copy.
       Done when: `annotatedLogLine` allocates less, and `AnnotationsTest` passes unchanged.
-- [ ] **`spec-0280-chain`**: `Bindings` as a chain of `Bound`.
+- [x] **`spec-0280-chain`**: `Bindings` as a chain of `Bound`.
       Done when: `SurefoldLocalTest`, `AnnotationsTest`, `ContextAcrossAForkSuite`,
       `FeatureContextSuite` and the cache suites pass unchanged. `LocalsBenchmark` is recorded
       before and after, with `-Pjfr`'s hot methods.
+
+### Numbers
+
+`LocalsBenchmark`, 2026-11-02, JDK 25.0.5, 4 vCPU cloud container, 1 fork, 3 warmup and 5 measured
+iterations of 1 s, `-prof gc`. Before is `main`; after is both entries.
+
+| Benchmark | Before ns | After ns | Change | Before B/op | After B/op |
+|---|---|---|---|---|---|
+| `annotatedLogLine` | 379.0 ± 92.2 | 162.8 ± 51.2 | −57% | 904 | 328 |
+| `annotatedLogLineUnderABoundLogger` | 321.6 ± 136.1 | 137.7 ± 75.9 | −57% | 768 | 272 |
+| `logLine` | 61.5 ± 17.7 | 56.4 ± 9.9 | within noise | 0 | 0 |
+| `readsInsideABinding` (100 reads) | 376.1 ± 134.1 | 266.1 ± 82.2 | −29% | 88 | 72 |
+| `bindAndRead` | 35.5 ± 10.5 | 36.0 ± 5.2 | within noise | 88 | 72 |
+| `forkInheritsABinding` | 43,927 ± 7,295 | 43,636 ± 7,406 | within noise | 1408 | 1392 |
+| `readUnbound` | 2.4 ± 0.6 | 2.0 ± 0.1 | within noise | 0 | 0 |
+
+`annotatedLogLine` with `-Pjfr` afterwards: 736 CPU-time samples kept, 45 lost.
+`SurefoldLocal.get` takes 21% and `ThreadLocalMap.set` 19%. The map work left
+(`HashMap.putVal` 11%, `putAll` 5%) is `logAnnotated`'s copy, which open question 3 keeps.
 
 ## Acceptance
 
