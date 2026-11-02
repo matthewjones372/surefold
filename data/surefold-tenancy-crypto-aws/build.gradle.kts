@@ -33,6 +33,6 @@ tasks.test {
 tasks.register<JavaExec>("kmsRegionalProof") {
     dependsOn(tasks.testClasses)
     classpath = sourceSets.test.get().runtimeClasspath
-    mainClass.set("io.github.matthewjones372.surefold.tenancy.crypto.aws.KmsRegionalProof")
+    mainClass.set("dev.surefold.tenancy.crypto.aws.KmsRegionalProof")
     args(providers.gradleProperty("kmsProofArgs").getOrElse("").split(' ').filter { it.isNotBlank() })
 }

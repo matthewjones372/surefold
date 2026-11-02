@@ -38,15 +38,15 @@ that finishes it, and is deleted from there once it is older than `JobSettings.r
 <!-- jobs -->
 ```kotlin
 import dev.surefold.clock
+import dev.surefold.jobs.JobCodec
+import dev.surefold.jobs.JobHandlers
+import dev.surefold.jobs.JobKind
+import dev.surefold.jobs.JobResult
+import dev.surefold.jobs.JobSettings
+import dev.surefold.jobs.Jobs
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.liquibase.migrations
 import io.github.matthewjones372.surefold.app.singleOf
-import io.github.matthewjones372.surefold.jobs.JobCodec
-import io.github.matthewjones372.surefold.jobs.JobHandlers
-import io.github.matthewjones372.surefold.jobs.JobKind
-import io.github.matthewjones372.surefold.jobs.JobResult
-import io.github.matthewjones372.surefold.jobs.JobSettings
-import io.github.matthewjones372.surefold.jobs.Jobs
 import java.sql.Connection
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
