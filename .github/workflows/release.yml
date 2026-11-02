@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: namespace-profile-mattjones372
+    runs-on: ubuntu-24.04
     # On the job rather than on the publish step: a tag gives axion a version with
     # no `-SNAPSHOT`, which is what makes Gradle's signing required, and `build`
     # signs the publications before anything is published. A PR never noticed
@@ -76,7 +76,7 @@ jobs:
 
       # Every module's javadoc jar, six modules to a Gradle run. Dokka's worker
       # process keeps the classes of each module it renders, so one run rendering
-      # all of them grew past the runner's 8 GB and had the daemon killed
+      # all of them grew past the 8 GB of the runner it then had and had the daemon killed
       # mid-publish, which is how v0.11.0 and v0.12.0 failed after their builds
       # had passed. A run of its own ends its workers; the publish below then finds
       # every javadoc up to date.

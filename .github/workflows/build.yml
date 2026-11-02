@@ -19,10 +19,8 @@ permissions:
 
 jobs:
   build:
-    # A pull request from a fork builds on GitHub's runners: this repository is public, so a fork's
-    # pull request can come from anyone and must not run on the Namespace account. Everything else,
-    # a push to main or a pull request from a branch here, builds on Namespace.
-    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || 'namespace-profile-mattjones372' }}
+    # GitHub's runners, which cost nothing for a public repository, for every build, a fork's included.
+    runs-on: ubuntu-24.04
     # A backstop behind the step's own limit below, for a hang outside it. GitHub's default is six hours.
     timeout-minutes: 40
 
@@ -56,9 +54,10 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
 
       # A green build takes under ten minutes. The limit is on the step rather than the job, so the reports
-      # below are still uploaded when it is hit. Two workers, not one per core: the Namespace machine has
-      # 8 GB, and four at once (test JVMs of up to 2 GB, TestKit's own Gradle, the Kotlin daemon beside
-      # Gradle's) got the daemon OOM-killed on a build with nothing cached.
+      # below are still uploaded when it is hit. Two workers, not one per core: four at once (test JVMs of up
+      # to 2 GB, TestKit's own Gradle, the Kotlin daemon beside Gradle's) got the daemon OOM-killed on a
+      # build with nothing cached, on the 8 GB machine this used to run on. GitHub's has 16 GB; the limit
+      # stays until a build shows four fit.
       # A pull request builds what it affects: the modules it changes, everything that depends on them, and
       # surefold-app's repository-wide suites, or SpecsSuite alone when it changes only specs/.
       # .github/affected-tasks.sh says which, and answers the whole build for a change to the build itself. A pull
