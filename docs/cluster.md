@@ -746,14 +746,14 @@ on `ready()`.
 <!-- cluster-operating -->
 ```kotlin
 import dev.surefold.actor.remote.node
+import dev.surefold.app.Module
+import dev.surefold.app.actor.Actors
+import dev.surefold.app.actor.actors
+import dev.surefold.app.probe
+import dev.surefold.app.single
 import dev.surefold.cluster.Cluster
 import dev.surefold.cluster.Discovery
 import dev.surefold.cluster.cluster
-import io.github.matthewjones372.surefold.app.Module
-import io.github.matthewjones372.surefold.app.actor.Actors
-import io.github.matthewjones372.surefold.app.actor.actors
-import io.github.matthewjones372.surefold.app.probe
-import io.github.matthewjones372.surefold.app.single
 import kotlin.time.Duration.Companion.seconds
 
 /** The cluster as a node of the application: in the actors' scope, left on release, and ready once it is in. */

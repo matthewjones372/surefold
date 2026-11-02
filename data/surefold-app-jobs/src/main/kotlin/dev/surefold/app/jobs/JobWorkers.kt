@@ -1,12 +1,12 @@
 package dev.surefold.app.jobs
 
+import dev.surefold.app.Migrated
+import dev.surefold.app.Module
+import dev.surefold.app.closingOf
 import dev.surefold.jobs.CronEntry
 import dev.surefold.jobs.JobHandlers
 import dev.surefold.jobs.JobSettings
 import dev.surefold.jobs.JobWorker
-import io.github.matthewjones372.surefold.app.Migrated
-import io.github.matthewjones372.surefold.app.Module
-import io.github.matthewjones372.surefold.app.closingOf
 import javax.sql.DataSource
 
 /**

@@ -1,6 +1,9 @@
 package dev.surefold.app.jobs
 
 // The example docs/jobs.md shows, from the imports down: JobsGuideSuite holds the page to this file.
+import dev.surefold.app.Module
+import dev.surefold.app.liquibase.migrations
+import dev.surefold.app.singleOf
 import dev.surefold.clock
 import dev.surefold.jobs.JobCodec
 import dev.surefold.jobs.JobHandlers
@@ -8,9 +11,6 @@ import dev.surefold.jobs.JobKind
 import dev.surefold.jobs.JobResult
 import dev.surefold.jobs.JobSettings
 import dev.surefold.jobs.Jobs
-import io.github.matthewjones372.surefold.app.Module
-import io.github.matthewjones372.surefold.app.liquibase.migrations
-import io.github.matthewjones372.surefold.app.singleOf
 import java.sql.Connection
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds

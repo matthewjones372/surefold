@@ -13,9 +13,9 @@ dependencies {
 
 <!-- flyway -->
 ```kotlin
-import io.github.matthewjones372.surefold.app.Migrated
-import io.github.matthewjones372.surefold.app.Module
-import io.github.matthewjones372.surefold.app.single
+import dev.surefold.app.Migrated
+import dev.surefold.app.Module
+import dev.surefold.app.single
 import javax.sql.DataSource
 
 class OrderRepo(val source: DataSource)
