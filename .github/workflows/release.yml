@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # On the job rather than on the publish step: a tag gives axion a version with
     # no `-SNAPSHOT`, which is what makes Gradle's signing required, and `build`
     # signs the publications before anything is published. A PR never noticed

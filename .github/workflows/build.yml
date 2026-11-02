@@ -20,7 +20,7 @@ permissions:
 jobs:
   build:
     # GitHub's runners, which cost nothing for a public repository, for every build, a fork's included.
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     # A backstop behind the step's own limit below, for a hang outside it. GitHub's default is six hours.
     timeout-minutes: 40
 
