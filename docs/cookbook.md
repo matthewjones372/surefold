@@ -764,7 +764,7 @@ what it held before the nodes it depends on are released.
 Asking an actor, and why the reply type is bound to `Any`:
 
 ```kotlin
-import io.github.matthewjones372.surefold.actor.pekko.ask
+import dev.surefold.actor.pekko.ask
 
 fun find(ref: ActorRef<Shop>, system: ActorSystem, id: PetId): Option<Pet> =
     ref.ask(system, 3.seconds) { replyTo -> Find(id, replyTo) }

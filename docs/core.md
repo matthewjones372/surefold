@@ -831,7 +831,7 @@ import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
 import dev.surefold.fail.bind
 import dev.surefold.parZip
-import io.github.matthewjones372.surefold.pekko.surefoldDispatcher
+import dev.surefold.pekko.surefoldDispatcher
 import org.apache.pekko.actor.ActorSystem
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage

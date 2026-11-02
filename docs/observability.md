@@ -137,9 +137,9 @@ That integration is unreleased; its privacy boundary and separate performance ga
 
 ```kotlin
 import dev.surefold.logInfo
+import dev.surefold.otel.span
+import dev.surefold.otel.tracedSpan
 import dev.surefold.parMap
-import io.github.matthewjones372.surefold.otel.span
-import io.github.matthewjones372.surefold.otel.tracedSpan
 import io.opentelemetry.api.trace.Tracer
 
 fun pricing(tracer: Tracer, orders: List<Order>): List<Price> =
@@ -202,7 +202,7 @@ named methods with no code change, which answers "how often, and how long?"
 about one call a profile only shows a share of:
 
 ```bash
-java '-XX:StartFlightRecording:filename=app.jfr,method-timing=io.github.matthewjones372.surefold.TransactKt::transact' ...
+java '-XX:StartFlightRecording:filename=app.jfr,method-timing=dev.surefold.TransactKt::transact' ...
 jfr view method-timing app.jfr
 ```
 

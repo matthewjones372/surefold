@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.stream.benchmarks
 
-import io.github.matthewjones372.surefold.stream.Layout
-import io.github.matthewjones372.surefold.stream.Measured
-import io.github.matthewjones372.surefold.stream.PekkoStreams
-import io.github.matthewjones372.surefold.stream.Profiler
-import io.github.matthewjones372.surefold.stream.Run
-import io.github.matthewjones372.surefold.stream.measured
-import io.github.matthewjones372.surefold.stream.render
-import io.github.matthewjones372.surefold.stream.run
+import dev.surefold.stream.Layout
+import dev.surefold.stream.Measured
+import dev.surefold.stream.PekkoStreams
+import dev.surefold.stream.Profiler
+import dev.surefold.stream.Run
+import dev.surefold.stream.measured
+import dev.surefold.stream.render
+import dev.surefold.stream.run
 import org.apache.pekko.actor.ActorSystem
 import java.io.File
 

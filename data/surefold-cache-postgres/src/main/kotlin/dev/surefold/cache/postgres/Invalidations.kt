@@ -3,10 +3,10 @@ package dev.surefold.cache.postgres
 import dev.surefold.cache.Cache
 import dev.surefold.cache.Invalidation
 import dev.surefold.postgres.notify.Notice
-import io.github.matthewjones372.surefold.stream.Run
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.map
-import io.github.matthewjones372.surefold.stream.runFold
+import dev.surefold.stream.Run
+import dev.surefold.stream.Stream
+import dev.surefold.stream.map
+import dev.surefold.stream.runFold
 
 /**
  * Each notice as what a cache is told (spec 0246): a payload is the key [key] reads from it, and a [Notice.Gap] is

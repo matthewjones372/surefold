@@ -7,8 +7,8 @@ import com.zaxxer.hikari.HikariDataSource
 import dev.surefold.Promise
 import dev.surefold.Shared
 import dev.surefold.awaitValue
+import dev.surefold.jdbc.otel.traced
 import dev.surefold.parMap
-import io.github.matthewjones372.surefold.jdbc.otel.traced
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext

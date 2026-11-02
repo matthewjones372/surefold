@@ -9,8 +9,8 @@ import dev.surefold.increment
 import dev.surefold.logInfo
 import dev.surefold.logWarn
 import dev.surefold.resourceScope
-import io.github.matthewjones372.surefold.stream.Stream
-import io.github.matthewjones372.surefold.stream.blocking
+import dev.surefold.stream.Stream
+import dev.surefold.stream.blocking
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 import java.sql.Connection
