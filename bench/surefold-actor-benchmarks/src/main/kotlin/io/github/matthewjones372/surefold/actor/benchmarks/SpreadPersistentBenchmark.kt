@@ -10,7 +10,7 @@ import dev.surefold.actor.journal
 import dev.surefold.actor.journal.jdbc.GroupCommit
 import dev.surefold.actor.journal.jdbc.JdbcJournal
 import dev.surefold.actor.persistent
-import io.github.matthewjones372.surefold.app.liquibase.migrate
+import dev.surefold.app.liquibase.migrate
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode
 import org.openjdk.jmh.annotations.Fork

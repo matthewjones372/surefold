@@ -23,7 +23,7 @@ dependencies {
 }
 ```
 
-Everything here is in `io.github.matthewjones372.surefold.app`. This page explains
+Everything here is in `dev.surefold.app`. This page explains
 how the graph behaves. The [cookbook](cookbook.md) has one compiled recipe per
 task, including configuration, migrations and actors.
 
@@ -40,11 +40,11 @@ task, including configuration, migrations and actors.
 ## Nodes and modules
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.Module
-import io.github.matthewjones372.surefold.app.boundTo
-import io.github.matthewjones372.surefold.app.closingOf
-import io.github.matthewjones372.surefold.app.single
-import io.github.matthewjones372.surefold.app.singleOf
+import dev.surefold.app.Module
+import dev.surefold.app.boundTo
+import dev.surefold.app.closingOf
+import dev.surefold.app.single
+import dev.surefold.app.singleOf
 
 val persistence: Module =
     closingOf { cfg: DbConfig -> HikariDataSource(cfg) }.boundTo<DataSource>() +
@@ -86,10 +86,10 @@ returns a platform type such as `Tracer!`, which matches no node asking for
 ## Checking a graph
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.findings
-import io.github.matthewjones372.surefold.app.render
-import io.github.matthewjones372.surefold.app.report
-import io.github.matthewjones372.surefold.app.validate
+import dev.surefold.app.findings
+import dev.surefold.app.render
+import dev.surefold.app.report
+import dev.surefold.app.validate
 
 app.validate()                                    // Either<NonEmptyList<WiringError>, Plan>
 app.findings(root = typeOf<HttpServer>()).report() // every error and warning, as text
@@ -135,9 +135,9 @@ example.
 An application declares its graph and the node it starts from:
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.Module
-import io.github.matthewjones372.surefold.app.SurefoldApp
-import io.github.matthewjones372.surefold.app.runApp
+import dev.surefold.app.Module
+import dev.surefold.app.SurefoldApp
+import dev.surefold.app.runApp
 import kotlin.system.exitProcess
 
 object Petshop : SurefoldApp<HttpServer>() {
@@ -194,8 +194,8 @@ connection, or a consumer with no partition assignment. A probe makes "started"
 mean "ready":
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.closingOf
-import io.github.matthewjones372.surefold.app.probe
+import dev.surefold.app.closingOf
+import dev.surefold.app.probe
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -233,9 +233,9 @@ A test of one class calls its constructor; a test whose claim spans wiring
 uses the graph.
 
 ```kotlin
-import io.github.matthewjones372.surefold.app.overriding
-import io.github.matthewjones372.surefold.app.subgraph
-import io.github.matthewjones372.surefold.app.testApp
+import dev.surefold.app.overriding
+import dev.surefold.app.subgraph
+import dev.surefold.app.testApp
 
 // One class, its collaborators as arguments.
 RegisterUser(InMemoryUsers()).register("ada") shouldBe Registered("ada")

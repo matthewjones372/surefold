@@ -2,7 +2,7 @@ package io.github.matthewjones372.surefold.bank
 
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.github.matthewjones372.surefold.app.liquibase.migrate
+import dev.surefold.app.liquibase.migrate
 
 /**
  * The Postgres database at [url], with the journal's tables, through a pool: Postgres starts a process for each
