@@ -1,4 +1,4 @@
-package io.github.matthewjones372.surefold.bank
+package dev.surefold.bank
 
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.LocatorAssertions

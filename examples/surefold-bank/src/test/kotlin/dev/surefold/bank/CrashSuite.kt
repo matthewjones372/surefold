@@ -1,4 +1,4 @@
-package io.github.matthewjones372.surefold.bank
+package dev.surefold.bank
 
 import dev.surefold.actor.NotSent
 import dev.surefold.actor.journal.jdbc.JdbcJournal

@@ -1,4 +1,4 @@
-package io.github.matthewjones372.surefold.bank
+package dev.surefold.bank
 
 import dev.surefold.actor.remote.outbox
 import dev.surefold.junit.Suite

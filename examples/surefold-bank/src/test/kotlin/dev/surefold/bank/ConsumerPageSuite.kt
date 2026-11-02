@@ -1,4 +1,4 @@
-package io.github.matthewjones372.surefold.bank
+package dev.surefold.bank
 
 import com.microsoft.playwright.Browser
 import com.microsoft.playwright.BrowserType

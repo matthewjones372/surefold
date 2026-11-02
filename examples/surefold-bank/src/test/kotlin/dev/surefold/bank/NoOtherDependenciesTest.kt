@@ -1,4 +1,4 @@
-package io.github.matthewjones372.surefold.bank
+package dev.surefold.bank
 
 import dev.surefold.assert.shouldBeEmpty
 import dev.surefold.assert.shouldNotBeNull

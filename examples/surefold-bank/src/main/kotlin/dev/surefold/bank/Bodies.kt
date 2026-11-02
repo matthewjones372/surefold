@@ -1,4 +1,4 @@
-package io.github.matthewjones372.surefold.bank
+package dev.surefold.bank
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json

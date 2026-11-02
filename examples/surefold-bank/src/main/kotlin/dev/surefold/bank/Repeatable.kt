@@ -1,4 +1,4 @@
-package io.github.matthewjones372.surefold.bank
+package dev.surefold.bank
 
 import dev.surefold.actor.Behaviour
 import dev.surefold.actor.Delivered

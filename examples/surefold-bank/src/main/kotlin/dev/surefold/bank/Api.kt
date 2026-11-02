@@ -1,4 +1,4 @@
-package io.github.matthewjones372.surefold.bank
+package dev.surefold.bank
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
