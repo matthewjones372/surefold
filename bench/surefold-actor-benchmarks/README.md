@@ -10,6 +10,10 @@ This is the baseline spec [0059](../../specs/0059-an-actor-without-an-actor-syst
 ./gradlew :surefold-actor-benchmarks:footprint                              # heap per idle actor
 ```
 
+`-PcompactHeaders` runs the measured JVMs, `footprint`'s and `askCpu`'s included, with `-XX:+UseCompactObjectHeaders` (JEP 519, spec
+[0276](../../specs/0276-compact-object-headers.md)). Without it, the numbers stay comparable with the
+baselines here.
+
 Results land in `build/jmh-result.json`. Compare numbers only against a baseline taken on the same machine.
 
 ## A cluster, to be measured
