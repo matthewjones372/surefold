@@ -1,21 +1,21 @@
 package io.github.matthewjones372.surefold.bank
 
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.Address
+import dev.surefold.actor.Confirmed
+import dev.surefold.actor.Delivery
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.TestActor
+import dev.surefold.actor.TestActors
+import dev.surefold.actor.events
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.outbox
+import dev.surefold.actor.testActors
 import dev.surefold.fail.map
 import dev.surefold.fail.right
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.Address
-import io.github.matthewjones372.surefold.actor.Confirmed
-import io.github.matthewjones372.surefold.actor.Delivery
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.TestActor
-import io.github.matthewjones372.surefold.actor.TestActors
-import io.github.matthewjones372.surefold.actor.events
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.outbox
-import io.github.matthewjones372.surefold.actor.testActors
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 

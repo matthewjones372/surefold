@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.bank
 
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.events
+import dev.surefold.actor.journal.jdbc.JdbcJournal
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.actor.events
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 
 private val opened = PersistenceId("account", "a-1")
 

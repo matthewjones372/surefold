@@ -1,5 +1,6 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.actor.remote.Node
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
@@ -7,7 +8,6 @@ import dev.surefold.junit.shouldBeEmpty
 import dev.surefold.junit.shouldBeLessThanOrEqual
 import dev.surefold.junit.shouldHaveSize
 import dev.surefold.junit.withClue
-import io.github.matthewjones372.surefold.actor.remote.Node
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit

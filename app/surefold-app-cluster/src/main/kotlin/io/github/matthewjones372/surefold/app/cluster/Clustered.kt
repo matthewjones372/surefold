@@ -2,11 +2,11 @@ package io.github.matthewjones372.surefold.app.cluster
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.remote.node
+import dev.surefold.actor.stay
 import dev.surefold.logError
 import dev.surefold.logInfo
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.remote.node
-import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.app.Asked
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.actor.Actors

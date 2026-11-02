@@ -2,15 +2,15 @@ package io.github.matthewjones372.surefold.cluster
 
 import dev.surefold.Carriers
 import dev.surefold.Gauge
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.Address
-import io.github.matthewjones372.surefold.actor.Ctx
-import io.github.matthewjones372.surefold.actor.DeadLetter
-import io.github.matthewjones372.surefold.actor.HandOn
-import io.github.matthewjones372.surefold.actor.PlumbingSeam
-import io.github.matthewjones372.surefold.actor.deadLetter
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.Node
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.Address
+import dev.surefold.actor.Ctx
+import dev.surefold.actor.DeadLetter
+import dev.surefold.actor.HandOn
+import dev.surefold.actor.PlumbingSeam
+import dev.surefold.actor.deadLetter
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.Node
 
 /**
  * What a region runs its shards with: which member owns a shard, what runs one here, and how a message reaches what

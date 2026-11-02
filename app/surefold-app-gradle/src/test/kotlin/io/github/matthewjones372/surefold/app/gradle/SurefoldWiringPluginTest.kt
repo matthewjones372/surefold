@@ -663,9 +663,9 @@ object Under : SurefoldApp<Settings>() {
 
 /** surefold-app-actor's factories, compiled against the real module, as [LIBRARY] does for the others. */
 private const val LIBRARY_ACTORS = """
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.stay
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.stay
 import io.github.matthewjones372.surefold.app.AppScope
 import io.github.matthewjones372.surefold.app.SurefoldApp
 import io.github.matthewjones372.surefold.app.Module
@@ -1000,7 +1000,7 @@ import dev.surefold.Histogram
 import dev.surefold.LogLine
 import dev.surefold.Logger
 import dev.surefold.Shared
-import io.github.matthewjones372.surefold.actor.ActorRef
+import dev.surefold.actor.ActorRef
 import dev.surefold.logInfo
 import io.github.matthewjones372.surefold.stream.Hub
 import dev.surefold.transact
@@ -1026,7 +1026,7 @@ fun hold(log: Logger, line: LogLine, sold: Counter, left: Gauge, sizes: Histogra
 private const val AFTER_COMMIT = """
 import dev.surefold.Counter
 import dev.surefold.Shared
-import io.github.matthewjones372.surefold.actor.ActorRef
+import dev.surefold.actor.ActorRef
 import dev.surefold.logInfo
 import dev.surefold.transact
 

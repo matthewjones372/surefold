@@ -1,15 +1,15 @@
 package io.github.matthewjones372.surefold.bank
 
+import dev.surefold.actor.NotSent
+import dev.surefold.actor.journal.jdbc.JdbcJournal
+import dev.surefold.actor.journal.jdbc.Postgres
+import dev.surefold.actor.remote.Node
 import dev.surefold.fail.Either
 import dev.surefold.fail.right
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.timeout
-import io.github.matthewjones372.surefold.actor.NotSent
-import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
-import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.cluster.Discovery
 import io.github.matthewjones372.surefold.cluster.Gossiping
 import java.net.ServerSocket

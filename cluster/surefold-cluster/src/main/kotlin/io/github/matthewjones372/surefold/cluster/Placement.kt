@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.actor.remote.Node
+import dev.surefold.actor.remote.Node
 import java.util.zip.CRC32
 
 private const val FNV_OFFSET = -0x340d631b7bdddcdbL

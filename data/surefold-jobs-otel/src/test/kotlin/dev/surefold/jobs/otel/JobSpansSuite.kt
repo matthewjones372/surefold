@@ -1,5 +1,7 @@
 package dev.surefold.jobs.otel
 
+import dev.surefold.actor.journal.jdbc.Postgres
+import dev.surefold.actor.journal.jdbc.migrate
 import dev.surefold.jobs.JobCodec
 import dev.surefold.jobs.JobHandlers
 import dev.surefold.jobs.JobKind
@@ -10,8 +12,6 @@ import dev.surefold.jobs.Jobs
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.test.eventually
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
-import io.github.matthewjones372.surefold.actor.journal.jdbc.migrate
 import io.github.matthewjones372.surefold.otel.Spans
 import io.github.matthewjones372.surefold.otel.span
 import io.opentelemetry.api.trace.Span

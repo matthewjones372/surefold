@@ -2,6 +2,8 @@ package dev.surefold.idempotency
 
 import dev.surefold.ByteChunk
 import dev.surefold.TestClock
+import dev.surefold.actor.journal.jdbc.Postgres
+import dev.surefold.actor.journal.jdbc.migrate
 import dev.surefold.clock
 import dev.surefold.jobs.Cron
 import dev.surefold.jobs.JobHandlers
@@ -11,8 +13,6 @@ import dev.surefold.jobs.Jobs
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.test.eventually
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
-import io.github.matthewjones372.surefold.actor.journal.jdbc.migrate
 import java.time.Instant
 import java.time.ZoneOffset.UTC
 import javax.sql.DataSource

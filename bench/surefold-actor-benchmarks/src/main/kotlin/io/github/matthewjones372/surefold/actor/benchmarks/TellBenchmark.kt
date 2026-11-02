@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.actor.benchmarks
 
-import io.github.matthewjones372.surefold.actor.ActorRef
+import dev.surefold.actor.ActorRef
 import org.apache.pekko.actor.typed.javadsl.Adapter
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode

@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.actor.remote.WireIn
-import io.github.matthewjones372.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
 
 private const val JOIN = 1
 private const val WELCOME = 2

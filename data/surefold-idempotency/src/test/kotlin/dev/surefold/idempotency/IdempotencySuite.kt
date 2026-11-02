@@ -2,12 +2,12 @@ package dev.surefold.idempotency
 
 import dev.surefold.ByteChunk
 import dev.surefold.TestClock
+import dev.surefold.actor.journal.jdbc.Postgres
+import dev.surefold.actor.journal.jdbc.migrate
 import dev.surefold.clock
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
-import io.github.matthewjones372.surefold.actor.journal.jdbc.migrate
 import java.time.Instant
 import java.util.UUID
 import java.util.concurrent.ConcurrentLinkedQueue

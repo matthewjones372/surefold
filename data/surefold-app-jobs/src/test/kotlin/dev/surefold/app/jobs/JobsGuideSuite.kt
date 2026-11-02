@@ -1,13 +1,13 @@
 package dev.surefold.app.jobs
 
 import dev.surefold.TestClock
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.clock
 import dev.surefold.jobs.JobSettings
 import dev.surefold.jobs.JobWorker
 import dev.surefold.junit.Suite
 import dev.surefold.junit.expect
 import dev.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.app.overriding
 import io.github.matthewjones372.surefold.app.singleOf
 import io.github.matthewjones372.surefold.app.testApp

@@ -782,7 +782,7 @@ node providing `Actors`, a scope that lives as long as the application, and
 `actor` spawns a behaviour in it, keyed by Surefold's own `ActorRef<M>`:
 
 ```kotlin
-import io.github.matthewjones372.surefold.actor.ActorRef
+import dev.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.app.actor.actor
 import io.github.matthewjones372.surefold.app.actor.actors
 

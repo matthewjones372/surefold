@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.app.cluster
 
+import dev.surefold.actor.DeadLetter
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.stay
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBeEmpty
 import dev.surefold.junit.shouldBeGreaterThan
-import io.github.matthewjones372.surefold.actor.DeadLetter
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.remote.Codecs
-import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.actor.actors
 import io.github.matthewjones372.surefold.app.single

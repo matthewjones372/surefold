@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.actor.Behaviour
-import io.github.matthewjones372.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.ActorRef
+import dev.surefold.actor.Behaviour
+import dev.surefold.actor.remote.MessageCodec
 
 /**
  * One actor named [name] in the whole cluster, made by [behaviour] on the oldest `Up` member and started there as

@@ -2,10 +2,10 @@ package io.github.matthewjones372.surefold.jdbc.otel
 
 import com.zaxxer.hikari.HikariDataSource
 import dev.surefold.Resource
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.junit.SharedSuite
 import dev.surefold.junit.expect
 import dev.surefold.resource
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.opentelemetry.sdk.OpenTelemetrySdk
 import io.opentelemetry.sdk.trace.SdkTracerProvider
 import io.opentelemetry.sdk.trace.samplers.Sampler

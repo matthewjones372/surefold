@@ -1,16 +1,16 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.actor.DeadLetter
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.onDeadLetter
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.node
+import dev.surefold.actor.stay
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldContainExactly
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.actor.DeadLetter
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.onDeadLetter
-import io.github.matthewjones372.surefold.actor.remote.Codecs
-import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.actor.remote.node
-import io.github.matthewjones372.surefold.actor.stay
 import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch

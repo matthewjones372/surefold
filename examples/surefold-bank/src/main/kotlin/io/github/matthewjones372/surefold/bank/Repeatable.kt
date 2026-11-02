@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.bank
 
-import io.github.matthewjones372.surefold.actor.Behaviour
-import io.github.matthewjones372.surefold.actor.Delivered
+import dev.surefold.actor.Behaviour
+import dev.surefold.actor.Delivered
 
 /**
  * [behaviour] given the command inside each one sent reliably, and confirming it once the turn returns.

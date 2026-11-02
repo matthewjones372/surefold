@@ -4,6 +4,11 @@ import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.surefold.Resource
+import dev.surefold.actor.Reply
+import dev.surefold.actor.ask
+import dev.surefold.actor.behaviour
+import dev.surefold.actor.spawn
+import dev.surefold.actor.stay
 import dev.surefold.junit.SharedSuite
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldContain
@@ -12,11 +17,6 @@ import dev.surefold.junit.withClue
 import dev.surefold.parZip
 import dev.surefold.resource
 import dev.surefold.scope
-import io.github.matthewjones372.surefold.actor.Reply
-import io.github.matthewjones372.surefold.actor.ask
-import io.github.matthewjones372.surefold.actor.behaviour
-import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.actor.stay
 import kotlin.time.Duration.Companion.minutes
 
 private data class Who(val reply: Reply<Pair<String, Int>>)

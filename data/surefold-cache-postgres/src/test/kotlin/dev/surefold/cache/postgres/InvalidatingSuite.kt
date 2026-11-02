@@ -1,5 +1,6 @@
 package dev.surefold.cache.postgres
 
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.cache.Cache
 import dev.surefold.cache.Invalidation
 import dev.surefold.fail.Either
@@ -8,7 +9,6 @@ import dev.surefold.junit.shouldBe
 import dev.surefold.postgres.notify.Notice
 import dev.surefold.postgres.notify.PostgresNotifications
 import dev.surefold.test.eventually
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.stream.Exit
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.Stream

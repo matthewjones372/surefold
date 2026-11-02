@@ -4,6 +4,7 @@ import com.zaxxer.hikari.HikariDataSource
 import dev.surefold.Promise
 import dev.surefold.Resource
 import dev.surefold.Shared
+import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.awaitValue
 import dev.surefold.junit.SharedSuite
 import dev.surefold.junit.expect
@@ -12,7 +13,6 @@ import dev.surefold.junit.shouldHaveSize
 import dev.surefold.junit.shouldThrow
 import dev.surefold.parMap
 import dev.surefold.resource
-import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.otel.span
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.AttributeKey

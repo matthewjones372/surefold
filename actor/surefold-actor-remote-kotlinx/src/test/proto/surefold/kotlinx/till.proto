@@ -2,23 +2,23 @@ syntax = "proto2";
 
 package surefold.kotlinx;
 
-// serial name 'io.github.matthewjones372.surefold.actor.remote.kotlinx.Till.Paid'
+// serial name 'dev.surefold.actor.remote.kotlinx.Till.Paid'
 message Paid {
   required int64 amount = 1;
   required string reference = 2;
 }
 
-// serial name 'io.github.matthewjones372.surefold.actor.remote.kotlinx.Till.Refunded'
+// serial name 'dev.surefold.actor.remote.kotlinx.Till.Refunded'
 message Refunded {
   required int64 amount = 1;
   required Reason reason = 2;
 }
 
-// serial name 'io.github.matthewjones372.surefold.actor.remote.kotlinx.Till.Closed'
+// serial name 'dev.surefold.actor.remote.kotlinx.Till.Closed'
 message Closed {
 }
 
-// serial name 'io.github.matthewjones372.surefold.actor.remote.kotlinx.Reason'
+// serial name 'dev.surefold.actor.remote.kotlinx.Reason'
 enum Reason {
   Faulty = 1;
   Unwanted = 2;

@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.app.cluster
 
 import com.typesafe.config.ConfigFactory
+import dev.surefold.actor.remote.Node
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldContainExactly
 import dev.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.app.typesafe.reading
 import java.util.Properties
 

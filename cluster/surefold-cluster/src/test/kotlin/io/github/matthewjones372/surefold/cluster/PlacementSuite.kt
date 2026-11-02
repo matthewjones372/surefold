@@ -1,5 +1,6 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.actor.remote.Node
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
@@ -8,7 +9,6 @@ import dev.surefold.junit.shouldBeInRange
 import dev.surefold.junit.shouldBeLessThanOrEqual
 import dev.surefold.junit.shouldBeNull
 import dev.surefold.junit.withClue
-import io.github.matthewjones372.surefold.actor.remote.Node
 
 private fun up(n: Int, status: Status = Status.Up) = Member(Node("n$n", "10.0.0.$n", 25520), n.toLong(), status, n)
 
