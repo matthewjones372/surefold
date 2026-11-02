@@ -143,4 +143,50 @@ class SurefoldLocalTest {
 
         seen shouldBe "bound"
     }
+
+    @Test
+    fun `attaching again and again without detaching leaves one link for the local, not one per attach`() {
+        val local = surefoldLocal { 0 }
+        val other = surefoldLocal { "initial" }
+        val keep = other.attach("kept")
+        val first = local.attach(-1)
+
+        repeat(1_000) { local.attach(it) }
+
+        local.get() shouldBe 999
+        other.get() shouldBe "kept"
+        withClue("an attach replaces its local's link, as OpenFeature's propagator relies on per request") {
+            generateSequence(Bindings.snapshot()) { it.next }.count() shouldBe 2
+        }
+        first.detach()
+        keep.detach()
+        local.get() shouldBe 0
+    }
+
+    @Test
+    fun `a value bound inside another binding of the same local is read first, and the outer one after`() {
+        val local = surefoldLocal { "initial" }
+
+        val seen = local.locally("outer") {
+            listOf(local.locally("inner") { local.get() }, local.get())
+        }
+
+        seen shouldContainExactly listOf("inner", "outer")
+    }
+
+    @Test
+    fun `an attach under another local's binding replaces its own link and keeps the other's`() {
+        val local = surefoldLocal { 0 }
+        val other = surefoldLocal { "initial" }
+        val first = local.attach(1)
+
+        val seen = other.locally("bound") {
+            local.attach(2)
+            Triple(local.get(), other.get(), generateSequence(Bindings.snapshot()) { it.next }.count())
+        }
+
+        seen shouldBe Triple(2, "bound", 2)
+        local.get() shouldBe 1
+        first.detach()
+    }
 }
