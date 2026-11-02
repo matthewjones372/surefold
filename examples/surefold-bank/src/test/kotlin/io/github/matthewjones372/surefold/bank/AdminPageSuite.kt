@@ -3,10 +3,10 @@ package io.github.matthewjones372.surefold.bank
 import com.microsoft.playwright.Page
 import com.microsoft.playwright.assertions.LocatorAssertions
 import com.microsoft.playwright.assertions.PlaywrightAssertions.assertThat
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.holds
-import io.github.matthewjones372.surefold.junit.timeout
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.holds
+import dev.surefold.junit.timeout
 import kotlin.time.Duration.Companion.seconds
 
 private val within = LocatorAssertions.HasTextOptions().setTimeout(30_000.0)

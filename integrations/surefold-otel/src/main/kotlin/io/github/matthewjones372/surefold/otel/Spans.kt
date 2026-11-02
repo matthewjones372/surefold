@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.otel
 
-import io.github.matthewjones372.surefold.logAnnotated
+import dev.surefold.logAnnotated
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.StatusCode
 import io.opentelemetry.api.trace.Tracer

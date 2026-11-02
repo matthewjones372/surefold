@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.idempotency
 
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldThrow
+import dev.surefold.TestClock
+import dev.surefold.clock
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldThrow
 import io.github.matthewjones372.surefold.ratelimit.InMemoryRateLimits
 import java.io.File
 import java.time.Instant

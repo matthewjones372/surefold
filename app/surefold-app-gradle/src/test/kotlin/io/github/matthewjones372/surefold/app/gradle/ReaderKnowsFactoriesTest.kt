@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.app.gradle
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldNotBeNull
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldNotBeNull
+import dev.surefold.assert.withClue
 import org.junit.jupiter.api.Test
 import java.io.File
 import java.lang.reflect.Modifier

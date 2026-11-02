@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.TestClock
+import dev.surefold.Clock
+import dev.surefold.TestClock
 import java.time.Instant
 import java.util.TreeSet
 import java.util.concurrent.locks.ReentrantLock

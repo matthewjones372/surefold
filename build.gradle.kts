@@ -295,7 +295,7 @@ subprojects {
         dependencies { "testImplementation"(project(":surefold-junit")) }
         @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
         extensions.configure<org.jetbrains.kotlin.powerassert.gradle.PowerAssertGradleExtension> {
-            functions.add("io.github.matthewjones372.surefold.junit.expect")
+            functions.add("dev.surefold.junit.expect")
             includedSourceSets.add("test")
         }
         // The checker reports the standard library's dropped must-use values, and only under it does `val _ =` compile.

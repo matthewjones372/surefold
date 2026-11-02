@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import java.util.Properties
 
 /**
- * `io.github.matthewjones372.surefold.compiler`: surefold-compiler's checkers in every Kotlin compilation (spec 0041),
+ * `dev.surefold.compiler`: surefold-compiler's checkers in every Kotlin compilation (spec 0041),
  * so a `Deferred` that outlives its scope fails to compile. A plugin of its own, apart from the wiring plugin, so a
  * service without surefold-app takes it alone; it lives in this jar beside that one, which already publishes plugins.
  */
@@ -28,7 +28,7 @@ class SurefoldForksPlugin : KotlinCompilerPluginSupportPlugin {
         kotlinCompilation.target.project.provider { emptyList() }
 
     private companion object {
-        const val PLUGIN_ID = "io.github.matthewjones372.surefold.compiler"
+        const val PLUGIN_ID = "dev.surefold.compiler"
 
         /** Written into this jar by its own build, so the coordinates cannot drift from the release. */
         private val coordinates: Properties by lazy {

@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.cache.redis
 
-import io.github.matthewjones372.surefold.cache.Layer
-import io.github.matthewjones372.surefold.cache.Stored
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.cache.Layer
+import dev.surefold.cache.Stored
+import dev.surefold.clock
 import io.lettuce.core.ScanArgs
 import io.lettuce.core.ScanCursor
 import io.lettuce.core.SetArgs

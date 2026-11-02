@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.app.compiler
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldContain
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldContain
+import dev.surefold.assert.withClue
 import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.junit.jupiter.api.Test
 

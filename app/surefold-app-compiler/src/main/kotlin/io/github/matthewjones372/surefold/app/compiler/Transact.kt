@@ -130,7 +130,7 @@ private fun refused(called: CallableId): Boolean {
     return io.any { owner == it || owner.startsWith(it) } || owner in kotlinIo || called in blocking || called in forks
 }
 
-private val surefold = FqName("io.github.matthewjones372.surefold")
+private val surefold = FqName("dev.surefold")
 
 private val transaction = ClassId(surefold, Name.identifier("Transaction"))
 

@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.await
-import io.github.matthewjones372.surefold.fail.Fail
+import dev.surefold.await
+import dev.surefold.fail.Fail
 import java.util.concurrent.CompletionStage
 
 /**

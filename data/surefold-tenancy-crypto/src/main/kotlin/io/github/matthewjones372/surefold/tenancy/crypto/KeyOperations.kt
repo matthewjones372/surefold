@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.tenancy.crypto
 
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.fail.Either
 import java.time.Instant
 import java.util.Collections
 

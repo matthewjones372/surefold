@@ -1,16 +1,16 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.junit.withTempDirectory
+import dev.surefold.Resource
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.right
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.junit.withClue
+import dev.surefold.junit.withTempDirectory
 import org.apache.pekko.Done
 import org.apache.pekko.actor.ClassicActorSystemProvider
 import org.apache.pekko.stream.javadsl.Sink

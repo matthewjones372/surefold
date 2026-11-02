@@ -2,7 +2,8 @@ package io.github.matthewjones372.surefold.actor.benchmarks
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import io.github.matthewjones372.surefold.Scope
+import dev.surefold.Scope
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.Behaviour
 import io.github.matthewjones372.surefold.actor.become
 import io.github.matthewjones372.surefold.actor.behaviour
@@ -15,7 +16,6 @@ import io.github.matthewjones372.surefold.cluster.Discovery
 import io.github.matthewjones372.surefold.cluster.Gossiping
 import io.github.matthewjones372.surefold.cluster.MemberEvent
 import io.github.matthewjones372.surefold.cluster.cluster
-import io.github.matthewjones372.surefold.scope
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.javadsl.Adapter
 import org.apache.pekko.actor.typed.javadsl.Behaviors

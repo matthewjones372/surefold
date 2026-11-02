@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.auth
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.shouldBeEmpty
 import java.io.File
 
 /** What surefold-auth may put on a service's classpath: surefold's, and Bouncy Castle's provider for Argon2id. */

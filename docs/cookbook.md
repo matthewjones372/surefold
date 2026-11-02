@@ -41,7 +41,7 @@ The types the recipes are written against:
 ```kotlin
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
-import io.github.matthewjones372.surefold.ExitCase
+import dev.surefold.ExitCase
 import io.github.matthewjones372.surefold.app.HealthRegistry
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.RealSys
@@ -406,7 +406,7 @@ surefold-app wiring
 ❯ warning: nothing reaches Metrics          Telemetry.kt:9
 ```
 
-Applying the `io.github.matthewjones372.surefold.wiring` Gradle plugin runs this on
+Applying the `dev.surefold.wiring` Gradle plugin runs this on
 every build and draws each graph; see
 [Checking the graph in the build](app.md#checking-the-graph-in-the-build).
 

@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.otel
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.withClue
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.Reply
 import io.github.matthewjones372.surefold.actor.ask
 import io.github.matthewjones372.surefold.actor.behaviour
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.scope
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.Tracer
 import kotlin.time.Duration.Companion.minutes

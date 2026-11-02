@@ -1,5 +1,9 @@
 package io.github.matthewjones372.surefold.app.actor
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeLessThan
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.behaviour
 import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.actor.remote.node
@@ -13,10 +17,6 @@ import io.github.matthewjones372.surefold.cluster.Gossiping
 import io.github.matthewjones372.surefold.cluster.MemberEvent
 import io.github.matthewjones372.surefold.cluster.Status
 import io.github.matthewjones372.surefold.cluster.cluster
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeLessThan
-import io.github.matthewjones372.surefold.scope
 import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch

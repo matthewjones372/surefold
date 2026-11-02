@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.app.liquibase
 
-import io.github.matthewjones372.surefold.assert.shouldBeEmpty
-import io.github.matthewjones372.surefold.assert.shouldNotBeNull
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBeEmpty
+import dev.surefold.assert.shouldNotBeNull
+import dev.surefold.assert.withClue
 import org.junit.jupiter.api.Test
 import java.io.File
 

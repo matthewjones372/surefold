@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.ScheduleStep
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.Fail
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.nonFatalOrThrow
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.fixedClock
+import dev.surefold.Clock
+import dev.surefold.Schedule
+import dev.surefold.ScheduleStep
+import dev.surefold.fail.Either
+import dev.surefold.fail.Fail
+import dev.surefold.fail.left
+import dev.surefold.fail.nonFatalOrThrow
+import dev.surefold.fail.right
+import dev.surefold.fixedClock
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong

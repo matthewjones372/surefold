@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldBeEmpty
-import io.github.matthewjones372.surefold.assert.shouldContain
-import io.github.matthewjones372.surefold.assert.shouldNotBe
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeEmpty
+import dev.surefold.assert.shouldContain
+import dev.surefold.assert.shouldNotBe
+import dev.surefold.assert.withClue
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -18,7 +18,7 @@ class CommittedCompileTest {
 
     /** Both packages imported, as a service using both writes them, so a clash between them would show. */
     private val preamble = """
-        import io.github.matthewjones372.surefold.fail.Either
+        import dev.surefold.fail.Either
         import io.github.matthewjones372.surefold.kafka.Committed
         import io.github.matthewjones372.surefold.kafka.DecodeError
         import io.github.matthewjones372.surefold.kafka.Kafka

@@ -1,5 +1,12 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.fail.right
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeGreaterThan
+import dev.surefold.metrics
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.Delivered
 import io.github.matthewjones372.surefold.actor.Delivery
 import io.github.matthewjones372.surefold.actor.EventCodec
@@ -17,13 +24,6 @@ import io.github.matthewjones372.surefold.actor.remote.WireIn
 import io.github.matthewjones372.surefold.actor.remote.WireOut
 import io.github.matthewjones372.surefold.actor.remote.delivery
 import io.github.matthewjones372.surefold.actor.remote.node
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeGreaterThan
-import io.github.matthewjones372.surefold.metrics
-import io.github.matthewjones372.surefold.scope
 import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference

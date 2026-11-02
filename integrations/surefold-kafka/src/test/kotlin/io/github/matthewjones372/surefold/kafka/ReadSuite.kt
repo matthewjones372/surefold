@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.fold
-import io.github.matthewjones372.surefold.fail.map
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldThrow
+import dev.surefold.Resource
+import dev.surefold.fail.Either
+import dev.surefold.fail.fold
+import dev.surefold.fail.map
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldThrow
 import io.github.matthewjones372.surefold.stream.Exit
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.run

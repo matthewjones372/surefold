@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.actor.journal.jdbc
 
+import dev.surefold.clock
+import dev.surefold.logInfo
 import io.github.matthewjones372.surefold.actor.OffsetStore
 import io.github.matthewjones372.surefold.actor.PersistenceId
 import io.github.matthewjones372.surefold.actor.ShardedJournal
 import io.github.matthewjones372.surefold.actor.SliceMap
 import io.github.matthewjones372.surefold.actor.Slices
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.logInfo
 import java.sql.Connection
 import javax.sql.DataSource
 import kotlin.time.Duration

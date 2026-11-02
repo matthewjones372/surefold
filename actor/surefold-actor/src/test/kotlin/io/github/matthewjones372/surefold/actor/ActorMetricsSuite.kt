@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.capturingMetrics
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.Schedule
+import dev.surefold.capturingMetrics
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.scope
 
 /** Fails once when told to. */
 private data object MeteredTrip

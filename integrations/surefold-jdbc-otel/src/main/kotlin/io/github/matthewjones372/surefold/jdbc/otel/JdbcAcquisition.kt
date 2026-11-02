@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.jdbc.otel
 
-import io.github.matthewjones372.surefold.surefoldLocal
+import dev.surefold.surefoldLocal
 import io.opentelemetry.instrumentation.jdbc.datasource.JdbcTelemetry
 import java.sql.Connection
 import java.sql.ConnectionBuilder

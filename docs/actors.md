@@ -66,7 +66,7 @@ import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.actor.stop
 import io.github.matthewjones372.surefold.actor.unhandled
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.scope
 import kotlin.time.Duration.Companion.seconds
 
 sealed interface Till
@@ -138,8 +138,8 @@ not; `watch` on the scope gives the same as a `Deferred` to await.
 
 <!-- actors-failure -->
 ```kotlin
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.Scope
+import dev.surefold.Schedule
+import dev.surefold.Scope
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Failure
 import io.github.matthewjones372.surefold.actor.Reply
@@ -151,7 +151,7 @@ import io.github.matthewjones372.surefold.actor.onStart
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.actor.watch
-import io.github.matthewjones372.surefold.logInfo
+import dev.surefold.logInfo
 import kotlin.time.Duration.Companion.milliseconds
 
 sealed interface Feed
@@ -215,7 +215,7 @@ fire in no time at all.
 
 <!-- actors-time -->
 ```kotlin
-import io.github.matthewjones372.surefold.TestClock
+import dev.surefold.TestClock
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.awaitIdle
 import io.github.matthewjones372.surefold.actor.become
@@ -226,8 +226,8 @@ import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.actor.stop
 import io.github.matthewjones372.surefold.actor.unhandled
 import io.github.matthewjones372.surefold.actor.watch
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.clock
+import dev.surefold.scope
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
@@ -310,7 +310,7 @@ many.
 
 <!-- actors-routing -->
 ```kotlin
-import io.github.matthewjones372.surefold.Scope
+import dev.surefold.Scope
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.ServiceKey
 import io.github.matthewjones372.surefold.actor.awaitIdle
@@ -420,7 +420,7 @@ import io.github.matthewjones372.surefold.actor.persistent
 import io.github.matthewjones372.surefold.actor.snapshots
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stop
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.scope
 import java.nio.ByteBuffer
 import kotlin.time.Duration.Companion.seconds
 
@@ -570,8 +570,8 @@ import io.github.matthewjones372.surefold.actor.ask
 import io.github.matthewjones372.surefold.actor.batching
 import io.github.matthewjones372.surefold.actor.become
 import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.logAnnotated
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.logAnnotated
+import dev.surefold.scope
 import kotlin.time.Duration.Companion.seconds
 
 data class Admit(val name: String, val reply: Reply<Int>)
@@ -640,7 +640,7 @@ The tests below are run by the build, as well as compiled, so each passes.
 
 <!-- actors-testing -->
 ```kotlin
-import io.github.matthewjones372.surefold.Schedule
+import dev.surefold.Schedule
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Failure
 import io.github.matthewjones372.surefold.actor.Reply
@@ -651,8 +651,8 @@ import io.github.matthewjones372.surefold.actor.stop
 import io.github.matthewjones372.surefold.actor.test
 import io.github.matthewjones372.surefold.actor.testActors
 import io.github.matthewjones372.surefold.actor.unhandled
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.assert.shouldBe
+import dev.surefold.fail.right
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes

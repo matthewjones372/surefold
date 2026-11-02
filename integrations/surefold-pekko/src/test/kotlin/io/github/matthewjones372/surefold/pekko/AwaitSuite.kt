@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.pekko
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeSameInstanceAs
-import io.github.matthewjones372.surefold.junit.shouldThrow
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeSameInstanceAs
+import dev.surefold.junit.shouldThrow
 import org.apache.pekko.dispatch.Futures
 import scala.concurrent.Future
 

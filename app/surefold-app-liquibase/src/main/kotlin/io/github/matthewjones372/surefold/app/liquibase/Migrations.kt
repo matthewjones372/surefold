@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.app.liquibase
 
+import dev.surefold.logInfo
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.single
-import io.github.matthewjones372.surefold.logInfo
 import liquibase.Contexts
 import liquibase.LabelExpression
 import liquibase.Liquibase

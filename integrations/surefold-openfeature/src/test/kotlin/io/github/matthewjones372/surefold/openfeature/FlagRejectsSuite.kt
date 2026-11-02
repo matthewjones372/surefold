@@ -4,11 +4,11 @@ import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.providers.memory.InMemoryProvider
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.withClue
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
 import dev.openfeature.sdk.providers.memory.Flag as MemoryFlag

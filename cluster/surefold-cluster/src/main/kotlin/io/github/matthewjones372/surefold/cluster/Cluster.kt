@@ -1,6 +1,8 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.Scope
+import dev.surefold.Scope
+import dev.surefold.clock
+import dev.surefold.logWarn
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Address
 import io.github.matthewjones372.surefold.actor.Ctx
@@ -24,8 +26,6 @@ import io.github.matthewjones372.surefold.actor.remote.WireOut
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.actor.stop
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.logWarn
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.locks.ReentrantLock

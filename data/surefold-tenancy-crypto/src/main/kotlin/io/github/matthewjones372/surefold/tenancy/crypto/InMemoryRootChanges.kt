@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.tenancy.crypto
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bind
+import dev.surefold.fail.left
+import dev.surefold.fail.right
 
 internal typealias InMemoryKeyReply<A> = Either<KeyOperationFailure, A>
 internal typealias InMemoryChange<A> = Pair<InMemoryKeyState, InMemoryKeyReply<A>>

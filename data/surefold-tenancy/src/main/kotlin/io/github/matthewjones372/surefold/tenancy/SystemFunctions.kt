@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.tenancy
 
-import io.github.matthewjones372.surefold.logInfo
+import dev.surefold.logInfo
 import java.sql.Connection
 import java.sql.ResultSet
 import javax.sql.DataSource

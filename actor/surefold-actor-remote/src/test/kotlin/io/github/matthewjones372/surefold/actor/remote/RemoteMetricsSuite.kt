@@ -1,19 +1,19 @@
 package io.github.matthewjones372.surefold.actor.remote
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Histogram
-import io.github.matthewjones372.surefold.Metrics
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Histogram
+import dev.surefold.Metrics
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.metrics
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.Address
 import io.github.matthewjones372.surefold.actor.DeadLetter
 import io.github.matthewjones372.surefold.actor.behaviour
 import io.github.matthewjones372.surefold.actor.onDeadLetter
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.metrics
-import io.github.matthewjones372.surefold.scope
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

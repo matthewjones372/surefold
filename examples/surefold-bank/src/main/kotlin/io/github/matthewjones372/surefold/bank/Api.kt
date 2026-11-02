@@ -2,8 +2,8 @@ package io.github.matthewjones372.surefold.bank
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.fold
+import dev.surefold.fail.Either
+import dev.surefold.fail.fold
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.encodeToJsonElement
 import java.net.InetSocketAddress

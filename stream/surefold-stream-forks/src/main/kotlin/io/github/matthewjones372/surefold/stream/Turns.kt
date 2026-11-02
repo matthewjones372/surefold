@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.VirtualThreads
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.TestClock
+import dev.surefold.VirtualThreads
+import dev.surefold.clock
 import java.time.Instant
 import java.util.concurrent.Executor
 import java.util.concurrent.locks.ReentrantLock

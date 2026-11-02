@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.app.typesafe
 
 import com.typesafe.config.ConfigFactory
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.junit.withClue
 import java.io.File
 
 /**

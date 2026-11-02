@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.Carriers
-import io.github.matthewjones372.surefold.Gauge
+import dev.surefold.Carriers
+import dev.surefold.Gauge
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Address
 import io.github.matthewjones372.surefold.actor.Ctx

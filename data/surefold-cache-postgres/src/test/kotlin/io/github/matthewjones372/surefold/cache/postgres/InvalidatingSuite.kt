@@ -1,11 +1,12 @@
 package io.github.matthewjones372.surefold.cache.postgres
 
+import dev.surefold.cache.Cache
+import dev.surefold.cache.Invalidation
+import dev.surefold.fail.Either
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.test.eventually
 import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.cache.Invalidation
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.postgres.notify.Notice
 import io.github.matthewjones372.surefold.postgres.notify.PostgresNotifications
 import io.github.matthewjones372.surefold.stream.Exit
@@ -14,7 +15,6 @@ import io.github.matthewjones372.surefold.stream.Stream
 import io.github.matthewjones372.surefold.stream.of
 import io.github.matthewjones372.surefold.stream.runCollect
 import io.github.matthewjones372.surefold.stream.start
-import io.github.matthewjones372.surefold.test.eventually
 import org.postgresql.ds.PGSimpleDataSource
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger

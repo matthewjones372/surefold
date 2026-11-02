@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.tenancy.crypto
 
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.fail.Either
 
 /** A revocable handle; each admitted callback owns a temporary copy which is wiped before return. */
 interface KeyView : AutoCloseable {

@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldContainExactly
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldContainExactly
+import dev.surefold.fail.left
+import dev.surefold.fail.right
 import org.junit.jupiter.api.Test
 
 /**

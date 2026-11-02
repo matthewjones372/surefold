@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.logError
+import dev.surefold.logError
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes

@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.app.flyway
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.actor.journal.jdbc.migrate
 import io.github.matthewjones372.surefold.app.single
 import io.github.matthewjones372.surefold.app.testApp
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.shouldBe
 import java.io.File
 import javax.sql.DataSource
 

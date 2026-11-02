@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.timeoutOrNull
+import dev.surefold.timeoutOrNull
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 import kotlin.time.Duration

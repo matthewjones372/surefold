@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.app.cluster
 
 import com.typesafe.config.ConfigFactory
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldNotBeNull
 import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.app.typesafe.reading
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
 import java.util.Properties
 
 /** Seeds given as `-Dpath.static.seeds.0=…`, as JAVA_OPTS gives them: an object Typesafe reads as a list. */

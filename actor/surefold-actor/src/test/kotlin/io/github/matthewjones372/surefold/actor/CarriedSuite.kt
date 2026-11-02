@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.capturingLogs
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldNotContainKey
-import io.github.matthewjones372.surefold.logAnnotated
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.capturingLogs
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldNotContainKey
+import dev.surefold.logAnnotated
+import dev.surefold.logInfo
+import dev.surefold.scope
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch

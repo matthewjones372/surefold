@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.bank
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
 
 object BodiesSuite : Suite() {
     init {

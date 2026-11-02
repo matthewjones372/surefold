@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Carriers
-import io.github.matthewjones372.surefold.Schedule
+import dev.surefold.Carriers
+import dev.surefold.Schedule
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 

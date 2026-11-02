@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.fold
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.map
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.retryOrElse
+import dev.surefold.Schedule
+import dev.surefold.fail.Either
+import dev.surefold.fail.fold
+import dev.surefold.fail.left
+import dev.surefold.fail.map
+import dev.surefold.fail.right
+import dev.surefold.retryOrElse
 import org.apache.kafka.clients.admin.Admin
 import org.apache.kafka.clients.admin.ListGroupsOptions
 import org.apache.kafka.clients.admin.NewPartitions

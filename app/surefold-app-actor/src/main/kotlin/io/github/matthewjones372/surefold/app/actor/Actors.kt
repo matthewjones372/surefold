@@ -1,10 +1,18 @@
 package io.github.matthewjones372.surefold.app.actor
 
-import io.github.matthewjones372.surefold.Deferred
-import io.github.matthewjones372.surefold.Promise
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.Scope
-import io.github.matthewjones372.surefold.Shared
+import dev.surefold.Deferred
+import dev.surefold.Promise
+import dev.surefold.Schedule
+import dev.surefold.Scope
+import dev.surefold.Shared
+import dev.surefold.awaitValue
+import dev.surefold.clock
+import dev.surefold.logDebug
+import dev.surefold.logger
+import dev.surefold.metricTags
+import dev.surefold.metrics
+import dev.surefold.scope
+import dev.surefold.transact
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Behaviour
 import io.github.matthewjones372.surefold.actor.DeadLetter
@@ -20,14 +28,6 @@ import io.github.matthewjones372.surefold.actor.watch
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.Wiring
 import io.github.matthewjones372.surefold.app.single
-import io.github.matthewjones372.surefold.awaitValue
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.logDebug
-import io.github.matthewjones372.surefold.logger
-import io.github.matthewjones372.surefold.metricTags
-import io.github.matthewjones372.surefold.metrics
-import io.github.matthewjones372.surefold.scope
-import io.github.matthewjones372.surefold.transact
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.FutureTask
 

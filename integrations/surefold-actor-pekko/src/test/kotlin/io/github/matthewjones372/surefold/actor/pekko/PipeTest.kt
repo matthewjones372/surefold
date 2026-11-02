@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.actor.pekko
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeInstanceOf
+import dev.surefold.fail.Either
+import dev.surefold.fail.left
+import dev.surefold.fail.right
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.ChildFailed

@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.NonEmptyList
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.map
-import io.github.matthewjones372.surefold.fail.mapLeft
-import io.github.matthewjones372.surefold.fail.nonEmptyListOf
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.fail.toNonEmptyListOrNull
+import dev.surefold.fail.Either
+import dev.surefold.fail.NonEmptyList
+import dev.surefold.fail.left
+import dev.surefold.fail.map
+import dev.surefold.fail.mapLeft
+import dev.surefold.fail.nonEmptyListOf
+import dev.surefold.fail.right
+import dev.surefold.fail.toNonEmptyListOrNull
 import kotlin.reflect.KType
 
 /** Why a graph cannot be built. */

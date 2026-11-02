@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.jobs
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
 import java.time.Instant
 
 object UuidV7Suite : Suite() {

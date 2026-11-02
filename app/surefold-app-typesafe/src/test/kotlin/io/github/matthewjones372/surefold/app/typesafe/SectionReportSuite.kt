@@ -2,17 +2,17 @@ package io.github.matthewjones372.surefold.app.typesafe
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigFactory
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldHaveSize
+import dev.surefold.junit.shouldNotContain
+import dev.surefold.junit.withClue
 import io.github.matthewjones372.surefold.app.StartupError
 import io.github.matthewjones372.surefold.app.single
 import io.github.matthewjones372.surefold.app.testApp
 import io.github.matthewjones372.surefold.app.use
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldHaveSize
-import io.github.matthewjones372.surefold.junit.shouldNotContain
-import io.github.matthewjones372.surefold.junit.withClue
 import java.util.logging.Handler
 import java.util.logging.LogRecord
 import java.util.logging.Logger

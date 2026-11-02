@@ -1,6 +1,11 @@
 package io.github.matthewjones372.surefold.actor.projection
 
-import io.github.matthewjones372.surefold.TestClock
+import dev.surefold.TestClock
+import dev.surefold.clock
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.logAnnotated
 import io.github.matthewjones372.surefold.actor.Confirmed
 import io.github.matthewjones372.surefold.actor.Delivered
 import io.github.matthewjones372.surefold.actor.Delivery
@@ -13,11 +18,6 @@ import io.github.matthewjones372.surefold.actor.delivered
 import io.github.matthewjones372.surefold.actor.persistent
 import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.actor.testActors
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.logAnnotated
 import io.github.matthewjones372.surefold.stream.Exit
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.Stream

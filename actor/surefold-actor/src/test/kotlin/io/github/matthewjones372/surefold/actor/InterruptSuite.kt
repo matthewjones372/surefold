@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.scope
-import io.github.matthewjones372.surefold.timeoutOrNull
+import dev.surefold.Schedule
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.withClue
+import dev.surefold.scope
+import dev.surefold.timeoutOrNull
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.hours

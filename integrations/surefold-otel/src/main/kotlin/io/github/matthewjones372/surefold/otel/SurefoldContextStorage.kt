@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.otel
 
-import io.github.matthewjones372.surefold.SurefoldLocal
-import io.github.matthewjones372.surefold.surefoldLocal
+import dev.surefold.SurefoldLocal
+import dev.surefold.surefoldLocal
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.ContextStorage
 import io.opentelemetry.context.ContextStorageProvider

@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.withClue
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
@@ -257,7 +257,7 @@ object HardenedSuite : Suite() {
                 val running = Stream.tick(20.milliseconds, 1)
                     .mapPar(2) { it }
                     .mapConcat { emptyList<Int>() }
-                    .restartOnDefect(io.github.matthewjones372.surefold.Schedule.spaced(10.milliseconds))
+                    .restartOnDefect(dev.surefold.Schedule.spaced(10.milliseconds))
                     .runCollect()
                     .start(backend(counted))
                 Thread.sleep(70)

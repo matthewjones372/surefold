@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeGreaterThan
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeGreaterThan
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldThrow
+import dev.surefold.junit.withClue
 import kotlin.time.Duration.Companion.seconds
 
 private fun log(): Behaviour<String, List<String>, Nothing> =

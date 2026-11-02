@@ -236,10 +236,10 @@ A complete program, with every import it uses:
 
 <!-- quickstart-example -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.parZip
-import io.github.matthewjones372.surefold.timeout
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.parZip
+import dev.surefold.timeout
 import kotlin.time.Duration.Companion.seconds
 
 data class User(val id: Int, val name: String)
@@ -340,14 +340,14 @@ fails.
 
 <!-- readme-junit-suite -->
 ```kotlin
-import io.github.matthewjones372.surefold.Limit
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.flaky
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.tag
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Limit
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.expect
+import dev.surefold.junit.flaky
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.tag
+import dev.surefold.resource
 import java.util.concurrent.ConcurrentHashMap
 
 // Stands in for a database: started once for the suite, closed after its last test.

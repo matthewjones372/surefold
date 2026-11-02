@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.jdbc.otel
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.shouldBe
 import java.io.File
 
 object JdbcGuideSuite : Suite() {

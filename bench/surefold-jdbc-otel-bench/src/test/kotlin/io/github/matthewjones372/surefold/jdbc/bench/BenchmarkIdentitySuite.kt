@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.jdbc.bench
 
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldThrow
+import dev.surefold.Shared
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldThrow
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 import java.sql.Connection

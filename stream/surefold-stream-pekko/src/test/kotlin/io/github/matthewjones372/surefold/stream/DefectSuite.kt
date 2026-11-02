@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBeGreaterThan
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldBeSameInstanceAs
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBeGreaterThan
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldBeSameInstanceAs
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.junit.withClue
 import org.apache.pekko.actor.testkit.typed.javadsl.LoggingTestKit
 import java.io.File
 import java.util.concurrent.CompletableFuture

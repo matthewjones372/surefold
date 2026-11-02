@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.fail.Either
 import java.util.concurrent.CompletionStage
 
 /**

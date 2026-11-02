@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.cache.redis
 
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.cache.Invalidation
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.test.eventually
+import dev.surefold.cache.Cache
+import dev.surefold.cache.Invalidation
+import dev.surefold.fail.Either
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.test.eventually
 import io.lettuce.core.RedisClient
 import io.lettuce.core.codec.ByteArrayCodec
 import io.lettuce.core.codec.RedisCodec

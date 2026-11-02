@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.app.gradle
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldContain
-import io.github.matthewjones372.surefold.assert.shouldNotBeNull
-import io.github.matthewjones372.surefold.assert.shouldNotContain
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldContain
+import dev.surefold.assert.shouldNotBeNull
+import dev.surefold.assert.shouldNotContain
+import dev.surefold.assert.withClue
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
@@ -12,7 +12,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
 /**
- * Spec 0041: a build that applies `io.github.matthewjones372.surefold.compiler` alone, with no wiring plugin, and
+ * Spec 0041: a build that applies `dev.surefold.compiler` alone, with no wiring plugin, and
  * compiles against this repository's own surefold, resolving the checker from the local repository as a consumer does.
  */
 class SurefoldForksPluginTest {
@@ -42,7 +42,7 @@ class SurefoldForksPluginTest {
             """
             plugins {
                 kotlin("jvm") version "2.4.10"
-                id("io.github.matthewjones372.surefold.compiler") version "$version"
+                id("dev.surefold.compiler") version "$version"
             }
 
             repositories {
@@ -82,13 +82,13 @@ class SurefoldForksPluginTest {
 }
 
 private const val ESCAPING = """
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.scope
 
 fun load() = scope { async { 1 } }
 """
 
 private const val AWAITED = """
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.scope
 
 fun load(): Int = scope { async { 1 }.await() }
 """

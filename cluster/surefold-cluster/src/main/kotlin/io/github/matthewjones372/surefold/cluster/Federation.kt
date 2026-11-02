@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.increment
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Address
 import io.github.matthewjones372.surefold.actor.DeadLetter
 import io.github.matthewjones372.surefold.actor.counter
 import io.github.matthewjones372.surefold.actor.deadLetter
 import io.github.matthewjones372.surefold.actor.remote.MessageCodec
-import io.github.matthewjones372.surefold.increment
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 

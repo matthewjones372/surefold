@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBe
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.RegisterExtension
 

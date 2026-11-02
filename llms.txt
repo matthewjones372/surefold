@@ -22,7 +22,7 @@ Facts worth having before anything else:
   `close()` is the graph's job, not the class that holds it.
 - Background work is a `Stream` started on the graph's `StreamBackend`
   (usually `Forks()`), not a scheduler or a thread of its own.
-- Surefold's compiler plugin, applied with `id("io.github.matthewjones372.surefold.wiring")`,
+- Surefold's compiler plugin, applied with `id("dev.surefold.wiring")`,
   checks every graph as it compiles and warns where code hand-rolls what surefold
   ships: `SUREFOLD_RUN_NEVER_RETURNS_ON_SHUTDOWN`, `SUREFOLD_SCHEDULER_BY_HAND`,
   `SUREFOLD_SECRET_AS_STRING`, `SUREFOLD_SLEEP_IN_TEST`.
@@ -40,7 +40,7 @@ Facts worth having before anything else:
   order each time and names the order that broke it; `replay(order) { }` runs that order again.
 - `surefold-compiler`: a K2 checker for surefold's structure rules; a `Deferred`,
   `Channel` or `Scope` returned from a scope or kept in a property fails to compile.
-  Applied by the Gradle plugin `io.github.matthewjones372.surefold.compiler`, in `surefold-app-gradle`.
+  Applied by the Gradle plugin `dev.surefold.compiler`, in `surefold-app-gradle`.
 - `surefold-pekko`: a Pekko dispatcher as the executor, and Pekko's Scala futures
   awaited from a fork.
 - `surefold-cache`: `Cache(ttl, stale) { lookup }`, one lookup per key however many ask,
@@ -86,8 +86,8 @@ Facts worth having before anything else:
 - `surefold-app-actor`: a `surefold-actor` scope as a node, and an actor as a node.
 - `surefold-app-cluster`: a `surefold-cluster` membership as a node, joined as a HOCON
   section says.
-- `surefold-app-gradle`: the Gradle plugin `io.github.matthewjones372.surefold.wiring`,
-  which checks and draws every graph as it compiles, and `io.github.matthewjones372.surefold.compiler`,
+- `surefold-app-gradle`: the Gradle plugin `dev.surefold.wiring`,
+  which checks and draws every graph as it compiles, and `dev.surefold.compiler`,
   which applies `surefold-compiler`. It is on Maven Central,
   not the Plugin Portal, so `pluginManagement` needs `mavenCentral()`.
 - `surefold-app-compiler`: the K2 checker behind it, which shows the same faults

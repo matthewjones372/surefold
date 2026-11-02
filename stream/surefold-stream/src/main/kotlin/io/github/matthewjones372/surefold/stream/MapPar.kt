@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Limit
-import io.github.matthewjones372.surefold.VirtualThreads
-import io.github.matthewjones372.surefold.fail.Fail
+import dev.surefold.Limit
+import dev.surefold.VirtualThreads
+import dev.surefold.fail.Fail
 import java.util.concurrent.Executor
 
 /**

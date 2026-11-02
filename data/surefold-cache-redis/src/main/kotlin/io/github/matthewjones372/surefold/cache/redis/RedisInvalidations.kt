@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.cache.redis
 
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.cache.Invalidation
+import dev.surefold.cache.Cache
+import dev.surefold.cache.Invalidation
 import io.lettuce.core.RedisChannelHandler
 import io.lettuce.core.RedisClient
 import io.lettuce.core.RedisConnectionStateListener

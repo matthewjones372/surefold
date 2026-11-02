@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Histogram
-import io.github.matthewjones372.surefold.Metrics
-import io.github.matthewjones372.surefold.increment
+import dev.surefold.Counter
+import dev.surefold.Histogram
+import dev.surefold.Metrics
+import dev.surefold.increment
 import java.util.concurrent.atomic.AtomicLong
 
 // A duration is recorded in seconds, as surefold's `timed` records it and a backend assumes a duration is.
@@ -19,7 +19,7 @@ private const val SAMPLE_EVERY = 64
  */
 class Measured(
     val pipeline: String,
-    val metrics: Metrics = io.github.matthewjones372.surefold.metrics.get(),
+    val metrics: Metrics = dev.surefold.metrics.get(),
     val sampleEvery: Int = SAMPLE_EVERY,
 ) {
     init {

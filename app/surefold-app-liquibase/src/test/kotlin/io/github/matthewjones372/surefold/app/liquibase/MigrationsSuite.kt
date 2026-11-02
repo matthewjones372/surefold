@@ -1,5 +1,10 @@
 package io.github.matthewjones372.surefold.app.liquibase
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.junit.withClue
 import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.app.Migrated
 import io.github.matthewjones372.surefold.app.render
@@ -7,11 +12,6 @@ import io.github.matthewjones372.surefold.app.report
 import io.github.matthewjones372.surefold.app.single
 import io.github.matthewjones372.surefold.app.testApp
 import io.github.matthewjones372.surefold.app.validate
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.junit.withClue
 import org.postgresql.ds.PGSimpleDataSource
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger

@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.actor.remote
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.Clock
+import dev.surefold.clock
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.ByteArrayOutputStream

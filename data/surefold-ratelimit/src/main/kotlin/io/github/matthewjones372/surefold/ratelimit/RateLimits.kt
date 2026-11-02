@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.ratelimit
 
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.clock
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.floor

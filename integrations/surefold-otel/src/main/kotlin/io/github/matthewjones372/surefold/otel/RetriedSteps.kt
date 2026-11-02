@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.otel
 
-import io.github.matthewjones372.surefold.RetryWatcher
+import dev.surefold.RetryWatcher
 import io.opentelemetry.api.common.Attributes
 import io.opentelemetry.api.trace.Span
 

@@ -44,7 +44,7 @@ tasks.test {
 // `expect`'s message overload, so its runtime, which lays the diagram out compactly, is on the test classpath only.
 @OptIn(ExperimentalKotlinGradlePluginApi::class)
 powerAssert {
-    functions.add("io.github.matthewjones372.surefold.junit.expect")
+    functions.add("dev.surefold.junit.expect")
     includedSourceSets.add("test")
 }
 

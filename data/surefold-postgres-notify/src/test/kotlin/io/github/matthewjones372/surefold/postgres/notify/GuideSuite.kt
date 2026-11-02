@@ -1,16 +1,16 @@
 package io.github.matthewjones372.surefold.postgres.notify
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.shouldBe
+import dev.surefold.test.eventually
 import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.stream.Exit
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.Hub
 import io.github.matthewjones372.surefold.stream.runCollect
 import io.github.matthewjones372.surefold.stream.start
 import io.github.matthewjones372.surefold.stream.take
-import io.github.matthewjones372.surefold.test.eventually
 import org.postgresql.ds.PGSimpleDataSource
 import java.io.File
 import kotlin.time.Duration.Companion.seconds

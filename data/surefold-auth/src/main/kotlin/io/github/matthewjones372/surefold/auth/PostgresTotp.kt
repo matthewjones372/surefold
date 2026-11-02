@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.auth
 
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.clock
 import java.net.URLEncoder
 import java.security.SecureRandom
 import javax.sql.DataSource

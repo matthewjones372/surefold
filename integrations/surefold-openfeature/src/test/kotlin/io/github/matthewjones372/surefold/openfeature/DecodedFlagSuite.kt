@@ -6,15 +6,15 @@ import dev.openfeature.sdk.ImmutableStructure
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.providers.memory.InMemoryProvider
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.capturingLogs
-import io.github.matthewjones372.surefold.capturingMetrics
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.LogLevel
+import dev.surefold.Resource
+import dev.surefold.capturingLogs
+import dev.surefold.capturingMetrics
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.withClue
+import dev.surefold.resource
 import java.time.Instant
 import kotlin.time.Duration.Companion.seconds
 import dev.openfeature.sdk.providers.memory.Flag as MemoryFlag

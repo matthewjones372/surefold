@@ -2,7 +2,7 @@
 
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.fail.Either
 import io.github.matthewjones372.surefold.stream.Run
 import io.github.matthewjones372.surefold.stream.Stream
 import io.github.matthewjones372.surefold.stream.map

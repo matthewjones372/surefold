@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.Schedule
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.scope
 import java.util.concurrent.atomic.AtomicReference
 
 private sealed interface Shift

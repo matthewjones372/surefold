@@ -36,10 +36,10 @@ running when the line was written.
 
 <!-- observability-logs -->
 ```kotlin
-import io.github.matthewjones372.surefold.logAnnotated
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.logSpan
-import io.github.matthewjones372.surefold.parMap
+import dev.surefold.logAnnotated
+import dev.surefold.logInfo
+import dev.surefold.logSpan
+import dev.surefold.parMap
 
 fun register(id: String, items: List<Int>): List<Unit> =
     logAnnotated("correlation_id" to id) {
@@ -73,11 +73,11 @@ front and no node takes a registry:
 
 <!-- observability-metrics -->
 ```kotlin
-import io.github.matthewjones372.surefold.counter
-import io.github.matthewjones372.surefold.gauge
-import io.github.matthewjones372.surefold.increment
-import io.github.matthewjones372.surefold.metricTagged
-import io.github.matthewjones372.surefold.timed
+import dev.surefold.counter
+import dev.surefold.gauge
+import dev.surefold.increment
+import dev.surefold.metricTagged
+import dev.surefold.timed
 
 class Adoptions(private val waiting: MutableList<String>) {
     fun adopt(name: String): String = timed("petshop.adopt.duration.seconds") {
@@ -136,10 +136,10 @@ For automatic JDBC query spans from one pool setup, see the [JDBC tracing guide]
 That integration is unreleased; its privacy boundary and separate performance gate are described there.
 
 ```kotlin
-import io.github.matthewjones372.surefold.logInfo
+import dev.surefold.logInfo
 import io.github.matthewjones372.surefold.otel.span
 import io.github.matthewjones372.surefold.otel.tracedSpan
-import io.github.matthewjones372.surefold.parMap
+import dev.surefold.parMap
 import io.opentelemetry.api.trace.Tracer
 
 fun pricing(tracer: Tracer, orders: List<Order>): List<Price> =

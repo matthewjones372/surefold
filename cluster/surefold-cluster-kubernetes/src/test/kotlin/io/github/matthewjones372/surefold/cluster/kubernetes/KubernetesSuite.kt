@@ -1,5 +1,12 @@
 package io.github.matthewjones372.surefold.cluster.kubernetes
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldThrow
+import dev.surefold.junit.withTempDirectory
 import io.fabric8.kubernetes.api.model.PodBuilder
 import io.fabric8.kubernetes.client.ConfigBuilder
 import io.fabric8.kubernetes.client.KubernetesClient
@@ -12,13 +19,6 @@ import io.fabric8.mockwebserver.ServerRequest
 import io.fabric8.mockwebserver.ServerResponse
 import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.cluster.Joins
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.junit.withTempDirectory
 import java.net.ServerSocket
 import java.nio.file.Files
 import java.time.Instant

@@ -1,7 +1,9 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Scope
-import io.github.matthewjones372.surefold.VirtualThreads
+import dev.surefold.Scope
+import dev.surefold.VirtualThreads
+import dev.surefold.clock
+import dev.surefold.logger
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Behaviour
 import io.github.matthewjones372.surefold.actor.Next
@@ -12,8 +14,6 @@ import io.github.matthewjones372.surefold.actor.onStart
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.actor.stop
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.logger
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.Executor
 import java.util.concurrent.atomic.AtomicInteger

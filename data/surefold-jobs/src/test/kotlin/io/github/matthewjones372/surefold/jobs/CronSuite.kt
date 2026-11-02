@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.jobs
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldThrow
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldThrow
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZoneOffset.UTC

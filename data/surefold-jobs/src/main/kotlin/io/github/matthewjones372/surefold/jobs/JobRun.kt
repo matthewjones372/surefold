@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.jobs
 
-import io.github.matthewjones372.surefold.Carriers
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.counter
-import io.github.matthewjones372.surefold.fail.nonFatalOrThrow
-import io.github.matthewjones372.surefold.increment
-import io.github.matthewjones372.surefold.logWarn
-import io.github.matthewjones372.surefold.timed
-import io.github.matthewjones372.surefold.timeoutOrNull
+import dev.surefold.Carriers
+import dev.surefold.Schedule
+import dev.surefold.clock
+import dev.surefold.counter
+import dev.surefold.fail.nonFatalOrThrow
+import dev.surefold.increment
+import dev.surefold.logWarn
+import dev.surefold.timed
+import dev.surefold.timeoutOrNull
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.toJavaDuration

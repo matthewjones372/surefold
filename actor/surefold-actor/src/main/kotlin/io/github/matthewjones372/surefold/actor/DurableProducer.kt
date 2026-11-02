@@ -1,15 +1,15 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.Scope
-import io.github.matthewjones372.surefold.fail.Fail
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.increment
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.logWarn
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Schedule
+import dev.surefold.Scope
+import dev.surefold.fail.Fail
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bind
+import dev.surefold.increment
+import dev.surefold.logInfo
+import dev.surefold.logWarn
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream

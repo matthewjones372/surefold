@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream.actors
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.withClue
 import io.github.matthewjones372.surefold.stream.Actors
 import java.io.File
 

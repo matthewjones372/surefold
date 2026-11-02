@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.jobs
 
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.capturingMetrics
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldHaveSize
+import dev.surefold.TestClock
+import dev.surefold.capturingMetrics
+import dev.surefold.clock
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldHaveSize
 import java.time.Instant
 import kotlin.time.Duration.Companion.minutes
 

@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.jobs
 
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.clock
 import java.time.Instant
 import javax.sql.DataSource
 import kotlin.time.Duration

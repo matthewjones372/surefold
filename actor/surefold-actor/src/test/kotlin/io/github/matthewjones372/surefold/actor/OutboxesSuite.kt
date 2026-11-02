@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeNull
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeNull
+import dev.surefold.junit.shouldContainExactly
 
 /** Spec 0146: the outbox rules of spec 0079, with no actor, room or clock. */
 object OutboxesSuite : Suite() {

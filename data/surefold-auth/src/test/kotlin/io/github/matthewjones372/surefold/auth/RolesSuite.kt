@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.auth
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
 
 /** Roles granted per tenant or for every tenant, and the permissions a resolved principal carries (spec 0227). */
 object RolesSuite : Suite() {

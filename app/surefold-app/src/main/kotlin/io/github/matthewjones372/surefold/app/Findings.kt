@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.fail.fold
+import dev.surefold.fail.fold
 import kotlin.reflect.KType
 
 /** Whether a finding stops a build. */

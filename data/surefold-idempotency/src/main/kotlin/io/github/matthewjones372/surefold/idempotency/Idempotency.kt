@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.idempotency
 
-import io.github.matthewjones372.surefold.ByteChunk
+import dev.surefold.ByteChunk
 import java.util.UUID
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours

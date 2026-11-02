@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream
 
 import com.typesafe.config.Config
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.resource
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.ClassicActorSystemProvider
 import org.apache.pekko.actor.testkit.typed.javadsl.ActorTestKit

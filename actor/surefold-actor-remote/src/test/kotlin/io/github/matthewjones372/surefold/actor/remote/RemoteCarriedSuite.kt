@@ -1,17 +1,17 @@
 package io.github.matthewjones372.surefold.actor.remote
 
+import dev.surefold.capturingLogs
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.logAnnotated
+import dev.surefold.logInfo
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.Address
 import io.github.matthewjones372.surefold.actor.Reply
 import io.github.matthewjones372.surefold.actor.ask
 import io.github.matthewjones372.surefold.actor.behaviour
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.capturingLogs
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.logAnnotated
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.scope
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

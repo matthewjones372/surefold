@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.app.gradle
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldContain
-import io.github.matthewjones372.surefold.assert.shouldNotBeNull
-import io.github.matthewjones372.surefold.assert.shouldNotContain
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldContain
+import dev.surefold.assert.shouldNotBeNull
+import dev.surefold.assert.shouldNotContain
+import dev.surefold.assert.withClue
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
@@ -48,7 +48,7 @@ class SurefoldWiringPluginTest {
             """
             plugins {
                 kotlin("jvm") version "2.4.10"
-                id("io.github.matthewjones372.surefold.wiring") version "$version"
+                id("dev.surefold.wiring") version "$version"
             }
 
             // Where the compiler plugin comes from; the Kotlin plugin resolves it by coordinates.
@@ -869,14 +869,14 @@ object Under : SurefoldApp<Pump>() {
 
 /** Every kind of call the step checker refuses, inside transact, a firstOf branch and a Transaction helper. */
 private const val EFFECTS_IN_A_STEP = """
-import io.github.matthewjones372.surefold.Deferred
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.Transaction
-import io.github.matthewjones372.surefold.parMap
-import io.github.matthewjones372.surefold.parZip
-import io.github.matthewjones372.surefold.raceN
-import io.github.matthewjones372.surefold.scope
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.Deferred
+import dev.surefold.Shared
+import dev.surefold.Transaction
+import dev.surefold.parMap
+import dev.surefold.parZip
+import dev.surefold.raceN
+import dev.surefold.scope
+import dev.surefold.transact
 import java.io.FileInputStream
 import java.net.Socket
 import java.sql.DriverManager
@@ -920,13 +920,13 @@ fun effects(future: Future<Int>, deferred: Deferred<Int>) = transact {
 
 /** The same calls, in a function that is not a step. */
 private const val EFFECTS_OUTSIDE_A_STEP = """
-import io.github.matthewjones372.surefold.Deferred
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.parMap
-import io.github.matthewjones372.surefold.parZip
-import io.github.matthewjones372.surefold.raceN
-import io.github.matthewjones372.surefold.scope
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.Deferred
+import dev.surefold.Shared
+import dev.surefold.parMap
+import dev.surefold.parZip
+import dev.surefold.raceN
+import dev.surefold.scope
+import dev.surefold.transact
 import java.io.FileInputStream
 import java.net.Socket
 import java.sql.DriverManager
@@ -958,9 +958,9 @@ fun effects(future: Future<Int>, deferred: Deferred<Int>) {
 
 /** Writes to state from outside a step, a peek, and the writes a step owns or cannot judge. */
 private const val CAPTURES = """
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.Transaction
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.Shared
+import dev.surefold.Transaction
+import dev.surefold.transact
 
 var total = 0
 
@@ -994,16 +994,16 @@ fun Transaction.counted(free: Shared<Int>): Int {
 
 /** Surefold's own effects, and printing, each the kind a step wants to happen once it has committed. */
 private const val SUREFOLD_EFFECTS = """
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Histogram
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.Shared
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Histogram
+import dev.surefold.LogLine
+import dev.surefold.Logger
+import dev.surefold.Shared
 import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.logInfo
+import dev.surefold.logInfo
 import io.github.matthewjones372.surefold.stream.Hub
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.transact
 
 val free = Shared(10)
 
@@ -1024,11 +1024,11 @@ fun hold(log: Logger, line: LogLine, sold: Counter, left: Gauge, sizes: Histogra
 
 /** Every kind of effect, each inside an afterCommit block in a step. */
 private const val AFTER_COMMIT = """
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Shared
+import dev.surefold.Counter
+import dev.surefold.Shared
 import io.github.matthewjones372.surefold.actor.ActorRef
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.logInfo
+import dev.surefold.transact
 
 val free = Shared(10)
 

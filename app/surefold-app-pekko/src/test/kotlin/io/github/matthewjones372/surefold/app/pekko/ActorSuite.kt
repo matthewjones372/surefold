@@ -1,16 +1,16 @@
 package io.github.matthewjones372.surefold.app.pekko
 
-import io.github.matthewjones372.surefold.Resource
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldHaveSize
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.resource
 import io.github.matthewjones372.surefold.app.probe
 import io.github.matthewjones372.surefold.app.single
 import io.github.matthewjones372.surefold.app.testApp
 import io.github.matthewjones372.surefold.app.use
 import io.github.matthewjones372.surefold.app.validate
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldHaveSize
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.resource
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.actor.typed.Behavior
