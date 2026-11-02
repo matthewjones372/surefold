@@ -48,7 +48,7 @@ untouched, unpublished trees not exhaustively inspected. Spec-only main precedes
 
 ## Exact source plan (separate review gate; no source authorised here)
 
-- Gate: precode PR980/Doorlist PR484 approved main/checks and independent committed-plan review before source; no R4 callers/tickets, introspection or activation.
+- Gate: precode PR980/consumer scope approved main/checks and independent committed-plan review before source; no R4 callers/tickets, introspection or activation.
 - In `core/surefold/src/main/kotlin/io/github/matthewjones372/surefold/Transact.kt`, immediately before `transact`'s
   existing KDoc, add one-line KDoc `/** Refuses retryable steps before ownership effects can escape them. */`
   and `fun checkNotInTransaction(): Unit { check(running.get() == null) { "the operation cannot run inside a transaction" } }`.
