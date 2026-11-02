@@ -1,7 +1,7 @@
 [
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.SpreadPersistentBenchmark.payments",
+        "benchmark" : "dev.surefold.actor.benchmarks.SpreadPersistentBenchmark.payments",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,
@@ -205,7 +205,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.actor.benchmarks.SpreadPersistentBenchmark.payments",
+        "benchmark" : "dev.surefold.actor.benchmarks.SpreadPersistentBenchmark.payments",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 1,

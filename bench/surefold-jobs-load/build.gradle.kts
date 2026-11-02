@@ -19,5 +19,5 @@ dependencies {
 }
 
 application {
-    mainClass.set("io.github.matthewjones372.surefold.jobs.load.LoadKt")
+    mainClass.set("dev.surefold.jobs.load.LoadKt")
 }

@@ -91,7 +91,7 @@ tasks.register<JavaExec>("jmh") {
 tasks.register<JavaExec>("timelines") {
     group = "verification"
     description = "Stamps one run of each consumer, for the README's timelines"
-    mainClass.set("io.github.matthewjones372.surefold.kafka.benchmarks.TimelinesKt")
+    mainClass.set("dev.surefold.kafka.benchmarks.TimelinesKt")
     classpath(benchmarkRuntimeClasspath)
     javaLauncher.set(toolchainLauncher)
     args(layout.buildDirectory.file("timelines.json").get().asFile.path)
@@ -101,7 +101,7 @@ tasks.register<JavaExec>("timelines") {
 tasks.register<JavaExec>("experiments") {
     group = "verification"
     description = "Times a fresh consumer's join, polls, commits and close"
-    mainClass.set("io.github.matthewjones372.surefold.kafka.benchmarks.ExperimentsKt")
+    mainClass.set("dev.surefold.kafka.benchmarks.ExperimentsKt")
     classpath(benchmarkRuntimeClasspath)
     javaLauncher.set(toolchainLauncher)
 }

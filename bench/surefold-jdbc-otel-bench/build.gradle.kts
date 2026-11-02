@@ -12,7 +12,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("io.github.matthewjones372.surefold.jdbc.bench.LoadKt")
+    mainClass.set("dev.surefold.jdbc.bench.LoadKt")
     applicationDefaultJvmArgs = listOf(
         "-Xms2g", "-Xmx2g", "-XX:+UseG1GC", "-Dotel.semconv-stability.opt-in=database",
     )

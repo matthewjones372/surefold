@@ -1,7 +1,7 @@
 [
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.javaParallelBatch",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.javaParallelBatch",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -220,7 +220,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.javaParallelBatch",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.javaParallelBatch",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -440,7 +440,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.javaParallelBatch",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.javaParallelBatch",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -657,7 +657,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.javaSerial",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.javaSerial",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -877,7 +877,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.javaSerial",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.javaSerial",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1090,7 +1090,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.javaSerial",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.javaSerial",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1302,7 +1302,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldMapPar",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldMapPar",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1522,7 +1522,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldMapPar",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldMapPar",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1742,7 +1742,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldMapPar",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldMapPar",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1961,7 +1961,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldSerial",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldSerial",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -2181,7 +2181,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldSerial",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldSerial",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -2394,7 +2394,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldSerial",
+        "benchmark" : "dev.surefold.kafka.benchmarks.ProcessingBenchmarks.surefoldSerial",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,

@@ -1,7 +1,7 @@
 [
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.EnrichThroughputBenchmark.actors",
+        "benchmark" : "dev.surefold.stream.benchmarks.EnrichThroughputBenchmark.actors",
         "mode" : "thrpt",
         "threads" : 1,
         "forks" : 2,
@@ -210,7 +210,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.EnrichThroughputBenchmark.forks",
+        "benchmark" : "dev.surefold.stream.benchmarks.EnrichThroughputBenchmark.forks",
         "mode" : "thrpt",
         "threads" : 1,
         "forks" : 2,
@@ -419,7 +419,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.EnrichThroughputBenchmark.surefold",
+        "benchmark" : "dev.surefold.stream.benchmarks.EnrichThroughputBenchmark.surefold",
         "mode" : "thrpt",
         "threads" : 1,
         "forks" : 2,
@@ -634,7 +634,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.EnrichThroughputBenchmark.pekko",
+        "benchmark" : "dev.surefold.stream.benchmarks.EnrichThroughputBenchmark.pekko",
         "mode" : "thrpt",
         "threads" : 1,
         "forks" : 2,
@@ -844,7 +844,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.IngestThroughputBenchmark.actors",
+        "benchmark" : "dev.surefold.stream.benchmarks.IngestThroughputBenchmark.actors",
         "mode" : "thrpt",
         "threads" : 1,
         "forks" : 2,
@@ -1061,7 +1061,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.IngestThroughputBenchmark.forks",
+        "benchmark" : "dev.surefold.stream.benchmarks.IngestThroughputBenchmark.forks",
         "mode" : "thrpt",
         "threads" : 1,
         "forks" : 2,
@@ -1278,7 +1278,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.IngestThroughputBenchmark.surefold",
+        "benchmark" : "dev.surefold.stream.benchmarks.IngestThroughputBenchmark.surefold",
         "mode" : "thrpt",
         "threads" : 1,
         "forks" : 2,
@@ -1495,7 +1495,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.IngestThroughputBenchmark.pekko",
+        "benchmark" : "dev.surefold.stream.benchmarks.IngestThroughputBenchmark.pekko",
         "mode" : "thrpt",
         "threads" : 1,
         "forks" : 2,
@@ -1712,7 +1712,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.ChainBenchmark.actors",
+        "benchmark" : "dev.surefold.stream.benchmarks.ChainBenchmark.actors",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -1929,7 +1929,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.ChainBenchmark.forks",
+        "benchmark" : "dev.surefold.stream.benchmarks.ChainBenchmark.forks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -2146,7 +2146,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.ChainBenchmark.surefold",
+        "benchmark" : "dev.surefold.stream.benchmarks.ChainBenchmark.surefold",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -2363,7 +2363,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.ChainBenchmark.pekko",
+        "benchmark" : "dev.surefold.stream.benchmarks.ChainBenchmark.pekko",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -2580,7 +2580,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.GroupedWithinBenchmark.actors",
+        "benchmark" : "dev.surefold.stream.benchmarks.GroupedWithinBenchmark.actors",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -2790,7 +2790,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.GroupedWithinBenchmark.forks",
+        "benchmark" : "dev.surefold.stream.benchmarks.GroupedWithinBenchmark.forks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -2999,7 +2999,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.GroupedWithinBenchmark.surefold",
+        "benchmark" : "dev.surefold.stream.benchmarks.GroupedWithinBenchmark.surefold",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -3216,7 +3216,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.HandOffBenchmark.bufferActors",
+        "benchmark" : "dev.surefold.stream.benchmarks.HandOffBenchmark.bufferActors",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -3429,7 +3429,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.HandOffBenchmark.bufferForks",
+        "benchmark" : "dev.surefold.stream.benchmarks.HandOffBenchmark.bufferForks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -3609,7 +3609,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.HandOffBenchmark.mergeActors",
+        "benchmark" : "dev.surefold.stream.benchmarks.HandOffBenchmark.mergeActors",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -3823,7 +3823,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.HandOffBenchmark.mergeForks",
+        "benchmark" : "dev.surefold.stream.benchmarks.HandOffBenchmark.mergeForks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -4032,7 +4032,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.ManyRunsBenchmark.actors",
+        "benchmark" : "dev.surefold.stream.benchmarks.ManyRunsBenchmark.actors",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -4249,7 +4249,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.ManyRunsBenchmark.forks",
+        "benchmark" : "dev.surefold.stream.benchmarks.ManyRunsBenchmark.forks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -4466,7 +4466,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.MapParBenchmark.actors",
+        "benchmark" : "dev.surefold.stream.benchmarks.MapParBenchmark.actors",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -4683,7 +4683,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.MapParBenchmark.forks",
+        "benchmark" : "dev.surefold.stream.benchmarks.MapParBenchmark.forks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -4896,7 +4896,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.MapParBenchmark.surefold",
+        "benchmark" : "dev.surefold.stream.benchmarks.MapParBenchmark.surefold",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -5113,7 +5113,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.MapParBenchmark.pekko",
+        "benchmark" : "dev.surefold.stream.benchmarks.MapParBenchmark.pekko",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -5326,7 +5326,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.RunManyBenchmark.describedEachTime",
+        "benchmark" : "dev.surefold.stream.benchmarks.RunManyBenchmark.describedEachTime",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -5543,7 +5543,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.RunManyBenchmark.describedOnce",
+        "benchmark" : "dev.surefold.stream.benchmarks.RunManyBenchmark.describedOnce",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -5759,7 +5759,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.RunManyBenchmark.describedOnceActors",
+        "benchmark" : "dev.surefold.stream.benchmarks.RunManyBenchmark.describedOnceActors",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
@@ -5974,7 +5974,7 @@
     },
     {
         "jmhVersion" : "1.37",
-        "benchmark" : "io.github.matthewjones372.surefold.stream.benchmarks.RunManyBenchmark.describedOnceForks",
+        "benchmark" : "dev.surefold.stream.benchmarks.RunManyBenchmark.describedOnceForks",
         "mode" : "avgt",
         "threads" : 1,
         "forks" : 2,
