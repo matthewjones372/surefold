@@ -49,7 +49,7 @@ internal fun train(transfers: Int) {
     val counted = ConcurrentHashMap.newKeySet<String>()
     val heard = CountDownLatch(transfers)
     val countOnce = { id: String -> if (counted.add(id)) heard.countDown() }
-    val ports = List(nodes.size) { ServerSocket(0).use { it.localPort } }
+    val ports = List(nodes.size) { ServerSocket(0).use { socket -> socket.localPort } }
     val seeds = ports.map { Node("", "127.0.0.1", it) }.let { Discovery { it } }
     val journal = InMemoryJournal()
     val running = ports.mapIndexed { i, port ->
