@@ -28,6 +28,10 @@ val toolchains = extensions.getByType<JavaToolchainService>()
 val benchmarkJdk = JavaLanguageVersion.of(25)
 val toolchainLauncher = toolchains.launcherFor { languageVersion.set(benchmarkJdk) }
 
+// `-PcompactHeaders` measures with JDK 25's compact object headers (JEP 519, spec 0276); off, the numbers stay
+// comparable with the baselines already recorded.
+val compactHeaders = providers.gradleProperty("compactHeaders").isPresent
+
 val generateBenchmarkStubs = tasks.register<JavaExec>("generateBenchmarkStubs") {
     description = "Generates JMH's benchmark stubs from the compiled Kotlin"
     mainClass.set("org.openjdk.jmh.generators.bytecode.JmhBytecodeGenerator")
@@ -78,4 +82,6 @@ tasks.register<JavaExec>("jmh") {
     val results = layout.buildDirectory.file("jmh-result.json").get().asFile
     args("-prof", "gc", "-rf", "json", "-rff", results.path)
     args(providers.gradleProperty("benchmarkArgs").getOrElse("").split(" ").filter { it.isNotBlank() })
+    // To JMH's forked JVMs, which are the ones measured, not to the launcher.
+    if (compactHeaders) args("-jvmArgsAppend", "-XX:+UseCompactObjectHeaders")
 }
