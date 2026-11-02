@@ -354,7 +354,7 @@ internal class Fork<E, T>(
      */
     private fun help() {
         val me = Thread.currentThread()
-        if (on === VirtualThreads || !runningFor.isBound || runningFor.get() !== on || me.isInterrupted) return
+        if (on === VirtualThreads || !onOwnExecutor() || me.isInterrupted) return
         if (!claim(me, own = false)) return
         val interrupted = Bindings.under(inherited) { body() }
         if (interrupted && !cancelled.get()) me.interrupt()
@@ -498,6 +498,9 @@ internal class Fork<E, T>(
     private fun outcome(): Outcome<E, T>? = (state.get() as? ForkState.Done)?.outcome
 
     private fun settled(): Outcome<E, T> = checkNotNull(outcome()) { "a joined fork always has an outcome" }
+
+    /** Whether this thread is running a fork body for [on], and so is one of its threads. */
+    private fun onOwnExecutor() = runningFor.isBound && runningFor.get() === on
 
     private fun wake(waiters: Waiter?) =
         generateSequence(waiters) { it.next }.forEach { Waiting.unpark(it.thread) }
