@@ -1,2 +1,2 @@
-io.github.matthewjones372.surefold.cluster.aws.EcsJoins
-io.github.matthewjones372.surefold.cluster.aws.CloudMapJoins
+dev.surefold.cluster.aws.EcsJoins
+dev.surefold.cluster.aws.CloudMapJoins

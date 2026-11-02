@@ -12,9 +12,9 @@ import dev.surefold.actor.journal
 import dev.surefold.actor.journal.jdbc.JdbcJournal
 import dev.surefold.actor.persistent
 import dev.surefold.actor.stay
+import dev.surefold.cluster.Sharded
+import dev.surefold.cluster.sharding
 import io.github.matthewjones372.surefold.app.liquibase.migrate
-import io.github.matthewjones372.surefold.cluster.Sharded
-import io.github.matthewjones372.surefold.cluster.sharding
 import org.apache.pekko.Done
 import org.apache.pekko.actor.typed.ActorSystem
 import org.apache.pekko.actor.typed.Behavior

@@ -4,14 +4,14 @@ import dev.surefold.actor.NotSent
 import dev.surefold.actor.journal.jdbc.JdbcJournal
 import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.actor.remote.Node
+import dev.surefold.cluster.Discovery
+import dev.surefold.cluster.Gossiping
 import dev.surefold.fail.Either
 import dev.surefold.fail.right
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.timeout
-import io.github.matthewjones372.surefold.cluster.Discovery
-import io.github.matthewjones372.surefold.cluster.Gossiping
 import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch

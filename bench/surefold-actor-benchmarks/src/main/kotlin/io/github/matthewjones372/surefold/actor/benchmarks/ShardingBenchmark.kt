@@ -5,7 +5,7 @@ import dev.surefold.actor.Behaviour
 import dev.surefold.actor.ask
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.stay
-import io.github.matthewjones372.surefold.cluster.sharding
+import dev.surefold.cluster.sharding
 import org.apache.pekko.actor.typed.Behavior
 import org.apache.pekko.actor.typed.javadsl.Behaviors
 import org.apache.pekko.cluster.sharding.typed.javadsl.ClusterSharding
