@@ -211,7 +211,8 @@ val surefoldJunitRunsOn =
 // Measured, not tested: a benchmark has no assertions for a coverage floor to count.
 val benchmarkModules =
     setOf(
-        "surefold-stream-benchmarks", "surefold-actor-benchmarks", "surefold-kafka-benchmarks",
+        "surefold-core-benchmarks", "surefold-stream-benchmarks", "surefold-actor-benchmarks",
+        "surefold-kafka-benchmarks",
         "surefold-jobs-load", "surefold-jdbc-otel-bench",
     )
 
