@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.fold
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.fold
 import org.apache.pekko.NotUsed
 import org.apache.pekko.stream.javadsl.Flow
 import java.util.concurrent.CompletableFuture

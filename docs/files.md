@@ -42,9 +42,9 @@ refused.
 
 <!-- files -->
 ```kotlin
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bind
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bind
 import io.github.matthewjones372.surefold.files.FileError
 import io.github.matthewjones372.surefold.files.Files
 import io.github.matthewjones372.surefold.files.Presigned

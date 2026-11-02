@@ -1,16 +1,16 @@
 package io.github.matthewjones372.surefold.app.jobs
 
-import io.github.matthewjones372.surefold.TestClock
+import dev.surefold.TestClock
+import dev.surefold.clock
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.app.overriding
 import io.github.matthewjones372.surefold.app.singleOf
 import io.github.matthewjones372.surefold.app.testApp
-import io.github.matthewjones372.surefold.clock
 import io.github.matthewjones372.surefold.jobs.JobSettings
 import io.github.matthewjones372.surefold.jobs.JobWorker
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.shouldBe
 import java.io.File
 import java.time.Instant
 import java.util.concurrent.ConcurrentLinkedQueue

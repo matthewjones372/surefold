@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.otel
 
-import io.github.matthewjones372.surefold.Carrier
+import dev.surefold.Carrier
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.propagation.W3CTraceContextPropagator
 import io.opentelemetry.context.Context

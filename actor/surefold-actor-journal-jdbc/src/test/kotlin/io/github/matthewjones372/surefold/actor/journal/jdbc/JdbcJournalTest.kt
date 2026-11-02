@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.actor.journal.jdbc
 
+import dev.surefold.assert.shouldContain
+import dev.surefold.assert.shouldThrow
 import io.github.matthewjones372.surefold.actor.Journal
 import io.github.matthewjones372.surefold.actor.JournalContract
 import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.assert.shouldContain
-import io.github.matthewjones372.surefold.assert.shouldThrow
 import org.junit.jupiter.api.Test
 import java.sql.SQLException
 

@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.assert.shouldContain
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldContain
+import dev.surefold.assert.withClue
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty

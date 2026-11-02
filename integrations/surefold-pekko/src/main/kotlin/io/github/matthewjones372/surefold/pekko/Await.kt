@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.pekko
 
-import io.github.matthewjones372.surefold.await
+import dev.surefold.await
 import scala.concurrent.Future
 import scala.jdk.javaapi.FutureConverters
 

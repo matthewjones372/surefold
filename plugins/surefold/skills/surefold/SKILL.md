@@ -1,6 +1,6 @@
 ---
 name: surefold
-description: Use whenever code depends on surefold (io.github.matthewjones372:surefold* in a build file, or an io.github.matthewjones372.surefold import) before writing a scheduler, a background job, a retry or backoff, a circuit breaker, a test wait, a config read, a secret, a resource's close, a database migration, a SurefoldApp's run, logging, metrics or tracing. surefold already ships each of these; this says which call to use instead of writing it again.
+description: Use whenever code depends on surefold (io.github.matthewjones372:surefold* in a build file, or an dev.surefold import) before writing a scheduler, a background job, a retry or backoff, a circuit breaker, a test wait, a config read, a secret, a resource's close, a database migration, a SurefoldApp's run, logging, metrics or tracing. surefold already ships each of these; this says which call to use instead of writing it again.
 ---
 
 # surefold
@@ -36,7 +36,7 @@ Before writing any of the code below, use the surefold call beside it.
 | a fake swapped in by hand | `.overriding(single<T> { … })`, and `.subgraph<Root>()` for a smaller graph |
 | `runCatching` | catch the exception you expect, by name, or `fail` with a declared failure |
 
-Apply the wiring plugin, `id("io.github.matthewjones372.surefold.wiring")`. It checks
+Apply the wiring plugin, `id("dev.surefold.wiring")`. It checks
 every graph as it compiles and warns on four of these by name:
 `SUREFOLD_RUN_NEVER_RETURNS_ON_SHUTDOWN`, `SUREFOLD_SCHEDULER_BY_HAND`,
 `SUREFOLD_SECRET_AS_STRING` and `SUREFOLD_SLEEP_IN_TEST`. Fix the code rather than
@@ -48,7 +48,7 @@ All on Maven Central as `io.github.matthewjones372:<module>`, on one version.
 
 - `surefold`: forks, resources, `Schedule`, `timeout`, `policy`, `Clock`, `TestClock`, logs and metrics, `capturingLogs`, `capturingMetrics`, `logger.unbound()` for what `main` reads.
 - `surefold-replay`: `explore` and `replay`, a test's forks in seeded orders.
-- `surefold-compiler`: a checker for forks that outlive their scope; plugin `io.github.matthewjones372.surefold.compiler`.
+- `surefold-compiler`: a checker for forks that outlive their scope; plugin `dev.surefold.compiler`.
 - `surefold-pekko`: a Pekko dispatcher as the executor.
 - `surefold-cache`: a cache with one lookup per key and stale values while the source fails.
 - `surefold-stream`: `Stream<E, A>`, described once and run on a backend.

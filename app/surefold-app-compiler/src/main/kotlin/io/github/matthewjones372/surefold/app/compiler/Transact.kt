@@ -130,7 +130,7 @@ private fun refused(called: CallableId): Boolean {
     return io.any { owner == it || owner.startsWith(it) } || owner in kotlinIo || called in blocking || called in forks
 }
 
-private val surefold = FqName("io.github.matthewjones372.surefold")
+private val surefold = FqName("dev.surefold")
 
 private val transaction = ClassId(surefold, Name.identifier("Transaction"))
 
@@ -165,7 +165,7 @@ private val forks = listOf("scope", "parZip", "parMap", "raceN")
     .toSet() + member(surefold.asString(), "Scope", "async")
 
 // An actor's tell has its own after-commit form, which surefold-actor names tellAfterCommit.
-private val tell = member("${surefold.asString()}.actor", "ActorRef", "tell")
+private val tell = member("io.github.matthewjones372.surefold.actor", "ActorRef", "tell")
 
 // Surefold's own effects: what a step most often wants to happen once it has committed.
 private val surefoldEffects = listOf("logDebug", "logInfo", "logWarn", "logError", "increment")
@@ -176,7 +176,7 @@ private val surefoldEffects = listOf("logDebug", "logInfo", "logWarn", "logError
         member(surefold.asString(), "Counter", "increment"),
         member(surefold.asString(), "Gauge", "set"),
         member(surefold.asString(), "Histogram", "record"),
-        member("${surefold.asString()}.stream", "Hub", "publish"),
+        member("io.github.matthewjones372.surefold.stream", "Hub", "publish"),
     )
 
 // Kotlin's own print and println. A PrintStream's are refused with the rest of java.io.

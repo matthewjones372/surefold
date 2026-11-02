@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.test.eventually
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.withClue
+import dev.surefold.test.eventually
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.LockSupport

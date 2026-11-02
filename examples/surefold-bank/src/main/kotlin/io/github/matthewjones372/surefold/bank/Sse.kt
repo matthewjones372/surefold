@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.bank
 
 import com.sun.net.httpserver.HttpHandler
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.logDebug
-import io.github.matthewjones372.surefold.timeoutOrNull
+import dev.surefold.Shared
+import dev.surefold.logDebug
+import dev.surefold.timeoutOrNull
 import java.io.IOException
 import java.io.OutputStream
 import kotlin.time.Duration

@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Scope
-import io.github.matthewjones372.surefold.increment
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Scope
+import dev.surefold.increment
 import kotlin.time.Duration.Companion.milliseconds
 
 /** What a topic's actor is told (spec 0082). */

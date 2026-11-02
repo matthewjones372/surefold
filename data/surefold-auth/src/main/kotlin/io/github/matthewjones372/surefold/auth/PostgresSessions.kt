@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.auth
 
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.clock
 import java.sql.ResultSet
 import java.time.Instant
 import java.time.OffsetDateTime

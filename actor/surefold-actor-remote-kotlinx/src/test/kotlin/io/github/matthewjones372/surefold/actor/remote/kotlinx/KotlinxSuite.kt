@@ -2,6 +2,12 @@
 
 package io.github.matthewjones372.surefold.actor.remote.kotlinx
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeRight
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldThrow
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Address
 import io.github.matthewjones372.surefold.actor.InMemoryJournal
@@ -22,12 +28,6 @@ import io.github.matthewjones372.surefold.actor.remote.node
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.actor.testActors
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeRight
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.scope
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.serializer

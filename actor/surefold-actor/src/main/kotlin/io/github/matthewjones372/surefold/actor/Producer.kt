@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Scope
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.fold
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.increment
-import io.github.matthewjones372.surefold.logWarn
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Scope
+import dev.surefold.fail.Either
+import dev.surefold.fail.fold
+import dev.surefold.fail.left
+import dev.surefold.fail.right
+import dev.surefold.increment
+import dev.surefold.logWarn
 import java.util.UUID
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Semaphore

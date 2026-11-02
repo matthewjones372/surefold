@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.bank
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Histogram
-import io.github.matthewjones372.surefold.Metrics
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Histogram
+import dev.surefold.Metrics
 import io.github.matthewjones372.surefold.actor.Topic
 import io.github.matthewjones372.surefold.actor.become
 import io.github.matthewjones372.surefold.actor.behaviour

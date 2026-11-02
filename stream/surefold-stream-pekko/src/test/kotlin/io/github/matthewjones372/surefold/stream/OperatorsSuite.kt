@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.Resource
+import dev.surefold.fail.Either
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.withClue
 import org.apache.pekko.stream.javadsl.Sink
 import org.apache.pekko.stream.testkit.javadsl.TestSink
 import java.time.Duration

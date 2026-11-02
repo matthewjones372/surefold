@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.cache.postgres
 
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.cache.Invalidation
+import dev.surefold.cache.Cache
+import dev.surefold.cache.Invalidation
 import io.github.matthewjones372.surefold.postgres.notify.Notice
 import io.github.matthewjones372.surefold.stream.Run
 import io.github.matthewjones372.surefold.stream.Stream

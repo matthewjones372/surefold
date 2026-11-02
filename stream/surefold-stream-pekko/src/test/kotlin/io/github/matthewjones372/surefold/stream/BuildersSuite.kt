@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.withClue
 import java.util.concurrent.CompletionStage
 
 /** The builders that start from values already in hand, asserted on a real system. */

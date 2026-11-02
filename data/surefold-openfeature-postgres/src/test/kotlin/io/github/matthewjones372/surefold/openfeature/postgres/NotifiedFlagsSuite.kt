@@ -1,8 +1,9 @@
 package io.github.matthewjones372.surefold.openfeature.postgres
 
 import dev.openfeature.sdk.ImmutableContext
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.test.eventually
 import io.github.matthewjones372.surefold.postgres.notify.Notice
 import io.github.matthewjones372.surefold.postgres.notify.PostgresNotifications
 import io.github.matthewjones372.surefold.stream.Exit
@@ -13,7 +14,6 @@ import io.github.matthewjones372.surefold.stream.start
 import io.github.matthewjones372.surefold.tenancy.RlsDatabase
 import io.github.matthewjones372.surefold.tenancy.TenantId
 import io.github.matthewjones372.surefold.tenancy.withTenant
-import io.github.matthewjones372.surefold.test.eventually
 import org.postgresql.ds.PGSimpleDataSource
 import java.util.concurrent.TimeUnit
 import javax.sql.DataSource

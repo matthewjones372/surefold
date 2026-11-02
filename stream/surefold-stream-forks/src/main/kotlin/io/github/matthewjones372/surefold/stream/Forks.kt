@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.VirtualThreads
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.logger
+import dev.surefold.Clock
+import dev.surefold.LogLevel
+import dev.surefold.LogLine
+import dev.surefold.Logger
+import dev.surefold.TestClock
+import dev.surefold.VirtualThreads
+import dev.surefold.clock
+import dev.surefold.logger
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executor

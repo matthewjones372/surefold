@@ -9,7 +9,7 @@ import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
 import java.util.Properties
 
 /**
- * `io.github.matthewjones372.surefold.compiler`: surefold-compiler's checkers in every Kotlin compilation (spec 0041),
+ * `dev.surefold.compiler`: surefold-compiler's checkers in every Kotlin compilation (spec 0041),
  * so a `Deferred` that outlives its scope fails to compile. A plugin of its own, apart from the wiring plugin, so a
  * service without surefold-app takes it alone; it lives in this jar beside that one, which already publishes plugins.
  */

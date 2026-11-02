@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.transact
+import dev.surefold.Shared
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldThrow
+import dev.surefold.transact
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 

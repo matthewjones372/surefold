@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.idempotency
 
 // The example docs/http-stores.md shows, from the imports down: HttpStoresGuideSuite holds the page to this file.
-import io.github.matthewjones372.surefold.ByteChunk
+import dev.surefold.ByteChunk
 import io.github.matthewjones372.surefold.ratelimit.Decision
 import io.github.matthewjones372.surefold.ratelimit.RateLimits
 import io.github.matthewjones372.surefold.ratelimit.TokenBucket

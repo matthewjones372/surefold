@@ -9,9 +9,9 @@ import dev.openfeature.sdk.ProviderEvaluation
 import dev.openfeature.sdk.ProviderEventDetails
 import dev.openfeature.sdk.Reason
 import dev.openfeature.sdk.Value
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.cache.Invalidation
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.cache.Cache
+import dev.surefold.cache.Invalidation
+import dev.surefold.fail.Either
 import io.github.matthewjones372.surefold.postgres.notify.Notice
 import io.github.matthewjones372.surefold.stream.Run
 import io.github.matthewjones372.surefold.stream.Stream

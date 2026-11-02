@@ -305,7 +305,7 @@ pluginManagement {
 // build.gradle.kts
 plugins {
     kotlin("jvm") version "2.4.10"
-    id("io.github.matthewjones372.surefold.wiring") version "0.17.0"
+    id("dev.surefold.wiring") version "0.17.0"
 }
 
 repositories { mavenCentral() }

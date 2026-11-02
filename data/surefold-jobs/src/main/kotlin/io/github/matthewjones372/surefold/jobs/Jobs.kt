@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.jobs
 
-import io.github.matthewjones372.surefold.Carriers
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.Carriers
+import dev.surefold.clock
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.Types

@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.postgres.notify
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.ScheduleStep
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.counter
-import io.github.matthewjones372.surefold.increment
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.logWarn
-import io.github.matthewjones372.surefold.resourceScope
+import dev.surefold.Clock
+import dev.surefold.Schedule
+import dev.surefold.ScheduleStep
+import dev.surefold.clock
+import dev.surefold.counter
+import dev.surefold.increment
+import dev.surefold.logInfo
+import dev.surefold.logWarn
+import dev.surefold.resourceScope
 import io.github.matthewjones372.surefold.stream.Stream
 import io.github.matthewjones372.surefold.stream.blocking
 import java.lang.reflect.InvocationTargetException

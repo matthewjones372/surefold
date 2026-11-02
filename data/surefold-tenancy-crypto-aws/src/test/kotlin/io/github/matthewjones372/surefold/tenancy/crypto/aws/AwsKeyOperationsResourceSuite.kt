@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.tenancy.crypto.aws
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.resourceScope
+import dev.surefold.Resource
+import dev.surefold.Shared
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldThrow
+import dev.surefold.resourceScope
+import dev.surefold.use
 import io.github.matthewjones372.surefold.tenancy.crypto.KeyOperations
 import io.github.matthewjones372.surefold.tenancy.crypto.RootKey
-import io.github.matthewjones372.surefold.use
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentials
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
@@ -34,7 +34,7 @@ object AwsKeyOperationsResourceSuite : Suite() {
                 val operations: KeyOperations = adapter
                 (
                     operations.describe(RootKey("invalid")) is
-                        io.github.matthewjones372.surefold.fail.Either.Left
+                        dev.surefold.fail.Either.Left
                     ) shouldBe true
             }
             provider.closed.peek() shouldBe false
@@ -123,11 +123,11 @@ object AwsKeyOperationsResourceSuite : Suite() {
                 clients.update { it + client }
                 client
             } use { operations ->
-                (operations.listRoots("eu-west-2") is io.github.matthewjones372.surefold.fail.Either.Right) shouldBe
+                (operations.listRoots("eu-west-2") is dev.surefold.fail.Either.Right) shouldBe
                     true
                 transport.calls.peek() shouldBe 3
                 provider.version.update { 2 }
-                (operations.listRoots("eu-west-2") is io.github.matthewjones372.surefold.fail.Either.Right) shouldBe
+                (operations.listRoots("eu-west-2") is dev.surefold.fail.Either.Right) shouldBe
                     true
                 transport.calls.peek() shouldBe 4
                 transport.identities.peek().last() shouldBe true

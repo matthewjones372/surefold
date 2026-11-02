@@ -6,8 +6,8 @@ import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.TransactionContextPropagator
 import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.TypeMismatchError
-import io.github.matthewjones372.surefold.SurefoldLocal
-import io.github.matthewjones372.surefold.surefoldLocal
+import dev.surefold.SurefoldLocal
+import dev.surefold.surefoldLocal
 
 /**
  * Who a flag is evaluated for, bound where the request came in and read wherever a flag is: a fork

@@ -2,7 +2,7 @@ package io.github.matthewjones372.surefold.openfeature
 
 import dev.openfeature.sdk.ImmutableContext
 import dev.openfeature.sdk.Value
-import io.github.matthewjones372.surefold.Carrier
+import dev.surefold.Carrier
 
 /**
  * [featureContext] carried from the thread that sent a message to the one that handles it: each scalar

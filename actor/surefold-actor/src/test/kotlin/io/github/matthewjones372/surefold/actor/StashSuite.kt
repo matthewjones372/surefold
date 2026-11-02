@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldBeRight
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.Schedule
+import dev.surefold.fail.left
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldBeRight
+import dev.surefold.junit.shouldThrow
+import dev.surefold.scope
 import kotlin.time.Duration.Companion.minutes
 
 private sealed interface Call

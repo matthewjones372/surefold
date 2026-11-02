@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.stream.benchmarks
 
-import io.github.matthewjones372.surefold.Scope
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.Scope
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.stream.Actors
 import org.openjdk.jmh.annotations.Level
 import org.openjdk.jmh.annotations.Setup

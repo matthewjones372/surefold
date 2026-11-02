@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldContainExactly
 import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
 
 /** DNS as a test states it: a name's addresses and SRV records, and nothing for any other name. */
 private class Zone(

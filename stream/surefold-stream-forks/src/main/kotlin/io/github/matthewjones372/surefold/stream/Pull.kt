@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.fold
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.fold
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionException
 import java.util.concurrent.CompletionStage

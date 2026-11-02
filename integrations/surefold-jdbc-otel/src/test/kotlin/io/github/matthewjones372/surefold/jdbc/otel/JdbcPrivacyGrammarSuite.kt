@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.jdbc.otel
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldThrow
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldThrow
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.common.AttributeKey
 import io.opentelemetry.api.common.Attributes

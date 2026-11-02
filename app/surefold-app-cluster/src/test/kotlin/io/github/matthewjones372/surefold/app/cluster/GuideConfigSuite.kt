@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.app.cluster
 
 import com.typesafe.config.ConfigFactory
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.junit.withClue
 import io.github.matthewjones372.surefold.app.typesafe.reading
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.junit.withClue
 import java.io.File
 import kotlin.time.Duration.Companion.milliseconds
 

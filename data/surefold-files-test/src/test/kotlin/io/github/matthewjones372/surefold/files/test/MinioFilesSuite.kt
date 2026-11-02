@@ -1,15 +1,15 @@
 package io.github.matthewjones372.surefold.files.test
 
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.fail.Either
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeLessThan
+import dev.surefold.policy
 import io.github.matthewjones372.surefold.files.FileError
 import io.github.matthewjones372.surefold.files.Files
 import io.github.matthewjones372.surefold.files.FilesConfig
 import io.github.matthewjones372.surefold.files.FilesContract
 import io.github.matthewjones372.surefold.files.Presigned
 import io.github.matthewjones372.surefold.files.S3Files
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeLessThan
-import io.github.matthewjones372.surefold.policy
 import java.io.ByteArrayInputStream
 import java.net.ServerSocket
 import java.net.URI

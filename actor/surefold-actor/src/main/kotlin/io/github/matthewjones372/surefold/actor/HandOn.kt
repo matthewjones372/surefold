@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Carriers
+import dev.surefold.Carriers
 
 /** A seam for surefold's own modules that hand messages on from a turn to receivers that may be busy (spec 0095). */
 @RequiresOptIn("A seam for surefold's own modules that hand messages on from a step to receivers that may be busy.")

@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.actor.pekko
 
-import io.github.matthewjones372.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBe
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.actor.typed.Behavior

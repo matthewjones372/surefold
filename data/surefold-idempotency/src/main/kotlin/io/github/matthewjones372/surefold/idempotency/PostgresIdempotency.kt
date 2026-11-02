@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.idempotency
 
-import io.github.matthewjones372.surefold.ByteChunk
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.ByteChunk
+import dev.surefold.clock
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.ResultSet

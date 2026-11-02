@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.tenancy.crypto.aws
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.resource
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.awscore.retry.AwsRetryStrategy
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient

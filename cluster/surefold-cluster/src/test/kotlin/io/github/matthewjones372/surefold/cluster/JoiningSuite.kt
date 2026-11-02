@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldContainAll
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldThrow
 import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldContainAll
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldThrow
 import kotlin.time.Duration.Companion.seconds
 
 /** Spec 0096: seeds as config writes them, and a way to join found by its name. */

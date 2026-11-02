@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.Promise
-import io.github.matthewjones372.surefold.awaitValue
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.fold
+import dev.surefold.Promise
+import dev.surefold.awaitValue
+import dev.surefold.fail.Either
+import dev.surefold.fail.fold
 import kotlin.time.Duration.Companion.seconds
 
 // A release that has not finished by then is one the process stops waiting for: a shutdown hook that

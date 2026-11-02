@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Scope
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.Scope
+import dev.surefold.scope
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 

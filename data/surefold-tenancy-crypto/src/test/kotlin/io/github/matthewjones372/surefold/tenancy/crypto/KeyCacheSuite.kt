@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.tenancy.crypto
 
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.map
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.parMap
+import dev.surefold.TestClock
+import dev.surefold.clock
+import dev.surefold.fail.Either
+import dev.surefold.fail.map
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.parMap
 import io.github.matthewjones372.surefold.tenancy.TenantId
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit

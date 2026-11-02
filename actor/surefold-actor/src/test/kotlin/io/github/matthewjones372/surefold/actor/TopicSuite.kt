@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.capturingMetrics
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.capturingMetrics
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.scope
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch

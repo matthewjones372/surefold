@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.otel
 
-import io.github.matthewjones372.surefold.capturingLogs
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldHaveSize
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.logInfo
-import io.github.matthewjones372.surefold.parMap
+import dev.surefold.capturingLogs
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldHaveSize
+import dev.surefold.junit.withClue
+import dev.surefold.logInfo
+import dev.surefold.parMap
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.context.Context
 import io.opentelemetry.context.ContextStorage

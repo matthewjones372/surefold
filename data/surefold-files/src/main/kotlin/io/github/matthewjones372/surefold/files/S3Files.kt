@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.files
 
-import io.github.matthewjones372.surefold.Policy
-import io.github.matthewjones372.surefold.Rejected
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.counter
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.policy
-import io.github.matthewjones372.surefold.timed
+import dev.surefold.Policy
+import dev.surefold.Rejected
+import dev.surefold.Schedule
+import dev.surefold.counter
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.policy
+import dev.surefold.timed
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider
 import software.amazon.awssdk.awscore.retry.AwsRetryStrategy

@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.jobs
 
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.clock
 import java.sql.Connection
 import java.sql.ResultSet
 import java.time.Instant

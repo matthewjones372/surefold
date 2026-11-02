@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.assert.shouldBeEmpty
-import io.github.matthewjones372.surefold.assert.shouldContain
-import io.github.matthewjones372.surefold.assert.shouldNotBe
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBeEmpty
+import dev.surefold.assert.shouldContain
+import dev.surefold.assert.shouldNotBe
+import dev.surefold.assert.withClue
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir

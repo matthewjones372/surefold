@@ -2,12 +2,12 @@ package io.github.matthewjones372.surefold.auth.oidc
 
 import com.nimbusds.jose.jwk.gen.RSAKeyGenerator
 import com.nimbusds.jwt.JWTClaimsSet
+import dev.surefold.fail.Either
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.auth.OidcError
 import io.github.matthewjones372.surefold.auth.OidcIdentity
 import io.github.matthewjones372.surefold.auth.Secret
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
 import java.net.URI
 import java.time.Instant
 import java.util.Date

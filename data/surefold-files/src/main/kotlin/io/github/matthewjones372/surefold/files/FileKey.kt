@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.files
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.fail.Either
+import dev.surefold.fail.left
+import dev.surefold.fail.right
 
 /**
  * Where a file lives in its bucket, checked once: not empty, at most 1,024 bytes of UTF-8 as S3 allows, no leading

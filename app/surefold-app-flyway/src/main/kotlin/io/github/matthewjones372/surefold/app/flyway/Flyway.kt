@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.app.flyway
 
+import dev.surefold.logInfo
 import io.github.matthewjones372.surefold.app.Migrated
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.Wiring
 import io.github.matthewjones372.surefold.app.single
-import io.github.matthewjones372.surefold.logInfo
 import org.flywaydb.core.Flyway
 import org.flywaydb.core.api.FlywayException
 import org.flywaydb.core.api.MigrationVersion

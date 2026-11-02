@@ -1,5 +1,8 @@
 package io.github.matthewjones372.surefold.app.jobs
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.test.eventually
 import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.liquibase.migrations
@@ -12,9 +15,6 @@ import io.github.matthewjones372.surefold.jobs.JobResult
 import io.github.matthewjones372.surefold.jobs.JobSettings
 import io.github.matthewjones372.surefold.jobs.JobWorker
 import io.github.matthewjones372.surefold.jobs.Jobs
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.test.eventually
 import java.util.concurrent.ConcurrentLinkedQueue
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.milliseconds

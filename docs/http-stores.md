@@ -17,7 +17,7 @@ HTTP framework: a framework built on Surefold, such as Pelican, puts its own int
 
 <!-- http-stores -->
 ```kotlin
-import io.github.matthewjones372.surefold.ByteChunk
+import dev.surefold.ByteChunk
 import io.github.matthewjones372.surefold.ratelimit.Decision
 import io.github.matthewjones372.surefold.ratelimit.RateLimits
 import io.github.matthewjones372.surefold.ratelimit.TokenBucket

@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor.benchmarks
 
 import com.typesafe.config.ConfigFactory
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.ask
 import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.scope
 import org.apache.pekko.actor.ActorSystem
 import org.apache.pekko.actor.typed.javadsl.Adapter
 import org.apache.pekko.actor.typed.javadsl.AskPattern

@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.tenancy.crypto
 
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.fail.Either
 import java.security.SecureRandom
 
 /** Fixed keys, one per owner, purpose and version, as TenantKeys would answer them unwrapped, and no database. */

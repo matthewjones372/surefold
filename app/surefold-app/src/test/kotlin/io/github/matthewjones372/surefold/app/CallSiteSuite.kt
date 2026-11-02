@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldMatch
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.junit.shouldNotContain
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldMatch
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.junit.shouldNotContain
+import dev.surefold.junit.withClue
 
 private class Spanner
 private class Bolt

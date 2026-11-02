@@ -2,15 +2,15 @@ package io.github.matthewjones372.surefold.app.flagd
 
 import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.Value
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.junit.withClue
 import io.github.matthewjones372.surefold.app.StartupError
 import io.github.matthewjones372.surefold.app.typesafe.configOf
 import io.github.matthewjones372.surefold.app.use
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.junit.withClue
 import io.github.matthewjones372.surefold.openfeature.Flag
 import io.github.matthewjones372.surefold.openfeature.evaluatedFor
 import kotlin.time.Duration.Companion.seconds

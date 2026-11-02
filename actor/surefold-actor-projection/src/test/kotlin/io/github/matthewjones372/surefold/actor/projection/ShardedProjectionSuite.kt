@@ -1,5 +1,9 @@
 package io.github.matthewjones372.surefold.actor.projection
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactlyInAnyOrder
 import io.github.matthewjones372.surefold.actor.EventCodec
 import io.github.matthewjones372.surefold.actor.InMemoryJournal
 import io.github.matthewjones372.surefold.actor.InMemoryOffsets
@@ -10,10 +14,6 @@ import io.github.matthewjones372.surefold.actor.StateCodec
 import io.github.matthewjones372.surefold.actor.every
 import io.github.matthewjones372.surefold.actor.persistent
 import io.github.matthewjones372.surefold.actor.testActors
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactlyInAnyOrder
 import io.github.matthewjones372.surefold.stream.Forks
 import io.github.matthewjones372.surefold.stream.start
 import java.util.Collections

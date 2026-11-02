@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.jobs
 
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.logAnnotated
+import dev.surefold.TestClock
+import dev.surefold.clock
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.logAnnotated
 import java.sql.Timestamp
 import java.time.Instant
 

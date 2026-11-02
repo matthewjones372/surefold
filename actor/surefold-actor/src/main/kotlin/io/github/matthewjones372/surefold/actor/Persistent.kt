@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.fail.Fail
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.logError
+import dev.surefold.fail.Fail
+import dev.surefold.fail.bind
+import dev.surefold.logError
 
 /**
  * A persistent actor's state: the [value] its events built, the sequence number of the last of them, and the last

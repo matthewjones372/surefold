@@ -2,7 +2,7 @@
 
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.logAnnotated
+import dev.surefold.logAnnotated
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata
 
 /** For a module that brings records of its own into surefold-kafka, such as the Pekko connector; not for a pipeline. */

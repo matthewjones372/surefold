@@ -1,6 +1,7 @@
 package io.github.matthewjones372.surefold.tenancy.crypto.aws
 
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.fail.Either
+import dev.surefold.use
 import io.github.matthewjones372.surefold.tenancy.crypto.EncryptionContext
 import io.github.matthewjones372.surefold.tenancy.crypto.ExpectedKeySet
 import io.github.matthewjones372.surefold.tenancy.crypto.KeyFailureCode
@@ -11,7 +12,6 @@ import io.github.matthewjones372.surefold.tenancy.crypto.RootCreation
 import io.github.matthewjones372.surefold.tenancy.crypto.RootExpectation
 import io.github.matthewjones372.surefold.tenancy.crypto.RootKey
 import io.github.matthewjones372.surefold.tenancy.crypto.RootMetadata
-import io.github.matthewjones372.surefold.use
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider
 import software.amazon.awssdk.core.exception.SdkClientException
 import java.io.IOException

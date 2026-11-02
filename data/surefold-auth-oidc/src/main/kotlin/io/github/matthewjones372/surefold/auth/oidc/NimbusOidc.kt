@@ -26,14 +26,14 @@ import com.nimbusds.openid.connect.sdk.Nonce
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponse
 import com.nimbusds.openid.connect.sdk.OIDCTokenResponseParser
 import com.nimbusds.openid.connect.sdk.op.OIDCProviderMetadata
+import dev.surefold.clock
+import dev.surefold.fail.Either
 import io.github.matthewjones372.surefold.auth.OidcError
 import io.github.matthewjones372.surefold.auth.OidcIdentity
 import io.github.matthewjones372.surefold.auth.OidcSignIn
 import io.github.matthewjones372.surefold.auth.OidcStart
 import io.github.matthewjones372.surefold.auth.Secret
 import io.github.matthewjones372.surefold.auth.constantTimeEquals
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.fail.Either
 import java.io.IOException
 import java.net.URI
 import kotlin.time.Duration

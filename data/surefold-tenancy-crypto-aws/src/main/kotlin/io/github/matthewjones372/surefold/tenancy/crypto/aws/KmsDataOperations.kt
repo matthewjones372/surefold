@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.tenancy.crypto.aws
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.Fail
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.fail.ensure
-import io.github.matthewjones372.surefold.fail.ensureNotNull
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.fail.Either
+import dev.surefold.fail.Fail
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bind
+import dev.surefold.fail.ensure
+import dev.surefold.fail.ensureNotNull
+import dev.surefold.fail.right
 import io.github.matthewjones372.surefold.tenancy.crypto.DataKeyOperations
 import io.github.matthewjones372.surefold.tenancy.crypto.EncryptionContext
 import io.github.matthewjones372.surefold.tenancy.crypto.GeneratedKey

@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.app.flyway
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.withClue
 import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.actor.journal.jdbc.migrate
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.withClue
 import javax.sql.DataSource
 
 /**

@@ -4,11 +4,11 @@ import com.sun.management.OperatingSystemMXBean
 import com.sun.management.ThreadMXBean
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
-import io.github.matthewjones372.surefold.Promise
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.awaitValue
+import dev.surefold.Promise
+import dev.surefold.Shared
+import dev.surefold.awaitValue
+import dev.surefold.parMap
 import io.github.matthewjones372.surefold.jdbc.otel.traced
-import io.github.matthewjones372.surefold.parMap
 import io.opentelemetry.api.OpenTelemetry
 import io.opentelemetry.api.trace.Span
 import io.opentelemetry.api.trace.SpanContext

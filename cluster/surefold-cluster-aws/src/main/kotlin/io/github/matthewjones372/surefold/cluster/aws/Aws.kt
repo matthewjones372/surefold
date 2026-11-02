@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.cluster.aws
 
+import dev.surefold.clock
 import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.clock
 import io.github.matthewjones372.surefold.cluster.Discovery
 import io.github.matthewjones372.surefold.cluster.Downing
 import io.github.matthewjones372.surefold.cluster.JoinOptions

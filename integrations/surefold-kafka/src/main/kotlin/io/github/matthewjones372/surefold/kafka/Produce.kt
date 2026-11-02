@@ -2,10 +2,10 @@
 
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.map
-import io.github.matthewjones372.surefold.fail.mapLeft
-import io.github.matthewjones372.surefold.fail.onLeft
+import dev.surefold.fail.Either
+import dev.surefold.fail.map
+import dev.surefold.fail.mapLeft
+import dev.surefold.fail.onLeft
 import io.github.matthewjones372.surefold.stream.Stream
 import io.github.matthewjones372.surefold.stream.groupedWithin
 import io.github.matthewjones372.surefold.stream.mapAsync

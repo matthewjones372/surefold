@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldContainExactly
 import io.github.matthewjones372.surefold.actor.remote.Node
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
 
 private fun member(n: Int, status: Status = Status.Up, uid: Long = n.toLong()) =
     Member(Node("n$n", "10.0.0.$n", 25520), uid, status, n)

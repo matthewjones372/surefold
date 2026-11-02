@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeGreaterThan
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.TestClock
+import dev.surefold.clock
+import dev.surefold.fail.right
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeGreaterThan
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.scope
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue

@@ -4,6 +4,12 @@ import com.google.protobuf.BoolValue
 import com.google.protobuf.Int64Value
 import com.google.protobuf.Message
 import com.google.protobuf.StringValue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeRight
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldThrow
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Address
 import io.github.matthewjones372.surefold.actor.Reply
@@ -18,12 +24,6 @@ import io.github.matthewjones372.surefold.actor.remote.encode
 import io.github.matthewjones372.surefold.actor.remote.node
 import io.github.matthewjones372.surefold.actor.spawn
 import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeRight
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.scope
 import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import kotlin.time.Duration.Companion.minutes

@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.withClue
 import kotlin.time.Duration.Companion.seconds
 
 private val five = listOf(1, 2, 3, 4, 5)

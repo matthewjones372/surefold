@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.stream
 
+import dev.surefold.fail.nonFatalOrThrow
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Behaviour
 import io.github.matthewjones372.surefold.actor.Ctx
 import io.github.matthewjones372.surefold.actor.behaviour
 import io.github.matthewjones372.surefold.actor.onStart
 import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.fail.nonFatalOrThrow
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.atomic.AtomicInteger

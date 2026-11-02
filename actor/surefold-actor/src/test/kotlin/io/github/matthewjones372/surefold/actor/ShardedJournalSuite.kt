@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldBeInRange
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.fail.Either
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldBeInRange
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldThrow
+import dev.surefold.junit.withClue
 
 private fun two() = listOf("db-a" to InMemoryJournal(), "db-b" to InMemoryJournal())
 

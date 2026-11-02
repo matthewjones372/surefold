@@ -1,5 +1,6 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.logWarn
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Ctx
 import io.github.matthewjones372.surefold.actor.Delivered
@@ -17,7 +18,6 @@ import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.actor.remote.WireIn
 import io.github.matthewjones372.surefold.actor.remote.WireOut
 import io.github.matthewjones372.surefold.actor.remote.delivery
-import io.github.matthewjones372.surefold.logWarn
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream

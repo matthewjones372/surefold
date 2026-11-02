@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeRight
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.fail.left
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeRight
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldThrow
+import dev.surefold.scope
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.minutes
 

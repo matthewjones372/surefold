@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.fail.getOrElse
+import dev.surefold.fail.getOrElse
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 

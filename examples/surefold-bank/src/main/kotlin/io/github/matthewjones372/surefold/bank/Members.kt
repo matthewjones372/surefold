@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.bank
 
-import io.github.matthewjones372.surefold.Shared
+import dev.surefold.Shared
+import dev.surefold.timeoutOrNull
 import io.github.matthewjones372.surefold.actor.behaviour
 import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.actor.stay
 import io.github.matthewjones372.surefold.cluster.Member
 import io.github.matthewjones372.surefold.cluster.MemberEvent
 import io.github.matthewjones372.surefold.cluster.Status
-import io.github.matthewjones372.surefold.timeoutOrNull
 import kotlin.time.Duration
 
 /** The members one node has heard of, by their events: who is in, and who some member cannot reach. */

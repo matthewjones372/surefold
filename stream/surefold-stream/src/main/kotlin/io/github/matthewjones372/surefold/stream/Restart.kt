@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.logger
+import dev.surefold.Schedule
+import dev.surefold.clock
+import dev.surefold.logger
 
 /**
  * On a defect, this same description materialised again after the delay [schedule] decides. A declared

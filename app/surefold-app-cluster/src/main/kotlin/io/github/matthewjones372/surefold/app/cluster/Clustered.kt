@@ -2,6 +2,8 @@ package io.github.matthewjones372.surefold.app.cluster
 
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
+import dev.surefold.logError
+import dev.surefold.logInfo
 import io.github.matthewjones372.surefold.actor.behaviour
 import io.github.matthewjones372.surefold.actor.remote.node
 import io.github.matthewjones372.surefold.actor.stay
@@ -21,8 +23,6 @@ import io.github.matthewjones372.surefold.cluster.Joins
 import io.github.matthewjones372.surefold.cluster.MemberEvent
 import io.github.matthewjones372.surefold.cluster.Ready
 import io.github.matthewjones372.surefold.cluster.cluster
-import io.github.matthewjones372.surefold.logError
-import io.github.matthewjones372.surefold.logInfo
 import kotlin.system.exitProcess
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds

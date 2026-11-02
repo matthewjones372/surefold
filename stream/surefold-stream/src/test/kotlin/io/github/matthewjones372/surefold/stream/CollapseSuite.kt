@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldBeSameInstanceAs
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldNotContain
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldBeSameInstanceAs
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldNotContain
 
 /** Each collapsing rule, on a pipeline built to trigger it, and read back through `render(optimised = true)`. */
 object CollapseSuite : Suite() {

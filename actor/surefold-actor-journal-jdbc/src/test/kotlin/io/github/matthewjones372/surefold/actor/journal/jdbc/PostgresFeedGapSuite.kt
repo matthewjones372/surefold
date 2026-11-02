@@ -1,15 +1,15 @@
 package io.github.matthewjones372.surefold.actor.journal.jdbc
 
-import io.github.matthewjones372.surefold.TestClock
+import dev.surefold.TestClock
+import dev.surefold.clock
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldContainExactlyInAnyOrder
 import io.github.matthewjones372.surefold.actor.FeedEvent
 import io.github.matthewjones372.surefold.actor.PersistenceId
 import io.github.matthewjones372.surefold.actor.Slices
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldContainExactlyInAnyOrder
 import java.sql.Connection
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.seconds

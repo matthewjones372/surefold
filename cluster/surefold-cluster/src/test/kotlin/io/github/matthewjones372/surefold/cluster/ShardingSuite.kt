@@ -1,5 +1,12 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.fail.right
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.withClue
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.Reply
 import io.github.matthewjones372.surefold.actor.Signal
 import io.github.matthewjones372.surefold.actor.ask
@@ -14,13 +21,6 @@ import io.github.matthewjones372.surefold.actor.remote.WireIn
 import io.github.matthewjones372.surefold.actor.remote.WireOut
 import io.github.matthewjones372.surefold.actor.remote.node
 import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.scope
 import java.net.ServerSocket
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch

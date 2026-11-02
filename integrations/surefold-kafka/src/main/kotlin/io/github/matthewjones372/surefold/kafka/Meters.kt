@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.Counter
-import io.github.matthewjones372.surefold.Gauge
-import io.github.matthewjones372.surefold.Histogram
-import io.github.matthewjones372.surefold.Metrics
-import io.github.matthewjones372.surefold.NoMetrics
-import io.github.matthewjones372.surefold.metricTags
-import io.github.matthewjones372.surefold.metrics
+import dev.surefold.Counter
+import dev.surefold.Gauge
+import dev.surefold.Histogram
+import dev.surefold.Metrics
+import dev.surefold.NoMetrics
+import dev.surefold.metricTags
+import dev.surefold.metrics
 import org.apache.kafka.clients.consumer.Consumer
 import org.apache.kafka.clients.consumer.ConsumerConfig
 import org.apache.kafka.clients.consumer.ConsumerRecord

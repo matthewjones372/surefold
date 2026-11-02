@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldContainExactlyInAnyOrder
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldContainExactlyInAnyOrder
 
 internal sealed interface Plain
 

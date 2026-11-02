@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.cache.tenancy
 
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.cache.Cache
-import io.github.matthewjones372.surefold.cache.CacheStats
-import io.github.matthewjones372.surefold.cache.DEFAULT_CAPACITY
-import io.github.matthewjones372.surefold.cache.Invalidation
-import io.github.matthewjones372.surefold.cache.Layer
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.Schedule
+import dev.surefold.cache.Cache
+import dev.surefold.cache.CacheStats
+import dev.surefold.cache.DEFAULT_CAPACITY
+import dev.surefold.cache.Invalidation
+import dev.surefold.cache.Layer
+import dev.surefold.fail.Either
+import dev.surefold.fail.left
+import dev.surefold.fail.right
 import io.github.matthewjones372.surefold.tenancy.TenancyError
 import io.github.matthewjones372.surefold.tenancy.TenantId
 import io.github.matthewjones372.surefold.tenancy.currentTenant

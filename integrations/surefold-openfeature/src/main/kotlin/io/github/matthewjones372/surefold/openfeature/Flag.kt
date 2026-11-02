@@ -5,8 +5,8 @@ import dev.openfeature.sdk.ErrorCode
 import dev.openfeature.sdk.FlagEvaluationDetails
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.Value
-import io.github.matthewjones372.surefold.SurefoldLocal
-import io.github.matthewjones372.surefold.surefoldLocal
+import dev.surefold.SurefoldLocal
+import dev.surefold.surefoldLocal
 import java.time.Instant
 import kotlin.time.Duration
 

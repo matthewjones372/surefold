@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.tenancy.crypto
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
+import dev.surefold.fail.Either
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
 import io.github.matthewjones372.surefold.tenancy.TenantId
 import io.github.matthewjones372.surefold.tenancy.withTenant
 import javax.crypto.Cipher

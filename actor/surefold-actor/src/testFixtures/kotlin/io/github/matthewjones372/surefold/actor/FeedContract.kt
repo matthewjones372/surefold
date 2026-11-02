@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldBeEmpty
-import io.github.matthewjones372.surefold.assert.shouldContainExactly
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeEmpty
+import dev.surefold.assert.shouldContainExactly
+import dev.surefold.assert.withClue
 import org.junit.jupiter.api.Test
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean

@@ -1,5 +1,12 @@
 package io.github.matthewjones372.surefold.actor.journal.jdbc
 
+import dev.surefold.fail.Either
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldContainExactlyInAnyOrder
+import dev.surefold.scope
 import io.github.matthewjones372.surefold.actor.EventCodec
 import io.github.matthewjones372.surefold.actor.JournalConflict
 import io.github.matthewjones372.surefold.actor.PersistenceId
@@ -14,13 +21,6 @@ import io.github.matthewjones372.surefold.actor.journal
 import io.github.matthewjones372.surefold.actor.persistent
 import io.github.matthewjones372.surefold.actor.snapshots
 import io.github.matthewjones372.surefold.actor.spawn
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldContainExactlyInAnyOrder
-import io.github.matthewjones372.surefold.scope
 
 private val shardedCents = object : EventCodec<Int> {
     override fun encode(event: Int): ByteArray = "$event".toByteArray()

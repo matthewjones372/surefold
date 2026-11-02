@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.resource
 import org.apache.pekko.actor.ActorSystem
 
 /** An actor system named [name], for a suite's `shared`: started as the suite begins, stopped after its last test. */

@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.assert.shouldBeNull
-import io.github.matthewjones372.surefold.assert.shouldBeRight
-import io.github.matthewjones372.surefold.assert.shouldBeSameInstanceAs
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.assert.shouldBeNull
+import dev.surefold.assert.shouldBeRight
+import dev.surefold.assert.shouldBeSameInstanceAs
+import dev.surefold.scope
 import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.minutes
 

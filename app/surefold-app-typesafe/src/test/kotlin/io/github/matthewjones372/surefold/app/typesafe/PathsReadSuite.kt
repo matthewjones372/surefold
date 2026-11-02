@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.app.typesafe
 
 import com.typesafe.config.ConfigFactory
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.withClue
 
 /** What a section read is what its report prints, so the record has to be exact (spec 0155). */
 object PathsReadSuite : Suite() {

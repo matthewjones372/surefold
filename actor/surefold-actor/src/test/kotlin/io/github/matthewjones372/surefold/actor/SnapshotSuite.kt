@@ -1,15 +1,15 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeNull
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.logger
+import dev.surefold.LogLevel
+import dev.surefold.LogLine
+import dev.surefold.fail.Either
+import dev.surefold.fail.right
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeNull
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.logger
 import java.util.concurrent.ConcurrentLinkedQueue
 
 private val tally = PersistenceId("tally", "t-1")

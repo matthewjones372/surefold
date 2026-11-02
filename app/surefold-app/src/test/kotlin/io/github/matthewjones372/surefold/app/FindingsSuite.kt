@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldNotContain
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldNotContain
+import dev.surefold.junit.withClue
 import kotlin.reflect.typeOf
 
 private class Kettle

@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.actor.journal.jdbc
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.logAnnotated
 import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.logAnnotated
 
 /** Spec 0123: an event is written with what its append carried, and read back with it. */
 object JournalMetadataSuite : Suite() {

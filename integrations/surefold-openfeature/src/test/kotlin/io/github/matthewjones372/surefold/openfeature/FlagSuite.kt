@@ -4,12 +4,12 @@ import dev.openfeature.sdk.Client
 import dev.openfeature.sdk.ErrorCode
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.providers.memory.InMemoryProvider
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.parZip
-import io.github.matthewjones372.surefold.resource
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.withClue
+import dev.surefold.parZip
+import dev.surefold.resource
 import dev.openfeature.sdk.providers.memory.Flag as MemoryFlag
 
 private object TestFlags {

@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.tenancy.crypto
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.Shared
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.resourceScope
+import dev.surefold.Clock
+import dev.surefold.Shared
+import dev.surefold.fail.Either
+import dev.surefold.resourceScope
 import java.time.Instant
 
 /** One transferred source array, retained independently of its views and admitted uses. */

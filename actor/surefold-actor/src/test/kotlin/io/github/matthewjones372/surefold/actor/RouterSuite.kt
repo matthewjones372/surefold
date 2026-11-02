@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldContainExactlyInAnyOrder
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.scope
+import dev.surefold.Schedule
+import dev.surefold.fail.right
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldContainExactlyInAnyOrder
+import dev.surefold.junit.withClue
+import dev.surefold.scope
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import kotlin.time.Duration.Companion.minutes

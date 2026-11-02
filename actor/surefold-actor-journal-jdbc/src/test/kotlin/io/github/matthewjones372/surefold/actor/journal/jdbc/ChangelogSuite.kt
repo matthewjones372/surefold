@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.actor.journal.jdbc
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
 import javax.sql.DataSource
 
 /** The journal's tables as a Liquibase changelog (spec 0107). */

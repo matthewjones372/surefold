@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.slf4j
 
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.logger
+import dev.surefold.Logger
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.withClue
+import dev.surefold.logger
 import java.util.ServiceLoader
 
 /**

@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Schedule
+import dev.surefold.Schedule
 import java.util.concurrent.atomic.AtomicLong
 
 /** Which of [of] routees takes [message], as an index from 0. */

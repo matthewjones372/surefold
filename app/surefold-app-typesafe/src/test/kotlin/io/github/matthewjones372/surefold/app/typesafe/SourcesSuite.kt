@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.app.typesafe
 
 import com.typesafe.config.ConfigFactory
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.withClue
 import io.github.matthewjones372.surefold.app.testApp
 import io.github.matthewjones372.surefold.app.use
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.withClue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 

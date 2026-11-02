@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldHaveSize
-import io.github.matthewjones372.surefold.junit.shouldNotBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldHaveSize
+import dev.surefold.junit.shouldNotBeEmpty
+import dev.surefold.junit.shouldThrow
+import dev.surefold.junit.withClue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 

@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.ratelimit
 
-import io.github.matthewjones372.surefold.clock
+import dev.surefold.clock
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.time.Instant

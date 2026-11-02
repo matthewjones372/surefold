@@ -1,5 +1,12 @@
 package io.github.matthewjones372.surefold.app.cluster
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldNotBe
+import dev.surefold.junit.shouldNotBeNull
 import io.github.matthewjones372.surefold.actor.remote.Node
 import io.github.matthewjones372.surefold.app.StartupError
 import io.github.matthewjones372.surefold.app.actor.actors
@@ -13,13 +20,6 @@ import io.github.matthewjones372.surefold.cluster.Downing
 import io.github.matthewjones372.surefold.cluster.Gossiping
 import io.github.matthewjones372.surefold.cluster.Joining
 import io.github.matthewjones372.surefold.cluster.Status
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldNotBe
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
 import java.net.ServerSocket
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch

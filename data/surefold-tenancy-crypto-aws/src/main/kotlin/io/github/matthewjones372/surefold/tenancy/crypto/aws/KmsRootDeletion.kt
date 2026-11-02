@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.tenancy.crypto.aws
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.fail.bind
-import io.github.matthewjones372.surefold.fail.ensure
-import io.github.matthewjones372.surefold.fail.ensureNotNull
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.fail.bind
+import dev.surefold.fail.ensure
+import dev.surefold.fail.ensureNotNull
 import io.github.matthewjones372.surefold.tenancy.crypto.DeletionProgress
 import io.github.matthewjones372.surefold.tenancy.crypto.DeletionState
 import io.github.matthewjones372.surefold.tenancy.crypto.ExpectedKeySet

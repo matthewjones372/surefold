@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.auth
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldThrow
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldThrow
 
 /** Argon2id hashes that say their own cost, and a rehash when the cost changes (spec 0227). */
 object PasswordsSuite : Suite() {

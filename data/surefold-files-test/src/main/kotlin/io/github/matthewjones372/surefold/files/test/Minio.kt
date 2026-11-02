@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.files.test
 
-import io.github.matthewjones372.surefold.Policy
+import dev.surefold.Policy
 import io.github.matthewjones372.surefold.files.FilesConfig
 import io.github.matthewjones372.surefold.files.S3Files
 import org.testcontainers.containers.GenericContainer

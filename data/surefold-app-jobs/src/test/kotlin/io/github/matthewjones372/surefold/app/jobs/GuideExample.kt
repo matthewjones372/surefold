@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.app.jobs
 
 // The example docs/jobs.md shows, from the imports down: JobsGuideSuite holds the page to this file.
+import dev.surefold.clock
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.liquibase.migrations
 import io.github.matthewjones372.surefold.app.singleOf
-import io.github.matthewjones372.surefold.clock
 import io.github.matthewjones372.surefold.jobs.JobCodec
 import io.github.matthewjones372.surefold.jobs.JobHandlers
 import io.github.matthewjones372.surefold.jobs.JobKind

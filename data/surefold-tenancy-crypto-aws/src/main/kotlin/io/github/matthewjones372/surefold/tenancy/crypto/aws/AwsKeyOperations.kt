@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.tenancy.crypto.aws
 
-import io.github.matthewjones372.surefold.fail.map
+import dev.surefold.fail.map
 import io.github.matthewjones372.surefold.tenancy.crypto.EncryptionContext
 import io.github.matthewjones372.surefold.tenancy.crypto.ExpectedKeySet
 import io.github.matthewjones372.surefold.tenancy.crypto.KeyOperations

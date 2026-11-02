@@ -2,14 +2,14 @@
 
 package io.github.matthewjones372.surefold.kafka
 
-import io.github.matthewjones372.surefold.capturingLogs
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactlyInAnyOrder
-import io.github.matthewjones372.surefold.junit.shouldContainKey
-import io.github.matthewjones372.surefold.junit.shouldNotContainKey
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.logInfo
+import dev.surefold.capturingLogs
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactlyInAnyOrder
+import dev.surefold.junit.shouldContainKey
+import dev.surefold.junit.shouldNotContainKey
+import dev.surefold.junit.withClue
+import dev.surefold.logInfo
 import io.github.matthewjones372.surefold.stream.Exit
 import io.github.matthewjones372.surefold.stream.Stream
 import io.github.matthewjones372.surefold.stream.TestStreams

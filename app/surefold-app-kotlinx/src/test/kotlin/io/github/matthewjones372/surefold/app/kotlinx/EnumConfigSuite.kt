@@ -1,14 +1,14 @@
 package io.github.matthewjones372.surefold.app.kotlinx
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldNotBeNull
 import io.github.matthewjones372.surefold.app.StartupError
 import io.github.matthewjones372.surefold.app.testApp
 import io.github.matthewjones372.surefold.app.typesafe.configOf
 import io.github.matthewjones372.surefold.app.use
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
 import kotlinx.serialization.Serializable
 
 private enum class Mode { Fast, Safe }

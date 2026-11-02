@@ -136,9 +136,9 @@ fun pause(provider: PostgresFlags, admin: DataSource, tenant: TenantId, operator
 <!-- flags-declare -->
 ```kotlin
 import dev.openfeature.sdk.FlagEvaluationDetails
+import dev.surefold.parZip
 import io.github.matthewjones372.surefold.openfeature.Flag
 import io.github.matthewjones372.surefold.openfeature.evaluatedFor
-import io.github.matthewjones372.surefold.parZip
 
 object AdoptionFlags {
     val registryCheck = Flag.boolean("adoption.registry-check", default = true)

@@ -1,18 +1,18 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.TestClock
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.withClue
-import io.github.matthewjones372.surefold.logger
+import dev.surefold.LogLevel
+import dev.surefold.LogLine
+import dev.surefold.Logger
+import dev.surefold.Schedule
+import dev.surefold.TestClock
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.withClue
+import dev.surefold.logger
 import java.time.Instant
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.Duration.Companion.hours
@@ -115,7 +115,7 @@ object TestStreamsSuite : Suite() {
         test("a stage body reads the test's clock as surefold's clock") {
             val clock = TestClock(Instant.parse("2026-09-25T12:00:00Z"))
             val running = Stream.tick(1.minutes, Unit)
-                .map { io.github.matthewjones372.surefold.clock.get().now() }
+                .map { dev.surefold.clock.get().now() }
                 .take(2)
                 .runCollect().start(TestStreams(clock))
 

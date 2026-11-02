@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.cache.postgres
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.expect
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
+import dev.surefold.junit.Suite
+import dev.surefold.junit.expect
+import dev.surefold.junit.shouldBeEmpty
 import java.io.File
 
 /** What surefold-cache-postgres may put on a service's classpath: surefold's own, and nothing more. */

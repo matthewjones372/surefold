@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor.remote
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeLessThan
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeLessThan
+import dev.surefold.junit.shouldContainExactly
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.net.ServerSocket

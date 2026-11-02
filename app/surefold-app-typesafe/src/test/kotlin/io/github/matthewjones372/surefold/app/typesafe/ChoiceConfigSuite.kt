@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.app.typesafe
 
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.choice
 import io.github.matthewjones372.surefold.app.single
 import io.github.matthewjones372.surefold.app.testApp
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
 
 /** A choice reads its setting from the graph's own Config, so overriding one key flips it (spec 0136). */
 object ChoiceConfigSuite : Suite() {

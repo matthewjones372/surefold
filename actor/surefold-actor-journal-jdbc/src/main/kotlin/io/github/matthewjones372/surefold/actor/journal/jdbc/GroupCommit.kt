@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.actor.journal.jdbc
 
+import dev.surefold.fail.Either
+import dev.surefold.logDebug
 import io.github.matthewjones372.surefold.actor.JournalConflict
 import io.github.matthewjones372.surefold.actor.PersistenceId
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.logDebug
 import java.sql.Connection
 import java.sql.SQLException
 import java.util.concurrent.CompletableFuture

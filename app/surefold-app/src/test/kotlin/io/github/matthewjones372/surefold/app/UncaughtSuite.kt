@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.LogLevel
-import io.github.matthewjones372.surefold.LogLine
-import io.github.matthewjones372.surefold.Logger
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContain
-import io.github.matthewjones372.surefold.junit.shouldHaveSize
-import io.github.matthewjones372.surefold.logger
+import dev.surefold.LogLevel
+import dev.surefold.LogLine
+import dev.surefold.Logger
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContain
+import dev.surefold.junit.shouldHaveSize
+import dev.surefold.logger
 import java.sql.SQLException
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds

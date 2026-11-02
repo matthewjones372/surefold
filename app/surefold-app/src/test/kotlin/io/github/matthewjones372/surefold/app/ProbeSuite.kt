@@ -1,13 +1,13 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.Clock
-import io.github.matthewjones372.surefold.SystemClock
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldBeInstanceOf
-import io.github.matthewjones372.surefold.junit.shouldNotBeNull
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.Clock
+import dev.surefold.SystemClock
+import dev.surefold.clock
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeInstanceOf
+import dev.surefold.junit.shouldNotBeNull
+import dev.surefold.junit.withClue
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean

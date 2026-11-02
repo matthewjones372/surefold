@@ -1,9 +1,9 @@
 package io.github.matthewjones372.surefold.cluster
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.withClue
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.withClue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 

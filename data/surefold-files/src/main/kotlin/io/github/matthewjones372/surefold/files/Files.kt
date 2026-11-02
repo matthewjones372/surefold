@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.files
 
-import io.github.matthewjones372.surefold.fail.Either
+import dev.surefold.fail.Either
 import java.io.InputStream
 import java.net.URI
 import java.time.Instant

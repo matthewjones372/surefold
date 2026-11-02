@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.cluster
 
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeEmpty
+import dev.surefold.assert.shouldNotBeEmpty
+import dev.surefold.assert.shouldNotBeNull
+import dev.surefold.assert.withClue
 import io.github.matthewjones372.surefold.actor.journal.jdbc.JdbcJournal
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldBeEmpty
-import io.github.matthewjones372.surefold.assert.shouldNotBeEmpty
-import io.github.matthewjones372.surefold.assert.shouldNotBeNull
-import io.github.matthewjones372.surefold.assert.withClue
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir

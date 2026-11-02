@@ -3,13 +3,13 @@ package io.github.matthewjones372.surefold.app.typesafe
 import com.typesafe.config.Config
 import com.typesafe.config.ConfigException
 import com.typesafe.config.ConfigUtil
+import dev.surefold.fail.Either
+import dev.surefold.fail.NonEmptyList
+import dev.surefold.fail.left
+import dev.surefold.fail.right
+import dev.surefold.fail.toNonEmptyListOrNull
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.single
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.NonEmptyList
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.fail.toNonEmptyListOrNull
 import kotlin.time.Duration
 import kotlin.time.toKotlinDuration
 

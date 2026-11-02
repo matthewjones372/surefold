@@ -5,7 +5,7 @@ import dev.openfeature.sdk.FeatureProvider
 import dev.openfeature.sdk.OpenFeatureAPI
 import dev.openfeature.sdk.ProviderState
 import dev.openfeature.sdk.exceptions.OpenFeatureError
-import io.github.matthewjones372.surefold.Shared
+import dev.surefold.Shared
 import io.github.matthewjones372.surefold.app.Module
 import io.github.matthewjones372.surefold.app.Wiring
 import io.github.matthewjones372.surefold.app.probe

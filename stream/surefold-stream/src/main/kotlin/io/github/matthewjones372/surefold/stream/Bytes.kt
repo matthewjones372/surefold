@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.ByteChunk
+import dev.surefold.ByteChunk
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.io.OutputStream

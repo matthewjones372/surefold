@@ -10,9 +10,9 @@ import dev.openfeature.sdk.Value
 import dev.openfeature.sdk.exceptions.FlagNotFoundError
 import dev.openfeature.sdk.providers.memory.Flag
 import dev.openfeature.sdk.providers.memory.InMemoryProvider
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldThrow
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldThrow
 import io.github.matthewjones372.surefold.tenancy.RlsDatabase
 import io.github.matthewjones372.surefold.tenancy.TenantId
 import io.github.matthewjones372.surefold.tenancy.withTenant

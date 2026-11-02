@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.tenancy
 
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.attempt
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
-import io.github.matthewjones372.surefold.junit.shouldContainExactly
-import io.github.matthewjones372.surefold.junit.shouldThrow
-import io.github.matthewjones372.surefold.parMap
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldContainExactly
+import dev.surefold.junit.shouldThrow
+import dev.surefold.parMap
 import org.postgresql.ds.PGSimpleDataSource
 import java.sql.Connection
 

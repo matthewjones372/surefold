@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.Carriers
-import io.github.matthewjones372.surefold.Schedule
-import io.github.matthewjones372.surefold.fail.Fail
+import dev.surefold.Carriers
+import dev.surefold.Schedule
+import dev.surefold.fail.Fail
 import java.util.Objects
 import kotlin.time.Duration
 

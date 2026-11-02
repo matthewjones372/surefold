@@ -1,11 +1,11 @@
 package io.github.matthewjones372.surefold.auth
 
-import io.github.matthewjones372.surefold.TestClock
+import dev.surefold.TestClock
+import dev.surefold.clock
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.actor.journal.jdbc.Postgres
 import io.github.matthewjones372.surefold.actor.journal.jdbc.migrate
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
 import java.time.Instant
 import javax.sql.DataSource
 import kotlin.time.Duration.Companion.hours

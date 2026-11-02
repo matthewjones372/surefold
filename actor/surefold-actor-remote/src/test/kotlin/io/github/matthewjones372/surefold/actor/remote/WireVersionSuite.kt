@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.actor.remote
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream

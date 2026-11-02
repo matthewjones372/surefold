@@ -1,10 +1,10 @@
 package io.github.matthewjones372.surefold.tenancy
 
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.logInfo
+import dev.surefold.clock
+import dev.surefold.fail.Either
+import dev.surefold.fail.left
+import dev.surefold.fail.right
+import dev.surefold.logInfo
 import java.sql.Connection
 import java.time.ZoneOffset
 import javax.sql.DataSource

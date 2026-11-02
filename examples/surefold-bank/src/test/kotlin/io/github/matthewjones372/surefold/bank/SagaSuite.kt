@@ -1,5 +1,10 @@
 package io.github.matthewjones372.surefold.bank
 
+import dev.surefold.fail.map
+import dev.surefold.fail.right
+import dev.surefold.junit.Suite
+import dev.surefold.junit.forAll
+import dev.surefold.junit.shouldBe
 import io.github.matthewjones372.surefold.actor.ActorRef
 import io.github.matthewjones372.surefold.actor.Address
 import io.github.matthewjones372.surefold.actor.Confirmed
@@ -11,11 +16,6 @@ import io.github.matthewjones372.surefold.actor.events
 import io.github.matthewjones372.surefold.actor.remote.MessageCodec
 import io.github.matthewjones372.surefold.actor.remote.outbox
 import io.github.matthewjones372.surefold.actor.testActors
-import io.github.matthewjones372.surefold.fail.map
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.forAll
-import io.github.matthewjones372.surefold.junit.shouldBe
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 

@@ -1,6 +1,11 @@
 package io.github.matthewjones372.surefold.actor.journal.jdbc
 
-import io.github.matthewjones372.surefold.Carriers
+import dev.surefold.Carriers
+import dev.surefold.clock
+import dev.surefold.fail.Either
+import dev.surefold.fail.left
+import dev.surefold.fail.right
+import dev.surefold.logWarn
 import io.github.matthewjones372.surefold.actor.FeedEvent
 import io.github.matthewjones372.surefold.actor.Journal
 import io.github.matthewjones372.surefold.actor.JournalConflict
@@ -10,11 +15,6 @@ import io.github.matthewjones372.surefold.actor.SliceElsewhere
 import io.github.matthewjones372.surefold.actor.SlicedFeed
 import io.github.matthewjones372.surefold.actor.Slices
 import io.github.matthewjones372.surefold.actor.StoredEvent
-import io.github.matthewjones372.surefold.clock
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
-import io.github.matthewjones372.surefold.logWarn
 import java.sql.Connection
 import java.sql.PreparedStatement
 import java.sql.SQLException

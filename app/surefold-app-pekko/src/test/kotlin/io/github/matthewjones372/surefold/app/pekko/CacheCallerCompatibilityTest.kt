@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.app.pekko
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldBeEmpty
-import io.github.matthewjones372.surefold.assert.withClue
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeEmpty
+import dev.surefold.assert.withClue
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -24,11 +24,6 @@ class CacheCallerCompatibilityTest {
             exit shouldBe ExitCode.OK
         }
         runFrom(File(workspace, "out").toURI().toURL()) shouldBe true
-    }
-
-    @Test
-    fun `the caller compiled against published 016 runs on current cache classes`() {
-        runFrom(fixture("bytecode/")) shouldBe true
     }
 
     private fun fixture(path: String): URL =

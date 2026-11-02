@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.actor.pekko
 
-import io.github.matthewjones372.surefold.await
+import dev.surefold.await
 import org.apache.pekko.actor.ClassicActorSystemProvider
 import org.apache.pekko.actor.typed.ActorRef
 import org.apache.pekko.actor.typed.javadsl.Adapter

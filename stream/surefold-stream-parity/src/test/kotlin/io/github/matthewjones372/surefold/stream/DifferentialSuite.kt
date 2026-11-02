@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.stream
 
-import io.github.matthewjones372.surefold.Resource
-import io.github.matthewjones372.surefold.junit.SharedSuite
-import io.github.matthewjones372.surefold.junit.shouldBeEmpty
+import dev.surefold.Resource
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBeEmpty
 import org.apache.pekko.actor.ActorSystem
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit

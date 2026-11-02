@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.tenancy
 
-import io.github.matthewjones372.surefold.Carrier
-import io.github.matthewjones372.surefold.SurefoldLocal
-import io.github.matthewjones372.surefold.surefoldLocal
+import dev.surefold.Carrier
+import dev.surefold.SurefoldLocal
+import dev.surefold.surefoldLocal
 
 /** Whose data a piece of work is about: a tenant's id, as the service names it. */
 @JvmInline

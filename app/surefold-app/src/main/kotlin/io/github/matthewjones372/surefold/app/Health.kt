@@ -1,6 +1,6 @@
 package io.github.matthewjones372.surefold.app
 
-import io.github.matthewjones372.surefold.parMap
+import dev.surefold.parMap
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean

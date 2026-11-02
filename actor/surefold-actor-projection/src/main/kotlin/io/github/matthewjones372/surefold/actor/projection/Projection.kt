@@ -1,6 +1,7 @@
 package io.github.matthewjones372.surefold.actor.projection
 
-import io.github.matthewjones372.surefold.Clock
+import dev.surefold.Clock
+import dev.surefold.clock
 import io.github.matthewjones372.surefold.actor.Behaviour
 import io.github.matthewjones372.surefold.actor.EventCodec
 import io.github.matthewjones372.surefold.actor.FeedEvent
@@ -15,7 +16,6 @@ import io.github.matthewjones372.surefold.actor.isDeliveryMark
 import io.github.matthewjones372.surefold.actor.onSignal
 import io.github.matthewjones372.surefold.actor.onStart
 import io.github.matthewjones372.surefold.actor.stay
-import io.github.matthewjones372.surefold.clock
 import io.github.matthewjones372.surefold.stream.Failing
 import io.github.matthewjones372.surefold.stream.Run
 import io.github.matthewjones372.surefold.stream.Stream

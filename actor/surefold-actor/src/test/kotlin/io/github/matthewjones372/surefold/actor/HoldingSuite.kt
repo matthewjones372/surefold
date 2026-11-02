@@ -1,7 +1,7 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.junit.Suite
-import io.github.matthewjones372.surefold.junit.shouldBe
+import dev.surefold.junit.Suite
+import dev.surefold.junit.shouldBe
 
 /** Spec 0146: which of a durable producer's commands hold room, with no actor or semaphore. */
 object HoldingSuite : Suite() {

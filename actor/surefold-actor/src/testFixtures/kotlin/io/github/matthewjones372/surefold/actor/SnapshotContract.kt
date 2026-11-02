@@ -1,8 +1,8 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldBeNull
-import io.github.matthewjones372.surefold.assert.shouldNotBeNull
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeNull
+import dev.surefold.assert.shouldNotBeNull
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors

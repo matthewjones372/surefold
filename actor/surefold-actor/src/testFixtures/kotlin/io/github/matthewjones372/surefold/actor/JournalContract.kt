@@ -1,12 +1,12 @@
 package io.github.matthewjones372.surefold.actor
 
-import io.github.matthewjones372.surefold.assert.shouldBe
-import io.github.matthewjones372.surefold.assert.shouldBeEmpty
-import io.github.matthewjones372.surefold.assert.shouldContainExactly
-import io.github.matthewjones372.surefold.assert.withClue
-import io.github.matthewjones372.surefold.fail.Either
-import io.github.matthewjones372.surefold.fail.left
-import io.github.matthewjones372.surefold.fail.right
+import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeEmpty
+import dev.surefold.assert.shouldContainExactly
+import dev.surefold.assert.withClue
+import dev.surefold.fail.Either
+import dev.surefold.fail.left
+import dev.surefold.fail.right
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
