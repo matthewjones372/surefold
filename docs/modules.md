@@ -27,10 +27,24 @@ describe the `main` branch, which can be ahead of the latest release; features
 not yet released are marked where they are documented.
 
 **Snapshots.** An untagged commit builds as the next patch version with
-`-SNAPSHOT` (after `v0.17.0`, `0.17.1-SNAPSHOT`). Snapshots are published by
-hand rather than on every push, to
-`https://central.sonatype.com/repository/maven-snapshots/`, and expire after
-90 days. To try `main` reliably, build it locally:
+`-SNAPSHOT` (after `v0.17.0`, `0.17.1-SNAPSHOT`). Every push to `main` publishes
+one to GitHub Packages, at `https://maven.pkg.github.com/surefold/surefold`, and
+it does not expire. GitHub Packages asks for a token even to read a public
+package: put a classic personal access token with only `read:packages` in
+`~/.gradle/gradle.properties` as `gpr.user` and `gpr.key`, and add
+
+```kotlin
+maven("https://maven.pkg.github.com/surefold/surefold") {
+    credentials {
+        username = providers.gradleProperty("gpr.user").get()
+        password = providers.gradleProperty("gpr.key").get()
+    }
+    content { includeGroup("dev.surefold") }
+    mavenContent { snapshotsOnly() }
+}
+```
+
+to the consuming build's repositories. To try an unpublished change, build it locally:
 
 ```bash
 ./gradlew publishToMavenLocal
