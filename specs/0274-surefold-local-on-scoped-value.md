@@ -33,7 +33,8 @@ internal object Bindings {
     fun <B> under(bound: Map<SurefoldLocal<*>, Any?>, block: () -> B): B =
         ScopedValue.where(current, Frame(bound)).call(ScopedValue.CallableOp<B, RuntimeException> { block() })
 
-    private fun frame(): Frame? = current.orElse(null) ?: root.get()
+    // JDK 25's orElse refuses null, so isBound first.
+    private fun frame(): Frame? = if (current.isBound) current.get() else root.get()
 }
 
 /** One binding's map. `attach` replaces [bound] on the thread that owns the frame and nowhere else. */
@@ -48,7 +49,9 @@ internal class Frame(var bound: Map<SurefoldLocal<*>, Any?>)
 With a frame, `locally`, logging and every fork site read a `ScopedValue`. A thread reads the
 `ThreadLocal` fallback only when nothing has bound on it, so `attach` still works for
 OpenTelemetry and OpenFeature. A frame is never shared across threads: a fork copies the
-snapshot into a new frame.
+snapshot into a new frame. A `StructuredTaskScope` subtask inherits its parent's frame, so an
+`attach` there would reach the parent. Only the unpublished `surefold-structured` opens one,
+and it binds no `SurefoldLocal`.
 
 Alternative: pure `ScopedValue` with `attach` removed. That moves OpenTelemetry and OpenFeature
 back to their own `ThreadLocal`s, which forks cannot see, and those integrations exist to fix
@@ -76,14 +79,15 @@ first stack entry shows less than 10% on a log line.
 
 ## Open questions
 
-1. **Gate the swap on the benchmark?** Recommended: yes. On HotSpot, `ThreadLocal.get` and a
-   cached `ScopedValue.get` both take nanoseconds. The gain may be smaller than the
-   `ScopedValue.where(...).call` cost on every `locally` and every fork.
-2. **Where does the benchmark live?** Recommended: a new `bench/surefold-core-benchmarks` with
-   `surefold-stream-benchmarks`' JMH wiring. The alternative, adding it to the stream module,
-   would give that module a second subject.
-3. **Is the root `ThreadLocal` fallback acceptable?** It is still a `ThreadLocal`, read only on
-   threads nothing has bound on. Recommended: yes. The alternative is rejecting `attach`
-   outside a `locally`, which breaks OpenTelemetry's root spans on `main`.
-4. **Does `surefold-cache`'s `ownWorker` attach from inside a fork's frame?** If it does, the
-   attach must last for the rest of that frame, which `Frame` gives. Needs a test.
+Answered 2026-11-02, when the maintainer said "implement both": each taken as recommended.
+
+1. **Gate the swap on the benchmark?** Yes. The numbers go under Stack before the swap
+   lands. On HotSpot, `ThreadLocal.get` and a cached `ScopedValue.get` both take
+   nanoseconds, and every `locally` and fork now pays for a `where(...).call`.
+2. **Where does the benchmark live?** A new `bench/surefold-core-benchmarks`, with
+   `surefold-actor-benchmarks`' JMH wiring.
+3. **Is the root `ThreadLocal` fallback acceptable?** Yes. Rejecting `attach` outside a
+   `locally` would break OpenTelemetry's root spans on `main`.
+4. **Does `surefold-cache`'s `ownWorker` attach from inside a fork's frame?** It does,
+   inside `SingleFlight`'s `under`. The attach lasts for the rest of that frame, as it does
+   today, and `SurefoldLocalTest` gets a case for it.
