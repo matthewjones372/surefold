@@ -27,7 +27,7 @@ package `io.github.matthewjones372.lark`. Moving over is a rename: `lark` become
 every artifact, package, plugin id and configuration key.
 
 From 0.18.0 the group is `dev.surefold` and the packages are `dev.surefold.*`; up to 0.17.0 they were
-`io.github.matthewjones372` and `io.github.matthewjones372.surefold.*`. Moving over is a rename of each import's prefix,
+`io.github.matthewjones372` and `dev.surefold.*`. Moving over is a rename of each import's prefix,
 the dependency group, and the plugin ids, which become `dev.surefold.wiring` and `dev.surefold.compiler`. The old
 coordinates relocate to the new ones at 0.18.0.
 
