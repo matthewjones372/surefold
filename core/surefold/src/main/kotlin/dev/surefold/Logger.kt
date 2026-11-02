@@ -79,7 +79,7 @@ internal fun logAt(level: LogLevel, message: String, cause: Throwable?, caller: 
     val at = clock.get().now()
     // With no span open, the bound map is the line's as it stands: nothing is added, so nothing is copied (spec 0280).
     val open = spans.get()
-    val annotated = if (open.isEmpty()) annotations.get() else annotations.get() + open.elapsedAt(at)
+    val annotated = if (open.isEmpty()) boundAnnotations() else boundAnnotations() + open.elapsedAt(at)
     val line = LogLine(level, message, at, cause, annotated, topLevel.get(caller))
     logger.get().log(line)
 }

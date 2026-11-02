@@ -4,7 +4,24 @@ import java.time.Duration
 import java.time.Instant
 import java.util.Collections
 
-internal val annotations: SurefoldLocal<Map<String, String>> = surefoldLocal { emptyMap() }
+/**
+ * One `logAnnotated` block's pairs over the blocks around it (spec 0282). Binding one copies nothing: the map a line
+ * reads is built the first time something asks for it, and kept for every later line and every fork.
+ */
+internal class Annotated(
+    private val pairs: Array<out Pair<String, String>>,
+    private val outer: Annotated?,
+    // Read from a fork's thread as well as the binder's. A plain field could hand a thread a reference to a map whose
+    // contents it does not yet see; two threads building it at once build equal maps.
+    @Volatile private var built: Map<String, String>? = null,
+) {
+    fun map(): Map<String, String> = built ?: (outer?.map().orEmpty() + pairs).also { built = it }
+}
+
+internal val annotations: SurefoldLocal<Annotated?> = surefoldLocal { null }
+
+/** The pairs every line written here carries, outermost first. */
+internal fun boundAnnotations(): Map<String, String> = annotations.get()?.map().orEmpty()
 
 internal val spans: SurefoldLocal<List<Span>> = surefoldLocal { emptyList() }
 
@@ -16,7 +33,7 @@ internal fun List<Span>.elapsedAt(at: Instant): Map<String, String> =
 
 /** Runs [block] with [pairs] on every line written inside it, this thread's forks included. */
 fun <A> logAnnotated(vararg pairs: Pair<String, String>, block: () -> A): A =
-    annotations.locally(annotations.get() + pairs, block)
+    annotations.locally(Annotated(pairs, annotations.get()), block)
 
 /** Runs [block] with [name] and how long it has been running on every line written inside it. */
 fun <A> logSpan(name: String, block: () -> A): A =
