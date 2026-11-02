@@ -87,4 +87,60 @@ class SurefoldLocalTest {
             pool.shutdownNow()
         }
     }
+
+    @Test
+    fun `an attach on a thread nothing has bound on lasts until its detach`() {
+        val local = surefoldLocal { "initial" }
+
+        val detach = local.attach("attached")
+        val during = local.get()
+        detach.detach()
+
+        during shouldBe "attached"
+        local.get() shouldBe "initial"
+    }
+
+    @Test
+    fun `an attach inside a binding lasts for the rest of that block and no further`() {
+        val local = surefoldLocal { "initial" }
+
+        val seen = local.locally("bound") {
+            local.attach("attached")
+            local.get()
+        }
+
+        seen shouldBe "attached"
+        withClue("leaving the block drops what was attached inside it, detached or not") {
+            local.get() shouldBe "initial"
+        }
+    }
+
+    @Test
+    fun `a fork inherits what was attached before it`() {
+        val local = surefoldLocal { "initial" }
+        val other = surefoldLocal { 0 }
+
+        val seen = other.locally(1) {
+            val detach = local.attach("attached")
+            try {
+                parMap(listOf(1, 2)) { local.get() to other.get() }
+            } finally {
+                detach.detach()
+            }
+        }
+
+        seen shouldContainExactly listOf("attached" to 1, "attached" to 1)
+    }
+
+    @Test
+    fun `an attach in a branch does not reach the thread that forked it`() {
+        val local = surefoldLocal { "initial" }
+
+        val seen = local.locally("bound") {
+            parMap(listOf(1)) { local.attach("branch's own") }
+            local.get()
+        }
+
+        seen shouldBe "bound"
+    }
 }

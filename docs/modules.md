@@ -75,6 +75,7 @@ against; the library's own transitive dependencies come with it.
 | `surefold-compiler` | a K2 checker: a `Deferred`, `Channel` or `Scope` returned from a scope or kept in a property is an error (spec 0041); applied by `io.github.matthewjones372.surefold.compiler` | none | the Kotlin compiler, already present | yes |
 | `surefold-cache` | `Cache`: one lookup per key, a ttl by result, the last good value while the source fails (spec 0246) | `surefold` | none | yes |
 | `surefold-structured` | `parZip`, `parMap`, `raceN`, `timeout` on the JDK's `StructuredTaskScope` (preview in JDK 27) | `surefold` | none | no |
+| `surefold-core-benchmarks` | JMH benchmarks of locals, log lines, forks and `transact` ([results](../bench/surefold-core-benchmarks/README.md)) | | JMH | no |
 
 ### Applications
 

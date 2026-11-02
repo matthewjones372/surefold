@@ -89,6 +89,7 @@ module("data", "surefold-tenancy-crypto-aws")
 module("data", "surefold-auth")
 module("data", "surefold-auth-oidc")
 
+module("bench", "surefold-core-benchmarks")
 module("bench", "surefold-stream-benchmarks")
 module("bench", "surefold-actor-benchmarks")
 module("bench", "surefold-kafka-benchmarks")
