@@ -320,7 +320,8 @@ class RemoteNode internal constructor(
     /** [encode] run, with the paths of the replies it wrote for asks on this node. */
     private fun writingReplies(encode: () -> ByteArray): Pair<ByteArray, List<String>> {
         val mine = mutableListOf<String>()
-        val bytes = ScopedValue.where(written, mine).call(ScopedValue.CallableOp<ByteArray, RuntimeException> { encode() })
+        val bytes = ScopedValue.where(written, mine)
+            .call(ScopedValue.CallableOp<ByteArray, RuntimeException> { encode() })
         return bytes to mine
     }
 
