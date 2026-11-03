@@ -22,7 +22,9 @@ dependencies {
 }
 ```
 
-Releases are tagged `vX.Y.Z` and published to Maven Central. The guides
+Releases are tagged `vX.Y.Z` and published to Maven Central. Running the
+`release` workflow with a version cuts one: it tags that commit on `main`,
+builds, publishes, and pushes the tag once Central has the release. The guides
 describe the `main` branch, which can be ahead of the latest release; features
 not yet released are marked where they are documented.
 
