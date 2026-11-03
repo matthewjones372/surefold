@@ -59,20 +59,31 @@ class SqsRefused internal constructor(val code: String, val senderFault: Boolean
     Exception("$code${detail?.let { ": $it" }.orEmpty()}")
 
 /** [message] sent and waited on: `Left` for one the SDK failed after its own retries. */
-fun SqsClient.send(message: SqsMessage): Either<SendFailed, Sent> =
-    Either.catchOrThrow<SdkException, Sent> {
+fun SqsClient.send(message: SqsMessage): Either<SendFailed, Sent> = send(message, ProducerMeters.here())
+
+private fun SqsClient.send(message: SqsMessage, meters: ProducerMeters): Either<SendFailed, Sent> {
+    val started = System.nanoTime()
+    return Either.catchOrThrow<SdkException, Sent> {
         val response = sendMessage(message.request())
         Sent(response.messageId(), response.sequenceNumber())
     }.mapLeft { thrown -> SendFailed(message, thrown) }
+        .also { outcome -> meters.sent(message.queue, started, listOf(outcome)) }
+}
 
 /**
  * Up to ten [messages], one `SendMessageBatch` per queue among them, answered per message in order: SQS reports each
  * entry on its own, so one it refuses fails only itself. A request the SDK fails is a `Left` for each of its messages.
  */
-fun SqsClient.sendAll(messages: List<SqsMessage>): List<Either<SendFailed, Sent>> {
+fun SqsClient.sendAll(messages: List<SqsMessage>): List<Either<SendFailed, Sent>> =
+    sendAll(messages, ProducerMeters.here())
+
+private fun SqsClient.sendAll(messages: List<SqsMessage>, meters: ProducerMeters): List<Either<SendFailed, Sent>> {
     require(messages.size <= MAX_BATCH) { "SQS takes up to $MAX_BATCH in a batch, and was given ${messages.size}" }
     val byIndex = messages.indices.groupBy { messages[it].queue }.flatMap { (queue, indices) ->
-        indices.zip(sendBatch(queue, indices.map { messages[it] }))
+        val started = System.nanoTime()
+        val outcomes = sendBatch(queue, indices.map { messages[it] })
+        meters.sent(queue, started, outcomes)
+        indices.zip(outcomes)
     }.toMap()
     return messages.indices.map(byIndex::getValue)
 }
@@ -82,8 +93,10 @@ fun SqsClient.sendAll(messages: List<SqsMessage>): List<Either<SendFailed, Sent>
  * run at once, so a FIFO queue keeps a group's order only at 1. A message SQS does not take is a defect, for
  * `restartOnDefect`.
  */
-fun <E, A : Any> Stream<E, A>.sendTo(sqs: SqsClient, inFlight: Int = IN_FLIGHT, to: (A) -> SqsMessage): Stream<E, A> =
-    mapPar(inFlight) { element -> sqs.send(to(element)).fold({ failed -> throw failed.cause }, { element }) }
+fun <E, A : Any> Stream<E, A>.sendTo(sqs: SqsClient, inFlight: Int = IN_FLIGHT, to: (A) -> SqsMessage): Stream<E, A> {
+    val meters = ProducerMeters.here()
+    return mapPar(inFlight) { element -> sqs.send(to(element), meters).fold({ throw it.cause }, { element }) }
+}
 
 /**
  * Elements in batches of up to [batch], or what came within [within], each batch sent through [sendAll] and each
@@ -96,9 +109,10 @@ fun <E, A : Any> Stream<E, A>.sendBatch(
     to: (A) -> SqsMessage,
 ): Stream<E, Either<SendFailed, A>> {
     require(batch in 1..MAX_BATCH) { "SQS takes up to $MAX_BATCH in a batch, and was given $batch" }
+    val meters = ProducerMeters.here()
     return groupedWithin(batch, within)
         // One batch at a time, off the stream's own thread, because sendAll blocks.
-        .mapPar(1) { taken: List<A> -> taken.zip(sqs.sendAll(taken.map(to))) }
+        .mapPar(1) { taken: List<A> -> taken.zip(sqs.sendAll(taken.map(to), meters)) }
         .mapConcat { sent -> sent.map { (element, outcome) -> outcome.map { element } } }
 }
 

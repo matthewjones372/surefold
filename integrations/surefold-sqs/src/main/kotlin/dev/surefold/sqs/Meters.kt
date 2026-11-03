@@ -4,6 +4,8 @@ import dev.surefold.Counter
 import dev.surefold.Gauge
 import dev.surefold.Histogram
 import dev.surefold.Metrics
+import dev.surefold.fail.Either
+import dev.surefold.fail.fold
 import dev.surefold.metricTags
 import dev.surefold.metrics
 import software.amazon.awssdk.services.sqs.model.Message
@@ -74,5 +76,34 @@ internal class ConsumerMeters(private val metrics: Metrics, private val tags: Ma
             metrics.get(),
             metricTags.get() + ("queue" to queue.name),
         )
+    }
+}
+
+/**
+ * Sends' own meters, `surefold.sqs.producer.*` (spec 0289), tagged with each message's queue and the caller's tags:
+ * taken where a send is described, so a stream's sends record where it was described rather than where they run.
+ */
+internal class ProducerMeters(private val metrics: Metrics, private val tags: Map<String, String>) {
+
+    /** One request to [queue], begun at [started], and the outcome of each message in it. */
+    fun sent(queue: Queue, started: Long, outcomes: List<Either<SendFailed, Sent>>) {
+        val of = tags + ("queue" to queue.name)
+        metrics.histogram("$PREFIX.send", of).record((System.nanoTime() - started) / NANOS_PER_SECOND)
+        outcomes.forEach { outcome ->
+            outcome.fold(
+                { failed ->
+                    val code = (failed.cause as? SqsRefused)?.code ?: failed.cause.javaClass.simpleName
+                    metrics.counter("$PREFIX.failures", of + ("code" to code)).increment(1.0)
+                },
+                { metrics.counter("$PREFIX.sent", of).increment(1.0) },
+            )
+        }
+    }
+
+    companion object {
+        private const val PREFIX = "surefold.sqs.producer"
+
+        /** The metrics and tags in scope here. */
+        fun here(): ProducerMeters = ProducerMeters(metrics.get(), metricTags.get())
     }
 }

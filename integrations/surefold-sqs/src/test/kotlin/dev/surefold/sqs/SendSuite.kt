@@ -1,5 +1,6 @@
 package dev.surefold.sqs
 
+import dev.surefold.capturingMetrics
 import dev.surefold.fail.Either
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
@@ -114,6 +115,38 @@ object SendSuite : Suite() {
         test("a batch of more than SQS's ten is refused before anything is sent") {
             val thrown = Either.catch { FakeSqs().sendAll((1..11).map { queue.message("$it") }) }
             thrown.shouldBeLeft { it.shouldBeInstanceOf<IllegalArgumentException>() }
+        }
+
+        test("a send records what was sent and how long it took, tagged with its queue") {
+            val captured = capturingMetrics { captured ->
+                FakeSqs().send(queue.message("a"))
+                captured
+            }
+
+            captured.counter("surefold.sqs.producer.sent") shouldBe 1.0
+            captured.histogram("surefold.sqs.producer.send").size shouldBe 1
+            captured.tags("surefold.sqs.producer.sent")["queue"] shouldBe "orders"
+        }
+
+        test("a batch with one refused entry records one failure, tagged with its code") {
+            val captured = capturingMetrics { captured ->
+                FakeSqs(refused = setOf("b")).sendAll(listOf("a", "b", "c").map { queue.message(it) })
+                captured
+            }
+
+            captured.counter("surefold.sqs.producer.sent") shouldBe 2.0
+            captured.counter("surefold.sqs.producer.failures") shouldBe 1.0
+            captured.tags("surefold.sqs.producer.failures")["code"] shouldBe "InvalidMessageContents"
+        }
+
+        test("sendTo records to the meters in scope where it is described") {
+            val captured = capturingMetrics { captured ->
+                Stream.from(listOf(1, 2, 3)).sendTo(FakeSqs()) { queue.message("$it") }
+                    .runCollect().run(Forks()).toCompletableFuture().join()
+                captured
+            }
+
+            captured.counter("surefold.sqs.producer.sent") shouldBe 3.0
         }
 
         test("sendTo passes each element on, in order, once SQS has it") {
