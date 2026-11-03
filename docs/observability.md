@@ -17,9 +17,9 @@ dependency is the whole setup.
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold-slf4j:0.17.0")
-    implementation("dev.surefold:surefold-micrometer:0.17.0")
-    implementation("dev.surefold:surefold-otel:0.17.0")
+    implementation("dev.surefold:surefold-slf4j:0.18.0")
+    implementation("dev.surefold:surefold-micrometer:0.18.0")
+    implementation("dev.surefold:surefold-otel:0.18.0")
 }
 ```
 
@@ -121,6 +121,7 @@ installing `surefold-micrometer` exports them with nothing more to write:
   [`measured`](stream.md#optimisation-rendering-and-profiling);
 - Kafka consumers and producers: `surefold.kafka.*`, see
   [Meters](kafka.md#meters);
+- SQS reads and sends: `surefold.sqs.*`, see [Meters](sqs.md#meters);
 - SNS publishes: `surefold.sns.publisher.*`, see [Meters](sns.md#meters);
 - actors, remoting, membership, sharding, reliable delivery and topics: see
   [Watching a cluster](cluster.md#watching).
@@ -134,7 +135,7 @@ OpenTelemetry's context, such as an instrumented HTTP client, reads and writes
 the same context. That process-wide effect is why it is a separate module.
 
 For automatic JDBC query spans from one pool setup, see the [JDBC tracing guide](jdbc-tracing.md).
-That integration is unreleased; its privacy boundary and separate performance gate are described there.
+That integration is published from 0.18.0; its privacy boundary and separate performance gate are described there.
 
 ```kotlin
 import dev.surefold.logInfo

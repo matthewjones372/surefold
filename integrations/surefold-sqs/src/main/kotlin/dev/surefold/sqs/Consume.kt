@@ -1,3 +1,5 @@
+@file:OptIn(SqsSpi::class)
+
 package dev.surefold.sqs
 
 import dev.surefold.fail.Either
@@ -13,6 +15,7 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequestEntry
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -21,31 +24,31 @@ import kotlin.time.Duration.Companion.seconds
 /** Where a read starts: [consume] here. */
 object Sqs
 
-/** An element and the receipt of the message it came from; the message is deleted by `runDeleting`. */
-class Received<out A : Any> internal constructor(val value: A, internal val receipt: Receipt)
-
-/** A message's receipt handle, settled from whichever thread its element reaches the end, or is dropped, on. */
-internal class Receipt(private val handle: String, private val reader: Settling) {
-    fun handled() = reader.handled(handle)
-
-    fun dropped(nack: Boolean) = reader.dropped(handle, nack)
-}
-
-internal interface Settling {
-    fun handled(handle: String)
-
-    fun dropped(handle: String, nack: Boolean)
-}
-
-/** For a module that maps received elements in batches of its own, such as surefold-sns; not for a pipeline. */
-@RequiresOptIn("A seam for a module that carries an SQS receipt through operators of its own.")
+/** For a module that brings messages of its own into surefold-sqs, such as Pekko's connector; not for a pipeline. */
+@RequiresOptIn("A seam for a module that feeds surefold-sqs messages from a source of its own.")
 @Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.CONSTRUCTOR, AnnotationTarget.FUNCTION)
 annotation class SqsSpi
 
-/** [value] in place of this element's, with its message's receipt carried through. */
+/** An element and how the message it came from is settled; the message is deleted by `runDeleting`. */
+class Received<out A : Any> @SqsSpi constructor(val value: A, @property:SqsSpi val settle: Settle)
+
+/**
+ * How a received message is settled, which depends on the source that read it, from whichever thread its element
+ * reaches the end, or is dropped, on.
+ */
 @SqsSpi
-fun <B : Any> Received<*>.carrying(value: B): Received<B> = Received(value, receipt)
+interface Settle {
+    /** The element reached the end: the message is to be deleted. */
+    fun handled()
+
+    /** The element was dropped: the message comes back after its timeout, or at once with [nack]. */
+    fun dropped(nack: Boolean)
+}
+
+/** [value] in place of this element's, with its message's settling carried through. */
+@SqsSpi
+fun <B : Any> Received<*>.carrying(value: B): Received<B> = Received(value, settle)
 
 /**
  * The messages on [queue], read by long polls of up to [waitTime] for up to [maxMessages] at a time, each with every
@@ -69,6 +72,7 @@ fun Sqs.consume(
     require(visibility in (if (extendVisibility) 1.seconds else Duration.ZERO)..12.hours) {
         "SQS hides a message for up to 12 hours, and at least a second when it is extended, not $visibility"
     }
+    val meters = ConsumerMeters.here(queue)
     val request = ReceiveMessageRequest.builder()
         .queueUrl(queue.url)
         .waitTimeSeconds(waitTime.inWholeSeconds.toInt())
@@ -78,8 +82,11 @@ fun Sqs.consume(
         .messageSystemAttributeNamesWithStrings("All")
         .build()
     return Stream.blocking(
-        // Built only when it is wanted: an extender starts its thread as it is made.
-        open = { Reader(sqs, queue, request, if (extendVisibility) Extender(sqs, queue, visibility) else null) },
+        open = {
+            // Built only when it is wanted: an extender starts its thread as it is made.
+            val extender = if (extendVisibility) Extender(sqs, queue, visibility, meters) else null
+            Reader(sqs, queue, request, extender, meters)
+        },
         next = { reader -> reader.next() },
         ready = { reader -> reader.ready() },
         wake = { reader -> reader.wake() },
@@ -90,7 +97,7 @@ fun Sqs.consume(
 /** A run described that deletes each message once its element reaches the end, answering how many did. */
 fun <E> Stream<E, Received<*>>.runDeleting(): Run<E, Long> =
     map { element ->
-        element.receipt.handled()
+        element.settle.handled()
         1L
     }.runFold(0L, Long::plus)
 
@@ -100,9 +107,13 @@ private class Reader(
     private val queue: Queue,
     private val request: ReceiveMessageRequest,
     private val extender: Extender?,
-) : Settling {
+    private val meters: ConsumerMeters,
+) {
     private val received = ArrayDeque<Message>()
     private val handled = ConcurrentLinkedQueue<String>()
+
+    /** When SQS says each message handed out and not yet settled was sent, for its latency. */
+    private val sent = ConcurrentHashMap<String, Long>()
 
     @Volatile private var receiving: Thread? = null
 
@@ -114,24 +125,42 @@ private class Reader(
             deleteHandled()
             receiving = Thread.currentThread()
             try {
-                received.addAll(sqs.receiveMessage(request).messages())
+                val started = System.nanoTime()
+                val messages = sqs.receiveMessage(request).messages()
+                meters.received(messages, started)
+                received.addAll(messages)
             } finally {
                 receiving = null
             }
         }
         val message = received.removeFirst()
         extender?.hold(message.receiptHandle())
-        return Received(message, Receipt(message.receiptHandle(), this))
+        message.attribute("SentTimestamp")?.let { sent[message.receiptHandle()] = it }
+        meters.handed()
+        val handle = message.receiptHandle()
+        return Received(
+            message,
+            object : Settle {
+                override fun handled() = handled(handle)
+
+                override fun dropped(nack: Boolean) = dropped(handle, nack)
+            },
+        )
     }
 
-    override fun handled(handle: String) {
+    private fun handled(handle: String) {
         extender?.release(handle)
+        meters.settled()
+        sent.remove(handle)?.let(meters::handled)
         handled += handle
     }
 
-    override fun dropped(handle: String, nack: Boolean) {
+    private fun dropped(handle: String, nack: Boolean) {
         extender?.release(handle)
+        meters.settled()
+        sent.remove(handle)
         if (nack) {
+            meters.nacked()
             // A nack SQS fails leaves the message to come back after its timeout, as it would without one.
             Either.catchOrThrow<SdkException, Unit> {
                 sqs.changeMessageVisibility { it.queueUrl(queue.url).receiptHandle(handle).visibilityTimeout(0) }
@@ -167,8 +196,10 @@ private class Reader(
                 val entries = chunk.mapIndexed { id, handle ->
                     DeleteMessageBatchRequestEntry.builder().id(id.toString()).receiptHandle(handle).build()
                 }
-                sqs.deleteMessageBatch { it.queueUrl(queue.url).entries(entries) }
+                val response = sqs.deleteMessageBatch { it.queueUrl(queue.url).entries(entries) }
                 sent += chunk.size
+                meters.deleted(response.successful().size)
+                response.failed().forEach { meters.deleteFailed(it.code()) }
             }
         } finally {
             // A call that throws, as one a stop's interrupt aborts does, leaves what it did not send for the close.
