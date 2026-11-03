@@ -1,4 +1,4 @@
-# 0292 - Retain cleanup failures on the Fail unwind signal
+# 0294 - Retain cleanup failures on the Fail unwind signal
 
 Delegated agent review answers decisions1-3 YES; source adoption remains CONDITIONAL.
 Source requires Doorlist603 scope MAIN, upstream spec MAIN, exact source-plan approval and root GO.

@@ -200,7 +200,7 @@ No finite completion under unbounded interruption/unresponsive callers, no force
 
 ### Required source-plan gate
 
-Fail cleanup diagnostics require accepted spec0292 before caller-boundary source: preserve the same opaque
+Fail cleanup diagnostics require accepted spec0294 before caller-boundary source: preserve the same opaque
 unwind signal with ordered cleanup suppression and unchanged owning Left(E). Diagnostics exist only before
 the owning attempt consumes its signal; this adds no post-attempt error API. All24 R4 laws, E/S/D proof modes,
 ownership and D/C/P scopes remain unchanged. B1/B2 split and exact test-fit approval remain separate gates.
@@ -277,8 +277,8 @@ Alternative: a general retained-resource cache; broader than this key requiremen
 - [x] **`codex/key-view-retention-delivery`** — B2 PR979/main91040b93, own-main41281917030 SUCCESS; internal only.
 - [ ] **`codex/key-callers-precode-20261102`** —0273 guard plus this R4 amendment, exact-spec review/spec-only main.
 - [ ] **`codex/transaction-boundary-guard`** —0273's one-method prerequisite; target<60 main/docs lines.
-- [ ] **`codex/fail-suppression-contract`** —spec0292 plus this dependency amendment, exact review/spec-only main.
-- [ ] **`codex/fail-suppression`** —spec0292 one-flag prerequisite; accepted RED/GREEN, full PR/actual-main gates.
+- [ ] **`codex/fail-suppression-contract`** —spec0294 plus this dependency amendment, exact review/spec-only main.
+- [ ] **`codex/fail-suppression`** —spec0294 one-flag prerequisite; accepted RED/GREEN, full PR/actual-main gates.
 - [ ] **`codex/key-callers-boundary`** —internal tickets/fence/wait and tests; target<170 main lines, no activation.
 - [ ] **`codex/key-callers-delivery`** —B2 outer packet/return/unwind integration; target<140 main lines.
 - [ ] **`codex/key-callers-close-drain`** —exact-phase interruption retries/Ack reconciliation; target<160 main lines.
