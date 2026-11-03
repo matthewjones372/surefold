@@ -71,7 +71,10 @@ fun Sqs.consume(
         .messageSystemAttributeNamesWithStrings("All")
         .build()
     return Stream.blocking(
-        open = { Reader(sqs, queue, request, Extender(sqs, queue, visibility).takeIf { extendVisibility }, meters) },
+        open = {
+            // Built only when it is wanted: an extender starts its thread as it is made.
+            Reader(sqs, queue, request, if (extendVisibility) Extender(sqs, queue, visibility) else null, meters)
+        },
         next = { reader -> reader.next() },
         ready = { reader -> reader.ready() },
         wake = { reader -> reader.wake() },
