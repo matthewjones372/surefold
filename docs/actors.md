@@ -51,7 +51,8 @@ a client with no async API without starving the other actors.
 
 `tell` sends and returns. A mailbox holds 1,024 messages by default
 (`capacity` on `spawn`): a sender outside any actor waits while it is full,
-and a turn that tells a full mailbox fails. `ask` sends a message carrying a
+and a turn that tells a full mailbox fails. A mailbox of 64 or more gives room back
+up to 16 messages at a time, so it can look full that much early. `ask` sends a message carrying a
 `Reply` and blocks the caller for up to a timeout, answering with an
 `Either`: an actor that stopped, took too long or could not be reached is an
 `AskFailure` value rather than an exception.

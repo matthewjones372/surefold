@@ -28,6 +28,8 @@ private data class Quit(val reply: Reply<Int>) : Log
 
 private data class Wait(val until: CountDownLatch) : Log
 
+private data class Enter(val entered: CountDownLatch, val until: CountDownLatch) : Log
+
 private data class Forward(val to: ActorRef<Log>, val message: Log) : Log
 
 private data object Break : Log
@@ -51,6 +53,12 @@ private fun log(): Behaviour<Log, List<Int>, Nothing> = behaviour(emptyList()) {
         is Quit -> stop()
 
         is Wait -> {
+            message.until.await()
+            stay()
+        }
+
+        is Enter -> {
+            message.entered.countDown()
             message.until.await()
             stay()
         }
@@ -148,6 +156,57 @@ object RuntimeSuite : Suite() {
             }
 
             answers shouldBe (AskFailure.Stopped.left() to listOf(1, 3).right())
+        }
+
+        test("a mailbox of 64 or more gives a turn's room back by the batch, not by the message") {
+            val taken = scope {
+                val entered = CountDownLatch(1)
+                val release = CountDownLatch(1)
+                val held = spawn("held", log(), capacity = 64)
+                held.tell(Enter(entered, release))
+                entered.await()
+                // The message in its turn has left the mailbox, and its room is not given back until the batch ends.
+                generateSequence { held.offer(Add(0)) }.takeWhile { it }.count().also { release.countDown() }
+            }
+
+            taken shouldBe 63
+        }
+
+        test("a mailbox under 64 gives a turn's room back at once") {
+            val taken = scope {
+                val entered = CountDownLatch(1)
+                val release = CountDownLatch(1)
+                val exact = spawn("exact", log(), capacity = 16)
+                exact.tell(Enter(entered, release))
+                entered.await()
+                generateSequence { exact.offer(Add(0)) }.takeWhile { it }.count().also { release.countDown() }
+            }
+
+            taken shouldBe 16
+        }
+
+        test("a sender parked on a full mailbox is woken by the next message the batch takes") {
+            val woken = scope {
+                val first = CountDownLatch(1)
+                val firstRelease = CountDownLatch(1)
+                val second = CountDownLatch(1)
+                val secondRelease = CountDownLatch(1)
+                val held = spawn("held", log(), capacity = 64)
+                held.tell(Enter(first, firstRelease))
+                first.await()
+                held.tell(Enter(second, secondRelease))
+                while (held.offer(Add(0))) {
+                    // Fills the mailbox, so the next tell parks.
+                }
+                val parked = Thread.ofVirtual().start { held.tell(Add(1)) }
+                while (parked.state != Thread.State.WAITING) Thread.onSpinWait()
+                firstRelease.countDown()
+                second.await()
+                // Still inside the batch, blocked in the second message's turn.
+                parked.join(java.time.Duration.ofMinutes(1)).also { secondRelease.countDown() }
+            }
+
+            woken shouldBe true
         }
 
         test(

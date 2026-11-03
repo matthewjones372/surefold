@@ -64,7 +64,8 @@ fun <F, M : Any, S, E> Scope<F>.spawn(
 
 /**
  * [message] told only if there is room for it, for a router passing over a full routee: false when the mailbox is
- * full or the actor has stopped. A test actor always has room.
+ * full or the actor has stopped. A mailbox of 64 or more gives room back up to 16 messages at a time, so it can
+ * refuse while that much of it is being handled (spec 0293). A test actor always has room.
  */
 internal fun <M : Any> ActorRef<M>.offer(message: M): Boolean {
     @Suppress("UNCHECKED_CAST")
@@ -74,7 +75,8 @@ internal fun <M : Any> ActorRef<M>.offer(message: M): Boolean {
 
 /**
  * [message] told if this has room, or has stopped, where a tell is a dead letter: false only when it is an actor's
- * full mailbox, and a tell from a turn would throw (spec 0095). An entity's ref asks its manager.
+ * full mailbox, and a tell from a turn would throw (spec 0095). A mailbox of 64 or more counts as full up to 16
+ * messages early, as [offer] says. An entity's ref asks its manager.
  */
 @PlumbingSeam
 fun <M : Any> ActorRef<M>.tellIfRoom(message: M): Boolean = when (this) {
@@ -264,6 +266,12 @@ private val incarnations = AtomicLong()
 
 /** How long an actor spins for a reply before parking: past the knee of the ping-pong benchmark, 5 µs to 50 µs. */
 private val LINGER_NANOS = TimeUnit.MICROSECONDS.toNanos(20)
+
+/**
+ * How much room a drain takes back before it gives it back in one write, so that a sender and the actor's runner do
+ * not trade the room's cache line on every message (spec 0293). Only a mailbox of at least four times this holds.
+ */
+private const val HOLD = 16
 private val asks = AtomicLong()
 
 /**
@@ -476,6 +484,11 @@ private class Cell<M : Any, S, E>(
     @Volatile
     @JvmField
     var scheduledFlag: Int = 0
+
+    // Room taken back by this drain and not yet given back. Read and written only by the thread running the
+    // activation, and always given back before the drain ends.
+    private var held = 0
+    private val holds = capacity >= 4 * HOLD
 
     // Senders parked on a full mailbox, made by the first to park.
     @Volatile
@@ -759,6 +772,22 @@ private class Cell<M : Any, S, E>(
         }
     }
 
+    /**
+     * Room for one polled message, given back at once in a small mailbox. A large one holds it until it holds
+     * [HOLD], or a sender has ever parked on a full mailbox, or the drain ends.
+     */
+    private fun tookBack() {
+        if (!holds) return releaseRoom(1)
+        held++
+        if (held >= HOLD || roomWaiters != null) giveBack()
+    }
+
+    private fun giveBack() {
+        if (held == 0) return
+        releaseRoom(held)
+        held = 0
+    }
+
     private fun releaseRoom(count: Int) {
         ROOM.getAndAdd(this, count)
         roomWaiters?.forEach(LockSupport::unpark)
@@ -869,6 +898,7 @@ private class Cell<M : Any, S, E>(
      */
     private tailrec fun run() {
         drain(throughput)
+        giveBack()
         when {
             stopped -> {
                 finish()
@@ -950,7 +980,7 @@ private class Cell<M : Any, S, E>(
         else -> {
             val turns = behaviour.turns
             if (turns == null || behaviour.batch <= 1 || left <= 1) {
-                releaseRoom(1)
+                tookBack()
                 turned(item).also { heard() }
             } else {
                 ran(turns, item, minOf(behaviour.batch, left))
