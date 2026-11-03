@@ -92,6 +92,36 @@ to `inFlight` (16) sends at once. A send that fails is a defect, for
 passes each element on as the outcome of its own message, so a refused one is a
 `Left` that `absolve` or `divertLefts` decides on.
 
+## Meters
+
+`Sqs.consume`, `send`, `sendAll`, `sendTo` and `sendBatch` record through surefold's
+metrics API, so installing `surefold-micrometer` exports them, and with no backend
+bound they cost nothing. A read, `sendTo` and `sendBatch` record to the metrics in
+scope, with the `metricTagged` tags bound, where they are described; `send` and
+`sendAll` where they are called. Every meter carries `queue`, the queue's name.
+Durations are in seconds.
+
+| Meter | Kind | Tags | Recorded |
+|---|---|---|---|
+| `surefold.sqs.consumer.received`, `.bytes` | counter | | each receive |
+| `surefold.sqs.consumer.receive` | timer | | around each `ReceiveMessage` |
+| `surefold.sqs.consumer.redelivered` | counter | | a message whose `ApproximateReceiveCount` is past one |
+| `surefold.sqs.consumer.latency` | histogram | | when a message is handled: now less its `SentTimestamp` |
+| `surefold.sqs.consumer.in.flight` | gauge | | messages handed to the stream and not yet handled or dropped |
+| `surefold.sqs.consumer.deleted` | counter | | each message deleted |
+| `surefold.sqs.consumer.delete.failures` | counter | `code` | each delete SQS refused |
+| `surefold.sqs.consumer.extended` | counter | | each visibility renewal |
+| `surefold.sqs.consumer.extend.failures` | counter | `code` | each renewal refused, or the exception's name where the call failed |
+| `surefold.sqs.consumer.nacks` | counter | | each `divertLefts(nack = true)` |
+| `surefold.sqs.producer.sent` | counter | | each message SQS accepted |
+| `surefold.sqs.producer.failures` | counter | `code` | each message refused, or the exception's name where the call failed |
+| `surefold.sqs.producer.send` | timer | | each request, call to answer |
+
+`latency` compares SQS's clock with the service's, so skew between them shows up
+in it. `delete.failures` tagged `ReceiptHandleIsInvalid` is the one to alert on:
+a message was handled but not deleted, and will be handled again. The queue's
+depth is not here; CloudWatch has `ApproximateNumberOfMessagesVisible`.
+
 ## Testing against a queue
 
 `surefold-sqs-test` runs SQS in the test JVM on ElasticMQ, so a test needs no
@@ -143,5 +173,5 @@ told to.
 
 ## Not here yet
 
-Meters and a Pekko connector module are each their own spec. Publishing what a queue
-reads to an SNS topic is [`surefold-sns`](sns.md).
+A Pekko connector module is its own spec. Publishing what a queue reads to an SNS
+topic is [`surefold-sns`](sns.md).
