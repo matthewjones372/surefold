@@ -32,13 +32,12 @@ the dependency group, and the plugin ids, which become `dev.surefold.wiring` and
 coordinates relocate to the new ones at 0.18.0. It is a source change only in the names, but not a binary one: code
 compiled against 0.17.0 or earlier names the old packages and has to be recompiled.
 
-[Explicit AWS KMS operations](docs/kms-operations.md) covers regional clients and the unreleased adapter.
+[Explicit AWS KMS operations](docs/kms-operations.md) covers regional clients and the AWS adapter, from 0.18.0.
 
-The spec 0268 development snapshot adds `Either.cond(condition, right = { value }, left = { error })`
-for lazy conditional construction. It is absent from release 0.17.0; [the core guide](docs/core.md)
-shows how it complements `attempt` and accumulating validation.
+From 0.18.0, `Either.cond(condition, right = { value }, left = { error })` constructs lazily on a
+condition; [the core guide](docs/core.md) shows how it complements `attempt` and accumulating validation.
 
-The spec 0270 development snapshot adds total and class-token `Either.recover` with Fail-context handlers;
+From 0.18.0, total and class-token `Either.recover` take Fail-context handlers;
 unmatched failures remain Left. See [recovery](docs/core.md) for the compiled examples.
 
 ## Why virtual threads
@@ -241,7 +240,7 @@ kotlin { jvmToolchain(25) }
 
 dependencies {
     // brings nothing but the Kotlin standard library
-    implementation("dev.surefold:surefold:0.17.0")
+    implementation("dev.surefold:surefold:0.18.0")
 }
 ```
 
@@ -294,7 +293,7 @@ than 200.
 
 Every published module uses the same group and version, so adding another is
 one more line, for example
-`implementation("dev.surefold:surefold-app:0.17.0")`. The
+`implementation("dev.surefold:surefold-app:0.18.0")`. The
 [module guide](docs/modules.md) has the coordinates, what each module brings,
 and how to use a snapshot or a local build.
 
@@ -338,7 +337,7 @@ read the results unchanged.
 ```kotlin
 // build.gradle.kts
 dependencies {
-    testImplementation("dev.surefold:surefold-junit:0.17.0")
+    testImplementation("dev.surefold:surefold-junit:0.18.0")
 }
 
 tasks.test { useJUnitPlatform() }
