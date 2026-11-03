@@ -139,10 +139,10 @@ private class Reader(
     }
 
     fun close() {
-        extender?.stop()
-        // A stop's interrupt may still be set, and would fail the last delete.
+        // A stop's interrupt may still be set: it would fail the wait for the extender, and the last delete with it.
         val interrupted = Thread.interrupted()
         try {
+            extender?.stop()
             deleteHandled()
         } finally {
             if (interrupted) Thread.currentThread().interrupt()
