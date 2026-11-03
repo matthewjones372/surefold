@@ -14,7 +14,7 @@ import kotlin.time.Duration.Companion.seconds
  * The printed copy is coloured under `-Dsurefold.test.colour=always`, `FORCE_COLOR` or IntelliJ, and not under
  * `never` or `NO_COLOR`. A Gradle test worker does not see the shell's environment; the
  * `dev.surefold.wiring` plugin hands these on to every test task, `-Psurefold.test.colour`
- * included.
+ * included. In a `surefold-junit` suite only the console copy is coloured.
  */
 @OptIn(StorySeam::class)
 fun story(title: String = storyTitle.get() ?: callingTest(), block: Story.() -> Unit) {
@@ -45,21 +45,34 @@ private fun <A> Story.telling(title: String, block: Story.() -> A): A {
 /** A seam for surefold's own modules that run stories, such as a test engine that names and captures each test. */
 @RequiresOptIn("A seam for surefold's own modules that run stories.")
 @Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.PROPERTY, AnnotationTarget.FUNCTION, AnnotationTarget.CLASS)
 annotation class StorySeam
 
 /** The title of a story told without one; unbound, the calling test's name. */
 @StorySeam
 val storyTitle: SurefoldLocal<String?> = surefoldLocal { null }
 
-/** Where a story's transcript goes, uncoloured, when it ends; unbound, stdout, coloured as [story] says. */
+/** Where a story's transcript goes when it ends; unbound, stdout, coloured as [story] says. */
 @StorySeam
-val storyTranscript: SurefoldLocal<((String) -> Unit)?> = surefoldLocal { null }
+val storyTranscript: SurefoldLocal<((Transcript) -> Unit)?> = surefoldLocal { null }
+
+/**
+ * A story's transcript twice: [plain] for anything kept, such as a report, and [coloured] for a console, coloured
+ * as [story] says and so the same as [plain] when colour is off (spec 0296).
+ */
+@StorySeam
+class Transcript internal constructor(val plain: String, val coloured: String)
 
 @OptIn(StorySeam::class)
 private fun Story.tell(title: String) {
     val sink = storyTranscript.get()
-    if (sink == null) println(told(title, Colour.wanted)) else sink(told(title, colour = false))
+    if (sink == null) println(told(title, Colour.wanted)) else sink(transcript(title, Colour.wanted))
+}
+
+@OptIn(StorySeam::class)
+internal fun Story.transcript(title: String, colour: Boolean): Transcript {
+    val plain = told(title, colour = false)
+    return Transcript(plain, if (colour) told(title, colour = true) else plain)
 }
 
 /** A story that failed: the message is the transcript up to the failing step, and the cause what it threw. */

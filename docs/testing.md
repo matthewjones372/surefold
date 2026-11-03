@@ -111,7 +111,10 @@ the logger the classpath registered, or `StderrLogger`. To run a block as
 `Given`, `When`, `Then`, `And` and `But` steps that return values. When a step
 fails, the message shows the story up to that step and what it threw, in
 colour under IntelliJ or with `FORCE_COLOR` set (`NO_COLOR` turns it off, and
-`-Dsurefold.test.colour=always|never` overrides both).
+`-Dsurefold.test.colour=always|never` overrides both). In a `surefold-junit` suite
+the story is coloured on the console and plain in the report and the failure.
+IntelliJ is detected only when it runs the tests itself; under "Run tests using:
+Gradle", set `FORCE_COLOR=1` in the run configuration.
 
 `eventually(within) { }` retries a block every 20 ms by default until it stops
 throwing, and gives up with `GaveUp`, an `AssertionError`, once `within` has

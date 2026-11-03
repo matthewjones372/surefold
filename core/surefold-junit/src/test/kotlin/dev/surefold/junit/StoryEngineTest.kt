@@ -4,6 +4,7 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeInstanceOf
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldNotContain
+import dev.surefold.assert.shouldStartWith
 import dev.surefold.junit.samples.StorySuite
 import dev.surefold.junit.testkit.failureOf
 import dev.surefold.junit.testkit.logs
@@ -78,5 +79,15 @@ class StoryEngineTest {
     fun `a step that throws fails its test with the story`() {
         run().first.testEvents().failureOf("throws in a step").shouldBeInstanceOf<StoryFailed>()
             .cause!!.message shouldBe "no database"
+    }
+
+    @Test
+    fun `a failing story is coloured on the console, and plain in its logs entry and its failure`() {
+        val (events, printed) = run()
+
+        val failed = printed.lines().single { "✗ Given a step that throws" in it }
+        failed shouldStartWith "\u001B[31m\u001B[1m"
+        events.testEvents().logs().values.flatten().joinToString("\n") shouldNotContain "\u001B"
+        events.testEvents().failureOf("throws in a step").message.orEmpty() shouldNotContain "\u001B"
     }
 }

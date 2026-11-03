@@ -27,6 +27,7 @@ import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
 import java.lang.reflect.Modifier
 import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -139,8 +140,9 @@ class SurefoldEngine : TestEngine {
                                 holding(leased) {
                                     report.started(test)
                                     started.countDown()
+                                    val consoleCopies = ConcurrentHashMap<String, String>()
                                     val (result, lines) = capturingLogs { logs ->
-                                        tellingStories(test.key.title) {
+                                        tellingStories(test.key.title, consoleCopies) {
                                             capturingMetrics {
                                                 outcomeOf {
                                                     aspects.run({ k, v -> report.entry(test, k, v) }) {
@@ -151,7 +153,7 @@ class SurefoldEngine : TestEngine {
                                             }
                                         } to logs.all()
                                     }
-                                    report.finished(test, result, lines)
+                                    report.finished(test, result, lines, consoleCopies)
                                 }
                             }
                         }
@@ -218,20 +220,28 @@ private class Report(private val listener: EngineExecutionListener) {
     fun entry(test: TestDescriptor, key: String, value: String) =
         lock.withLock { listener.reportingEntryPublished(test, ReportEntry.from(key, value)) }
 
-    /** A failed test's [lines] are published and printed before its result; a passing test's are dropped. */
-    fun finished(test: TestDescriptor, result: TestExecutionResult, lines: List<LogLine> = emptyList()) =
-        lock.withLock {
-            if (result.status == TestExecutionResult.Status.FAILED && lines.isNotEmpty()) {
-                val logs = lines.joinToString("\n") { it.rendered() }
-                listener.reportingEntryPublished(test, ReportEntry.from("logs", logs))
-                println("${(test as? TestCaseDescriptor)?.key?.title ?: test.displayName} logged:\n$logs")
-            }
-            listener.executionFinished(test, result)
+    /**
+     * A failed test's [lines] are published and printed before its result; a passing test's are dropped. A line in
+     * [consoleCopies] is printed as its copy there, so a story is coloured on the console and plain in the report.
+     */
+    fun finished(
+        test: TestDescriptor,
+        result: TestExecutionResult,
+        lines: List<LogLine> = emptyList(),
+        consoleCopies: Map<String, String> = emptyMap(),
+    ) = lock.withLock {
+        if (result.status == TestExecutionResult.Status.FAILED && lines.isNotEmpty()) {
+            val logs = lines.joinToString("\n") { it.rendered() }
+            listener.reportingEntryPublished(test, ReportEntry.from("logs", logs))
+            val console = lines.joinToString("\n") { it.rendered(consoleCopies[it.message] ?: it.message) }
+            println("${(test as? TestCaseDescriptor)?.key?.title ?: test.displayName} logged:\n$console")
         }
+        listener.executionFinished(test, result)
+    }
 }
 
 /** `LEVEL origin message key=value`, and the cause's class and message where there is one. */
-private fun LogLine.rendered(): String =
+private fun LogLine.rendered(message: String = this.message): String =
     (listOfNotNull(level.name.uppercase(), origin, message) + annotations.map { (key, value) -> "$key=$value" })
         .plus(listOfNotNull(cause?.let { "($it)" }))
         .joinToString(" ")
