@@ -25,6 +25,7 @@ and the same-cache layer reentry restriction.
 
 | Need | Use | Module |
 |---|---|---|
+| catch one throwable type onto the left and rethrow the rest (unreleased) | [`Either.catchOrThrow`](core.md#catching-one-type) | `surefold` |
 | recover selected typed failures without rethrowing unmatched errors | [`Either.recover`](core.md) | `surefold` (spec 0270 development snapshot) |
 | refuse retryable ownership boundaries (unreleased) | [`checkNotInTransaction`](core.md#nontransactional-ownership-boundaries) | `surefold` |
 | share one in-flight block per key | `SingleFlight.run` | `surefold` |

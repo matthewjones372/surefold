@@ -7,13 +7,13 @@
 anything it doesn't match stays on the left. Nothing catches one type onto the left and lets
 everything else propagate.
 
-Doorlist, the first consumer, writes this by hand about 54 times in main code:
+A private service built on Surefold, the first consumer, writes this by hand about 54 times in main code:
 
 ```kotlin
 Either.catch { Instant.parse(raw) }.getOrElse { thrown -> if (thrown is DateTimeException) null else throw thrown }
 ```
 
-That is a narrow try/catch spelled the long way to get past Doorlist's raw-catch ban, and the
+That is a narrow try/catch spelled the long way to get past that service's raw-catch ban, and the
 left side's type is lost on the way.
 
 ## Not doing
@@ -21,7 +21,7 @@ left side's type is lost on the way.
 - Catching several unrelated types at once (`catchOrThrow<A, B>`). Callers can use a common
   supertype or nest two calls.
 - Changing `Either.catch`, `recover` or `nonFatalOrThrow`.
-- Migrating Doorlist. That is Doorlist's own change, after this one is released.
+- Migrating that service. That is its own change, after this one is released.
 
 ## Shape
 
