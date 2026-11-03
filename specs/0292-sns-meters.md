@@ -55,12 +55,12 @@ meters nobody has asked for yet; a later spec can add them.
 
 ## Open questions
 
-1. **`publisher` or `producer` in the name?** Recommended: `publisher`, SNS's
+1. **`publisher` or `producer` in the name?** Answered: `publisher`, SNS's
    word and `surefold-sns`'s class, at the cost of differing from
    `surefold.sqs.producer`.
-2. **Tag by topic name or ARN?** Recommended: name, as 0289 tags queues; two
+2. **Tag by topic name or ARN?** Answered: name, as 0289 tags queues; two
    topics of one name in two regions need `metricTagged`.
-3. **Share code with `surefold-sqs`'s `ProducerMeters`?** Recommended: no. They
+3. **Share code with `surefold-sqs`'s `ProducerMeters`?** Answered: no. They
    are a dozen lines each, and sharing would make it public in `surefold-sqs`.
-4. **Count the messages a `publishMessageBatch` deletes?** Recommended: no;
+4. **Count the messages a `publishMessageBatch` deletes?** Answered: no;
    `surefold.sqs.consumer.deleted` already does.
