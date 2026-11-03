@@ -77,13 +77,13 @@ with LocalStack left to services that already run Docker.
 
 ## Open questions
 
-1. **A fake rather than LocalStack?** Recommended: the fake, as above.
-2. **Which SNS refusals to model?** Recommended: the ones a caller can cause:
+1. **A fake rather than LocalStack?** Answered: the fake, as above.
+2. **Which SNS refusals to model?** Answered: the ones a caller can cause:
    FIFO ids on a standard topic and missing on a FIFO one, more than ten in a
    batch, an empty body. Throttling and auth are out.
-3. **Envelope shape for `raw = false`.** Recommended: SNS's documented fields
+3. **Envelope shape for `raw = false`.** Answered: SNS's documented fields
    (`Type`, `MessageId`, `TopicArn`, `Message`, `Timestamp`,
    `MessageAttributes`), with no signature.
 4. **Where does `surefold-sns-test` sit?** It needs `surefold-sqs-test`, which
-   brings Pekko 1.5 (0288). Recommended: accept that, as 0288 did; it is test
+   brings Pekko 1.5 (0288). Answered: accept that, as 0288 did; it is test
    scope only.
