@@ -1,6 +1,11 @@
 package dev.surefold.cluster
 
 import dev.surefold.actor.Delivered
+import java.net.BindException
+import dev.surefold.junit.withClue
+import dev.surefold.junit.shouldThrow
+import dev.surefold.actor.remote.freePort
+import dev.surefold.actor.InMemoryJournal
 import dev.surefold.actor.Delivery
 import dev.surefold.actor.EventCodec
 import dev.surefold.actor.Journal
@@ -76,7 +81,8 @@ internal fun accountsDatabase(): DataSource = Postgres.fresh()
 
 /**
  * A node with the accounts sharded on it and [journal] as its scope's, on a thread of its own, until [close]. With a
- * [ledger] role, accounts run only on members that hold it, and this one holds it if [ledger] is true.
+ * [ledger] role, accounts run only on members that hold it, and this one holds it if [ledger] is true. If it cannot
+ * open, as when another socket holds [port], asking for its [cluster] or [accounts] throws why.
  */
 internal class Bank(
     val name: String,
@@ -92,10 +98,14 @@ internal class Bank(
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Pair<Cluster, Sharded<PayInto>>>()
+    private val failed = AtomicReference<Throwable>()
     val measured = NodeMetrics()
-    private val thread = Thread.ofPlatform().start {
-        metrics.locally(measured) { open(port, seeds, journal, leaveWithin) }
-    }
+    private val thread = Thread.ofPlatform()
+        .uncaughtExceptionHandler { _, thrown ->
+            failed.set(thrown)
+            ready.countDown()
+        }
+        .start { metrics.locally(measured) { open(port, seeds, journal, leaveWithin) } }
 
     private fun open(port: Int, seeds: Discovery, journal: Journal, leaveWithin: Duration) {
         scope {
@@ -109,17 +119,15 @@ internal class Bank(
         }
     }
 
-    val cluster: Cluster
-        get() {
-            ready.await()
-            return opened.get().first
-        }
+    val cluster: Cluster get() = opened().first
 
-    val accounts: Sharded<PayInto>
-        get() {
-            ready.await()
-            return opened.get().second
-        }
+    val accounts: Sharded<PayInto> get() = opened().second
+
+    private fun opened(): Pair<Cluster, Sharded<PayInto>> {
+        ready.await()
+        failed.get()?.let { throw IllegalStateException("$name did not open", it) }
+        return opened.get()
+    }
 
     override fun close() {
         done.countDown()
@@ -258,6 +266,16 @@ object ReliableSuite : Suite() {
                 accounts.forAll { id -> journal.events(accountOf(id), paidPence) shouldBe listOf(1, 2) }
             } finally {
                 banks.forEach(Bank::close)
+            }
+        }
+
+        test("a bank whose port another socket holds says why it did not open, rather than keeping its callers waiting") {
+            ServerSocket(freePort()).use { held ->
+                Bank("held", held.localPort, Discovery.static(), InMemoryJournal(), Duration.ZERO).use { bank ->
+                    shouldThrow<IllegalStateException>({ bank.cluster }) { thrown ->
+                        withClue({ "it was given $thrown" }) { (thrown.cause is BindException) shouldBe true }
+                    }
+                }
             }
         }
     }
