@@ -15,9 +15,14 @@ dependencies {
     // Both backends a read is run on in the tests: Forks, and Forks on a test clock.
     testImplementation(project(":surefold-stream-forks"))
     testImplementation(project(":surefold-stream-test"))
+    // SQS's own protocol in the test JVM, for the claims a fake client cannot check (spec 0288).
+    testImplementation(project(":surefold-sqs-test"))
+    testImplementation(project(":surefold-test"))
+    testRuntimeOnly("org.slf4j:slf4j-simple:2.0.17")
 }
 
 tasks.test {
+    systemProperty("org.slf4j.simpleLogger.defaultLogLevel", "error")
     inputs.file(rootProject.layout.projectDirectory.file("docs/sqs.md")).withPropertyName("guide")
     systemProperty("surefold.sqs.repoRoot", rootProject.projectDir.absolutePath)
     val mainRuntime = configurations.runtimeClasspath
