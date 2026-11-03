@@ -48,21 +48,35 @@ class PublishFailed internal constructor(val message: SnsMessage, val cause: Thr
 class SnsPublisher(internal val client: SnsClient) {
 
     /** [message] published and waited on: `Left` for one the SDK failed after its own retries. */
-    fun publish(message: SnsMessage): Either<PublishFailed, Published> =
-        Either.catchOrThrow<SdkException, Published> {
+    fun publish(message: SnsMessage): Either<PublishFailed, Published> = publish(message, PublisherMeters.here())
+
+    internal fun publish(message: SnsMessage, meters: PublisherMeters): Either<PublishFailed, Published> {
+        val started = System.nanoTime()
+        return Either.catchOrThrow<SdkException, Published> {
             val response = client.publish(message.request())
             Published(response.messageId(), response.sequenceNumber())
         }.mapLeft { thrown -> PublishFailed(message, thrown) }
+            .also { outcome -> meters.published(message.topic, started, listOf(outcome)) }
+    }
 
     /**
      * Up to ten [messages], one `PublishBatch` per topic among them, answered per message in order: SNS reports
      * each entry on its own, so one it refuses fails only itself. A request the SDK fails is a `Left` for each
      * message in it.
      */
-    fun publishAll(messages: List<SnsMessage>): List<Either<PublishFailed, Published>> {
+    fun publishAll(messages: List<SnsMessage>): List<Either<PublishFailed, Published>> =
+        publishAll(messages, PublisherMeters.here())
+
+    internal fun publishAll(
+        messages: List<SnsMessage>,
+        meters: PublisherMeters,
+    ): List<Either<PublishFailed, Published>> {
         require(messages.size <= MAX_BATCH) { "SNS takes up to $MAX_BATCH in a batch, and was given ${messages.size}" }
         val byIndex = messages.indices.groupBy { messages[it].topic }.flatMap { (topic, indices) ->
-            indices.zip(client.publishBatch(topic, indices.map { messages[it] }))
+            val started = System.nanoTime()
+            val outcomes = client.publishBatch(topic, indices.map { messages[it] })
+            meters.published(topic, started, outcomes)
+            indices.zip(outcomes)
         }.toMap()
         return messages.indices.map(byIndex::getValue)
     }
@@ -77,8 +91,10 @@ fun <E, A : Any> Stream<E, A>.publishTo(
     publisher: SnsPublisher,
     inFlight: Int = IN_FLIGHT,
     to: (A) -> SnsMessage,
-): Stream<E, A> =
-    mapPar(inFlight) { element -> publisher.publish(to(element)).fold({ failed -> throw failed.cause }, { element }) }
+): Stream<E, A> {
+    val meters = PublisherMeters.here()
+    return mapPar(inFlight) { element -> publisher.publish(to(element), meters).fold({ throw it.cause }, { element }) }
+}
 
 internal fun String.attribute(): MessageAttributeValue =
     MessageAttributeValue.builder().dataType("String").stringValue(this).build()

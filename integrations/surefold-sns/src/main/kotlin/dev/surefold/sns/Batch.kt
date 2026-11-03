@@ -34,9 +34,11 @@ fun <E, A : Any> Stream<E, A>.publishBatch(
     batch: Int = MAX_BATCH,
     within: Duration = WITHIN,
     to: (A) -> SnsMessage,
-): Stream<E, Either<PublishFailed, A>> =
-    batched(batch, within) { taken: List<A> -> taken.zip(publisher.publishAll(taken.map(to))) }
+): Stream<E, Either<PublishFailed, A>> {
+    val meters = PublisherMeters.here()
+    return batched(batch, within) { taken: List<A> -> taken.zip(publisher.publishAll(taken.map(to), meters)) }
         .mapConcat { sent -> sent.map { (element, outcome) -> outcome.map { element } } }
+}
 
 /**
  * [publishBatch] over messages read from SQS, each element carrying its receipt, and named apart from it because the
@@ -49,9 +51,12 @@ fun <E, A : Any> Stream<E, Received<A>>.publishMessageBatch(
     batch: Int = MAX_BATCH,
     within: Duration = WITHIN,
     to: (A) -> SnsMessage,
-): Stream<E, Received<Either<PublishFailed, A>>> =
-    batched(batch, within) { taken: List<Received<A>> -> taken.zip(publisher.publishAll(taken.map { to(it.value) })) }
-        .mapConcat { sent -> sent.map { (r, outcome) -> r.carrying(outcome.map { r.value }) } }
+): Stream<E, Received<Either<PublishFailed, A>>> {
+    val meters = PublisherMeters.here()
+    return batched(batch, within) { taken: List<Received<A>> ->
+        taken.zip(publisher.publishAll(taken.map { to(it.value) }, meters))
+    }.mapConcat { sent -> sent.map { (r, outcome) -> r.carrying(outcome.map { r.value }) } }
+}
 
 private fun <E, A : Any, B : Any> Stream<E, A>.batched(
     batch: Int,
