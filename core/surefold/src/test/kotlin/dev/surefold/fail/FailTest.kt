@@ -1,9 +1,12 @@
 package dev.surefold.fail
 
+import dev.surefold.Shared
 import dev.surefold.assert.shouldBe
+import dev.surefold.assert.shouldBeSameInstanceAs
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldNotBeNull
 import dev.surefold.assert.shouldThrow
+import dev.surefold.resourceScope
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CancellationException
 
@@ -18,6 +21,62 @@ class FailTest {
 
     context(scope: Fail<String>)
     private fun scope(): Fail<String> = scope
+
+    @Test
+    fun `a foreign attempt rethrows the owning fail signal with cleanup intact`() {
+        val error = Any()
+        val cleanup = IllegalStateException("cleanup")
+        val original = Shared<Throwable?>(null)
+        val foreignTail = Shared(false)
+        val answer = attempt<Any, Unit> {
+            val owner = this
+            val crossed = shouldThrow<Throwable> {
+                attempt<String, Unit> {
+                    resourceScope<Unit> {
+                        onRelease { throw cleanup }
+                        val signal = shouldThrow<Throwable> { owner.fail(error) }
+                        original.update { signal }
+                        signal.stackTrace.toList() shouldBe emptyList()
+                        throw signal
+                    }
+                    foreignTail.update { true }
+                }
+            }
+            crossed shouldBeSameInstanceAs original.peek()
+            crossed.stackTrace.toList() shouldBe emptyList()
+            crossed.suppressed.size shouldBe 1
+            crossed.suppressed[0] shouldBeSameInstanceAs cleanup
+            throw crossed
+        }
+        (answer as Either.Left).value shouldBeSameInstanceAs error
+        foreignTail.peek() shouldBe false
+    }
+
+    @Test
+    fun `cleanup belongs to the fail signal and leaves a throwable error unchanged`() {
+        val error = IllegalArgumentException("declared")
+        val prior = IllegalStateException("prior")
+        val cleanup = IllegalStateException("cleanup")
+        error.addSuppressed(prior)
+        error.suppressed.size shouldBe 1
+        error.suppressed[0] shouldBeSameInstanceAs prior
+        val answer = attempt<Throwable, Unit> {
+            val signal = shouldThrow<Throwable> {
+                resourceScope {
+                    onRelease { throw cleanup }
+                    fail(error)
+                }
+            }
+            signal.suppressed.size shouldBe 1
+            signal.suppressed[0] shouldBeSameInstanceAs cleanup
+            error.suppressed.size shouldBe 1
+            error.suppressed[0] shouldBeSameInstanceAs prior
+            throw signal
+        }
+        (answer as Either.Left).value shouldBeSameInstanceAs error
+        error.suppressed.size shouldBe 1
+        error.suppressed[0] shouldBeSameInstanceAs prior
+    }
 
     @Test
     fun `a block that returns answers on the right`() {
