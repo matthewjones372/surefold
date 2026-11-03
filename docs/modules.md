@@ -135,7 +135,7 @@ against; the library's own transitive dependencies come with it.
 | Module | For | Surefold deps | Adds | Published |
 |---|---|---|---|---|
 | `surefold-sqs` | a queue as a `Stream` on any backend, deleted after the work, and sends ([guide](sqs.md)) | `surefold-stream` | AWS SDK 2.55.6 `sqs`, on its URL-connection client | yes |
-| `surefold-sqs-pekko` | the same through Pekko's SQS connector, on Pekko Streams (spec 0290) | `surefold-sqs`, `surefold-stream-pekko` | `pekko-connectors-sqs` 1.3.0, on its Pekko HTTP transport | yes |
+| `surefold-sqs-pekko` | the same through Pekko's SQS connector, on Pekko Streams ([guide](sqs.md#on-pekko)) | `surefold-sqs`, `surefold-stream-pekko` | `pekko-connectors-sqs` 1.3.0, on its Pekko HTTP transport | yes |
 | `surefold-sqs-test` | an SQS queue in the test JVM on ElasticMQ, as a surefold-junit `Resource` or a Jupiter extension ([guide](sqs.md#testing-against-a-queue)) | `surefold-sqs` | `elasticmq-rest-sqs` 1.7.1, Pekko 1.5 | yes |
 
 ### Actors and clusters

@@ -25,6 +25,8 @@ dependencies {
 }
 
 tasks.test {
+    inputs.file(rootProject.layout.projectDirectory.file("docs/sqs.md")).withPropertyName("guide")
+    systemProperty("surefold.sqs.pekko.repoRoot", rootProject.projectDir.absolutePath)
     systemProperty("org.slf4j.simpleLogger.defaultLogLevel", "error")
     val mainRuntime = configurations.runtimeClasspath
     inputs.files(mainRuntime).withPropertyName("mainRuntimeClasspath")
