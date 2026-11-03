@@ -34,11 +34,16 @@ fun <E, A : Any, B : Any> Stream<E, Received<A>>.mapParMessage(
 
 /**
  * Each `Left` handed to [to], one at a time on a virtual thread and in order. Its message is not deleted: it comes
- * back after the visibility timeout, and the queue's redrive policy decides when it stops. A throw from [to] is a
- * defect.
+ * back after the visibility timeout, or at once with [nack], and the queue's redrive policy decides when it stops.
+ * A throw from [to] is a defect.
  */
-fun <E, L : Any, R : Any> Stream<E, Received<Either<L, R>>>.divertLefts(to: (L) -> Unit): Stream<E, Received<R>> =
-    mapPar(1) { r: Received<Either<L, R>> -> r.also { it.value.onLeft(to) } }
+fun <E, L : Any, R : Any> Stream<E, Received<Either<L, R>>>.divertLefts(
+    nack: Boolean = false,
+    to: (L) -> Unit,
+): Stream<E, Received<R>> =
+    mapPar(1) { r: Received<Either<L, R>> ->
+        r.also { it.value.onLeft { left -> to(left).also { r.receipt.dropped(nack) } } }
+    }
         .mapConcat { r -> r.value.fold({ emptyList() }, { right -> listOf(r.carrying(right)) }) }
 
 /** The first `Left` ends the run as `Failed`, with what came before it deleted and its own message left. */
