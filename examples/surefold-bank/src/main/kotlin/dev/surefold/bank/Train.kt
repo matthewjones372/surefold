@@ -6,6 +6,7 @@ import dev.surefold.cluster.Discovery
 import dev.surefold.logInfo
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import java.io.IOException
 import java.lang.management.ManagementFactory
 import java.net.ServerSocket
 import java.net.URI
@@ -15,6 +16,7 @@ import java.net.http.HttpResponse
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.minutes
 
 /** Enough for every route a transfer takes to be compiled before the run ends (spec 0278, open question 2). */
@@ -26,6 +28,28 @@ private const val TRAINING_MOST = 500L
 
 /** The HTTP statuses that say a request was taken. */
 private val SUCCESSFUL = 200..299
+
+// Below the ephemeral range every OS hands outgoing connections from (32768 on Linux, 49152 on macOS and Windows), so
+// the training run's own HTTP connections are never given a port a node is about to bind (spec 0295).
+private const val LOWEST_PORT = 20_000
+private const val HIGHEST_PORT = 32_000
+
+private val handedOut = ConcurrentHashMap.newKeySet<Int>()
+
+/** A port nothing listens on, below the ephemeral range, and never handed out twice in this JVM. */
+private fun freePort(): Int {
+    while (true) {
+        val port = Random.nextInt(LOWEST_PORT, HIGHEST_PORT)
+        if (handedOut.add(port) && bindable(port)) return port
+    }
+}
+
+private fun bindable(port: Int): Boolean = try {
+    ServerSocket(port).close()
+    true
+} catch (_: IOException) {
+    false
+}
 
 /**
  * How long this JVM took to have its nodes and servers made: what an AOT cache shortens (spec 0278). Ready comes
@@ -49,7 +73,7 @@ internal fun train(transfers: Int) {
     val counted = ConcurrentHashMap.newKeySet<String>()
     val heard = CountDownLatch(transfers)
     val countOnce = { id: String -> if (counted.add(id)) heard.countDown() }
-    val ports = List(nodes.size) { ServerSocket(0).use { socket -> socket.localPort } }
+    val ports = List(nodes.size) { freePort() }
     val seeds = ports.map { Node("", "127.0.0.1", it) }.let { Discovery { it } }
     val journal = InMemoryJournal()
     val running = ports.mapIndexed { i, port ->
