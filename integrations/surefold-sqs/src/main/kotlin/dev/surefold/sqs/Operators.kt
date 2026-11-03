@@ -1,3 +1,5 @@
+@file:OptIn(SqsSpi::class)
+
 package dev.surefold.sqs
 
 import dev.surefold.fail.Either

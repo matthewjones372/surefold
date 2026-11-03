@@ -19,7 +19,7 @@ A node is a function, and a module is an ordinary Kotlin expression.
 ```kotlin
 dependencies {
     // brings surefold, and through it nothing else
-    implementation("dev.surefold:surefold-app:0.17.0")
+    implementation("dev.surefold:surefold-app:0.18.0")
 }
 ```
 

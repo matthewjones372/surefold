@@ -6,8 +6,8 @@ instance it reaches. Both keep their state in the Postgres the service already r
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold-idempotency:0.17.0")
-    implementation("dev.surefold:surefold-ratelimit:0.17.0")
+    implementation("dev.surefold:surefold-idempotency:0.18.0")
+    implementation("dev.surefold:surefold-ratelimit:0.18.0")
 }
 ```
 
