@@ -113,6 +113,8 @@ Facts worth having before anything else:
   renewed while a message is handled, sends with per-message outcomes.
 - `surefold-sns`: SNS publishing from a `Stream` on any backend, passing an element on
   once SNS has it; from an SQS queue, each message deleted only after its publish.
+- `surefold-sns-test`: SNS topics in the test JVM that deliver to `surefold-sqs-test`'s
+  queues, raw or in SNS's envelope, for a service's own tests.
 - `surefold-sqs-test`: an SQS queue in the test JVM on ElasticMQ for a service's own
   tests, with helpers to create, send, receive and count.
 - `surefold-otel-test`: a tracer that keeps the spans it ends, for a service's own

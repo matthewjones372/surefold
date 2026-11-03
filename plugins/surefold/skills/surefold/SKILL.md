@@ -85,6 +85,7 @@ All on Maven Central as `dev.surefold:<module>`, on one version.
 - `surefold-kafka-test`: a Kafka broker in the test JVM, for a service's own tests.
 - `surefold-sqs`: SQS as a `Stream`, delete after the work, sends.
 - `surefold-sns`: SNS publishing from a `Stream`.
+- `surefold-sns-test`: SNS topics in the test JVM, delivering to test queues.
 - `surefold-sqs-test`: an SQS queue in the test JVM, for a service's own tests.
 - `surefold-actor`: actors as values on virtual threads.
 - `surefold-actor-journal-jdbc`: an actor's journal on JDBC.
