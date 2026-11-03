@@ -78,11 +78,11 @@ answers. Recommended: a module of its own, with the Kafka names.
 ## Open questions
 
 1. **Lift `Committed` into `surefold-stream`** so SQS reuses Kafka's operators?
-   Recommended: not yet. `Received` of its own now, and a later spec merges the
+   Answered: not yet. `Received` of its own now, and a later spec merges the
    two once both exist and their differences are known.
-2. **Tests against a fake client or ElasticMQ?** Recommended: a fake `SqsClient`
+2. **Tests against a fake client or ElasticMQ?** Answered: a fake `SqsClient`
    here, as `AwsSuite` does, and ElasticMQ in the follow-up test-module spec.
-3. **Visibility extension on by default?** Recommended: yes, at half the queue's
+3. **Visibility extension on by default?** Answered: yes, at half the queue's
    timeout, with `extendVisibility = false` to turn it off.
-4. **Sync or async SDK client?** Recommended: sync, since Forks runs it on a
+4. **Sync or async SDK client?** Answered: sync, since Forks runs it on a
    virtual thread and the async client would bring Netty.
