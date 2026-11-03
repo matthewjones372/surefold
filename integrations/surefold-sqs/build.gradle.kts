@@ -12,7 +12,9 @@ dependencies {
     }
     implementation("software.amazon.awssdk:url-connection-client:$awsVersion")
 
+    // Both backends a read is run on in the tests: Forks, and Forks on a test clock.
     testImplementation(project(":surefold-stream-forks"))
+    testImplementation(project(":surefold-stream-test"))
 }
 
 tasks.test {
