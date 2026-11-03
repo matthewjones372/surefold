@@ -151,11 +151,19 @@ private class Reader(
 
     // An entry SQS fails to delete comes back after its visibility timeout, as it would after a crash: at least once.
     private fun deleteHandled() {
-        generateSequence { handled.poll() }.toList().chunked(MAX_BATCH).forEach { handles ->
-            val entries = handles.mapIndexed { id, handle ->
-                DeleteMessageBatchRequestEntry.builder().id(id.toString()).receiptHandle(handle).build()
+        val handles = generateSequence { handled.poll() }.toList()
+        var sent = 0
+        try {
+            handles.chunked(MAX_BATCH).forEach { chunk ->
+                val entries = chunk.mapIndexed { id, handle ->
+                    DeleteMessageBatchRequestEntry.builder().id(id.toString()).receiptHandle(handle).build()
+                }
+                sqs.deleteMessageBatch { it.queueUrl(queue.url).entries(entries) }
+                sent += chunk.size
             }
-            sqs.deleteMessageBatch { it.queueUrl(queue.url).entries(entries) }
+        } finally {
+            // A call that throws, as one a stop's interrupt aborts does, leaves what it did not send for the close.
+            handled.addAll(handles.drop(sent))
         }
     }
 }
