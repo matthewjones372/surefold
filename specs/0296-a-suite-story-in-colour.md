@@ -9,7 +9,7 @@ sink the transcript with `colour = false` (`Story.kt`). The suite logs it as one
 `Report.finished` prints it under "… logged:" when the test fails. So `FORCE_COLOR=1`,
 `-Psurefold.test.colour=always` and IntelliJ change nothing: the ✗ is plain.
 
-A consumer (doorlist) writes its tests as suite stories and sees no colour in the Given / When / Then.
+A consumer service writes its tests as suite stories and sees no colour in the Given / When / Then.
 Nothing tells them the setting was ignored rather than off.
 
 ## Not doing
@@ -65,7 +65,7 @@ knows where the colours go. Two ways to carry the coloured copy to `Report`:
 ./gradlew spotlessApply && ./gradlew :surefold-test:test :surefold-junit:test
 ```
 
-Then a failing doorlist suite story, run with `FORCE_COLOR=1` and the wiring plugin, prints its ✗ in red.
+Then a failing suite story in a consumer service, run with `FORCE_COLOR=1` and the wiring plugin, prints its ✗ in red.
 
 ## Open questions
 
