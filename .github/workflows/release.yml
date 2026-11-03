@@ -7,7 +7,22 @@ on:
     # A pre-release tag is not a release: a candidate is a snapshot, which
     # snapshot.yml publishes, rather than a version on Central for good.
     tags: ["v*", "!v*-*"]
+  # A dispatch with a version cuts that release from a commit on main: this
+  # workflow tags it, so nobody has to push a tag from a laptop (and a session
+  # that cannot push tags can still release). A tag pushed by the workflow's own
+  # token would not start another workflow, which is why the tagging happens
+  # here rather than in a workflow of its own. Without a version, a dispatch
+  # re-runs the release of the tag it was dispatched on.
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Release to cut, e.g. 0.18.1. Tags v<version> on `commit`. Empty: release the dispatched tag."
+        type: string
+        default: ""
+      commit:
+        description: "Commit on main to tag. Empty: the head of main."
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -15,6 +30,10 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-24.04
+    # To push the tag this run creates, at the end and only once Central has the
+    # release. Nothing else here writes to the repository.
+    permissions:
+      contents: write
     # On the job rather than on the publish step: a tag gives axion a version with
     # no `-SNAPSHOT`, which is what makes Gradle's signing required, and `build`
     # signs the publications before anything is published. A PR never noticed
@@ -29,6 +48,33 @@ jobs:
         with:
           # axion reads the tag to decide the version, and a shallow clone has none.
           fetch-depth: 0
+          ref: ${{ inputs.version != '' && (inputs.commit || 'main') || '' }}
+
+      # Local first, so axion reads the release version for the build and the
+      # publish below; pushed in the last step, once the publish has succeeded,
+      # so a failed build leaves no tag behind. A tag that already exists on the
+      # same commit is a re-run and is reused; on another commit it is refused.
+      - name: Tag the release
+        if: inputs.version != ''
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          case "$VERSION" in
+            *[!0-9.]*|.*|*.|*..*) echo "$VERSION is not a release version (X.Y.Z)"; exit 1 ;;
+          esac
+          [ "$(echo "$VERSION" | tr -cd . | wc -c)" = 2 ] || { echo "$VERSION is not X.Y.Z"; exit 1; }
+          commit=$(git rev-parse HEAD)
+          git merge-base --is-ancestor "$commit" origin/main || { echo "$commit is not on main"; exit 1; }
+          tag="v$VERSION"
+          if existing=$(git rev-parse -q --verify "refs/tags/$tag^{commit}"); then
+            [ "$existing" = "$commit" ] || { echo "$tag already tags $existing, not $commit"; exit 1; }
+            echo "$tag already tags $commit"
+          else
+            git -c user.name="github-actions[bot]" \
+                -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+                tag -a "$tag" "$commit" -m "surefold $VERSION"
+            echo "tagged $commit as $tag"
+          fi
 
       # 27 for surefold-structured's toolchain, installed rather than left to Gradle, whose download of
       # 27 is an Alpine build that does not run here; 25, listed last, is what Gradle runs on.
@@ -62,6 +108,11 @@ jobs:
             "") echo "could not read the version"; exit 1 ;;
             *-*) echo "$version is not a release; snapshot.yml publishes candidates"; exit 1 ;;
           esac
+          if [ -n "$ASKED" ] && [ "$version" != "$ASKED" ]; then
+            echo "asked to release $ASKED, but the build reads $version"; exit 1
+          fi
+        env:
+          ASKED: ${{ inputs.version }}
 
       # A tag can be re-run, and Central refuses a version it already has — with a
       # message about the upload rather than about the re-run. Saying so here is
@@ -112,3 +163,12 @@ jobs:
         run: >
           ./gradlew publishToMavenCentral --no-configuration-cache --max-workers=2
           -PcentralNamespace=io.github.matthewjones372
+
+      # Last, and only after both deployments are staged: the tag is the record
+      # of what was released. A dispatch without a version ran on a tag that is
+      # already pushed.
+      - name: Push the tag
+        if: inputs.version != ''
+        env:
+          VERSION: ${{ inputs.version }}
+        run: git push origin "refs/tags/v$VERSION"
