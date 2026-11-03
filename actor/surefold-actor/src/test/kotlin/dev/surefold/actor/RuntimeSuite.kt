@@ -195,7 +195,9 @@ object RuntimeSuite : Suite() {
                 held.tell(Enter(first, firstRelease))
                 first.await()
                 held.tell(Enter(second, secondRelease))
-                while (held.offer(Add(0))) Unit
+                while (held.offer(Add(0))) {
+                    // Fills the mailbox, so the next tell parks.
+                }
                 val parked = Thread.ofVirtual().start { held.tell(Add(1)) }
                 while (parked.state != Thread.State.WAITING) Thread.onSpinWait()
                 firstRelease.countDown()
