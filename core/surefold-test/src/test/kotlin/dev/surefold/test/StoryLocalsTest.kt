@@ -116,7 +116,7 @@ class StoryLocalsTest {
     @Test
     fun `a transcript's coloured copy is coloured only when colour is on, and its plain copy never is`() {
         val story = Story { (it as? String)?.let { _ -> AssertionError("expected: 3") } }
-            .apply { Then("it is three") { "two" } }
+        story.Then("it is three") { "two" }
 
         val on = story.transcript("coloured", colour = true)
         val off = story.transcript("coloured", colour = false)
