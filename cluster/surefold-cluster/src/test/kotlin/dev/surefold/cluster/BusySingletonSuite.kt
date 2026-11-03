@@ -1,11 +1,11 @@
 package dev.surefold.cluster
 
-import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.DeadLetter
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.onDeadLetter
 import dev.surefold.actor.remote.Codecs
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.stay
 import dev.surefold.junit.Suite

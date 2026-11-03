@@ -1,6 +1,5 @@
 package dev.surefold.cluster
 
-import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.ActorRef
 import dev.surefold.actor.Reply
 import dev.surefold.actor.ask
@@ -10,6 +9,7 @@ import dev.surefold.actor.remote.MessageCodec
 import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.stay
 import dev.surefold.junit.Suite

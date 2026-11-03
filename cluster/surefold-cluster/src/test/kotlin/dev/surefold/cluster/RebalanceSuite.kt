@@ -1,7 +1,7 @@
 package dev.surefold.cluster
 
-import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe

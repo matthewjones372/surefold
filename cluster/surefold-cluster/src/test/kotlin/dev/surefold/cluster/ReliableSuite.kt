@@ -1,13 +1,9 @@
 package dev.surefold.cluster
 
 import dev.surefold.actor.Delivered
-import java.net.BindException
-import dev.surefold.junit.withClue
-import dev.surefold.junit.shouldThrow
-import dev.surefold.actor.remote.freePort
-import dev.surefold.actor.InMemoryJournal
 import dev.surefold.actor.Delivery
 import dev.surefold.actor.EventCodec
+import dev.surefold.actor.InMemoryJournal
 import dev.surefold.actor.Journal
 import dev.surefold.actor.PersistenceId
 import dev.surefold.actor.delivered
@@ -21,14 +17,18 @@ import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
 import dev.surefold.actor.remote.delivery
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.fail.right
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeGreaterThan
+import dev.surefold.junit.shouldThrow
+import dev.surefold.junit.withClue
 import dev.surefold.metrics
 import dev.surefold.scope
+import java.net.BindException
 import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
@@ -267,7 +267,7 @@ object ReliableSuite : Suite() {
             }
         }
 
-        test("a bank whose port another socket holds says why it did not open, rather than keeping its callers waiting") {
+        test("a bank whose port is taken says why it did not open, rather than keeping its callers waiting") {
             ServerSocket(freePort()).use { held ->
                 Bank("held", held.localPort, Discovery.static(), InMemoryJournal(), Duration.ZERO).use { bank ->
                     shouldThrow<IllegalStateException>({ bank.cluster }) { thrown ->

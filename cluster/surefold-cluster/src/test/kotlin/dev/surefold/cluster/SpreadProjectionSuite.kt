@@ -1,6 +1,5 @@
 package dev.surefold.cluster
 
-import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.EventCodec
 import dev.surefold.actor.InMemoryJournal
 import dev.surefold.actor.InMemoryOffsets
@@ -10,6 +9,7 @@ import dev.surefold.actor.projection.Projection
 import dev.surefold.actor.projection.mapFollowed
 import dev.surefold.actor.projection.runProjecting
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
