@@ -92,8 +92,56 @@ to `inFlight` (16) sends at once. A send that fails is a defect, for
 passes each element on as the outcome of its own message, so a refused one is a
 `Left` that `absolve` or `divertLefts` decides on.
 
+## Testing against a queue
+
+`surefold-sqs-test` runs SQS in the test JVM on ElasticMQ, so a test needs no
+Docker. A surefold-junit suite shares one `SqsQueues` as its resource; a Jupiter
+class registers `SqsQueues()` with `@RegisterExtension` instead. Each starts on
+a port the system picks, so suites run in parallel.
+
+<!-- sqs-testing -->
+```kotlin
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.sqs.Depth
+import dev.surefold.sqs.Sqs
+import dev.surefold.sqs.SqsQueues
+import dev.surefold.sqs.consume
+import dev.surefold.sqs.runDeleting
+import dev.surefold.sqs.sqsQueues
+import dev.surefold.stream.Exit
+import dev.surefold.stream.Forks
+import dev.surefold.stream.run
+import dev.surefold.stream.take
+import kotlin.time.Duration.Companion.seconds
+
+object OrdersSuite : SharedSuite<SqsQueues>() {
+    override val shared = sqsQueues()
+
+    init {
+        test("every order read is deleted") { sqs ->
+            val orders = sqs.create("guide-orders", deadLetters = sqs.create("guide-orders-dlq"))
+            sqs.send(orders, "o-1", "o-2")
+
+            Sqs.consume(sqs.client, orders, waitTime = 1.seconds).take(2).runDeleting().run(Forks())
+                .toCompletableFuture().join() shouldBe Exit.Done(2L)
+
+            sqs.depth(orders) shouldBe Depth(visible = 0, inFlight = 0)
+        }
+    }
+}
+```
+
+`client` is an `SqsClient` pointed at the queue, closed when the resource is
+released. `create` takes `fifo`, `visibility`, `deadLetters` and `maxReceives`,
+`send` writes bodies in order, `receive` reads without deleting, and `depth`
+answers how many messages are visible and in flight. ElasticMQ brings Pekko 1.5
+onto the test classpath.
+
+A fake `SqsClient` is still how a test makes a call fail: ElasticMQ cannot be
+told to.
+
 ## Not here yet
 
-A queue in the test JVM, meters and a Pekko connector module are each their own
-spec. Publishing what a queue reads to an SNS topic is [`surefold-sns`](sns.md). Until the test module lands, a fake `SqsClient` is what this module's
-own suites run against.
+Meters and a Pekko connector module are each their own spec. Publishing what a queue
+reads to an SNS topic is [`surefold-sns`](sns.md).
