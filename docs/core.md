@@ -425,6 +425,47 @@ suppressed.
 In an application, the graph in [`surefold-app`](app.md) uses the same `install`
 for each node, and releases nodes in reverse dependency order.
 
+### Interruption-preserving cleanup
+
+`draining { cleanup() }` clears an existing interrupt for cleanup and restores it when the block returns,
+throws or returns non-locally. `uninterruptible { waitForCompletion() }` retries only `InterruptedException`
+and restores interruption after the wait finishes. Its block must be safe to repeat after interruption:
+use it for joins and completion waits, not ordinary work. `onInterrupted = { cause -> ... }` may observe
+an interrupted wait; an observer failure propagates with interruption restored.
+
+`onThrow(action = { cause -> ... }) { acquire() }` observes every escaping throw, including cancellation,
+fatal failure and a `fail` unwinding, for partial-acquisition cleanup. It rethrows the original object and
+suppresses any observer failure onto it, setting the interrupt flag again if that failure was an interrupt.
+The observer cannot return non-locally and recover the failure. `checkInterrupted()` is a cancellation
+checkpoint for synchronous adapters; it throws and leaves the interrupt flag set. Prefer `Resource` and `use`
+for normal resource ownership, and `Either.catch` or `recover` for ordinary failure values.
+Unreleased: in the snapshots after 0.18.0, not in 0.18.0 itself.
+
+<!-- core-draining -->
+```kotlin
+import dev.surefold.checkInterrupted
+import dev.surefold.draining
+import dev.surefold.onThrow
+import dev.surefold.uninterruptible
+import java.util.concurrent.CompletableFuture
+
+class Worker(private val stopped: CompletableFuture<Unit>) {
+    fun stop() = Unit
+
+    fun close() {
+        // finishes the shutdown wait even when the closing thread was interrupted, then hands the interrupt back
+        draining { stop() }
+        uninterruptible { stopped.get() }
+    }
+}
+
+fun started(ready: CompletableFuture<Worker>, stopped: CompletableFuture<Unit>): Worker =
+    onThrow({ cause -> ready.completeExceptionally(cause) }) {
+        checkInterrupted()
+        Worker(stopped).also { ready.complete(it) }
+    }
+```
+
 ## Schedules, retries and timeouts
 
 A `Schedule<Input, Output>` is a value that answers each input with a
