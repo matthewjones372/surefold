@@ -16,9 +16,9 @@ transitive dependency fails the build.
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold:0.17.0")
-    implementation("dev.surefold:surefold-app:0.17.0")
-    testImplementation("dev.surefold:surefold-test:0.17.0")
+    implementation("dev.surefold:surefold:0.18.0")
+    implementation("dev.surefold:surefold-app:0.18.0")
+    testImplementation("dev.surefold:surefold-test:0.18.0")
 }
 ```
 
@@ -27,7 +27,7 @@ describe the `main` branch, which can be ahead of the latest release; features
 not yet released are marked where they are documented.
 
 **Snapshots.** An untagged commit builds as the next patch version with
-`-SNAPSHOT` (after `v0.17.0`, `0.17.1-SNAPSHOT`). Every push to `main` publishes
+`-SNAPSHOT` (after `v0.18.0`, `0.18.1-SNAPSHOT`). Every push to `main` publishes
 one to GitHub Packages, at `https://maven.pkg.github.com/surefold/surefold`, and
 it does not expire. GitHub Packages asks for a token even to read a public
 package: put a classic personal access token with only `read:packages` in
