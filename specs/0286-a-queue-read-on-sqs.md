@@ -82,7 +82,10 @@ answers. Recommended: a module of its own, with the Kafka names.
    two once both exist and their differences are known.
 2. **Tests against a fake client or ElasticMQ?** Answered: a fake `SqsClient`
    here, as `AwsSuite` does, and ElasticMQ in the follow-up test-module spec.
-3. **Visibility extension on by default?** Answered: yes, at half the queue's
-   timeout, with `extendVisibility = false` to turn it off.
+3. **Visibility extension on by default?** Answered: yes, with
+   `extendVisibility = false` to turn it off. Built: renewed every half of an
+   explicit `visibility` (30 s by default) sent with each receive, rather than
+   the queue's own timeout; kept so on review, as it needs no
+   `GetQueueAttributes` call or permission.
 4. **Sync or async SDK client?** Answered: sync, since Forks runs it on a
    virtual thread and the async client would bring Netty.

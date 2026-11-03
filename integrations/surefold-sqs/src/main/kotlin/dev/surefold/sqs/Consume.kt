@@ -38,7 +38,15 @@ internal interface Settling {
     fun dropped(handle: String, nack: Boolean)
 }
 
-internal fun <B : Any> Received<*>.carrying(value: B): Received<B> = Received(value, receipt)
+/** For a module that maps received elements in batches of its own, such as surefold-sns; not for a pipeline. */
+@RequiresOptIn("A seam for a module that carries an SQS receipt through operators of its own.")
+@Retention(AnnotationRetention.BINARY)
+@Target(AnnotationTarget.FUNCTION)
+annotation class SqsSpi
+
+/** [value] in place of this element's, with its message's receipt carried through. */
+@SqsSpi
+fun <B : Any> Received<*>.carrying(value: B): Received<B> = Received(value, receipt)
 
 /**
  * The messages on [queue], read by long polls of up to [waitTime] for up to [maxMessages] at a time, each with every
