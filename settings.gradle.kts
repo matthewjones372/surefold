@@ -72,6 +72,7 @@ module("integrations", "surefold-sqs")
 module("integrations", "surefold-sns")
 module("integrations", "surefold-sns-test")
 module("integrations", "surefold-sqs-test")
+module("integrations", "surefold-sqs-pekko")
 
 module("data", "surefold-jobs")
 module("data", "surefold-app-jobs")

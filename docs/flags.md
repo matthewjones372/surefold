@@ -9,7 +9,7 @@ key, its type and its default, and read with no client passed in.
 ```kotlin
 dependencies {
     // brings surefold, the OpenFeature SDK and the slf4j-api it logs through
-    implementation("dev.surefold:surefold-openfeature:0.17.0")
+    implementation("dev.surefold:surefold-openfeature:0.18.0")
 }
 ```
 
@@ -59,7 +59,7 @@ a tenant never sees another tenant's rows.
 ```kotlin
 dependencies {
     // brings surefold-openfeature, surefold-tenancy, surefold-cache and surefold-postgres-notify
-    implementation("dev.surefold:surefold-openfeature-postgres:0.17.0")
+    implementation("dev.surefold:surefold-openfeature-postgres:0.18.0")
 }
 ```
 
