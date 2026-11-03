@@ -4,12 +4,12 @@ Status: DONE_WITH_CONCERNS; feasible local checks pass, full gate unpaid; not H 
 Branch: `codex/p04-h-fail-cleanup-source-20261103`.
 Base: `35d2c8505dea0d7d0dc96c65402bb687e0a08b58`.
 Verified source head: `1184ff8c2757ca3d3828d50625a6e91ab1f274da`; this handover follows it.
-Root commission: Doorlist P04-KEY-VIEWS generation4, owner `codex-launch-director-20261102a`,
+Root commission: consumer programme P04-KEY-VIEWS generation4, owner `codex-launch-director-20261102a`,
 token `d63a7071a1857a66472a381b55b84181b95a0183`; network-enabled read-only guard PASS.
 Initial sandbox guard wrapper rejection and Gradle cache lock denial were environmental, zero RED credit.
 No claim transition, push, PR, CI dispatch, release, integration, consumer or AWS operation performed.
 Approved plan SHA256: `0e708bb9fa26500564278fbf3f8767dcf6705269acb7940d3491d230b2df00a3`;
-Doorlist reconciliation: `e8f1d37528b0ca9291222b18ce3de4ab732d790d`.
+Consumer reconciliation: `e8f1d37528b0ca9291222b18ce3de4ab732d790d`.
 
 ## Scope and public source refs
 
