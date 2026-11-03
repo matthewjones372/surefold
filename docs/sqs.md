@@ -90,7 +90,66 @@ to `inFlight` (16) sends at once. A send that fails is a defect, for
 `restartOnDefect`. On a FIFO queue a group keeps its order only at
 `inFlight = 1`. `sendBatch` groups up to ten, or what came within `within`, and
 passes each element on as the outcome of its own message, so a refused one is a
-`Left` that `absolve` or `divertLefts` decides on.
+`Left` that `absolve` or `divertLefts` decides on. To publish what a queue reads to an SNS topic, see
+[`surefold-sns`](sns.md).
+
+## On Pekko
+
+`Sqs.consume` runs on Pekko too, one long poll at a time on one thread. A Pekko
+service reading a busy queue can read it through Pekko Connectors' `SqsSource`
+instead, with `surefold-sqs-pekko`: several receives in flight at once, their
+messages buffered, and deletes batched and sent asynchronously by `SqsAckSink`.
+The elements are the same `Received`, so every operator above applies.
+
+<!-- sqs-pekko -->
+```kotlin
+import dev.surefold.sqs.Queue
+import dev.surefold.sqs.Sqs
+import dev.surefold.sqs.mapMessage
+import dev.surefold.sqs.runDeleting
+import dev.surefold.sqs.source
+import dev.surefold.stream.PekkoStreams
+import dev.surefold.stream.Running
+import dev.surefold.stream.start
+import org.apache.pekko.Done
+import org.apache.pekko.actor.ActorSystem
+import org.apache.pekko.stream.connectors.awsspi.PekkoHttpClient
+import org.apache.pekko.stream.connectors.sqs.SqsSourceSettings
+import software.amazon.awssdk.services.sqs.SqsAsyncClient
+
+fun onPekkoHttp(system: ActorSystem): SqsAsyncClient =
+    SqsAsyncClient.builder().httpClient(PekkoHttpClient.builder().withActorSystem(system).build()).build()
+
+fun shipping(
+    system: ActorSystem,
+    client: SqsAsyncClient,
+    orders: Queue,
+    ship: (String) -> Unit,
+): Running<Nothing, Done> =
+    Sqs.source(client, orders, SqsSourceSettings.create().withParallelRequests(4))
+        .mapMessage { message -> ship(message.body()) }
+        .runDeleting(client, orders)
+        .start(PekkoStreams(system))
+```
+
+The connector takes `SqsAsyncClient`; on the connector's own Pekko HTTP
+transport, as here, no Netty comes with it. The client is the caller's. A run's
+`stop()` drains: no receive starts after it, and what was handed out reaches the
+end and is deleted. Messages the connector received but never handed out stay
+in flight until their timeout, then come back.
+
+What differs from `Sqs.consume`:
+
+- **No renewal.** The connector keeps no message's visibility. Set the queue's,
+  or the source settings', timeout longer than buffering and handling together.
+  A message that lapses is received again, and the first copy's delete then
+  fails the run with `ReceiptHandleIsInvalidException`, where `Sqs.consume`
+  counts it and goes on.
+- **One end each.** Messages from `Sqs.source` end on
+  `runDeleting(client, queue)`, and those from `Sqs.consume` on `runDeleting()`.
+  The other one is a defect naming the right one.
+- **No meters yet.** `surefold.sqs.*` is recorded by `Sqs.consume` and the
+  sends only.
 
 ## Meters
 
@@ -170,8 +229,3 @@ onto the test classpath.
 
 A fake `SqsClient` is still how a test makes a call fail: ElasticMQ cannot be
 told to.
-
-## Not here yet
-
-A Pekko connector module is its own spec. Publishing what a queue reads to an SNS
-topic is [`surefold-sns`](sns.md).
