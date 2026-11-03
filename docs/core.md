@@ -168,6 +168,22 @@ to the scope that started it, but work handed to some
 other thread, such as a callback, should answer with an `Either` that the
 handler binds.
 
+### Catching one type
+
+`Either.catchOrThrow<T, _> { }` puts a thrown `T`, or a subclass of it, on the left and rethrows
+anything else as the same instance. Fatals and a `fail` go up as they do from `Either.catch`, so
+`catchOrThrow<InterruptedException, _>` never answers a left. In the spec 0285 development snapshot,
+not published 0.17.0.
+
+<!-- core-catch-or-throw -->
+```kotlin
+import dev.surefold.fail.Either
+import java.time.DateTimeException
+import java.time.Instant
+
+fun parsed(raw: String): Instant? = Either.catchOrThrow<DateTimeException, _> { Instant.parse(raw) }.getOrNull()
+```
+
 ## Traversing a list
 
 `traverse` runs a function that can fail over every element, in order on the

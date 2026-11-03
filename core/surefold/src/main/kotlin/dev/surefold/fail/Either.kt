@@ -52,6 +52,19 @@ sealed interface Either<out E, out A> {
             } catch (thrown: Throwable) {
                 Left(thrown.nonFatalOrThrow())
             }
+
+        /**
+         * What [block] returned, or on the left a [T] it threw. Anything else it threw goes on up unchanged; a fatal
+         * goes up first, so `T = InterruptedException` never answers a left: see [nonFatalOrThrow].
+         */
+        // Kotlin cannot catch a type parameter, so one catch-all narrows with is-T after nonFatalOrThrow.
+        @Suppress("TooGenericExceptionCaught", "InstanceOfCheckForException")
+        inline fun <reified T : Throwable, A> catchOrThrow(block: () -> A): Either<T, A> =
+            try {
+                Right(block())
+            } catch (thrown: Throwable) {
+                if (thrown.nonFatalOrThrow() is T) Left(thrown as T) else throw thrown
+            }
     }
 }
 

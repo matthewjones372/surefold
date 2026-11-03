@@ -17,7 +17,7 @@ virtual threads, so its core depends on nothing but the Kotlin standard library.
 | `ensure`, `ensureNotNull`, `bind`, `recover` | the same names, from `dev.surefold.fail` |
 | `arrow.core.Either`, `NonEmptyList` | `dev.surefold.fail.Either`, `NonEmptyList` |
 | `Option<A>` | `A?` |
-| `Either.catch { }` | the same, from `dev.surefold.fail` |
+| `Either.catch { }`, `Either.catchOrThrow<T, _> { }` | the same, from `dev.surefold.fail` |
 | `parZip`, `parMap`, `raceN`, `parZipOrAccumulate`, `parMapOrAccumulate` | the same names in `dev.surefold`, without `suspend` |
 | `zipOrAccumulate`, `mapOrAccumulate`, `accumulate`, `ensureOrAccumulate`, `bindOrAccumulate` | the same names, run in order on the calling thread; `accumulate` and its two checks are in `dev.surefold.fail`. `bindOrAccumulate` answers `A?` |
 
