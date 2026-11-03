@@ -17,6 +17,12 @@ provider delegate preserves both credential and identity resolution. Close the p
 client scopes end. If using the default chain, own `DefaultCredentialsProvider.builder().build()` in an outer
 scope; do not take ownership of the shared `DefaultCredentialsProvider.create()` singleton.
 
+For other SDK clients, pass `borrowedAwsCredentialsProvider(provider)` (spec
+[0263](../specs/0263-borrowed-aws-credentials.md)). The public view resolves nothing on construction,
+forwards each credentials value and the exact identity-resolution future/failure, and is not AutoCloseable.
+It retains no credentials and adds no refresh mechanism. All borrowing clients must close before their
+caller-owned provider; the key-operations Resource uses this same view internally.
+
 The application selects separate runtime, provisioner and deletion role providers and operation instances.
 The library neither assumes STS roles nor reads SSM. `creationClients` separates retry settings; it grants
 no additional IAM authority. Borrowed creation clients must expose a verified SDK retry strategy with one
