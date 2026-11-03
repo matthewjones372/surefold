@@ -1,3 +1,5 @@
+@file:OptIn(SqsSpi::class)
+
 package dev.surefold.sqs
 
 import dev.surefold.fail.Either
@@ -22,31 +24,31 @@ import kotlin.time.Duration.Companion.seconds
 /** Where a read starts: [consume] here. */
 object Sqs
 
-/** An element and the receipt of the message it came from; the message is deleted by `runDeleting`. */
-class Received<out A : Any> internal constructor(val value: A, internal val receipt: Receipt)
-
-/** A message's receipt handle, settled from whichever thread its element reaches the end, or is dropped, on. */
-internal class Receipt(private val handle: String, private val reader: Settling) {
-    fun handled() = reader.handled(handle)
-
-    fun dropped(nack: Boolean) = reader.dropped(handle, nack)
-}
-
-internal interface Settling {
-    fun handled(handle: String)
-
-    fun dropped(handle: String, nack: Boolean)
-}
-
-/** For a module that maps received elements in batches of its own, such as surefold-sns; not for a pipeline. */
-@RequiresOptIn("A seam for a module that carries an SQS receipt through operators of its own.")
+/** For a module that brings messages of its own into surefold-sqs, such as Pekko's connector; not for a pipeline. */
+@RequiresOptIn("A seam for a module that feeds surefold-sqs messages from a source of its own.")
 @Retention(AnnotationRetention.BINARY)
-@Target(AnnotationTarget.FUNCTION)
+@Target(AnnotationTarget.CLASS, AnnotationTarget.PROPERTY, AnnotationTarget.CONSTRUCTOR, AnnotationTarget.FUNCTION)
 annotation class SqsSpi
 
-/** [value] in place of this element's, with its message's receipt carried through. */
+/** An element and how the message it came from is settled; the message is deleted by `runDeleting`. */
+class Received<out A : Any> @SqsSpi constructor(val value: A, @property:SqsSpi val settle: Settle)
+
+/**
+ * How a received message is settled, which depends on the source that read it, from whichever thread its element
+ * reaches the end, or is dropped, on.
+ */
 @SqsSpi
-fun <B : Any> Received<*>.carrying(value: B): Received<B> = Received(value, receipt)
+interface Settle {
+    /** The element reached the end: the message is to be deleted. */
+    fun handled()
+
+    /** The element was dropped: the message comes back after its timeout, or at once with [nack]. */
+    fun dropped(nack: Boolean)
+}
+
+/** [value] in place of this element's, with its message's settling carried through. */
+@SqsSpi
+fun <B : Any> Received<*>.carrying(value: B): Received<B> = Received(value, settle)
 
 /**
  * The messages on [queue], read by long polls of up to [waitTime] for up to [maxMessages] at a time, each with every
@@ -95,7 +97,7 @@ fun Sqs.consume(
 /** A run described that deletes each message once its element reaches the end, answering how many did. */
 fun <E> Stream<E, Received<*>>.runDeleting(): Run<E, Long> =
     map { element ->
-        element.receipt.handled()
+        element.settle.handled()
         1L
     }.runFold(0L, Long::plus)
 
@@ -106,7 +108,7 @@ private class Reader(
     private val request: ReceiveMessageRequest,
     private val extender: Extender?,
     private val meters: ConsumerMeters,
-) : Settling {
+) {
     private val received = ArrayDeque<Message>()
     private val handled = ConcurrentLinkedQueue<String>()
 
@@ -135,17 +137,25 @@ private class Reader(
         extender?.hold(message.receiptHandle())
         message.attribute("SentTimestamp")?.let { sent[message.receiptHandle()] = it }
         meters.handed()
-        return Received(message, Receipt(message.receiptHandle(), this))
+        val handle = message.receiptHandle()
+        return Received(
+            message,
+            object : Settle {
+                override fun handled() = handled(handle)
+
+                override fun dropped(nack: Boolean) = dropped(handle, nack)
+            },
+        )
     }
 
-    override fun handled(handle: String) {
+    private fun handled(handle: String) {
         extender?.release(handle)
         meters.settled()
         sent.remove(handle)?.let(meters::handled)
         handled += handle
     }
 
-    override fun dropped(handle: String, nack: Boolean) {
+    private fun dropped(handle: String, nack: Boolean) {
         extender?.release(handle)
         meters.settled()
         sent.remove(handle)
