@@ -64,14 +64,14 @@ permission. CloudWatch already has it, so it is left out (Open questions 1).
 
 ## Open questions
 
-1. **A queue-depth gauge?** Recommended: not by default. CloudWatch has
+1. **A queue-depth gauge?** Answered: not by default. CloudWatch has
    `ApproximateNumberOfMessagesVisible`; an opt-in `depthEvery: Duration?`
    later, if someone needs it in the same backend.
-2. **Tag by queue name or URL?** Recommended: name. The URL adds account and
+2. **Tag by queue name or URL?** Answered: name. The URL adds account and
    region, which a service has one of; two queues with the same name in two
    regions would need it, and `metricTagged` covers that.
 3. **Latency across clocks.** `SentTimestamp` is SQS's clock and "now" is the
-   service's. Recommended: record it anyway, as 0163 does with Kafka's
+   service's. Answered: record it anyway, as 0163 does with Kafka's
    timestamps, and say in the docs that skew shows up in it.
-4. **Per-entry delete failures by `code` tag?** Recommended: yes. The codes are
+4. **Per-entry delete failures by `code` tag?** Answered: yes. The codes are
    a short, fixed list, and `ReceiptHandleIsInvalid` is the one worth alerting on.
