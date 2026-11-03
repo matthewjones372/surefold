@@ -12,8 +12,8 @@ write each piece.
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold-app:0.17.0")
-    implementation("dev.surefold:surefold-app-pekko:0.17.0")  // Pekko actors only
+    implementation("dev.surefold:surefold-app:0.18.0")
+    implementation("dev.surefold:surefold-app-pekko:0.18.0")  // Pekko actors only
 }
 ```
 
@@ -26,16 +26,16 @@ and the same-cache layer reentry restriction.
 | Need | Use | Module |
 |---|---|---|
 | catch one throwable type onto the left and rethrow the rest (unreleased) | [`Either.catchOrThrow`](core.md#catching-one-type) | `surefold` |
-| recover selected typed failures without rethrowing unmatched errors | [`Either.recover`](core.md) | `surefold` (spec 0270 development snapshot) |
-| refuse retryable ownership boundaries (unreleased) | [`checkNotInTransaction`](core.md#nontransactional-ownership-boundaries) | `surefold` |
+| recover selected typed failures without rethrowing unmatched errors | [`Either.recover`](core.md) | `surefold` (from 0.18.0) |
+| refuse retryable ownership boundaries | [`checkNotInTransaction`](core.md#nontransactional-ownership-boundaries) | `surefold` |
 | share one in-flight block per key | `SingleFlight.run` | `surefold` |
-| record a quiet final ownership decision (unreleased) | [`HandoffDecision.tryComplete` / `peek`](core.md#quiet-handoff-decisions) | `surefold` |
+| record a quiet final ownership decision | [`HandoffDecision.tryComplete` / `peek`](core.md#quiet-handoff-decisions) | `surefold` |
 | share a fixed lookup without retaining its result | `Cache(ttl = { Duration.ZERO })` | `surefold-cache` |
 | retain answers by capacity without expiry | `Cache(ttl = { Duration.INFINITE }, capacity = …)` | `surefold-cache` |
 | retain by result-specific expiry, with last-good fallback | `Cache(ttl = …, stale = …)` | `surefold-cache` |
 | finish shared cache work before releasing its dependencies | `Cache.closeAndJoin` in `onRelease` | `surefold-cache` |
-| explicit regional KMS roots, exact contexts and owned clients | [`KeyOperations`, `AwsKeyOperations`, `awsKeyOperations`](kms-operations.md) | `surefold-tenancy-crypto-aws` (unreleased) |
-| trace JDBC executions without per-query wrapping (unreleased) | `DataSource.traced(openTelemetry)` | [`surefold-jdbc-otel`](jdbc-tracing.md) |
+| explicit regional KMS roots, exact contexts and owned clients | [`KeyOperations`, `AwsKeyOperations`, `awsKeyOperations`](kms-operations.md) | `surefold-tenancy-crypto-aws` |
+| trace JDBC executions without per-query wrapping | `DataSource.traced(openTelemetry)` | [`surefold-jdbc-otel`](jdbc-tracing.md) |
 
 The types the recipes are written against:
 
@@ -474,7 +474,7 @@ plugins {
 }
 
 dependencies {
-    implementation("dev.surefold:surefold-app-kotlinx:0.17.0")
+    implementation("dev.surefold:surefold-app-kotlinx:0.18.0")
 }
 ```
 
@@ -507,7 +507,7 @@ substitution, merging, `getDuration` and `getMemorySize` all still work.
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold-app-typesafe:0.17.0")
+    implementation("dev.surefold:surefold-app-typesafe:0.18.0")
 }
 ```
 
@@ -697,7 +697,7 @@ the graph enforces and `render()` draws:
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold-app-liquibase:0.17.0")
+    implementation("dev.surefold:surefold-app-liquibase:0.18.0")
 }
 ```
 
