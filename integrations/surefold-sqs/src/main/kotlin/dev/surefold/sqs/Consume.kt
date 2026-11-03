@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequestEntry
 import software.amazon.awssdk.services.sqs.model.Message
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.hours
@@ -81,7 +82,8 @@ fun Sqs.consume(
     return Stream.blocking(
         open = {
             // Built only when it is wanted: an extender starts its thread as it is made.
-            Reader(sqs, queue, request, if (extendVisibility) Extender(sqs, queue, visibility) else null, meters)
+            val extender = if (extendVisibility) Extender(sqs, queue, visibility, meters) else null
+            Reader(sqs, queue, request, extender, meters)
         },
         next = { reader -> reader.next() },
         ready = { reader -> reader.ready() },
@@ -108,6 +110,9 @@ private class Reader(
     private val received = ArrayDeque<Message>()
     private val handled = ConcurrentLinkedQueue<String>()
 
+    /** When SQS says each message handed out and not yet settled was sent, for its latency. */
+    private val sent = ConcurrentHashMap<String, Long>()
+
     @Volatile private var receiving: Thread? = null
 
     @Volatile private var stopping = false
@@ -128,6 +133,7 @@ private class Reader(
         }
         val message = received.removeFirst()
         extender?.hold(message.receiptHandle())
+        message.attribute("SentTimestamp")?.let { sent[message.receiptHandle()] = it }
         meters.handed()
         return Received(message, Receipt(message.receiptHandle(), this))
     }
@@ -135,13 +141,16 @@ private class Reader(
     override fun handled(handle: String) {
         extender?.release(handle)
         meters.settled()
+        sent.remove(handle)?.let(meters::handled)
         handled += handle
     }
 
     override fun dropped(handle: String, nack: Boolean) {
         extender?.release(handle)
         meters.settled()
+        sent.remove(handle)
         if (nack) {
+            meters.nacked()
             // A nack SQS fails leaves the message to come back after its timeout, as it would without one.
             Either.catchOrThrow<SdkException, Unit> {
                 sqs.changeMessageVisibility { it.queueUrl(queue.url).receiptHandle(handle).visibilityTimeout(0) }
