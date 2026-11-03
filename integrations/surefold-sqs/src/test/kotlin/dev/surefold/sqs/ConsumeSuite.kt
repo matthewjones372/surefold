@@ -12,6 +12,7 @@ import dev.surefold.stream.TestStreams
 import dev.surefold.stream.run
 import dev.surefold.stream.start
 import dev.surefold.stream.take
+import software.amazon.awssdk.core.exception.AbortedException
 import software.amazon.awssdk.services.sqs.SqsClient
 import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchRequest
 import software.amazon.awssdk.services.sqs.model.DeleteMessageBatchResponse
@@ -21,9 +22,12 @@ import software.amazon.awssdk.services.sqs.model.ReceiveMessageRequest
 import software.amazon.awssdk.services.sqs.model.ReceiveMessageResponse
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /** A queue that hands each message out once, as SQS does within a visibility timeout, and keeps what was deleted. */
-private class FakeQueue(vararg bodies: String) : SqsClient {
+private class FakeQueue(vararg bodies: String, failFirstDelete: Boolean = false) : SqsClient {
+    private val failed = AtomicBoolean(!failFirstDelete)
+
     private val waiting =
         ConcurrentLinkedQueue(bodies.map { Message.builder().body(it).receiptHandle("r-$it").build() })
     val deleted = ConcurrentLinkedQueue<String>()
@@ -38,6 +42,8 @@ private class FakeQueue(vararg bodies: String) : SqsClient {
     }
 
     override fun deleteMessageBatch(request: DeleteMessageBatchRequest): DeleteMessageBatchResponse {
+        // As a call a stop's interrupt aborts: thrown, with nothing deleted.
+        if (failed.compareAndSet(false, true)) throw AbortedException.builder().message("aborted").build()
         deleted += request.entries().map { it.receiptHandle() }
         return DeleteMessageBatchResponse.builder()
             .successful(request.entries().map { DeleteMessageBatchResultEntry.builder().id(it.id()).build() })
@@ -137,6 +143,18 @@ object ConsumeSuite : Suite() {
             exit shouldBe Exit.Done(30L)
             seen.toList() shouldBe (1..30).map { "$it" }
             sqs.deleted.size shouldBe 30
+        }
+
+        test("a delete that throws keeps its messages, and the close deletes them") {
+            val sqs = FakeQueue("1", "2", failFirstDelete = true)
+
+            val exit = Sqs.consume(sqs, queue, maxMessages = 1).runDeleting().run(Forks())
+                .toCompletableFuture().get(5, TimeUnit.SECONDS)
+
+            exit.shouldBeInstanceOf<Exit.Died>()
+            withClue("the first message was handled before the delete that threw, so the close deletes it") {
+                ("r-1" in sqs.deleted) shouldBe true
+            }
         }
 
         test("a receive asks for SQS's long poll, ten at a time, with every attribute") {
