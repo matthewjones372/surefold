@@ -5,7 +5,7 @@
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold-app-flyway:0.17.0")
+    implementation("dev.surefold:surefold-app-flyway:0.18.0")
 }
 ```
 
