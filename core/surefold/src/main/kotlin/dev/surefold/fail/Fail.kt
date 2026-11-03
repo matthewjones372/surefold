@@ -40,7 +40,7 @@ internal class Attempt<in E>(private val openedIn: String) : Fail<E> {
  * How [fail] leaves the block. It extends Throwable rather than Exception so that `catch (e: Exception)` in
  * the block cannot swallow it, and records no stack trace because nothing ever prints it.
  */
-internal class Failed(val error: Any?, val scope: Fail<*>) : Throwable(null, null, false, false)
+internal class Failed(val error: Any?, val scope: Fail<*>) : Throwable(null, null, true, false)
 
 /** Runs [block], answering with its value on the right, or on the left with the error it failed with. */
 fun <E, A> attempt(block: Fail<E>.() -> A): Either<E, A> {

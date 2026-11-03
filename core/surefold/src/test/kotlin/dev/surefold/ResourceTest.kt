@@ -9,15 +9,114 @@ import dev.surefold.assert.shouldContainExactly
 import dev.surefold.assert.shouldNotBeNull
 import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
+import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
 import dev.surefold.fail.left
 import org.junit.jupiter.api.Test
+import java.util.concurrent.CancellationException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 
 private class Held(val name: String)
 
 class ResourceTest {
+
+    // Independent release defects and same-signal observations require five explicit throws.
+    @Suppress("ThrowsCount")
+    @Test
+    fun `nested cleanup retains the original fail signal through every finally`() {
+        val error = Any()
+        val innerCleanup = IllegalStateException("inner cleanup")
+        val outerCleanup = IllegalStateException("outer cleanup")
+        val original = Shared<Throwable?>(null)
+        val afterInner = Shared(emptyList<Throwable>())
+        val events = Shared(emptyList<Int>())
+        val exits = Shared(emptyList<ExitCase>())
+        val answer = attempt<Any, Unit> {
+            val outer = shouldThrow<Throwable> {
+                try {
+                    resourceScope {
+                        onRelease { exit ->
+                            events.update { it + 1 }
+                            exits.update { it + exit }
+                            throw outerCleanup
+                        }
+                        val inner = shouldThrow<Throwable> {
+                            try {
+                                resourceScope {
+                                    onRelease { exit ->
+                                        events.update { it + 2 }
+                                        exits.update { it + exit }
+                                        throw innerCleanup
+                                    }
+                                    val signal = shouldThrow<Throwable> { fail(error) }
+                                    original.update { signal }
+                                    signal.stackTrace.toList() shouldBe emptyList()
+                                    signal.suppressed.toList() shouldBe emptyList()
+                                    throw signal
+                                }
+                            } finally {
+                                events.update { it + 3 }
+                            }
+                        }
+                        inner shouldBeSameInstanceAs original.peek()
+                        inner.stackTrace.toList() shouldBe emptyList()
+                        afterInner.update { inner.suppressed.toList() }
+                        throw inner
+                    }
+                } finally {
+                    events.update { it + 4 }
+                }
+            }
+            outer shouldBeSameInstanceAs original.peek()
+            outer.stackTrace.toList() shouldBe emptyList()
+            outer.suppressed.size shouldBe 2
+            outer.suppressed[0] shouldBeSameInstanceAs innerCleanup
+            outer.suppressed[1] shouldBeSameInstanceAs outerCleanup
+            afterInner.peek().size shouldBe 1
+            afterInner.peek()[0] shouldBeSameInstanceAs innerCleanup
+            throw outer
+        }
+        (answer as Either.Left).value shouldBeSameInstanceAs error
+        events.peek() shouldBe listOf(2, 3, 1, 4)
+        exits.peek() shouldBe listOf(ExitCase.Completed, ExitCase.Completed)
+    }
+
+    @Test
+    fun `ordinary interrupt and cancellation primaries retain both cleanup failures`() {
+        val ordinary = IllegalStateException("ordinary")
+        val interrupt = InterruptedException("interrupt")
+        val cancellation = CancellationException("cancellation")
+        listOf(
+            ordinary to ExitCase.Failure(ordinary),
+            interrupt to ExitCase.Cancelled(interrupt),
+            cancellation to ExitCase.Completed,
+        ).forEach { (primary, expectedExit) ->
+            val firstCleanup = IllegalStateException("first cleanup")
+            val secondCleanup = IllegalStateException("second cleanup")
+            val released = Shared(emptyList<Pair<Int, ExitCase>>())
+            val thrown = shouldThrow<Throwable> {
+                attempt<Any, Unit> {
+                    resourceScope {
+                        onRelease { exit ->
+                            released.update { it + (1 to exit) }
+                            throw firstCleanup
+                        }
+                        onRelease { exit ->
+                            released.update { it + (2 to exit) }
+                            throw secondCleanup
+                        }
+                        throw primary
+                    }
+                }
+            }
+            thrown shouldBeSameInstanceAs primary
+            thrown.suppressed.size shouldBe 2
+            thrown.suppressed[0] shouldBeSameInstanceAs secondCleanup
+            thrown.suppressed[1] shouldBeSameInstanceAs firstCleanup
+            released.peek() shouldBe listOf(2 to expectedExit, 1 to expectedExit)
+        }
+    }
 
     @Test
     fun `releases run in reverse acquisition order`() {
