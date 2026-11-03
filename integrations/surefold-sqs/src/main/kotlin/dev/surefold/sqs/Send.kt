@@ -19,6 +19,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 /** A queue by its URL, so a send's arguments cannot be mistaken for a body or a group id. */
 data class Queue(val url: String) {
+    /** The last segment of [url], which is what the meters tag a queue with (spec 0289). */
+    val name: String get() = url.substringAfterLast('/')
+
     /** SQS's own rule: a FIFO queue's name ends in `.fifo`. */
     val fifo: Boolean get() = url.endsWith(".fifo")
 }
