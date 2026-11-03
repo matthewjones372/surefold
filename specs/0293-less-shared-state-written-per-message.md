@@ -76,11 +76,11 @@ cheaper, but it is more code to keep a test counter. Recommended: `LongAdder`.
 ## Open questions
 
 1. **Is a refused `offer` within `HOLD` of full acceptable?** It is a visible change for anyone using `offer`
-   as a load signal. Recommended: yes, and say so in `offer`'s KDoc.
+   as a load signal. Decided: yes, and say so in `offer`'s KDoc.
 2. **Is `HOLD` fixed, or a fraction of capacity?** `capacity / 64` is exact for small mailboxes without the
-   `4 * HOLD` cut-off, but it is one more division to explain. Recommended: fixed 16.
+   `4 * HOLD` cut-off, but it is one more division to explain. Decided: fixed 16.
 3. **Does `spinning` stay a shared counter?** `submit` reads it on every tell that wakes an actor. A per-carrier
-   flag would cut the writes further, but `submit` would have to scan. Recommended: keep it, revisit after
+   flag would cut the writes further, but `submit` would have to scan. Decided: keep it, revisit after
    the work-queue spec.
 4. **Which machine?** The 0143 numbers came from 8 cores and JDK 25; the older rows came from a noisy 4 vCPU
-   container. Recommended: the 0143 machine, before and after in the same run, as 0143 did.
+   container. Decided: the 0143 machine, before and after in the same run, as 0143 did.
