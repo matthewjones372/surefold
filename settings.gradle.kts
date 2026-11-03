@@ -70,6 +70,7 @@ module("integrations", "surefold-kafka-pekko")
 module("integrations", "surefold-kafka-test")
 module("integrations", "surefold-sqs")
 module("integrations", "surefold-sqs-test")
+module("integrations", "surefold-sqs-pekko")
 
 module("data", "surefold-jobs")
 module("data", "surefold-app-jobs")

@@ -111,6 +111,8 @@ Facts worth having before anything else:
 - `surefold-kafka-pekko`: `surefold-kafka` through Pekko's Kafka connector.
 - `surefold-sqs`: SQS as a `Stream` on any backend: delete after the work, visibility
   renewed while a message is handled, sends with per-message outcomes.
+- `surefold-sqs-pekko`: `surefold-sqs` through Pekko's SQS connector: parallel receives
+  and batched asynchronous deletes.
 - `surefold-sqs-test`: an SQS queue in the test JVM on ElasticMQ for a service's own
   tests, with helpers to create, send, receive and count.
 - `surefold-otel-test`: a tracer that keeps the spans it ends, for a service's own
