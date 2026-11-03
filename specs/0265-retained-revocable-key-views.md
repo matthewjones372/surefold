@@ -279,7 +279,14 @@ Alternative: a general retained-resource cache; broader than this key requiremen
 - [ ] **`codex/transaction-boundary-guard`** —0273's one-method prerequisite; target<60 main/docs lines.
 - [ ] **`codex/fail-suppression-contract`** —spec0294 plus this dependency amendment, exact review/spec-only main.
 - [ ] **`codex/fail-suppression`** —spec0294 one-flag prerequisite; accepted RED/GREEN, full PR/actual-main gates.
-- [ ] **`codex/key-callers-boundary`** —internal tickets/fence/wait and tests; target<170 main lines, no activation.
+- [ ] **`codex/key-callers-admission`** —B1 internal admission/Finished only; no pool/close, target90-120 main/150-220 test lines.
+- [ ] **`codex/key-callers-fence-probe`** —BQ same-file real Shared/Solo test fixture plus self-tests;0 main/140-220 test lines; no R4 row5 credit.
+- [ ] **`codex/key-callers-observation`** —B2 one supplied pool/fence/stop/observe/reap, all B executable proofs; target150-165 main/250-340 test lines.
+      B1/BQ/B2 require accepted G/H source/main and independently reviewed committed exact split/source plans.
+      Each follows the preceding entry's successful containing-main; BQ is machinery proof, B2 proves the full B union.
+      These are planning envelopes, not actual formatted fit. Report130 main/320 tests; STOP before170/400 and200 main/build/docs.
+      Review the complete ordinary-formatted B2 source/test layout before source; split/review again if it would exceed either cap.
+      Preserve all24 laws/E/S/D modes, D/C/P scopes and existing KeyCache.kt/RetainedKeyCacheSuite.kt path bounds; no activation/core API.
 - [ ] **`codex/key-callers-delivery`** —B2 outer packet/return/unwind integration; target<140 main lines.
 - [ ] **`codex/key-callers-close-drain`** —exact-phase interruption retries/Ack reconciliation; target<160 main lines.
 - [ ] **`codex/key-view-retention-policy`** — shared owner LRU, modes, success tickets and epochs; no public lease; ~175 main lines.
