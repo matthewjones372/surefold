@@ -75,12 +75,13 @@ grep -rn "ServerSocket(0)" --include=*.kt */*/src/main   # nothing
 1. **Should `KafkaBroker` change at all?** Its three-attempt retry already covers a
    lost port, and it runs on users' machines. There, 20000–32000 is more likely to
    hold one of their own services than an ephemeral port is to be taken.
-   Recommended: yes, but the retry stays, since a bindable check is only true at that
-   moment. Alternatively, drop the second stack entry.
+   **Answered: yes, and the retry stays.** A bindable check is only true at that
+   moment, so the retry still covers a port taken between check and bind.
 2. **Do the benchmarks need it?** A JMH run is one process doing one thing, so the
-   race is less likely there. Recommended: yes, for one rule across the tree.
-3. **How is `Train`'s change tested?** No test covers its ports, and I found no CI
-   job that runs `:surefold-bank:aotCache`. Recommended: run that task by hand, plus
-   the grep above. Not a new test that inspects a private function.
-4. **Spec number:** 0294 is taken by the open surefold/surefold#1040. Re-check before
-   committing.
+   race is less likely there. **Answered: yes**, so one rule holds across the tree
+   and no `ServerSocket(0)` pick is left in main sources.
+3. **How is `Train`'s change tested?** No test covers its ports, and no CI job runs
+   `:surefold-bank:aotCache`. **Answered: by running that task by hand, plus the
+   grep under Acceptance.** No new test inspects a private function.
+4. **Spec number:** 0294 is taken by the open surefold/surefold#1040.
+   **Answered: 0295 is free** on `main`, re-checked when this was answered.
