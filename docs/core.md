@@ -570,6 +570,42 @@ built, not on the first call. Each step is optional.
 Called as `partner { … }`, a refusal throws its `Rejected`, which is a
 `RuntimeException`. `guarded(policy, ifRejected) { }` turns it into a fail.
 
+### Results kept as values
+
+A call already captured with `Either.catch` keeps its `Either` through the
+policy with `guardResult` (spec 0272, unreleased). Its `countsAsFailure` picks
+which lefts are the dependency failing: those are retried, counted by the
+breaker (when its own `countsAsFailure` counts them too) and learnt from by a
+`Limit`. Any other left is the dependency's answer, a success that resets the
+breaker and is not retried. Every left comes back as the same instance. What
+the block throws, and a guard's refusal or a timeout, is handled as
+`partner { }` handles it and answered on the left; a fatal error, an
+interrupt, a cancellation or a `fail` still goes up. Map to your own error
+type after the policy.
+
+<!-- core-policy-result -->
+```kotlin
+import dev.surefold.CircuitBreaker
+import dev.surefold.Schedule
+import dev.surefold.fail.Either
+import dev.surefold.guardResult
+import dev.surefold.policy
+import kotlin.time.Duration.Companion.seconds
+
+class Declined(message: String) : RuntimeException(message)
+
+class Payments(private val charge: (Long) -> String) {
+    private val payments = policy("payments") {
+        retry(Schedule.recurs(2))
+        guard(CircuitBreaker("payments", maxFailures = 5, resetAfter = Schedule.spaced(30.seconds)))
+    }
+
+    // A decline is the provider answering: it neither trips the breaker nor is retried.
+    fun charged(pence: Long): Either<Throwable, String> =
+        payments.guardResult(countsAsFailure = { it !is Declined }) { Either.catch { charge(pence) } }
+}
+```
+
 Each guard records metrics through surefold's [metrics](observability.md#metrics):
 
 | Metric | Kind | Tags |
