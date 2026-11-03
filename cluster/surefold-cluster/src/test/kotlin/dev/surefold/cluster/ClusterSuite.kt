@@ -1,5 +1,6 @@
 package dev.surefold.cluster
 
+import dev.surefold.actor.remote.freePort
 import dev.surefold.Scope
 import dev.surefold.actor.Address
 import dev.surefold.actor.behaviour
@@ -17,7 +18,6 @@ import dev.surefold.junit.shouldBeGreaterThanOrEqual
 import dev.surefold.junit.shouldBeLessThan
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
@@ -32,8 +32,6 @@ import kotlin.time.TimeSource
 
 private val quick =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
-
-private fun freePort(): Int = ServerSocket(0).use { it.localPort }
 
 /** A node on a scope and a thread of its own, until [close]. */
 private class Running(

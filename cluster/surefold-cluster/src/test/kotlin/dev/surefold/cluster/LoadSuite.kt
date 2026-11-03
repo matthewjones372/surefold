@@ -1,5 +1,6 @@
 package dev.surefold.cluster
 
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.Reply
 import dev.surefold.actor.Signal
 import dev.surefold.actor.ask
@@ -18,7 +19,6 @@ import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
@@ -40,8 +40,6 @@ internal val whichCodec = object : MessageCodec<Which> {
 /** Probes calm enough that three nodes busy with entities never miss each other. */
 internal val steady =
     Gossiping(probeEvery = 500.milliseconds, ackWithin = 250.milliseconds, formAfter = 1_000.milliseconds)
-
-internal fun loadPort(): Int = ServerSocket(0).use { it.localPort }
 
 /** How many of each entity run now, across every node in this JVM; and which ever ran on two at once. */
 internal val runningNow = ConcurrentHashMap<String, AtomicInteger>()
@@ -116,7 +114,7 @@ object LoadSuite : Suite() {
         test(
             "every member sees each member's running entities of a kind that rebalances, as they start and passivate",
         ) {
-            val ports = List(3) { loadPort() }
+            val ports = List(3) { freePort() }
             val seeds = seedsAt(ports)
             // So wide a tolerance that nothing moves: this is about the load, not what the leader does with it.
             val every = Rebalance.byLoad(every = 200.milliseconds, tolerance = 100.0)

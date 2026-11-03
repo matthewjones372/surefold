@@ -75,8 +75,6 @@ internal fun account(id: String) = delivered(
 internal val calm =
     Gossiping(probeEvery = 500.milliseconds, ackWithin = 250.milliseconds, formAfter = 1_000.milliseconds)
 
-private fun openPort(): Int = ServerSocket(0).use { it.localPort }
-
 internal fun accountsDatabase(): DataSource = Postgres.fresh()
 
 /**
@@ -139,7 +137,7 @@ object ReliableSuite : Suite() {
     init {
         test("payments to 200 accounts while a node crashes are each applied exactly once, in order") {
             val journal = JdbcJournal(accountsDatabase())
-            val ports = List(3) { openPort() }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             // The third goes as a crashed node does, without leaving.
             val banks = ports.mapIndexed { i, port ->
@@ -198,7 +196,7 @@ object ReliableSuite : Suite() {
             "payments a node sends just before it closes are each applied once, from wherever their accounts run",
         ) {
             val journal = JdbcJournal(accountsDatabase())
-            val ports = List(3) { openPort() }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val banks = ports.mapIndexed { i, port -> Bank("b${i + 1}", port, seeds, journal, 30.seconds) }
             try {
@@ -226,7 +224,7 @@ object ReliableSuite : Suite() {
             "payments a durable producer accepted before its node crashed are each applied once, sent by the registry",
         ) {
             val journal = JdbcJournal(accountsDatabase())
-            val ports = List(4) { openPort() }
+            val ports = List(4) { freePort() }
             val seeds = Discovery.static(*ports.take(3).map { Node("", "127.0.0.1", it) }.toTypedArray())
             // Accounts run only on a ledger, and none is up until the crash: every payment is still unconfirmed then.
             // Each node goes as a crashed one does, without leaving or draining.

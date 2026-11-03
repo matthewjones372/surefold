@@ -1,5 +1,6 @@
 package dev.surefold.cluster
 
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.Address
 import dev.surefold.actor.AskFailure
 import dev.surefold.actor.DeadLetter
@@ -22,7 +23,6 @@ import dev.surefold.junit.shouldBeRight
 import dev.surefold.junit.shouldThrow
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -41,8 +41,6 @@ private val whoHoldsCodec = object : MessageCodec<WhoHolds> {
 }
 
 private val brisk = Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 500.milliseconds)
-
-private fun openPort(): Int = ServerSocket(0).use { it.localPort }
 
 private fun answering(name: String) =
     behaviour<WhoHolds, Unit>(Unit) { _, _, asked -> stay().also { asked.reply(name) } }
@@ -85,8 +83,8 @@ private class OneNodeCluster(name: String, port: Int, northPort: Int) : AutoClos
 object FederationSuite : Suite() {
     init {
         test("a cluster asks another's entities, fails at once while it is gone, and asks again once it is back") {
-            val southPort = openPort()
-            val northPort = openPort()
+            val southPort = freePort()
+            val northPort = freePort()
             val letters = LinkedBlockingQueue<DeadLetter>()
             var south = OneNodeCluster("south", southPort, northPort)
             try {
@@ -136,7 +134,7 @@ object FederationSuite : Suite() {
         }
 
         test("a cluster not accepted is refused, as a dead letter, and is answered once it is accepted") {
-            val southPort = openPort()
+            val southPort = freePort()
             val letters = LinkedBlockingQueue<DeadLetter>()
             scope {
                 onDeadLetter(letters::add)
@@ -144,7 +142,7 @@ object FederationSuite : Suite() {
                 check(south.await(1.minutes) { v -> v.members.any { it.status == Status.Up } }) { "south is down" }
                 val _ = south.sharding("account", whoHoldsCodec, 1.minutes) { answering("south") }
                 south.acceptFederated("east")
-                val westPort = openPort()
+                val westPort = freePort()
                 val west = cluster(node("west", westPort), Discovery.static(Node("", "127.0.0.1", westPort)), brisk)
                 val accounts = west.federate(
                     "south",
@@ -165,7 +163,7 @@ object FederationSuite : Suite() {
         }
 
         test("federating without TLS needs plaintext said outright") {
-            val port = openPort()
+            val port = freePort()
             scope {
                 val alone = cluster(node("alone", port), Discovery.static(Node("", "127.0.0.1", port)), brisk)
                 shouldThrow<IllegalArgumentException> {

@@ -1,5 +1,6 @@
 package dev.surefold.cluster
 
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.Reply
 import dev.surefold.actor.Signal
 import dev.surefold.actor.ask
@@ -21,7 +22,6 @@ import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeEmpty
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
@@ -82,8 +82,6 @@ private fun tab(on: String, id: String, running: TabsRunning) = behaviour<Tab, I
 private val brisk =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
 
-private fun openPort(): Int = ServerSocket(0).use { it.localPort }
-
 /** A node with the tabs sharded on it, on a scope and a thread of its own, until [close]. */
 private class Bar(val name: String, port: Int, seeds: Discovery, running: TabsRunning) : AutoCloseable {
     private val done = CountDownLatch(1)
@@ -126,7 +124,7 @@ private fun List<Bar>.awaitUp(count: Int) = forAll { bar ->
 object ShardingSuite : Suite() {
     init {
         test("an entity told and asked from any node runs on the one node that owns it") {
-            val ports = List(3) { openPort() }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val running = TabsRunning()
             val bars = ports.mapIndexed { i, port -> Bar("n${i + 1}", port, seeds, running) }
@@ -153,7 +151,7 @@ object ShardingSuite : Suite() {
         }
 
         test("a node joining and one leaving while tabs are told throughout never runs one tab on two nodes") {
-            val ports = List(4) { openPort() }
+            val ports = List(4) { freePort() }
             val seeds = Discovery.static(*ports.take(3).map { Node("", "127.0.0.1", it) }.toTypedArray())
             val running = TabsRunning()
             val bars = ports.take(3).mapIndexed { i, port -> Bar("n${i + 1}", port, seeds, running) }.toMutableList()

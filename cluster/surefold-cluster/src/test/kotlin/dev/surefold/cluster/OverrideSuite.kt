@@ -1,5 +1,6 @@
 package dev.surefold.cluster
 
+import dev.surefold.actor.remote.freePort
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
@@ -13,7 +14,7 @@ object OverrideSuite : Suite() {
         test(
             "an override set on the leader moves exactly its shard through the handoff, and goes when its member does",
         ) {
-            val ports = List(3) { loadPort() }
+            val ports = List(3) { freePort() }
             val seeds = seedsAt(ports)
             val rarely = Rebalance.byLoad(every = 1.minutes)
             val nodes = ports.indices.map { LoadNode("v${it + 1}", ports[it], seeds, rarely, 1.minutes) }

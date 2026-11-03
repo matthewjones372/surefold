@@ -1,5 +1,6 @@
 package dev.surefold.cluster
 
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.Node
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
@@ -108,7 +109,7 @@ object RebalanceSuite : Suite() {
             "with one hot range of ids on one node of three, its entities spread out, and no shard moves twice at once",
         ) {
             val every = 1.seconds
-            val ports = List(3) { loadPort() }
+            val ports = List(3) { freePort() }
             val seeds = seedsAt(ports)
             val byLoad = Rebalance.byLoad(every = every, tolerance = 0.2, mostMoves = 4)
             val nodes = ports.indices.map { LoadNode("b${it + 1}", ports[it], seeds, byLoad, 1.minutes) }
