@@ -1,3 +1,5 @@
+@file:OptIn(SqsSpi::class)
+
 package dev.surefold.sqs
 
 import dev.surefold.fail.Either
@@ -42,7 +44,7 @@ fun <E, L : Any, R : Any> Stream<E, Received<Either<L, R>>>.divertLefts(
     to: (L) -> Unit,
 ): Stream<E, Received<R>> =
     mapPar(1) { r: Received<Either<L, R>> ->
-        r.also { it.value.onLeft { left -> to(left).also { r.receipt.dropped(nack) } } }
+        r.also { it.value.onLeft { left -> to(left).also { r.settle.dropped(nack) } } }
     }
         .mapConcat { r -> r.value.fold({ emptyList() }, { right -> listOf(r.carrying(right)) }) }
 
