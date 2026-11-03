@@ -132,6 +132,13 @@ against; the library's own transitive dependencies come with it.
 | `surefold-kafka-test` | a broker in the test JVM for a service's own tests, as a surefold-junit `Resource` or a Jupiter extension ([guide](kafka.md#testing-against-a-broker)) | `surefold-kafka` | `embedded-kafka` 4.3.1 | yes |
 | `surefold-kafka-benchmarks` | JMH benchmarks against the Java client ([results](../bench/surefold-kafka-benchmarks/README.md)) | | JMH, embedded-kafka | no |
 
+### AWS messaging
+
+| Module | For | Surefold deps | Adds | Published |
+|---|---|---|---|---|
+| `surefold-sqs` | a queue as a `Stream` on any backend, deleted after the work, and sends ([guide](sqs.md)) | `surefold-stream` | AWS SDK 2.55.6 `sqs`, on its URL-connection client | yes |
+| `surefold-sns` | publishing to an SNS topic from a `Stream` on any backend, per-message outcomes ([guide](sns.md)) | `surefold-sqs` | AWS SDK 2.55.6 `sns`, on its URL-connection client | yes |
+
 ### Actors and clusters
 
 | Module | For | Surefold deps | Adds | Published |
