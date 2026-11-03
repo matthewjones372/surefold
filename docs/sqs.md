@@ -173,4 +173,5 @@ told to.
 
 ## Not here yet
 
-A Pekko connector module is its own spec.
+A Pekko connector module is its own spec. Publishing what a queue reads to an SNS
+topic is [`surefold-sns`](sns.md).

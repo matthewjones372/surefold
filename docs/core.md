@@ -9,7 +9,7 @@ inherit. Everything on this page is in the package
 ```kotlin
 dependencies {
     // brings nothing but the Kotlin standard library
-    implementation("dev.surefold:surefold:0.17.0")
+    implementation("dev.surefold:surefold:0.18.0")
 }
 ```
 
@@ -172,8 +172,8 @@ handler binds.
 
 `Either.catchOrThrow<T, _> { }` puts a thrown `T`, or a subclass of it, on the left and rethrows
 anything else as the same instance. Fatals and a `fail` go up as they do from `Either.catch`, so
-`catchOrThrow<InterruptedException, _>` never answers a left. In the spec 0285 development snapshot,
-not published 0.17.0.
+`catchOrThrow<InterruptedException, _>` never answers a left. Unreleased: in the snapshots after
+0.18.0, not in 0.18.0 itself.
 
 <!-- core-catch-or-throw -->
 ```kotlin
@@ -201,7 +201,7 @@ unchanged; matching handlers can return a value, bind an alternative or fail thr
 The selective form keeps E and A fixed; declare A nullable at capture when null is a valid fallback. The total
 extension can change E; supply its result type when a value-only handler gives the new error type no constraints.
 Recovery does not capture exceptions thrown by its handler: capture foreign calls explicitly.
-These overloads are in the spec 0270 development snapshot, not published 0.17.0.
+These overloads are available from 0.18.0.
 
 <!-- core-recover -->
 ```kotlin
@@ -585,7 +585,7 @@ Each guard records metrics through surefold's [metrics](observability.md#metrics
 
 ## Quiet handoff decisions
 
-`HandoffDecision<A : Any>` (unreleased) records one final ownership decision. Construct it before acquiring resources.
+`HandoffDecision<A : Any>` (from 0.18.0) records one final ownership decision. Construct it before acquiring resources.
 `tryComplete(value)` publishes the first exact nonnull reference; later attempts return false. `peek()` returns it,
 or null while pending. A successful completion publishes prior writes to a reader that observes its value.
 The decision's ordinary path preserves interruption and uses no callbacks, metrics, turns, waiting or wakeup.
@@ -695,7 +695,7 @@ fun holdAtEither(east: BoxOffice, west: BoxOffice, order: Order) =
 
 ### Nontransactional ownership boundaries
 
-Unreleased: `checkNotInTransaction()` uses the existing `surefold` core dependency.
+From 0.18.0, `checkNotInTransaction()` uses the existing `surefold` core dependency.
 Call it before admission, callbacks or ownership publication that cannot be retried.
 It returns `Unit` outside a step, including `afterCommit`, and throws
 `IllegalStateException("the operation cannot run inside a transaction")` inside
@@ -845,7 +845,7 @@ configured there the executor Surefold forks on, and lets a fork wait for Pekko'
 ```kotlin
 dependencies {
     // brings surefold and pekko-actor
-    implementation("dev.surefold:surefold-pekko:0.17.0")
+    implementation("dev.surefold:surefold-pekko:0.18.0")
 }
 ```
 
@@ -1027,7 +1027,7 @@ can overflow.
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold-cache:0.17.0") // includes surefold
+    implementation("dev.surefold:surefold-cache:0.18.0") // includes surefold
 }
 ```
 
