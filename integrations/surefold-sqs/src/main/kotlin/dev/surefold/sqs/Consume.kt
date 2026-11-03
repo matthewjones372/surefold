@@ -69,6 +69,7 @@ fun Sqs.consume(
     require(visibility in (if (extendVisibility) 1.seconds else Duration.ZERO)..12.hours) {
         "SQS hides a message for up to 12 hours, and at least a second when it is extended, not $visibility"
     }
+    val meters = ConsumerMeters.here(queue)
     val request = ReceiveMessageRequest.builder()
         .queueUrl(queue.url)
         .waitTimeSeconds(waitTime.inWholeSeconds.toInt())
@@ -78,8 +79,10 @@ fun Sqs.consume(
         .messageSystemAttributeNamesWithStrings("All")
         .build()
     return Stream.blocking(
-        // Built only when it is wanted: an extender starts its thread as it is made.
-        open = { Reader(sqs, queue, request, if (extendVisibility) Extender(sqs, queue, visibility) else null) },
+        open = {
+            // Built only when it is wanted: an extender starts its thread as it is made.
+            Reader(sqs, queue, request, if (extendVisibility) Extender(sqs, queue, visibility) else null, meters)
+        },
         next = { reader -> reader.next() },
         ready = { reader -> reader.ready() },
         wake = { reader -> reader.wake() },
@@ -100,6 +103,7 @@ private class Reader(
     private val queue: Queue,
     private val request: ReceiveMessageRequest,
     private val extender: Extender?,
+    private val meters: ConsumerMeters,
 ) : Settling {
     private val received = ArrayDeque<Message>()
     private val handled = ConcurrentLinkedQueue<String>()
@@ -114,23 +118,29 @@ private class Reader(
             deleteHandled()
             receiving = Thread.currentThread()
             try {
-                received.addAll(sqs.receiveMessage(request).messages())
+                val started = System.nanoTime()
+                val messages = sqs.receiveMessage(request).messages()
+                meters.received(messages, started)
+                received.addAll(messages)
             } finally {
                 receiving = null
             }
         }
         val message = received.removeFirst()
         extender?.hold(message.receiptHandle())
+        meters.handed()
         return Received(message, Receipt(message.receiptHandle(), this))
     }
 
     override fun handled(handle: String) {
         extender?.release(handle)
+        meters.settled()
         handled += handle
     }
 
     override fun dropped(handle: String, nack: Boolean) {
         extender?.release(handle)
+        meters.settled()
         if (nack) {
             // A nack SQS fails leaves the message to come back after its timeout, as it would without one.
             Either.catchOrThrow<SdkException, Unit> {
@@ -167,8 +177,10 @@ private class Reader(
                 val entries = chunk.mapIndexed { id, handle ->
                     DeleteMessageBatchRequestEntry.builder().id(id.toString()).receiptHandle(handle).build()
                 }
-                sqs.deleteMessageBatch { it.queueUrl(queue.url).entries(entries) }
+                val response = sqs.deleteMessageBatch { it.queueUrl(queue.url).entries(entries) }
                 sent += chunk.size
+                meters.deleted(response.successful().size)
+                response.failed().forEach { meters.deleteFailed(it.code()) }
             }
         } finally {
             // A call that throws, as one a stop's interrupt aborts does, leaves what it did not send for the close.
