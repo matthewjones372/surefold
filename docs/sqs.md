@@ -94,6 +94,6 @@ passes each element on as the outcome of its own message, so a refused one is a
 
 ## Not here yet
 
-A queue in the test JVM, meters, a Pekko connector module and SNS are each their
-own spec. Until the test module lands, a fake `SqsClient` is what this module's
+A queue in the test JVM, meters and a Pekko connector module are each their own
+spec. Publishing what a queue reads to an SNS topic is [`surefold-sns`](sns.md). Until the test module lands, a fake `SqsClient` is what this module's
 own suites run against.

@@ -18,6 +18,8 @@ dependencies {
 }
 
 tasks.test {
+    inputs.file(rootProject.layout.projectDirectory.file("docs/sns.md")).withPropertyName("guide")
+    systemProperty("surefold.sns.repoRoot", rootProject.projectDir.absolutePath)
     val mainRuntime = configurations.runtimeClasspath
     inputs.files(mainRuntime).withPropertyName("mainRuntimeClasspath")
     jvmArgumentProviders.add(
