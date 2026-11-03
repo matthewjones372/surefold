@@ -76,12 +76,12 @@ ElasticMQ, with LocalStack left to services that already run Docker.
 
 1. **Pekko versions.** ElasticMQ 1.7.1 brings Pekko 1.5.0 and pekko-http 1.3.0,
    while the repo pins Pekko 1.2.1 for `surefold-pekko`. A service whose tests
-   use both would resolve to 1.5.0. Recommended: accept it for a test-scope
+   use both would resolve to 1.5.0. Answered: accept it for a test-scope
    module, and add a test that `surefold-pekko`'s suites pass on 1.5.0 if a
    conflict shows up.
 2. **Port.** A free port per `SqsQueues`, or ElasticMQ's fixed 9324?
-   Recommended: free port, as `KafkaBroker` does, so suites can run in parallel.
-3. **Name.** `SqsQueues` or `ElasticMq`? Recommended: `SqsQueues`, naming what a
+   Answered: free port, as `KafkaBroker` does, so suites can run in parallel.
+3. **Name.** `SqsQueues` or `ElasticMq`? Answered: `SqsQueues`, naming what a
    test gets rather than how it is provided, so the backing could change.
-4. **Move the fakes here** for services to inject failures with? Recommended:
+4. **Move the fakes here** for services to inject failures with? Answered:
    not yet. The fakes are small, and each suite's fake fits its own claim.
