@@ -15,7 +15,12 @@ import kotlin.time.Duration
  * One run's renewals: every half [visibility], each message [hold] was told of and [release] was not is hidden for
  * [visibility] again. On a thread of its own, since the reader may be blocked in a receive, or not asked at all.
  */
-internal class Extender(private val sqs: SqsClient, private val queue: Queue, private val visibility: Duration) {
+internal class Extender(
+    private val sqs: SqsClient,
+    private val queue: Queue,
+    private val visibility: Duration,
+    private val meters: ConsumerMeters,
+) {
     private val held: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     private val stopped = CountDownLatch(1)
@@ -50,7 +55,12 @@ internal class Extender(private val sqs: SqsClient, private val queue: Queue, pr
                 .build()
         }
         Either.catchOrThrow<SdkException, Unit> {
-            sqs.changeMessageVisibilityBatch { it.queueUrl(queue.url).entries(entries) }
-        }.onLeft { failed -> logWarn("surefold-sqs: extending visibility on ${queue.url} failed: $failed") }
+            val response = sqs.changeMessageVisibilityBatch { it.queueUrl(queue.url).entries(entries) }
+            meters.extended(response.successful().size)
+            response.failed().forEach { meters.extendFailed(it.code()) }
+        }.onLeft { failed ->
+            meters.extendFailed(failed.javaClass.simpleName)
+            logWarn("surefold-sqs: extending visibility on ${queue.url} failed: $failed")
+        }
     }
 }

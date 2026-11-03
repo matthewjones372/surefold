@@ -134,6 +134,8 @@ val moduleDescriptions = mapOf(
         "An SQS queue in the test JVM on ElasticMQ for a service's own tests: no Docker, and helpers to read it.",
     "surefold-sns-test" to
         "SNS topics in the test JVM, delivering to ElasticMQ queues, for a service's own tests: no Docker.",
+    "surefold-sqs-pekko" to
+        "surefold-sqs through Pekko's own SQS connector: parallel receives, batched asynchronous deletes, a drain.",
     "surefold-actor" to
         "An actor as a value and a step, on virtual threads: no actor system, and tests that never wait.",
     "surefold-actor-journal-jdbc" to

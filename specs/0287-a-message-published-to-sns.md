@@ -30,7 +30,7 @@ orders
     .runDrain()
 
 received                                                // Stream<E, Received<A>> from Sqs.consume
-    .publishBatch(publisher, topic) { a -> topic.message(a.toJson()) }   // Received<Either<PublishFailed, A>>
+    .publishMessageBatch(publisher) { a -> topic.message(a.toJson()) }   // Received<Either<PublishFailed, A>>
 ```
 
 - `publishTo` is `mapAsync(inFlight)` over `Publish`, as Kafka's is; a refusal
@@ -47,7 +47,8 @@ received                                                // Stream<E, Received<A>
 
 The Kafka sink's names and outcomes, so a service moving between the two edits
 the client, not the pipeline. Depending on `surefold-sqs` only for
-`publishBatch` over `Received` keeps a fan-out from SQS to SNS settling each
+`publishMessageBatch` over `Received` (named apart from `publishBatch`, whose
+overload Kotlin cannot tell from it) keeps a fan-out from SQS to SNS settling each
 message after its publish. The alternative, `surefold-sns` on `surefold-stream`
 alone with no `Received` overload, is smaller but leaves that wiring to callers.
 Recommended: depend on `surefold-sqs`, see Open questions 1.
@@ -70,12 +71,12 @@ Recommended: depend on `surefold-sqs`, see Open questions 1.
 
 ## Open questions
 
-1. **Depend on `surefold-sqs`?** Recommended: yes, for the `Received`
+1. **Depend on `surefold-sqs`?** Answered: yes, for the `Received`
    overloads. Otherwise `surefold-sns` stands alone and the overloads move to a
    third module.
 2. **Unwrap the SNS envelope** on an SQS subscription without raw delivery?
-   Recommended: no. The guide says to turn raw message delivery on.
-3. **Share `PublishFailed`/`Published` with Kafka?** Recommended: no. SNS has
+   Answered: no. The guide says to turn raw message delivery on.
+3. **Share `PublishFailed`/`Published` with Kafka?** Answered: no. SNS has
    its own types now, and they merge with spec 0286's question 1.
-4. **One module `surefold-aws-messaging` for both?** Recommended: no. One SDK
+4. **One module `surefold-aws-messaging` for both?** Answered: no. One SDK
    per module, as AGENTS.md says.
