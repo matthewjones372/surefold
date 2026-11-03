@@ -5,6 +5,8 @@ val awsVersion = "2.55.6"
 
 dependencies {
     api(project(":surefold-stream"))
+    // For publishBatch over messages read from SQS, which deletes each only after its own publish (spec 0287).
+    api(project(":surefold-sqs"))
     api("software.amazon.awssdk:sns:$awsVersion") {
         exclude(group = "software.amazon.awssdk", module = "apache-client")
         exclude(group = "software.amazon.awssdk", module = "apache5-client")

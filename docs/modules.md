@@ -137,7 +137,7 @@ against; the library's own transitive dependencies come with it.
 | Module | For | Surefold deps | Adds | Published |
 |---|---|---|---|---|
 | `surefold-sqs` | a queue as a `Stream` on any backend, deleted after the work, and sends ([guide](sqs.md)) | `surefold-stream` | AWS SDK 2.55.6 `sqs`, on its URL-connection client | yes |
-| `surefold-sns` | publishing to an SNS topic from a `Stream` on any backend (spec 0287) | `surefold-stream` | AWS SDK 2.55.6 `sns`, on its URL-connection client | yes |
+| `surefold-sns` | publishing to an SNS topic from a `Stream` on any backend (spec 0287) | `surefold-sqs` | AWS SDK 2.55.6 `sns`, on its URL-connection client | yes |
 
 ### Actors and clusters
 
