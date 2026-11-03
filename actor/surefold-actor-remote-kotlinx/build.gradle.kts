@@ -12,6 +12,8 @@ val protobufVersion = "4.36.2"
 
 dependencies {
     testImplementation(project(":surefold-assert"))
+    // freePort(): a port below the ephemeral range, never handed out twice in a JVM (spec 0197).
+    testImplementation(testFixtures(project(":surefold-actor-remote")))
     api(project(":surefold-actor-remote"))
     // Its protobuf format and schema generator are marked experimental: pinned to the version tested here.
     api("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.11.0")

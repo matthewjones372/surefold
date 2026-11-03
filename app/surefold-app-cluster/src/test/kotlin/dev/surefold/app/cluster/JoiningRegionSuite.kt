@@ -3,6 +3,7 @@ package dev.surefold.app.cluster
 import dev.surefold.actor.DeadLetter
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.stay
 import dev.surefold.app.Module
 import dev.surefold.app.actor.actors
@@ -16,7 +17,6 @@ import dev.surefold.cluster.sharding
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBeEmpty
 import dev.surefold.junit.shouldBeGreaterThan
-import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -69,7 +69,7 @@ private fun AtomicReference<Ledgers>.awaitUp(count: Int): Ledgers {
 object JoiningRegionSuite : Suite() {
     init {
         test("a node that joins while its future entities are being told has no dead letter for their region") {
-            val ports = List(3) { ServerSocket(0).use { socket -> socket.localPort } }.sorted()
+            val ports = List(3) { freePort() }.sorted()
             val done = CountDownLatch(1)
             val ignored = ConcurrentLinkedQueue<DeadLetter>()
             val (first, second, third) = List(3) { AtomicReference<Ledgers>() }

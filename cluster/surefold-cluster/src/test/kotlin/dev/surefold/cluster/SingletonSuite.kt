@@ -12,6 +12,7 @@ import dev.surefold.actor.remote.MessageCodec
 import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.stay
 import dev.surefold.fail.right
@@ -20,7 +21,6 @@ import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
@@ -95,7 +95,7 @@ object SingletonSuite : Suite() {
         test(
             "one clock runs on the oldest member, and moves to the next oldest when it leaves, never running twice",
         ) {
-            val ports = List(3) { ServerSocket(0).use(ServerSocket::getLocalPort) }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val stations = ports.mapIndexed { i, port -> Station("n${i + 1}", port, seeds) }
             val stop = AtomicBoolean(false)

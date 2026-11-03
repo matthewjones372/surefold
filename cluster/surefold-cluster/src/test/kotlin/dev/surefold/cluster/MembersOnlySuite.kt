@@ -11,13 +11,13 @@ import dev.surefold.actor.remote.MessageCodec
 import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.stay
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeRight
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.milliseconds
@@ -34,8 +34,6 @@ private val holderCodec = object : MessageCodec<Holder> {
 
 private val quickly =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 500.milliseconds)
-
-private fun freePort(): Int = ServerSocket(0).use { it.localPort }
 
 /** Spec 0103: a region moves a shard only for its own cluster's members. */
 object MembersOnlySuite : Suite() {

@@ -19,6 +19,7 @@ import dev.surefold.actor.remote.MessageCodec
 import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.snapshots
 import dev.surefold.fail.right
@@ -28,7 +29,6 @@ import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldNotBe
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
@@ -94,8 +94,6 @@ private fun jar(on: String, id: String) = persistent<Jar, Int, Int>(
 
 private val quick =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
-
-private fun freePort(): Int = ServerSocket(0).use { it.localPort }
 
 /** A fresh Postgres, with the table the journal's jar ships. */
 private fun sharedDatabase(): DataSource = Postgres.fresh()

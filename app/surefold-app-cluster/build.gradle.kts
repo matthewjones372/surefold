@@ -7,6 +7,8 @@ dependencies {
     api(project(":surefold-app-typesafe"))
     api(project(":surefold-cluster"))
     testImplementation(project(":surefold-assert"))
+    // freePort(): a port below the ephemeral range, never handed out twice in a JVM (spec 0197).
+    testImplementation(testFixtures(project(":surefold-actor-remote")))
 }
 
 // Read at configuration time, so the configuration cache survives it.

@@ -8,7 +8,7 @@ dependencies {
     // A sharded persistent entity keeps its state across a move only on a journal every node reaches (spec 0072).
     testImplementation(project(":surefold-actor-journal-jdbc"))
     testImplementation(testFixtures(project(":surefold-actor-journal-jdbc")))
-    // The TLS test certificates (spec 0073).
+    // The TLS test certificates (spec 0073), and freePort() for each node's port (spec 0197).
     testImplementation(testFixtures(project(":surefold-actor-remote")))
     // GuideExampleTest compiles the examples out of docs/cluster.md (spec 0084).
     testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.10")

@@ -9,13 +9,13 @@ import dev.surefold.actor.remote.MessageCodec
 import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.stay
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -40,8 +40,6 @@ private fun answering(on: String) = behaviour<WhereAreYou, Unit>(Unit) { _, _, a
 
 private val lively =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
-
-private fun somePort(): Int = ServerSocket(0).use { it.localPort }
 
 /** A node with the ledgers sharded and the clock singleton placed on members with the role "ledger". */
 private class RoleNode(val name: String, port: Int, seeds: Discovery, roles: Set<String>) : AutoCloseable {
@@ -81,7 +79,7 @@ object RolePlacementSuite : Suite() {
         test(
             "entities and a singleton run only on members with the role, reached from all, and wait while none is up",
         ) {
-            val ports = List(5) { somePort() }
+            val ports = List(5) { freePort() }
             val seeds = Discovery.static(*ports.take(4).map { Node("", "127.0.0.1", it) }.toTypedArray())
             val ledger = setOf("ledger")
             val offices = mutableListOf(

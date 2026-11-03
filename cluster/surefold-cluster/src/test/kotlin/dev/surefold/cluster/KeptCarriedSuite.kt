@@ -8,6 +8,7 @@ import dev.surefold.actor.remote.MessageCodec
 import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.stay
 import dev.surefold.capturingLogs
@@ -16,7 +17,6 @@ import dev.surefold.junit.shouldBe
 import dev.surefold.logAnnotated
 import dev.surefold.logInfo
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -77,7 +77,7 @@ private class LedgerNode(name: String, port: Int, seeds: Discovery, roles: Set<S
 object KeptCarriedSuite : Suite() {
     init {
         test("a message kept until a member with the role joins is handled with what its sender had bound") {
-            val ports = List(2) { ServerSocket(0).use { socket -> socket.localPort } }.sorted()
+            val ports = List(2) { freePort() }.sorted()
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val nodes = mutableListOf(LedgerNode("front", ports[0], seeds, emptySet()))
             try {

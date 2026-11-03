@@ -1,5 +1,6 @@
 package dev.surefold.files.test
 
+import dev.surefold.actor.remote.freePort
 import dev.surefold.fail.Either
 import dev.surefold.files.FileError
 import dev.surefold.files.Files
@@ -11,7 +12,6 @@ import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeLessThan
 import dev.surefold.policy
 import java.io.ByteArrayInputStream
-import java.net.ServerSocket
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -40,7 +40,7 @@ object MinioFilesSuite : FilesContract() {
 
     init {
         test("a store nobody answers is unavailable, within the policy's deadline") {
-            val nobody = ServerSocket(0).use { it.localPort }
+            val nobody = freePort()
             val files = S3Files.of(
                 FilesConfig("b", "us-east-1", "k", "s", endpoint = URI("http://127.0.0.1:$nobody"), pathStyle = true),
                 policy("files") { deadline(2.seconds) },

@@ -9,6 +9,7 @@ import dev.surefold.actor.projection.Projection
 import dev.surefold.actor.projection.mapFollowed
 import dev.surefold.actor.projection.runProjecting
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
@@ -20,7 +21,6 @@ import dev.surefold.junit.withClue
 import dev.surefold.scope
 import dev.surefold.stream.Forks
 import dev.surefold.stream.start
-import java.net.ServerSocket
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
@@ -112,7 +112,7 @@ private class Spread {
         ids.forEach { id -> journal.append(id, 0, (1..EACH).map { "$it".toByteArray() }) }
         val total = IDS * EACH
 
-        val ports = List(3) { ServerSocket(0).use(ServerSocket::getLocalPort) }
+        val ports = List(3) { freePort() }
         val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
         val members = ports.mapIndexed { i, port -> Member("n${i + 1}", port, seeds) }.toMutableList()
         try {

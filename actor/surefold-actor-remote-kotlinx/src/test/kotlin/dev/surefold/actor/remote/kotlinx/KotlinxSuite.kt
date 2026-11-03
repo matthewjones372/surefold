@@ -18,6 +18,7 @@ import dev.surefold.actor.remote.Refs
 import dev.surefold.actor.remote.WireException
 import dev.surefold.actor.remote.decode
 import dev.surefold.actor.remote.encode
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.spawn
 import dev.surefold.actor.stay
@@ -31,7 +32,6 @@ import dev.surefold.scope
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.cbor.Cbor
 import kotlinx.serialization.serializer
-import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import kotlin.time.Duration.Companion.minutes
 
@@ -155,7 +155,7 @@ object KotlinxSuite : Suite() {
         }
 
         test("an ask whose request is a data class is answered from another node") {
-            val port = ServerSocket(0).use(ServerSocket::getLocalPort)
+            val port = freePort()
             val ready = CountDownLatch(1)
             val done = CountDownLatch(1)
             val tillNode = Thread.ofPlatform().start {
@@ -172,7 +172,7 @@ object KotlinxSuite : Suite() {
             ready.await()
             try {
                 val answer = scope {
-                    val till = node("shop", ServerSocket(0).use(ServerSocket::getLocalPort))
+                    val till = node("shop", freePort())
                         .remote(Address("till@127.0.0.1:$port", "/user/till", 0), quote)
                     till.ask(1.minutes) { Quote(Till.Paid(Pence(21), "q"), it) }
                 }

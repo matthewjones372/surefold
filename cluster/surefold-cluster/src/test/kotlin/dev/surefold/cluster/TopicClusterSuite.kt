@@ -4,6 +4,7 @@ import dev.surefold.actor.Topic
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.remote.Codecs
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.spawn
 import dev.surefold.actor.stay
@@ -11,7 +12,6 @@ import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -21,8 +21,6 @@ import kotlin.time.Duration.Companion.minutes
 
 private val swift =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
-
-private fun portFree(): Int = ServerSocket(0).use { it.localPort }
 
 /** A node with the topic "prices" on a thread of its own, and a subscriber whose hearing it keeps. */
 private class Exchange(val name: String, port: Int, seeds: Discovery) : AutoCloseable {
@@ -67,7 +65,7 @@ object TopicClusterSuite : Suite() {
         test(
             "a publish on one node reaches every subscriber on every member once, in order, a later member included",
         ) {
-            val ports = List(4) { portFree() }
+            val ports = List(4) { freePort() }
             val seeds = Discovery.static(*ports.take(3).map { Node("", "127.0.0.1", it) }.toTypedArray())
             val nodes = mutableListOf(
                 Exchange("x1", ports[0], seeds),

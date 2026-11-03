@@ -3,6 +3,7 @@ package dev.surefold.cluster
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.remote.Codecs
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.stay
 import dev.surefold.junit.Suite
@@ -10,7 +11,6 @@ import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldContainExactly
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
 import java.util.concurrent.TimeUnit
@@ -63,7 +63,7 @@ private class TillNode(name: String, port: Int, seeds: Discovery, roles: Set<Str
 object BusyEntitySuite : Suite() {
     init {
         test("a burst of 5,000 from another node to a busy entity is applied in order, and no region stops") {
-            val ports = List(3) { ServerSocket(0).use { socket -> socket.localPort } }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val open = CountDownLatch(1)
             val nodes = listOf(

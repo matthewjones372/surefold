@@ -11,6 +11,7 @@ import dev.surefold.actor.remote.Refs
 import dev.surefold.actor.remote.WireException
 import dev.surefold.actor.remote.decode
 import dev.surefold.actor.remote.encode
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.spawn
 import dev.surefold.actor.stay
@@ -23,7 +24,6 @@ import org.apache.avro.generic.GenericData
 import org.apache.avro.generic.GenericRecord
 import org.apache.avro.message.BinaryMessageEncoder
 import org.apache.avro.message.SchemaStore
-import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import kotlin.time.Duration.Companion.minutes
 
@@ -84,7 +84,7 @@ object AvroSuite : Suite() {
         }
 
         test("an ask whose request is a record is answered from another node") {
-            val port = ServerSocket(0).use(ServerSocket::getLocalPort)
+            val port = freePort()
             val ready = CountDownLatch(1)
             val done = CountDownLatch(1)
             val pricing = Thread.ofPlatform().start {
@@ -101,7 +101,7 @@ object AvroSuite : Suite() {
             ready.await()
             try {
                 val answer = scope {
-                    val desk = node("shop", ServerSocket(0).use(ServerSocket::getLocalPort))
+                    val desk = node("shop", freePort())
                         .remote(Address("pricing@127.0.0.1:$port", "/user/pricing", 0), price)
                     desk.ask(1.minutes) { Price(Placed("o-1", 500), it) }
                 }

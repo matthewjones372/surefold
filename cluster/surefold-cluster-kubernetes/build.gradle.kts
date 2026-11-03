@@ -15,6 +15,8 @@ dependencies {
     // An API server in the test JVM that keeps what it is sent, so a test lists and updates as a cluster would.
     testImplementation("io.fabric8:kubernetes-server-mock:$fabric8Version")
     testImplementation(project(":surefold-assert"))
+    // freePort(): a port below the ephemeral range, never handed out twice in a JVM (spec 0197).
+    testImplementation(testFixtures(project(":surefold-actor-remote")))
 }
 
 tasks.test {

@@ -3,6 +3,8 @@
 
 dependencies {
     testImplementation(project(":surefold-assert"))
+    // freePort(): a port below the ephemeral range, never handed out twice in a JVM (spec 0197).
+    testImplementation(testFixtures(project(":surefold-actor-remote")))
     api(project(":surefold-actor-remote"))
     api("org.apache.avro:avro:1.12.2")
 }

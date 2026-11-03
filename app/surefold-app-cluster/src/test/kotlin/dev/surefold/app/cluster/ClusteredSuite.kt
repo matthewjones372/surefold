@@ -1,6 +1,7 @@
 package dev.surefold.app.cluster
 
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.app.StartupError
 import dev.surefold.app.actor.actors
 import dev.surefold.app.single
@@ -20,15 +21,12 @@ import dev.surefold.junit.shouldBeInstanceOf
 import dev.surefold.junit.shouldContain
 import dev.surefold.junit.shouldNotBe
 import dev.surefold.junit.shouldNotBeNull
-import java.net.ServerSocket
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-
-private fun freePort(): Int = ServerSocket(0).use { it.localPort }
 
 private val quick =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)

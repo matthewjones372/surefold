@@ -1,13 +1,13 @@
 package dev.surefold.cluster
 
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.metrics
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration
@@ -17,8 +17,6 @@ import kotlin.time.Duration.Companion.seconds
 
 private val brisk =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
-
-private fun anyPort(): Int = ServerSocket(0).use { it.localPort }
 
 /** A node on a thread of its own, measuring into [measured], that goes as a crashed node does when closed. */
 private class MeasuredNode(val name: String, port: Int, seeds: Discovery) : AutoCloseable {
@@ -56,7 +54,7 @@ private fun leaders(nodes: List<MeasuredNode>) =
 object ClusterMetricsSuite : Suite() {
     init {
         test("members are gauged with one leader, and a crash is unreachable and not ready until it is downed") {
-            val ports = List(3) { anyPort() }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val nodes = ports.mapIndexed { i, port -> MeasuredNode("m${i + 1}", port, seeds) }
             try {

@@ -3,6 +3,7 @@ package dev.surefold.cluster
 import dev.surefold.actor.Delivered
 import dev.surefold.actor.Delivery
 import dev.surefold.actor.EventCodec
+import dev.surefold.actor.InMemoryJournal
 import dev.surefold.actor.Journal
 import dev.surefold.actor.PersistenceId
 import dev.surefold.actor.delivered
@@ -16,14 +17,18 @@ import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
 import dev.surefold.actor.remote.delivery
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.fail.right
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeGreaterThan
+import dev.surefold.junit.shouldThrow
+import dev.surefold.junit.withClue
 import dev.surefold.metrics
 import dev.surefold.scope
+import java.net.BindException
 import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
@@ -70,13 +75,12 @@ internal fun account(id: String) = delivered(
 internal val calm =
     Gossiping(probeEvery = 500.milliseconds, ackWithin = 250.milliseconds, formAfter = 1_000.milliseconds)
 
-private fun openPort(): Int = ServerSocket(0).use { it.localPort }
-
 internal fun accountsDatabase(): DataSource = Postgres.fresh()
 
 /**
  * A node with the accounts sharded on it and [journal] as its scope's, on a thread of its own, until [close]. With a
- * [ledger] role, accounts run only on members that hold it, and this one holds it if [ledger] is true.
+ * [ledger] role, accounts run only on members that hold it, and this one holds it if [ledger] is true. If it cannot
+ * open, as when another socket holds [port], asking for its [cluster] or [accounts] throws why.
  */
 internal class Bank(
     val name: String,
@@ -92,10 +96,14 @@ internal class Bank(
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Pair<Cluster, Sharded<PayInto>>>()
+    private val failed = AtomicReference<Throwable>()
     val measured = NodeMetrics()
-    private val thread = Thread.ofPlatform().start {
-        metrics.locally(measured) { open(port, seeds, journal, leaveWithin) }
-    }
+    private val thread = Thread.ofPlatform()
+        .uncaughtExceptionHandler { _, thrown ->
+            failed.set(thrown)
+            ready.countDown()
+        }
+        .start { metrics.locally(measured) { open(port, seeds, journal, leaveWithin) } }
 
     private fun open(port: Int, seeds: Discovery, journal: Journal, leaveWithin: Duration) {
         scope {
@@ -109,17 +117,15 @@ internal class Bank(
         }
     }
 
-    val cluster: Cluster
-        get() {
-            ready.await()
-            return opened.get().first
-        }
+    val cluster: Cluster get() = opened().first
 
-    val accounts: Sharded<PayInto>
-        get() {
-            ready.await()
-            return opened.get().second
-        }
+    val accounts: Sharded<PayInto> get() = opened().second
+
+    private fun opened(): Pair<Cluster, Sharded<PayInto>> {
+        ready.await()
+        failed.get()?.let { throw IllegalStateException("$name did not open", it) }
+        return opened.get()
+    }
 
     override fun close() {
         done.countDown()
@@ -131,7 +137,7 @@ object ReliableSuite : Suite() {
     init {
         test("payments to 200 accounts while a node crashes are each applied exactly once, in order") {
             val journal = JdbcJournal(accountsDatabase())
-            val ports = List(3) { openPort() }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             // The third goes as a crashed node does, without leaving.
             val banks = ports.mapIndexed { i, port ->
@@ -190,7 +196,7 @@ object ReliableSuite : Suite() {
             "payments a node sends just before it closes are each applied once, from wherever their accounts run",
         ) {
             val journal = JdbcJournal(accountsDatabase())
-            val ports = List(3) { openPort() }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val banks = ports.mapIndexed { i, port -> Bank("b${i + 1}", port, seeds, journal, 30.seconds) }
             try {
@@ -218,7 +224,7 @@ object ReliableSuite : Suite() {
             "payments a durable producer accepted before its node crashed are each applied once, sent by the registry",
         ) {
             val journal = JdbcJournal(accountsDatabase())
-            val ports = List(4) { openPort() }
+            val ports = List(4) { freePort() }
             val seeds = Discovery.static(*ports.take(3).map { Node("", "127.0.0.1", it) }.toTypedArray())
             // Accounts run only on a ledger, and none is up until the crash: every payment is still unconfirmed then.
             // Each node goes as a crashed one does, without leaving or draining.
@@ -258,6 +264,16 @@ object ReliableSuite : Suite() {
                 accounts.forAll { id -> journal.events(accountOf(id), paidPence) shouldBe listOf(1, 2) }
             } finally {
                 banks.forEach(Bank::close)
+            }
+        }
+
+        test("a bank whose port is taken says why it did not open, rather than keeping its callers waiting") {
+            ServerSocket(freePort()).use { held ->
+                Bank("held", held.localPort, Discovery.static(), InMemoryJournal(), Duration.ZERO).use { bank ->
+                    shouldThrow<IllegalStateException>({ bank.cluster }) { thrown ->
+                        withClue({ "it was given $thrown" }) { (thrown.cause is BindException) shouldBe true }
+                    }
+                }
             }
         }
     }

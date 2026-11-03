@@ -7,6 +7,7 @@ import dev.surefold.actor.PersistenceId
 import dev.surefold.actor.events
 import dev.surefold.actor.journal.jdbc.JdbcJournal
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.fail.onLeft
 import dev.surefold.fail.right
 import dev.surefold.junit.Suite
@@ -14,7 +15,6 @@ import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeEmpty
 import dev.surefold.junit.withClue
-import java.net.ServerSocket
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -36,7 +36,7 @@ object ProducersSuite : Suite() {
             "two lives of one node, restarted in place, keep separate outboxes, and each one's commands are delivered",
         ) {
             val journal = JdbcJournal(accountsDatabase())
-            val ports = List(3) { ServerSocket(0).use(ServerSocket::getLocalPort) }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             // Every node goes as a crashed one does, so the third's earlier life is still held when it comes back.
             val bank = { i: Int -> Bank("b${i + 1}", ports[i], seeds, journal, Duration.ZERO) }
@@ -75,7 +75,7 @@ object ProducersSuite : Suite() {
 
         test("on three nodes, the registry lists each node's durable producer with the life that runs it") {
             val journal = JdbcJournal(accountsDatabase())
-            val ports = List(3) { ServerSocket(0).use(ServerSocket::getLocalPort) }
+            val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val banks = ports.mapIndexed { i, port -> Bank("b${i + 1}", port, seeds, journal, Duration.ZERO) }
             try {
@@ -102,7 +102,7 @@ object ProducersSuite : Suite() {
             "a crashed node's commands are delivered, though the node that resumed them crashes straight after",
         ) {
             val journal = Conflicts(JdbcJournal(accountsDatabase()))
-            val ports = List(4) { ServerSocket(0).use(ServerSocket::getLocalPort) }
+            val ports = List(4) { freePort() }
             val seeds = Discovery.static(*ports.take(3).map { Node("", "127.0.0.1", it) }.toTypedArray())
             // Accounts run only on a ledger, and none is up until both crashes, so nothing is confirmed before them. A
             // side of one stays, so the last of the three goes on alone.

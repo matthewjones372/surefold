@@ -10,6 +10,7 @@ import dev.surefold.actor.remote.TestCertificates
 import dev.surefold.actor.remote.Tls
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.stay
 import dev.surefold.junit.Suite
@@ -18,7 +19,6 @@ import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldContainExactlyInAnyOrder
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
@@ -36,8 +36,6 @@ private val deskCodec = object : MessageCodec<Desk> {
 
 private val lively =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
-
-private fun portFree(): Int = ServerSocket(0).use { it.localPort }
 
 /** A node of a cluster over [tls], with desks sharded on it, on a thread of its own until [close]. */
 private class Office(val name: String, port: Int, seeds: Discovery, tls: Tls) : AutoCloseable {
@@ -77,7 +75,7 @@ private class Office(val name: String, port: Int, seeds: Discovery, tls: Tls) : 
 object TlsClusterSuite : Suite() {
     init {
         test("three nodes form a cluster and shard over TLS, and one another CA signed never joins") {
-            val ports = List(4) { portFree() }
+            val ports = List(4) { freePort() }
             val seeds = Discovery.static(*ports.take(3).map { Node("", "127.0.0.1", it) }.toTypedArray())
             val offices = (1..3).map { Office("n$it", ports[it - 1], seeds, TestCertificates.tls("n$it")) }
             val opened = offices.toMutableList()
