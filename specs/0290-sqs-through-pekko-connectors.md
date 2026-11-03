@@ -73,15 +73,15 @@ Recommended: a module of its own (Open questions 1).
 
 ## Open questions
 
-1. **Build it at all?** `Sqs.consume` already runs on Pekko. Recommended: yes,
+1. **Build it at all?** `Sqs.consume` already runs on Pekko. Answered: yes,
    but only for parallel receives and async acks; say so in the guide, and
    point everyone else at `Sqs.consume`.
-2. **Which HTTP client under `SqsAsyncClient`?** Recommended: the connector's
+2. **Which HTTP client under `SqsAsyncClient`?** Answered: the connector's
    `aws-spi-pekko-http`, so no Netty arrives; Netty's `nio` client stays excluded.
 3. **`@SqsSpi` lands twice.** 0287's batch entry already adds `@SqsSpi` for
-   `carrying`. Recommended: this spec's seam entry adds the annotation, and
+   `carrying`. Answered: this spec's seam entry adds the annotation, and
    whichever of the two merges second drops its copy.
 4. **Connector version.** 1.3.0 is built on pekko-stream 1.1.5 and AWS SDK
-   2.42; the repo resolves Pekko 1.2.1 and SDK 2.55.6. Recommended: accept the
+   2.42; the repo resolves Pekko 1.2.1 and SDK 2.55.6. Answered: accept the
    upgrade, as `surefold-kafka-pekko` does, with the module's suite run on the
    resolved versions.
