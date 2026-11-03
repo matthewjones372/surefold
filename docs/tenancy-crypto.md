@@ -6,8 +6,8 @@ cannot open what they sealed. Delete a tenant's root and every copy of its data 
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold-tenancy-crypto:0.17.0")
-    implementation("dev.surefold:surefold-tenancy-crypto-aws:0.17.0") // AwsKms
+    implementation("dev.surefold:surefold-tenancy-crypto:0.18.0")
+    implementation("dev.surefold:surefold-tenancy-crypto-aws:0.18.0") // AwsKms
 }
 ```
 

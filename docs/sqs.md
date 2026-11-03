@@ -90,7 +90,8 @@ to `inFlight` (16) sends at once. A send that fails is a defect, for
 `restartOnDefect`. On a FIFO queue a group keeps its order only at
 `inFlight = 1`. `sendBatch` groups up to ten, or what came within `within`, and
 passes each element on as the outcome of its own message, so a refused one is a
-`Left` that `absolve` or `divertLefts` decides on.
+`Left` that `absolve` or `divertLefts` decides on. To publish what a queue reads to an SNS topic, see
+[`surefold-sns`](sns.md).
 
 ## On Pekko
 

@@ -16,18 +16,20 @@ transitive dependency fails the build.
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold:0.17.0")
-    implementation("dev.surefold:surefold-app:0.17.0")
-    testImplementation("dev.surefold:surefold-test:0.17.0")
+    implementation("dev.surefold:surefold:0.18.0")
+    implementation("dev.surefold:surefold-app:0.18.0")
+    testImplementation("dev.surefold:surefold-test:0.18.0")
 }
 ```
 
-Releases are tagged `vX.Y.Z` and published to Maven Central. The guides
+Releases are tagged `vX.Y.Z` and published to Maven Central. Running the
+`release` workflow with a version cuts one: it tags that commit on `main`,
+builds, publishes, and pushes the tag once Central has the release. The guides
 describe the `main` branch, which can be ahead of the latest release; features
 not yet released are marked where they are documented.
 
 **Snapshots.** An untagged commit builds as the next patch version with
-`-SNAPSHOT` (after `v0.17.0`, `0.17.1-SNAPSHOT`). Every push to `main` publishes
+`-SNAPSHOT` (after `v0.18.0`, `0.18.1-SNAPSHOT`). Every push to `main` publishes
 one to GitHub Packages, at `https://maven.pkg.github.com/surefold/surefold`, and
 it does not expire. GitHub Packages asks for a token even to read a public
 package: put a classic personal access token with only `read:packages` in
@@ -135,6 +137,7 @@ against; the library's own transitive dependencies come with it.
 | Module | For | Surefold deps | Adds | Published |
 |---|---|---|---|---|
 | `surefold-sqs` | a queue as a `Stream` on any backend, deleted after the work, and sends ([guide](sqs.md)) | `surefold-stream` | AWS SDK 2.55.6 `sqs`, on its URL-connection client | yes |
+| `surefold-sns` | publishing to an SNS topic from a `Stream` on any backend, per-message outcomes ([guide](sns.md)) | `surefold-sqs` | AWS SDK 2.55.6 `sns`, on its URL-connection client | yes |
 | `surefold-sqs-pekko` | the same through Pekko's SQS connector, on Pekko Streams ([guide](sqs.md#on-pekko)) | `surefold-sqs`, `surefold-stream-pekko` | `pekko-connectors-sqs` 1.3.0, on its Pekko HTTP transport | yes |
 | `surefold-sqs-test` | an SQS queue in the test JVM on ElasticMQ, as a surefold-junit `Resource` or a Jupiter extension ([guide](sqs.md#testing-against-a-queue)) | `surefold-sqs` | `elasticmq-rest-sqs` 1.7.1, Pekko 1.5 | yes |
 
