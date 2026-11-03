@@ -109,6 +109,8 @@ Facts worth having before anything else:
 - `surefold-kafka`: Kafka as a `Stream` on any backend: commit after the work,
   dead letters, transactions.
 - `surefold-kafka-pekko`: `surefold-kafka` through Pekko's Kafka connector.
+- `surefold-sqs`: SQS sends from a `Stream` on any backend, passing an element on once
+  SQS has it, with per-message outcomes in a batch.
 - `surefold-otel-test`: a tracer that keeps the spans it ends, for a service's own
   tests, without displacing `surefold-otel`'s context storage.
 - `surefold-kafka-test`: a Kafka broker in the test JVM for a service's own tests,
