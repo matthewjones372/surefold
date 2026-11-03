@@ -70,12 +70,12 @@ Recommended: depend on `surefold-sqs`, see Open questions 1.
 
 ## Open questions
 
-1. **Depend on `surefold-sqs`?** Recommended: yes, for the `Received`
+1. **Depend on `surefold-sqs`?** Answered: yes, for the `Received`
    overloads. Otherwise `surefold-sns` stands alone and the overloads move to a
    third module.
 2. **Unwrap the SNS envelope** on an SQS subscription without raw delivery?
-   Recommended: no. The guide says to turn raw message delivery on.
-3. **Share `PublishFailed`/`Published` with Kafka?** Recommended: no. SNS has
+   Answered: no. The guide says to turn raw message delivery on.
+3. **Share `PublishFailed`/`Published` with Kafka?** Answered: no. SNS has
    its own types now, and they merge with spec 0286's question 1.
-4. **One module `surefold-aws-messaging` for both?** Recommended: no. One SDK
+4. **One module `surefold-aws-messaging` for both?** Answered: no. One SDK
    per module, as AGENTS.md says.
