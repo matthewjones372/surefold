@@ -20,6 +20,8 @@ dependencies {
     // The pages in a real headless Chromium: the only proof they work. 1.56 drives Chromium 141, build 1194.
     testImplementation("com.microsoft.playwright:playwright:1.56.0")
     testImplementation(project(":surefold-assert"))
+    // freePort(): a port below the ephemeral range, never handed out twice in a JVM (spec 0197).
+    testImplementation(testFixtures(project(":surefold-actor-remote")))
 }
 
 application {

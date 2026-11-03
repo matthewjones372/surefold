@@ -4,6 +4,7 @@ import dev.surefold.actor.NotSent
 import dev.surefold.actor.journal.jdbc.JdbcJournal
 import dev.surefold.actor.journal.jdbc.Postgres
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.cluster.Discovery
 import dev.surefold.cluster.Gossiping
 import dev.surefold.fail.Either
@@ -12,7 +13,6 @@ import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.timeout
-import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
@@ -31,12 +31,10 @@ internal val calm = Settings(
     resendAfter = 2.seconds,
 )
 
-internal fun openPort(): Int = ServerSocket(0).use { it.localPort }
-
 /** Three nodes on one journal, each on its own thread, formed into a cluster before this returns. */
 internal fun threeNodes(settings: Settings = calm, ended: (String, Saga) -> Unit = { _, _ -> }): List<BankNode> {
     val journal = JdbcJournal(Postgres.fresh())
-    val ports = List(3) { openPort() }
+    val ports = List(3) { freePort() }
     val seeds = ports.map { Node("", "127.0.0.1", it) }.let { Discovery { it } }
     val nodes = ports.mapIndexed { i, port -> BankNode("n${i + 1}", port, seeds, journal, settings, ended) }
     nodes.forEach { node ->

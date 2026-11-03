@@ -3,6 +3,8 @@
 
 dependencies {
     testImplementation(project(":surefold-assert"))
+    // freePort(): a port below the ephemeral range, never handed out twice in a JVM (spec 0197).
+    testImplementation(testFixtures(project(":surefold-actor-remote")))
     api(project(":surefold-actor-remote"))
     api("com.google.protobuf:protobuf-java:4.36.2")
 }

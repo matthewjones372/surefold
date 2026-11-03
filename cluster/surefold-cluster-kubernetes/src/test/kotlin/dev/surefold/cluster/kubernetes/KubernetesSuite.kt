@@ -1,6 +1,7 @@
 package dev.surefold.cluster.kubernetes
 
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.cluster.Joins
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
@@ -19,7 +20,6 @@ import io.fabric8.mockwebserver.Context
 import io.fabric8.mockwebserver.MockWebServer
 import io.fabric8.mockwebserver.ServerRequest
 import io.fabric8.mockwebserver.ServerResponse
-import java.net.ServerSocket
 import java.nio.file.Files
 import java.time.Instant
 import java.util.Queue
@@ -72,7 +72,7 @@ object KubernetesSuite : Suite() {
         }
 
         test("an API server that cannot be asked gives no seeds, and no lease") {
-            val nowhere = ServerSocket(0).use { socket -> socket.localPort }
+            val nowhere = freePort()
             val config =
                 ConfigBuilder().withMasterUrl("http://127.0.0.1:$nowhere").withRequestRetryBackoffLimit(0).build()
             KubernetesClientBuilder().withConfig(config).build().use { unreachable ->

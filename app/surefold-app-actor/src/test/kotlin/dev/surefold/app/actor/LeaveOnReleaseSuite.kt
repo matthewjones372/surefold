@@ -2,6 +2,7 @@ package dev.surefold.app.actor
 
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.remote.Node
+import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
 import dev.surefold.actor.spawn
 import dev.surefold.actor.stay
@@ -17,7 +18,6 @@ import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeLessThan
 import dev.surefold.scope
-import java.net.ServerSocket
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -27,8 +27,6 @@ import kotlin.time.TimeSource
 
 private val quick =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
-
-private fun freePort(): Int = ServerSocket(0).use { it.localPort }
 
 object LeaveOnReleaseSuite : Suite() {
     init {
