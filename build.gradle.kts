@@ -126,6 +126,8 @@ val moduleDescriptions = mapOf(
         "surefold-kafka through Pekko's own Kafka connector: prefetch, batched commits, a draining stop.",
     "surefold-kafka-test" to
         "A Kafka broker in the test JVM for a service's own tests: no Docker, and helpers to read what it did.",
+    "surefold-sqs" to
+        "SQS as a surefold Stream on any backend: sends that pass an element on once SQS has it.",
     "surefold-actor" to
         "An actor as a value and a step, on virtual threads: no actor system, and tests that never wait.",
     "surefold-actor-journal-jdbc" to
