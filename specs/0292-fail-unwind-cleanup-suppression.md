@@ -1,7 +1,7 @@
 # 0292 - Retain cleanup failures on the Fail unwind signal
 
-PROPOSED canonical spec; implementation requires owner-edited, committed approval.
-0292 is a candidate, not a reservation; recheck main/open branches before committing.
+Delegated agent review answers decisions1-3 YES; source adoption remains CONDITIONAL.
+Source requires Doorlist603 scope MAIN, upstream spec MAIN, exact source-plan approval and root GO.
 
 ## Problem
 
@@ -44,8 +44,8 @@ cleanup without replacing Fail or changing E. Wrapping or rewriting Resource/rou
 
 ## Stack
 
-- [ ] **codex/fail-suppression-contract** - this reviewed spec and0265 dependency amendment only.
-- [ ] **codex/fail-suppression** - one constructor flag, focused lifecycle tests; main target<10.
+- [ ] **codex/p04-h-fail-cleanup-spec-20261103** - this reviewed spec and0265 dependency amendment only.
+- [ ] **codex/p04-h-fail-cleanup-source-20261103** - one constructor flag, focused lifecycle tests; main target<10.
       Done after reviewed source plan, meaningful RED, full gates and successful containing-main.
 B1/B2 source follows acceptance of this prerequisite and separate approved split/source plans.
 
@@ -71,6 +71,6 @@ exact PR/actual-main receipts. No check or source edit has occurred for this dra
 
 ## Open questions
 
-1. Approve transient suppression on opaque Fail while final Left(E) stays unchanged? Recommend yes.
-2. Test placement: extend the two existing suites above rather than add a helper/framework? Recommend yes.
-3. Amend0265's dependency/stack only, preserving all24 laws and E/S/D modes? Recommend yes.
+1. YES - retain transient suppression on opaque Fail while final Left(E) stays unchanged.
+2. YES - extend the two existing suites above; no helper/framework.
+3. YES - amend0265's dependency/stack only, preserving all24 laws and E/S/D modes.
