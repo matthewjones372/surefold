@@ -3,6 +3,7 @@ package dev.surefold.test
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldNotContain
+import dev.surefold.assert.shouldStartWith
 import dev.surefold.assert.shouldThrow
 import dev.surefold.scope
 import org.junit.jupiter.api.Test
@@ -31,7 +32,7 @@ class StoryLocalsTest {
 
         val printed = printedBy {
             storyTitle.locally("a bound title") {
-                storyTranscript.locally({ told += it }) {
+                storyTranscript.locally({ told += it.plain }) {
                     story { Given("a step") { } }
                 }
             }
@@ -45,7 +46,7 @@ class StoryLocalsTest {
     fun `a failing story tells its transcript where it is bound before it throws`() {
         val told = CopyOnWriteArrayList<String>()
 
-        val failed = storyTranscript.locally({ told += it }) {
+        val failed = storyTranscript.locally({ told += it.plain }) {
             shouldThrow<StoryFailed> { story("failing") { Then("it fails") { error("no") } } }
         }
 
@@ -57,7 +58,7 @@ class StoryLocalsTest {
         val told = CopyOnWriteArrayList<String>()
 
         storyTitle.locally("the bound title") {
-            storyTranscript.locally({ told += it }) { story("its own title") { } }
+            storyTranscript.locally({ told += it.plain }) { story("its own title") { } }
         }
 
         told.single() shouldBe "Story: its own title"
@@ -68,7 +69,7 @@ class StoryLocalsTest {
         val told = CopyOnWriteArrayList<String>()
 
         storyTitle.locally("from the opener") {
-            storyTranscript.locally({ told += it }) {
+            storyTranscript.locally({ told += it.plain }) {
                 scope { async { story { } } }
             }
         }
@@ -81,7 +82,7 @@ class StoryLocalsTest {
         val told = CopyOnWriteArrayList<String>()
         val wrong = AssertionError("expected: 3")
 
-        val answered = storyTranscript.locally({ told += it }) {
+        val answered = storyTranscript.locally({ told += it.plain }) {
             tellStory("judged", failed = { (it as? String)?.let { _ -> wrong } }) {
                 Then("it is three") { "two" }
                 And("it goes on") { 4 }
@@ -100,7 +101,7 @@ class StoryLocalsTest {
         val told = CopyOnWriteArrayList<String>()
         val wrong = AssertionError("expected: 3")
 
-        storyTranscript.locally({ told += it }) {
+        storyTranscript.locally({ told += it.plain }) {
             tellStory("nested", failed = { (it as? String)?.let { _ -> wrong } }) {
                 Then("the outer") { And("the inner") { "two" } }
             }
@@ -110,5 +111,19 @@ class StoryLocalsTest {
         lines[1] shouldContain "✗ Then the outer"
         lines[2] shouldContain "✗ And the inner"
         lines.count { "expected: 3" in it } shouldBe 1
+    }
+
+    @Test
+    fun `a transcript's coloured copy is coloured only when colour is on, and its plain copy never is`() {
+        val story = Story { (it as? String)?.let { _ -> AssertionError("expected: 3") } }
+            .apply { Then("it is three") { "two" } }
+
+        val on = story.transcript("coloured", colour = true)
+        val off = story.transcript("coloured", colour = false)
+
+        on.coloured.lines()[1] shouldStartWith "\u001B[31m\u001B[1m"
+        on.plain shouldNotContain "\u001B"
+        off.coloured shouldBe off.plain
+        off.plain shouldBe on.plain
     }
 }

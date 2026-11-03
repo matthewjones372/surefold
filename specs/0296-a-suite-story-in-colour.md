@@ -37,7 +37,7 @@ INFO Story: a guest on the list is let in        ← bold
   `SurefoldLocal<((Transcript) -> Unit)?>`, with `Transcript(plain: String, coloured: String)`, where
   `coloured` follows `Colour.wanted` (so it equals `plain` when colour is off). It is `@StorySeam`, so no
   consumer outside Surefold is broken.
-- `tellingStories` logs `plain` as today, and keeps `coloured` beside it, keyed to that line.
+- `tellingStories` logs `plain` as today, and keeps `coloured` beside it, keyed by that message.
 - `Report.finished` publishes the plain lines as the `logs` entry, unchanged, and prints the coloured copy
   in place of the plain one on the console.
 
@@ -53,7 +53,7 @@ knows where the colours go. Two ways to carry the coloured copy to `Report`:
 
 ## Stack
 
-- [ ] **`spec-0296-suite-colour`** — `surefold-test`: `Transcript` and the seam's new type;
+- [x] **`spec-0296-suite-colour`** ([#1054](https://github.com/surefold/surefold/pull/1054)) — `surefold-test`: `Transcript` and the seam's new type;
       `surefold-junit`: keep the coloured copy and print it in `Report.finished`.
       Done when: a failing suite story run with `surefold.test.colour=always` prints its ✗ line starting
       with red and bold; with `never` the console holds no escape code; in both modes the `logs` report
@@ -69,11 +69,11 @@ Then a failing doorlist suite story, run with `FORCE_COLOR=1` and the wiring plu
 
 ## Open questions
 
-1. **Colour the `INFO` prefix too, or only the story's lines?** Recommended: only the story's lines; the
-   prefix comes from `rendered()`, which is shared with every log line.
-2. **Should this wait for 0255 and land as part of it?** 0255 prints passing stories and says colour follows
-   `surefold.test.colour`, but does not say how. Recommended: land this first; 0255 then prints passing
-   stories from the same coloured list.
-3. **Is IntelliJ detection good enough for suites?** Under "Run tests using: Gradle", the
-   `idea.test.cyclic.buffer.size` property is not set in the worker, so IntelliJ users still need
-   `FORCE_COLOR=1`. Recommended: out of scope here; note it in `docs/testing.md`.
+Answered with the recommendations, on the go-ahead to build (2026-11-03):
+
+1. **Colour the `INFO` prefix too?** No: only the story's lines. The prefix comes from `rendered()`, shared
+   with every log line.
+2. **Wait for 0255?** No: this lands first, and 0255 prints passing stories from the same console copies.
+3. **IntelliJ detection for suites?** Out of scope. Under "Run tests using: Gradle" the worker does not see
+   `idea.test.cyclic.buffer.size`, so `FORCE_COLOR=1` in the run configuration is needed;
+   `docs/testing.md` says so.
