@@ -143,4 +143,5 @@ told to.
 
 ## Not here yet
 
-Meters and a Pekko connector module are each their own spec.
+Meters and a Pekko connector module are each their own spec. Publishing what a queue
+reads to an SNS topic is [`surefold-sns`](sns.md).

@@ -1,12 +1,11 @@
 # JDBC query traces
 
 Wrap the application's pool once and use the returned `DataSource` everywhere.
-This module is unreleased in this checkout (`0.17.1-SNAPSHOT`); publication remains pending.
-Qualified performance measurements are deferred. For a consumer subproject in this checkout:
+The module is published from 0.18.0. Qualified performance measurements are deferred.
 
 ```kotlin
 dependencies {
-    implementation(project(":surefold-jdbc-otel"))
+    implementation("dev.surefold:surefold-jdbc-otel:0.18.0")
     implementation("io.opentelemetry:opentelemetry-sdk:1.67.0")
 }
 ```

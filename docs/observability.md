@@ -17,9 +17,9 @@ dependency is the whole setup.
 
 ```kotlin
 dependencies {
-    implementation("dev.surefold:surefold-slf4j:0.17.0")
-    implementation("dev.surefold:surefold-micrometer:0.17.0")
-    implementation("dev.surefold:surefold-otel:0.17.0")
+    implementation("dev.surefold:surefold-slf4j:0.18.0")
+    implementation("dev.surefold:surefold-micrometer:0.18.0")
+    implementation("dev.surefold:surefold-otel:0.18.0")
 }
 ```
 
@@ -133,7 +133,7 @@ OpenTelemetry's context, such as an instrumented HTTP client, reads and writes
 the same context. That process-wide effect is why it is a separate module.
 
 For automatic JDBC query spans from one pool setup, see the [JDBC tracing guide](jdbc-tracing.md).
-That integration is unreleased; its privacy boundary and separate performance gate are described there.
+That integration is published from 0.18.0; its privacy boundary and separate performance gate are described there.
 
 ```kotlin
 import dev.surefold.logInfo
