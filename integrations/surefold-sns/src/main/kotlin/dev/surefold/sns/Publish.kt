@@ -39,13 +39,13 @@ fun SnsTopic.message(
 /** What SNS answered for a message it accepted: [sequenceNumber] on a FIFO topic only. */
 data class Published(val messageId: String, val sequenceNumber: String?)
 
-/** A message SNS did not take, and why: what the SDK threw after its own retries. */
+/** A message SNS did not take, and why: an [SnsRefused] for a batch entry it refused, or what the SDK threw. */
 class PublishFailed internal constructor(val message: SnsMessage, val cause: Throwable) {
     override fun toString(): String = "PublishFailed(${message.topic.arn}: $cause)"
 }
 
 /** Publishes through [client], which stays the caller's: closing it is theirs. */
-class SnsPublisher(private val client: SnsClient) {
+class SnsPublisher(internal val client: SnsClient) {
 
     /** [message] published and waited on: `Left` for one the SDK failed after its own retries. */
     fun publish(message: SnsMessage): Either<PublishFailed, Published> =
@@ -53,6 +53,19 @@ class SnsPublisher(private val client: SnsClient) {
             val response = client.publish(message.request())
             Published(response.messageId(), response.sequenceNumber())
         }.mapLeft { thrown -> PublishFailed(message, thrown) }
+
+    /**
+     * Up to ten [messages], one `PublishBatch` per topic among them, answered per message in order: SNS reports
+     * each entry on its own, so one it refuses fails only itself. A request the SDK fails is a `Left` for each
+     * message in it.
+     */
+    fun publishAll(messages: List<SnsMessage>): List<Either<PublishFailed, Published>> {
+        require(messages.size <= MAX_BATCH) { "SNS takes up to $MAX_BATCH in a batch, and was given ${messages.size}" }
+        val byIndex = messages.indices.groupBy { messages[it].topic }.flatMap { (topic, indices) ->
+            indices.zip(client.publishBatch(topic, indices.map { messages[it] }))
+        }.toMap()
+        return messages.indices.map(byIndex::getValue)
+    }
 }
 
 /**
