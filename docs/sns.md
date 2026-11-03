@@ -61,6 +61,25 @@ is refused there. Attributes are strings. `publishTo` runs up to `inFlight`
 `SnsPublisher` publishes through a client it does not own: closing the client is
 the caller's.
 
+## Meters
+
+`SnsPublisher.publish`, `publishAll`, `publishTo`, `publishBatch` and
+`publishMessageBatch` record through surefold's metrics API, so installing
+`surefold-micrometer` exports them, and with no backend bound they cost nothing.
+The stream operators record to the metrics in scope, with the `metricTagged`
+tags bound, where they are described; `publish` and `publishAll` where they are
+called. Every meter carries `topic`, the topic's name. Durations are in seconds.
+
+| Meter | Kind | Tags | Recorded |
+|---|---|---|---|
+| `surefold.sns.publisher.published` | counter | | each message SNS accepted |
+| `surefold.sns.publisher.failures` | counter | `code` | each message refused, or the exception's name where the call failed |
+| `surefold.sns.publisher.publish` | timer | | each request, call to answer |
+
+What SNS does after it accepts a message, delivery to each subscriber, is in
+CloudWatch. A `publishMessageBatch`'s deletes are counted by `surefold-sqs` as
+`surefold.sqs.consumer.deleted`, where its read records them.
+
 ## Testing against a topic
 
 `surefold-sns-test` gives a test SNS topics that deliver to real queues, on
@@ -106,5 +125,5 @@ published, subscribers or not.
 
 ## Not here yet
 
-Meters, binary and number attributes, and unwrapping SNS's envelope on a
-subscription without raw delivery.
+Binary and number attributes, and unwrapping SNS's envelope on a subscription
+without raw delivery.

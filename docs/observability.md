@@ -122,6 +122,7 @@ installing `surefold-micrometer` exports them with nothing more to write:
 - Kafka consumers and producers: `surefold.kafka.*`, see
   [Meters](kafka.md#meters);
 - SQS reads and sends: `surefold.sqs.*`, see [Meters](sqs.md#meters);
+- SNS publishes: `surefold.sns.publisher.*`, see [Meters](sns.md#meters);
 - actors, remoting, membership, sharding, reliable delivery and topics: see
   [Watching a cluster](cluster.md#watching).
 
