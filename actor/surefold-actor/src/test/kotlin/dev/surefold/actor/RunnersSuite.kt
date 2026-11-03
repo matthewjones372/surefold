@@ -12,6 +12,9 @@ private const val SPACED = 2_000
 private const val GAP_NANOS = 50_000L
 private const val QUARTER_SPIN_NANOS = 2_500L
 
+// Halving 10 µs reaches zero in 14 spins, so a few dozen leave room for the first activations and a near miss.
+private const val FEW_SPINS = 64L
+
 object RunnersSuite : Suite() {
     init {
         // Spec 0104: an urgent activation is taken before every ordinary one already waiting.
@@ -49,7 +52,7 @@ object RunnersSuite : Suite() {
         // Spec 0144: a runner whose spins keep ending empty spins less, until a near miss gives it a full one again.
         test("activations submitted 50 µs apart are spun through for less than a quarter of 10 µs each") {
             val runners = Runners(parallelism = 1, cap = 1)
-            val before = runners.spun.get()
+            val before = runners.spun.sum()
             repeat(SPACED) {
                 val ran = CountDownLatch(1)
                 runners.submit(Activation { ran.countDown() })
@@ -60,7 +63,25 @@ object RunnersSuite : Suite() {
             runners.awaitIdle()
 
             withClue("nanoseconds spun per activation, each submitted 50 µs after the last had run") {
-                (runners.spun.get() - before) / SPACED shouldBeLessThan QUARTER_SPIN_NANOS
+                (runners.spun.sum() - before) / SPACED shouldBeLessThan QUARTER_SPIN_NANOS
+            }
+        }
+
+        // Spec 0293: a runner whose spin has halved to nothing goes straight to parking, and counts itself spinning
+        // in no shared counter on the way.
+        test("a runner whose spin has halved to nothing stops spinning at all") {
+            val runners = Runners(parallelism = 1, cap = 1)
+            repeat(SPACED) {
+                val ran = CountDownLatch(1)
+                runners.submit(Activation { ran.countDown() })
+                ran.await()
+                val next = System.nanoTime() + GAP_NANOS
+                while (System.nanoTime() < next) Thread.onSpinWait()
+            }
+            runners.awaitIdle()
+
+            withClue("dry spells spun through, of 2,000 activations each submitted 50 µs after the last had run") {
+                runners.spins.sum() shouldBeLessThan FEW_SPINS
             }
         }
     }

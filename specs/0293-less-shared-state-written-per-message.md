@@ -56,7 +56,7 @@ cheaper, but it is more code to keep a test counter. Recommended: `LongAdder`.
 
 ## Stack
 
-- [ ] **`spec-0293-room-by-the-batch`** — `Cell` holds back room it takes back, as above; a `RuntimeSuite` test
+- [x] **`spec-0293-room-by-the-batch`** ([#1045](https://github.com/surefold/surefold/pull/1045)) — `Cell` holds back room it takes back, as above; a `RuntimeSuite` test
       that a sender parked on a full mailbox of 1,024 is woken before the batch that filled it ends.
       Done when: `TellBenchmark.surefoldOneToOne` is at or below 65 ns on the 0143 machine, with no other row in
       the 0143 table worse beyond its error, and `./gradlew build` is green.
