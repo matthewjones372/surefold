@@ -61,7 +61,50 @@ is refused there. Attributes are strings. `publishTo` runs up to `inFlight`
 `SnsPublisher` publishes through a client it does not own: closing the client is
 the caller's.
 
+## Testing against a topic
+
+`surefold-sns-test` gives a test SNS topics that deliver to real queues, on
+[`surefold-sqs-test`](sqs.md#testing-against-a-queue)'s ElasticMQ, so a test
+needs no Docker. A surefold-junit suite shares one `SnsTopics` as its resource;
+a Jupiter class registers `SnsTopics()` with `@RegisterExtension` instead.
+
+<!-- sns-testing -->
+```kotlin
+import dev.surefold.junit.SharedSuite
+import dev.surefold.junit.shouldBe
+import dev.surefold.sns.SnsPublisher
+import dev.surefold.sns.SnsTopics
+import dev.surefold.sns.message
+import dev.surefold.sns.snsTopics
+
+object PlacedSuite : SharedSuite<SnsTopics>() {
+    override val shared = snsTopics()
+
+    init {
+        test("a placed order reaches billing") { sns ->
+            val placed = sns.create("guide-placed")
+            val billing = sns.queues.create("guide-billing")
+            sns.subscribe(placed, billing)
+
+            SnsPublisher(sns.client).publish(placed.message("o-1"))
+
+            sns.queues.receive(billing).map { it.body() } shouldBe listOf("o-1")
+            sns.published(placed).map { it.body } shouldBe listOf("o-1")
+        }
+    }
+}
+```
+
+`client` is an `SnsClient` in the test JVM: `publish` and `publishBatch` deliver
+each message to every queue subscribed and answer as SNS does, refusing an empty
+body, a FIFO group id missing or misplaced, and more than ten in a batch. It is
+not SNS's wire protocol, so nothing is signed or serialised. `queues` is the
+`SqsQueues` underneath, to create, read and count queues with.
+`subscribe(topic, queue, raw = false)` delivers in SNS's JSON envelope, without
+a signature, for a service that reads one. `published(topic)` is everything
+published, subscribers or not.
+
 ## Not here yet
 
-Meters, a fake topic for a service's own tests, binary and number attributes,
-and unwrapping SNS's envelope on a subscription without raw delivery.
+Meters, binary and number attributes, and unwrapping SNS's envelope on a
+subscription without raw delivery.
