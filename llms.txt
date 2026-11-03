@@ -109,8 +109,8 @@ Facts worth having before anything else:
 - `surefold-kafka`: Kafka as a `Stream` on any backend: commit after the work,
   dead letters, transactions.
 - `surefold-kafka-pekko`: `surefold-kafka` through Pekko's Kafka connector.
-- `surefold-sqs`: SQS sends from a `Stream` on any backend, passing an element on once
-  SQS has it, with per-message outcomes in a batch.
+- `surefold-sqs`: SQS as a `Stream` on any backend: delete after the work, visibility
+  renewed while a message is handled, sends with per-message outcomes.
 - `surefold-otel-test`: a tracer that keeps the spans it ends, for a service's own
   tests, without displacing `surefold-otel`'s context storage.
 - `surefold-kafka-test`: a Kafka broker in the test JVM for a service's own tests,
@@ -185,6 +185,6 @@ Facts worth having before anything else:
 - [Core](https://github.com/surefold/surefold/blob/main/docs/core.md): forks, cancellation, errors, resources, schedules, timeouts, policies, context, Pekko dispatchers.
 - [Applications](https://github.com/surefold/surefold/blob/main/docs/app.md): the graph, starting and stopping, probes, testing, the Gradle and compiler plugins.
 - [Application cookbook](https://github.com/surefold/surefold/blob/main/docs/cookbook.md): one recipe per task, most compiled by a test.
-- [Streams](https://github.com/surefold/surefold/blob/main/docs/stream.md), [Kafka](https://github.com/surefold/surefold/blob/main/docs/kafka.md), [Actors](https://github.com/surefold/surefold/blob/main/docs/actors.md), [Remoting and clusters](https://github.com/surefold/surefold/blob/main/docs/cluster.md), [Jobs](https://github.com/surefold/surefold/blob/main/docs/jobs.md), [Migrations on Flyway](https://github.com/surefold/surefold/blob/main/docs/flyway.md), [Files](https://github.com/surefold/surefold/blob/main/docs/files.md), [Tenancy](https://github.com/surefold/surefold/blob/main/docs/tenancy.md), [Idempotency and rate limits](https://github.com/surefold/surefold/blob/main/docs/http-stores.md), [Sign-in and sessions](https://github.com/surefold/surefold/blob/main/docs/auth.md).
+- [Streams](https://github.com/surefold/surefold/blob/main/docs/stream.md), [Kafka](https://github.com/surefold/surefold/blob/main/docs/kafka.md), [SQS](https://github.com/surefold/surefold/blob/main/docs/sqs.md), [Actors](https://github.com/surefold/surefold/blob/main/docs/actors.md), [Remoting and clusters](https://github.com/surefold/surefold/blob/main/docs/cluster.md), [Jobs](https://github.com/surefold/surefold/blob/main/docs/jobs.md), [Migrations on Flyway](https://github.com/surefold/surefold/blob/main/docs/flyway.md), [Files](https://github.com/surefold/surefold/blob/main/docs/files.md), [Tenancy](https://github.com/surefold/surefold/blob/main/docs/tenancy.md), [Idempotency and rate limits](https://github.com/surefold/surefold/blob/main/docs/http-stores.md), [Sign-in and sessions](https://github.com/surefold/surefold/blob/main/docs/auth.md).
 - [Observability](https://github.com/surefold/surefold/blob/main/docs/observability.md) and [Testing](https://github.com/surefold/surefold/blob/main/docs/testing.md).
 - [Feature flags](https://github.com/surefold/surefold/blob/main/docs/flags.md): `Flag`, `evaluatedFor`, `featureClient`.

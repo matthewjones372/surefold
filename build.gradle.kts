@@ -127,7 +127,7 @@ val moduleDescriptions = mapOf(
     "surefold-kafka-test" to
         "A Kafka broker in the test JVM for a service's own tests: no Docker, and helpers to read what it did.",
     "surefold-sqs" to
-        "SQS as a surefold Stream on any backend: sends that pass an element on once SQS has it.",
+        "SQS as a surefold Stream on any backend: a message is deleted only after the work on it is done.",
     "surefold-actor" to
         "An actor as a value and a step, on virtual threads: no actor system, and tests that never wait.",
     "surefold-actor-journal-jdbc" to

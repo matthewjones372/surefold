@@ -83,7 +83,7 @@ All on Maven Central as `dev.surefold:<module>`, on one version.
 - `surefold-kafka`: Kafka as a `Stream`, commit after the work, dead letters, transactions.
 - `surefold-kafka-pekko`: `surefold-kafka` through Pekko's connector.
 - `surefold-kafka-test`: a Kafka broker in the test JVM, for a service's own tests.
-- `surefold-sqs`: SQS sends from a `Stream`, per-message outcomes in a batch.
+- `surefold-sqs`: SQS as a `Stream`, delete after the work, sends.
 - `surefold-actor`: actors as values on virtual threads.
 - `surefold-actor-journal-jdbc`: an actor's journal on JDBC.
 - `surefold-jobs`: durable jobs on Postgres.

@@ -134,6 +134,8 @@ topics, a JDBC journal and read-model projections.
 backend. Offsets are committed only after the work on a record is done, and
 transactions give exactly-once output to `read_committed` readers, with
 one caveat at the end of a run that the guide describes.
+[`surefold-sqs`](docs/sqs.md) does the same for an SQS queue: a message is
+deleted only after the work on it is done.
 
 **Observability.** Logging, metrics and tracing calls are part of the core and
 cross forks. Adding [`surefold-slf4j`, `surefold-micrometer` or `surefold-otel`](docs/observability.md)
@@ -192,6 +194,7 @@ your classpath, and which are unpublished.
 | `surefold-actor-journal-jdbc` | the event journal, snapshots and offsets on JDBC ([guide](docs/cluster.md)) | nothing |
 | `surefold-cluster` | membership, sharding, singletons, reliable delivery, topics ([guide](docs/cluster.md)) | nothing |
 | `surefold-kafka` | Kafka as a `Stream`, producers and transactions ([guide](docs/kafka.md)) | `kafka-clients` |
+| `surefold-sqs` | SQS as a `Stream`, deleted after the work, and sends ([guide](docs/sqs.md)) | AWS SDK `sqs` |
 | `surefold-slf4j`, `surefold-micrometer`, `surefold-otel` | logs, metrics and traces to an existing backend ([guide](docs/observability.md)) | the library named |
 | `surefold-test` | `story` and `eventually` for service tests ([guide](docs/testing.md)) | nothing |
 | `surefold-junit` | suites whose tests run together, expectations as values, aspects ([guide](docs/testing.md#suites)) | `junit-platform-engine` |
