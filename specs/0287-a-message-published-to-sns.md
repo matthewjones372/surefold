@@ -30,7 +30,7 @@ orders
     .runDrain()
 
 received                                                // Stream<E, Received<A>> from Sqs.consume
-    .publishBatch(publisher, topic) { a -> topic.message(a.toJson()) }   // Received<Either<PublishFailed, A>>
+    .publishMessageBatch(publisher) { a -> topic.message(a.toJson()) }   // Received<Either<PublishFailed, A>>
 ```
 
 - `publishTo` is `mapAsync(inFlight)` over `Publish`, as Kafka's is; a refusal
@@ -47,7 +47,8 @@ received                                                // Stream<E, Received<A>
 
 The Kafka sink's names and outcomes, so a service moving between the two edits
 the client, not the pipeline. Depending on `surefold-sqs` only for
-`publishBatch` over `Received` keeps a fan-out from SQS to SNS settling each
+`publishMessageBatch` over `Received` (named apart from `publishBatch`, whose
+overload Kotlin cannot tell from it) keeps a fan-out from SQS to SNS settling each
 message after its publish. The alternative, `surefold-sns` on `surefold-stream`
 alone with no `Received` overload, is smaller but leaves that wiring to callers.
 Recommended: depend on `surefold-sqs`, see Open questions 1.
