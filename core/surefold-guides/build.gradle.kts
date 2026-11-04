@@ -7,6 +7,8 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:${rootProject.extra["surefoldKotlinVersion"]}")
     // What the core guide's examples use beyond surefold itself.
     testImplementation(project(":surefold-cache"))
+    // The cookbook's recipes: applications as graphs.
+    testImplementation(project(":surefold-app"))
     // For the core guide's coroutine examples, which compile against kotlinx's own `await`.
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     // For the stream guide and the README's quick start: a description, and the three backends that stay in core.
@@ -24,6 +26,7 @@ val guides = files(
     rootProject.layout.projectDirectory.file("docs/core.md"),
     rootProject.layout.projectDirectory.file("docs/stream.md"),
     rootProject.layout.projectDirectory.file("docs/testing.md"),
+    rootProject.layout.projectDirectory.file("docs/cookbook.md"),
     rootProject.layout.projectDirectory.file("README.md"),
 )
 

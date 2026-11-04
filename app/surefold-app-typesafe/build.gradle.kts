@@ -13,13 +13,9 @@ dependencies {
     testImplementation(project(":surefold-assert"))
 }
 
-// The page ReportedSuite holds to what the report answers, declared so editing it re-runs the test.
-val documentedReport = files(rootProject.layout.projectDirectory.file("docs/cookbook.md"))
-
 tasks.test {
     // What LoadedLayersSuite forces on top once -Dconfig.override_with_env_vars asks it to.
     environment("CONFIG_FORCE_surefold_layered_forced", "from-env")
-    inputs.files(documentedReport).withPropertyName("documentedReport")
     val mainRuntime = configurations.runtimeClasspath
     inputs.files(mainRuntime).withPropertyName("mainRuntimeClasspath")
     jvmArgumentProviders.add(
@@ -27,7 +23,6 @@ tasks.test {
             listOf(
                 "-Dsurefold.app.typesafe.runtimeClasspath=" +
                     mainRuntime.get().joinToString(File.pathSeparator) { it.name },
-                "-Dsurefold.app.typesafe.repoRoot=${rootProject.projectDir.absolutePath}",
             )
         },
     )

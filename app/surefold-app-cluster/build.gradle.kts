@@ -11,12 +11,7 @@ dependencies {
     testImplementation(testFixtures(project(":surefold-actor-remote")))
 }
 
-// Read at configuration time, so the configuration cache survives it.
-val repoRoot = rootProject.projectDir.absolutePath
-val guide = files(rootProject.layout.projectDirectory.file("docs/cluster.md"))
-
 tasks.test {
-    inputs.files(guide).withPropertyName("guide")
     val mainRuntime = configurations.runtimeClasspath
     inputs.files(mainRuntime).withPropertyName("mainRuntimeClasspath")
     jvmArgumentProviders.add(
@@ -24,7 +19,6 @@ tasks.test {
             listOf(
                 "-Dsurefold.app.cluster.runtimeClasspath=" +
                     mainRuntime.get().joinToString(File.pathSeparator) { it.name },
-                "-Dsurefold.app.cluster.repoRoot=$repoRoot",
             )
         },
     )

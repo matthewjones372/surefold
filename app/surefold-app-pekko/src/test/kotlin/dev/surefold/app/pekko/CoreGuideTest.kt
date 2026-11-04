@@ -11,9 +11,9 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
 /**
- * The complete examples in `docs/observability.md`, `docs/arrow.md` and `docs/flags.md`, each compiled on its own: this
- * module's test classpath holds the core, surefold-pekko, surefold-arrow and surefold-openfeature, which is all they
- * use. `docs/core.md`, `docs/testing.md` and the README are compiled in surefold-guides, against the core alone.
+ * The complete examples in `docs/observability.md` and `docs/arrow.md`, each compiled on its own: this module's
+ * test classpath holds the core, surefold-pekko and surefold-arrow, which is all they use. The core's own guides
+ * are compiled in surefold-guides, against the core alone.
  */
 class CoreGuideTest {
 
@@ -21,7 +21,6 @@ class CoreGuideTest {
         listOf(
             "docs/observability.md" to "observability",
             "docs/arrow.md" to "arrow",
-            "docs/flags.md" to "flags",
         )
 
     @TempDir
