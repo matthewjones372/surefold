@@ -1,4 +1,4 @@
-# 0308 — Runtime code on Surefold's own primitives
+# 0309 — Runtime code on Surefold's own primitives
 
 ## Problem
 
@@ -52,17 +52,17 @@ and (b) is what `Keyed.kt` already got wrong. It costs one binding per activatio
 
 ## Stack
 
-- [ ] **`spec-0308-rule`** — the detekt rule, every current use listed with its reason.
+- [ ] **`spec-0309-rule`** — the detekt rule, every current use listed with its reason.
       Done when: a new `Thread.ofVirtual` in a main source fails `./gradlew build` until its file is listed.
-- [ ] **`spec-0308-turn-locals`** — the runtime binds the scope's locals around each activation (question 1).
+- [ ] **`spec-0309-turn-locals`** — the runtime binds the scope's locals around each activation (question 1).
       Done when: `clock.get()` in a turn reads a `TestClock` bound on the scope, `keyed`'s answer time included.
-- [ ] **`spec-0308-actor-remote`** — the remote watch and unreachable threads onto the node's scope.
+- [ ] **`spec-0309-actor-remote`** — the remote watch and unreachable threads onto the node's scope.
       Done when: closing a node's scope leaves no `surefold-remote-watch` thread, and the rule lists neither.
-- [ ] **`spec-0308-journal-jdbc`** — `GroupCommit`'s thread and `SliceMover`'s sleep-poll onto `Schedule`/forks.
+- [ ] **`spec-0309-journal-jdbc`** — `GroupCommit`'s thread and `SliceMover`'s sleep-poll onto `Schedule`/forks.
       Done when: the rule lists neither file.
-- [ ] **`spec-0308-app`** — `surefold-app-actor`'s holder and `surefold-app-cluster`'s downed thread.
+- [ ] **`spec-0309-app`** — `surefold-app-actor`'s holder and `surefold-app-cluster`'s downed thread.
       Done when: the same, for those files.
-- [ ] **`spec-0308-integrations`** — `Keeper` and `Visibility` (question 3).
+- [ ] **`spec-0309-integrations`** — `Keeper` and `Visibility` (question 3).
       Done when: the same, for those files.
 
 ## Acceptance
