@@ -30,13 +30,13 @@ not yet released are marked where they are documented.
 
 **Snapshots.** An untagged commit builds as the next patch version with
 `-SNAPSHOT` (after `v0.18.0`, `0.18.1-SNAPSHOT`). Every push to `main` publishes
-one to GitHub Packages, at `https://maven.pkg.github.com/surefold/surefold`, and
+one to GitHub Packages, at `https://maven.pkg.github.com/surefold/surefold-core`, and
 it does not expire. GitHub Packages asks for a token even to read a public
 package: put a classic personal access token with only `read:packages` in
 `~/.gradle/gradle.properties` as `gpr.user` and `gpr.key`, and add
 
 ```kotlin
-maven("https://maven.pkg.github.com/surefold/surefold") {
+maven("https://maven.pkg.github.com/surefold/surefold-core") {
     credentials {
         username = providers.gradleProperty("gpr.user").get()
         password = providers.gradleProperty("gpr.key").get()
