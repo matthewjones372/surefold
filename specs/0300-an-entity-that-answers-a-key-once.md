@@ -15,6 +15,8 @@ whose answer was lost.
 - **Keys across entities.** A key is unique within one entity, not across a kind.
 - **Keeping keys forever.** They are kept for a window (open question 1).
 - **Changing `persistent` or `delivered`.** `keyed` is a behaviour beside them.
+- **Replacing `surefold-idempotency`.** That reserves HTTP requests' keys in a Postgres table across instances;
+  `keyed` keeps a command's key inside one entity's journal. Each guide links the other.
 
 ## Shape
 
