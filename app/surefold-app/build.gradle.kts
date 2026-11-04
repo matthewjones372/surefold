@@ -31,6 +31,13 @@ val documentedDiagram = files(
 // The specs SpecsSuite holds to one number each. Their names are the input, so a spec renamed or added re-runs it.
 val specs = fileTree(rootProject.layout.projectDirectory.dir("specs")) { include("**/*.md") }
 
+// ThreadRuleSuite holds detekt's thread rule to the main sources it excuses (spec 0309): both are what it reads.
+val threadRule = files(rootProject.layout.projectDirectory.file("config/detekt/detekt.yml"))
+val mainSources = fileTree(rootProject.layout.projectDirectory) {
+    include("**/src/main/kotlin/**/*.kt")
+    exclude("**/build/**")
+}
+
 // CheckSuite runs discovery against this module's own test output, which is the only way to test a
 // scan that reads class files rather than a list someone passed it.
 val testClassDirs = sourceSets.test.get().output.classesDirs
@@ -40,6 +47,8 @@ tasks.test {
     inputs.files(agentDocs).withPropertyName("agentDocs")
     inputs.files(guides).withPropertyName("guides")
     inputs.files(specs).withPropertyName("specs").withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.files(threadRule).withPropertyName("threadRule")
+    inputs.files(mainSources).withPropertyName("mainSources").withPathSensitivity(PathSensitivity.RELATIVE)
     inputs.property("publishedModules", publishedModules)
     inputs.property("describedModules", describedModules)
     val mainRuntime = configurations.runtimeClasspath

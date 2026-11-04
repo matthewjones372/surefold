@@ -223,6 +223,54 @@ style:
     # SystemClock.sleep parks in Waiting.kt (spec 0042) rather than calling it,
     # and everything else waits through whichever Clock the thread inherited.
     excludes: ['**/test/**', '**/example/**']
+  # A third instance, for main sources: a thread started by hand belongs to no scope, so it outlives its node and
+  # reads none of the scope's locals (spec 0309). Each file below starts one anyway, and says why; ThreadRuleSuite
+  # fails on a listed file that no longer does, so the list only shrinks. Thread.sleep is the first instance's.
+  ForbiddenMethodCall/threads:
+    active: true
+    methods:
+      - reason: 'A thread started by hand belongs to no scope: fork with scope.async, or block in an actor turn (spec 0309).'
+        value: 'java.lang.Thread.ofVirtual'
+      - reason: 'A thread started by hand belongs to no scope: fork with scope.async, or block in an actor turn (spec 0309).'
+        value: 'java.lang.Thread.ofPlatform'
+      - reason: 'A thread started by hand belongs to no scope: fork with scope.async, or block in an actor turn (spec 0309).'
+        value: 'java.lang.Thread.<init>'
+    excludes:
+      - '**/test/**'
+      - '**/testFixtures/**'
+      - '**/example/**'
+      # A benchmark measures Surefold's threads against hand-started ones.
+      - '**/bench/**'
+      # The bank example moves to surefold-platform with its module (0301), and is changed there.
+      - '**/examples/surefold-bank/**'
+      # The executor every scope forks on.
+      - '**/core/surefold/src/main/kotlin/dev/surefold/VirtualThreads.kt'
+      # A shielded block outlives the interrupt of the thread that waits for it, so no fork of that thread can run it.
+      - '**/core/surefold/src/main/kotlin/dev/surefold/Saga.kt'
+      # The one flight every caller of a key waits on, owned by none of them.
+      - '**/core/surefold/src/main/kotlin/dev/surefold/SingleFlight.kt'
+      # The thread factory of the JDK's StructuredTaskScope, which this module wraps.
+      - '**/core/surefold-structured/src/main/kotlin/dev/surefold/structured/Tasks.kt'
+      # The watcher that ends a deterministic order, and must run outside the order it watches.
+      - '**/core/surefold-replay/src/main/kotlin/dev/surefold/replay/Order.kt'
+      # The runners every actor turn runs on.
+      - '**/actor/surefold-actor/src/main/kotlin/dev/surefold/actor/Runners.kt'
+      # The timer wheel every actor timer waits on.
+      - '**/actor/surefold-actor/src/main/kotlin/dev/surefold/actor/Wheel.kt'
+      # The transport's accept, read and write loops, one per socket.
+      - '**/actor/surefold-actor-remote/src/main/kotlin/dev/surefold/actor/remote/Wire.kt'
+      # spec-0309-actor-remote moves the watch and unreachable threads onto the node's scope.
+      - '**/actor/surefold-actor-remote/src/main/kotlin/dev/surefold/actor/remote/Remote.kt'
+      # spec-0309-journal-jdbc moves the committer onto a fork.
+      - '**/actor/surefold-actor-journal-jdbc/src/main/kotlin/dev/surefold/actor/journal/jdbc/GroupCommit.kt'
+      # spec-0309-app moves the holder of the application's actors.
+      - '**/app/surefold-app-actor/src/main/kotlin/dev/surefold/app/actor/Actors.kt'
+      # spec-0309-app moves the thread that ends a downed node's process.
+      - '**/app/surefold-app-cluster/src/main/kotlin/dev/surefold/app/cluster/Clustered.kt'
+      # Changed in surefold-integrations once 0302 has moved it (0309 question 3).
+      - '**/integrations/surefold-kafka/src/main/kotlin/dev/surefold/kafka/Keeper.kt'
+      # Changed in surefold-integrations once 0302 has moved it (0309 question 3).
+      - '**/integrations/surefold-sqs/src/main/kotlin/dev/surefold/sqs/Visibility.kt'
   # A second instance of the rule, for main and test sources alike: the first excludes tests, which may sleep.
   ForbiddenMethodCall/runCatching:
     active: true
