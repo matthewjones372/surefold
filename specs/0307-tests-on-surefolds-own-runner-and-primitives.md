@@ -94,8 +94,8 @@ grep -rln "Thread.sleep" core/surefold/src/test   # only tests whose subject is 
 ## Open questions
 
 1. **`Guarded` permits for an actor system:** unlimited, or one per test so tests never share it at once?
-   Recommended: unlimited; a Pekko system is built to be shared, and tests already use distinct actor names.
+   Answered (maintainer, 2026-11-04), as recommended: unlimited; a Pekko system is built to be shared, and tests already use distinct actor names.
 2. **Kafka's 11 files** use real brokers and real time on purpose. Leave them out of the clock entries?
-   Recommended: yes, except where a sleep only waits for a test's own fork, which `await` replaces.
+   Answered (maintainer, 2026-11-04), as recommended: yes, except where a sleep only waits for a test's own fork, which `await` replaces.
 3. **Ban `Thread.sleep` in tests with a detekt rule**, allowed per file with a reason, as `TooGenericExceptionCaught`
-   is? Recommended: yes, as the last entry, once the clock entries leave only the files that need it.
+   is? Answered (maintainer, 2026-11-04), as recommended: yes, as the last entry, once the clock entries leave only the files that need it.
