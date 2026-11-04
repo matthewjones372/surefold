@@ -129,5 +129,6 @@ already talk to entities, with jobs left as a later backend.
    id is still refused and an old transfer can't run again. Audit belongs in a read model (0075).
 5. **`entityStep` and `keyed` here or in a spec of their own?** Answered (maintainer, 2026-11-04): here, as
    `spec-0299-keyed`, because the bank rewrite that proves this spec uses them for both steps.
-6. **How long does a `keyed` entity remember a key?** Recommended: until a snapshot older than the longest saga's
-   `resume` window prunes it, set per kind with a default of 30 days.
+6. **How long does a `keyed` entity remember a key?** Answered (maintainer, 2026-11-04): a window per kind,
+   30 days by default, dropped at a snapshot (0076). `resume` refuses a saga stuck for longer than the window of
+   any kind it sends to, so a forgotten key can't be sent again.
