@@ -67,6 +67,8 @@ fun Cluster.outcome(id: String) = transfers(accounts).on(this).await(id)        
   `check` the saga stops `Stuck` before calling anything.
 - **A step's key** is `"$sagaId/$stepName"` (`…/undo` for its undo), the same on every run and every node, for
   the system called to deduplicate on, such as a reliable command's id or a job's dedupe key.
+- **`now()` and `uuid()` in the body** are journalled the first time and return the same value on replay, read
+  from the `clock` local so a test clock reaches them.
 - **Undoing is journalled too** (`Undoing(why)`, `Undone(step)`), so a node that dies mid-undo resumes the undo
   elsewhere, never the forward steps.
 - **An unsettled step or an undo that still fails after its policy** leaves the saga `Stuck`, undoing nothing
@@ -89,7 +91,9 @@ already talk to entities, with jobs left as a later backend.
 
 - [ ] **`spec-0299-journal`** — the module, `durableSaga`, steps journalled and replayed, keys, on one node.
       Done when: a saga stopped after its first step and started again calls the second step's action only, and
-      one stopped mid-step calls that step's `check` before anything else.
+      one stopped mid-step calls that step's `check` before anything else; `now()` and `uuid()` answer the same
+      after a restart; and a 0128 unkind run that crashes at every step boundary ends every saga as it would have
+      without a crash.
 - [ ] **`spec-0299-undo`** — journalled undos, `Stuck`, `resume`, the `stuck` gauge.
       Done when: an undo failing past its policy leaves `Stuck`, and `resume` after the fix ends it `Undone`.
 - [ ] **`spec-0299-cluster`** — `on(cluster)`, `start`/`await` from any node, and recovery when a node leaves.
@@ -118,8 +122,8 @@ already talk to entities, with jobs left as a later backend.
    through codecs that may be `versioned` (0091), so a changed *shape* replays; a changed *order of steps* is
    what diverges, and running in-flight sagas on the body they started with is the later versioning spec.
 3. **Reading the clock or a random id in the body** gives a different answer on replay. Make them steps
-   (`now()` and `uuid()` journalled), or document it? Recommended: journalled helpers, plus a test in the
-   `testActors` unkind runtime (0128) that crashes at every step boundary.
+   (`now()` and `uuid()` journalled), or document it? Answered (maintainer, 2026-11-04): journalled helpers, plus
+   a test in the `testActors` unkind runtime (0128) that crashes at every step boundary.
 4. **Keep `await` for a finished saga forever?** Recommended: until its events are pruned, then answer `Forgotten`.
 5. **`entityStep` and `keyed` here or in a spec of their own?** Answered (maintainer, 2026-11-04): here, as
    `spec-0299-keyed`, because the bank rewrite that proves this spec uses them for both steps.
