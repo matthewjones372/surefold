@@ -50,6 +50,14 @@ surefold/surefold-platform      core + integrations (0301)
   `llms.txt` and links are updated in the same step.
 - **The core's guides keep pointers.** `docs/modules.md` lists every moved module with a link, and `docs/arrow.md`,
   `observability.md`, `kafka.md`, `sqs.md`, `sns.md` and the Pekko sections move with their modules.
+- **One build when you ask for it.** With the repositories checked out side by side, a repository's
+  `settings.gradle.kts` includes the ones it depends on, and Gradle substitutes their source for the published
+  artifacts by group and name. CI never checks them out, so it always builds against Central:
+
+  ```kotlin
+  // surefold-integrations/settings.gradle.kts (and surefold-platform's, with both upstreams)
+  listOf("../surefold-core").filter { file(it).exists() }.forEach { includeBuild(it) }
+  ```
 - **Releases name their upstream.** An integrations release says which core version it was built against, and a
   platform release names both.
 
@@ -62,8 +70,10 @@ Recommended (maintainer, 2026-11-04): a third repository.
 
 ## Stack
 
-- [ ] **`spec-0302-seed`** (new repository) — the filtered history, the build on published core 0.19.0, gates, CI.
-      Done when: `./gradlew build` there is green against Maven Central artifacts only.
+- [ ] **`spec-0302-seed`** (new repository) — the filtered history, the build on published core 0.19.0, gates, CI,
+      and the side-by-side composite build with its layout in `AGENTS.md`.
+      Done when: `./gradlew build` there is green against Maven Central artifacts only, and with `surefold-core`
+      checked out beside it a change to core's source reaches the integrations' tests without publishing.
 - [ ] **`spec-0302-release`** (new repository) — release and snapshot workflows for the same coordinates.
       Done when: a snapshot of every moved artifact is published from there.
 - [ ] **`spec-0302-remove`** (here) — delete the moved modules, keep the pointers.
@@ -88,3 +98,5 @@ Recommended (maintainer, 2026-11-04): a third repository.
    changelog through the journal's own setup rather than `app-liquibase`, because it proves the sagas (0299).
 3. **Order of 0301 and 0302.** Recommended: both seed from the same last single-repository release (0.19.0), 0302
    first, so the platform repository's first build after the split already resolves integrations from Central.
+4. **A composite build across the repositories?** Answered (maintainer, 2026-11-04): yes, opt-in by checking the
+   repositories out side by side; CI stays on published artifacts.

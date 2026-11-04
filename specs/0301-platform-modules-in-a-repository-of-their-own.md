@@ -43,6 +43,8 @@ dependencies {
 }
 ```
 
+- **The same side-by-side composite build as 0302**: `settings.gradle.kts` includes `../surefold-core` and
+  `../surefold-integrations` when they are checked out there, so one build spans all three; CI never does.
 - **Surefold publishes `surefold-actor-journal-jdbc`'s test fixtures** (its Postgres for tests), which eight
   `data/` modules use today through `testFixtures(project(...))`.
 - **Surefold keeps a pointer.** `docs/modules.md`'s Data section becomes a short table linking each module to the
@@ -62,8 +64,10 @@ checkout but none of the smaller build or reading. **Alternative:** split by mod
 
 - [ ] **`spec-0301-fixtures`** (here) — publish `surefold-actor-journal-jdbc`'s test fixtures and release.
       Done when: a project outside this build resolves `testFixtures("dev.surefold:surefold-actor-journal-jdbc")`.
-- [ ] **`spec-0301-seed`** (new repository) — the filtered history, the build on published 0.19.0, gates and CI.
-      Done when: `./gradlew build` there is green against Maven Central artifacts only.
+- [ ] **`spec-0301-seed`** (new repository) — the filtered history, the build on published 0.19.0, gates, CI and
+      the composite build.
+      Done when: `./gradlew build` there is green against Maven Central artifacts only, and with both upstreams
+      checked out beside it a change to their source reaches the platform's tests without publishing.
 - [ ] **`spec-0301-release`** (new repository) — the release and snapshot workflows publishing the same coordinates.
       Done when: a snapshot of every moved artifact is published from there.
 - [ ] **`spec-0301-remove`** (here) — delete `data/`, `surefold-jobs-load` and the moved tests, and add the pointers.
