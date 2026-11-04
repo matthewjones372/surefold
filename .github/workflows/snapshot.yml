@@ -34,21 +34,21 @@ jobs:
       ORG_GRADLE_PROJECT_githubPackagesPassword: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           # The version is derived from the nearest `v` tag, and a shallow
           # checkout has no tags to derive it from.
           fetch-depth: 0
 
       # The same two as release.yml: 27 for surefold-structured's toolchain, 25 for Gradle.
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: |
             27
             25
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       # On a tagged commit axion gives a release version, which is release.yml's
       # to publish. A push of one is skipped; a dispatch of one is a mistake.

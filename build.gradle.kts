@@ -297,14 +297,17 @@ subprojects {
     extensions.configure<com.vanniktech.maven.publish.MavenPublishBaseExtension> {
         // Sources are not an optional extra for a library someone else has to
         // debug, and Maven Central will not accept a release without a javadoc
-        // jar. Dokka fills it: an empty jar leaves javadoc.io blank, which puts
-        // the KDoc out of reach of anyone who has not cloned the repository.
+        // jar. An empty one: Dokka's were 16 of core 0.18.0's 19 MB on Central,
+        // nearly all of it the same scripts and fonts in every module, and
+        // Central now caps a publisher's monthly release size. javadoc.io is
+        // blank as a result; `dokkaGeneratePublicationHtml` still renders the
+        // KDoc locally, and the sources jar carries it to an IDE.
         // A Gradle plugin says which platform it is in its own build script, where
         // `java-gradle-plugin` has been applied: this block runs before that.
         if (name !in gradlePluginModules) {
             configure(
                 com.vanniktech.maven.publish.KotlinJvm(
-                    javadocJar = com.vanniktech.maven.publish.JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
+                    javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
                     sourcesJar = true,
                 ),
             )
@@ -362,50 +365,8 @@ subprojects {
                 credentials(PasswordCredentials::class)
             }
         }
-        // Not for the Gradle plugin: vanniktech's GradlePlugin platform with a Dokka javadoc jar makes that jar for
-        // every publication, so a second one fails to configure; a plugin is found by its ID's marker anyway.
-        val module = this@subprojects.name
-        if (module !in gradlePluginModules) relocatedFromOldGroup(module, version.toString())
-    }
-    // The relocation POMs are for Central: GitHub Packages, which keeps snapshots, takes `dev.surefold` only.
-    tasks.withType<PublishToMavenRepository>().configureEach {
-        onlyIf("only dev.surefold goes to GitHub Packages") { task ->
-            val publish = task as PublishToMavenRepository
-            publish.repository.name != "githubPackages" || publish.publication.groupId == "dev.surefold"
-        }
-    }
-    // The Central Portal refuses a deployment with files for two namespaces, and a Gradle run uploads one
-    // deployment, so release.yml publishes to Central once per namespace: `dev.surefold` by default, then the
-    // relocation POMs with `-PcentralNamespace=io.github.matthewjones372`.
-    val centralNamespace = providers.gradleProperty("centralNamespace").getOrElse("dev.surefold")
-    tasks.withType<PublishToMavenRepository>().configureEach {
-        onlyIf("only $centralNamespace goes to Central in this run") { task ->
-            val publish = task as PublishToMavenRepository
-            val group = publish.publication.groupId
-            val inNamespace = group == centralNamespace || group.startsWith("$centralNamespace.")
-            publish.repository.name != "mavenCentral" || inNamespace
-        }
-    }
-}
-
-/**
- * A POM-only publication at the coordinates surefold had up to 0.17, relocating to the same module under
- * `dev.surefold` (spec 0277). Maven and Gradle follow it, so a build still on `io.github.matthewjones372` resolves
- * the new module.
- */
-fun PublishingExtension.relocatedFromOldGroup(module: String, version: String) {
-    publications.register<MavenPublication>("relocation") {
-        groupId = "io.github.matthewjones372"
-        artifactId = module
-        this.version = version
-        pom {
-            packaging = "pom"
-            distributionManagement {
-                relocation {
-                    groupId.set("dev.surefold")
-                    message.set("surefold moved to dev.surefold in 0.18.0; packages and plugin IDs moved with it.")
-                }
-            }
-        }
+        // No relocation POMs at `io.github.matthewjones372` any more (spec 0277 published them at 0.18.0):
+        // 0.18.0's send a build on the old group here, and every further version of them would be a
+        // second Central deployment per release, which Central now counts against a monthly limit.
     }
 }
