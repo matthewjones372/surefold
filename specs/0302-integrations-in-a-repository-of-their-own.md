@@ -58,8 +58,8 @@ surefold/surefold-platform      core + integrations (0301)
   // surefold-integrations/settings.gradle.kts (and surefold-platform's, with both upstreams)
   listOf("../surefold-core").filter { file(it).exists() }.forEach { includeBuild(it) }
   ```
-- **Releases name their upstream.** An integrations release says which core version it was built against, and a
-  platform release names both.
+- **Each repository has its own version** (0301 question 3), all starting at 0.19.0. An integrations release says
+  which core version it was built against, and a platform release names both.
 
 ## Why this shape
 

@@ -88,7 +88,8 @@ grep -c 'module("data"' settings.gradle.kts       # 0 here
    repository of their own, `surefold-integrations` (0302), not into this one.
 2. **What is the new repository called?** Answered (maintainer, 2026-11-04): `surefold/surefold-platform`.
    Creating it is the maintainer's to do; no agent can.
-3. **Versions: in lockstep with Surefold, or their own?** Recommended: their own, starting at the version that
-   moves (0.19.0), each release naming the Surefold version it was built against.
+3. **Versions: in lockstep with Surefold, or their own?** Answered (maintainer, 2026-11-04): each repository its own,
+   all three starting at 0.19.0, each release naming the core and integrations versions it was built against. A
+   BOM, if wanted, is a later spec.
 4. **Does the last Surefold release that still contains `data/` get a notice in its README?** Recommended: yes,
    one line under Status saying where the modules went and that coordinates are unchanged.
