@@ -57,6 +57,7 @@ jobs:
         run: |
           version=$(./gradlew -q currentVersion | awk 'NF { last = $NF } END { print last }')
           echo "version: $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
           case "$version" in
             *-SNAPSHOT) echo "publish=true" >> "$GITHUB_OUTPUT" ;;
             *) if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ]; then
@@ -69,3 +70,11 @@ jobs:
       # publishes without running the tests again.
       - if: steps.version.outputs.publish == 'true'
         run: ./gradlew publishAllPublicationsToGithubPackagesRepository --no-configuration-cache
+
+      # surefold-integrations and surefold-platform test on core's fixtures (spec 0301): a build outside this one
+      # resolves them from GitHub Packages, as theirs will, so a snapshot that dropped one fails here, not there.
+      - if: steps.version.outputs.publish == 'true'
+        run: >
+          ./gradlew -p .github/consumers/test-fixtures checkFixtures
+          -PsurefoldRepo=https://maven.pkg.github.com/surefold/surefold-core
+          -PsurefoldVersion=${{ steps.version.outputs.version }}
