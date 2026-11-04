@@ -29,7 +29,7 @@ dependencies {
     // The compiler, so that "this does not compile" can be a test rather than
     // a sentence in a document that goes stale.
     testImplementation("org.jetbrains.kotlin:kotlin-compiler-embeddable:2.4.10")
-    // The README's example starts one description on every backend, and is compiled against them.
+    // RestartDelaySuite runs a restart on the test backend's clock.
     testImplementation(project(":surefold-stream-test"))
     testImplementation(project(":surefold-assert"))
 }
@@ -38,10 +38,6 @@ dependencies {
 // execution time would not survive the configuration cache.
 val repoRoot = rootProject.projectDir.absolutePath
 val judgedSources = files(layout.projectDirectory.dir("src/main/kotlin"))
-val documentedExample = files(
-    rootProject.layout.projectDirectory.file("docs/stream.md"),
-    rootProject.layout.projectDirectory.file("README.md"),
-)
 
 tasks.test {
     // The main runtime classpath, so the dependency test can assert on what is
@@ -53,11 +49,6 @@ tasks.test {
     // read files Gradle knows nothing about, and a violation would ride green
     // builds until `--rerun-tasks`.
     inputs.files(judgedSources).withPropertyName("judgedSources")
-    // ReadmeExampleSuite compiles the example out of docs/stream.md and holds the
-    // README's copy of it to the same text, so an edit to either page is a change
-    // to what this task tests: without this the example would ride a cached green
-    // until something else in the module moved.
-    inputs.files(documentedExample).withPropertyName("documentedExample")
     // DoesNotCompileTest runs the Kotlin compiler inside the test JVM. Gradle's
     // default heap turns that into a garbage-collection stall long enough to
     // trip the suite's 60s timeout.

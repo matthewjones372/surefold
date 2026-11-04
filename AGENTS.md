@@ -117,8 +117,9 @@ Work out which of these a change can break:
 
 The guides' Kotlin fences are compiled by tests that read the Markdown:
 `CoreGuidesSuite` in `core/surefold-guides` (`docs/core.md`, `testing.md` and
-the README's suite, against the core alone), `ReadmeExampleSuite` (README and
-`docs/stream.md`), `CoreGuideTest` and `CookbookTest` (`observability.md`,
+the README's suite, against the core alone), `StreamGuidesSuite` beside it
+(`docs/stream.md` and the README's quick start, against the core alone),
+`CoreGuideTest` and `CookbookTest` (`observability.md`,
 `arrow.md`, `flags.md`, `cookbook.md`), `ActorsGuideTest` and
 `GuideExampleTest`. A fence is found by
 the HTML comment above it, such as `<!-- core-policy -->`, so keep the marker
