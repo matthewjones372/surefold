@@ -12,6 +12,7 @@ import dev.surefold.actor.Reply
 import dev.surefold.actor.Signal
 import dev.surefold.actor.Unanswerable
 import dev.surefold.actor.Watchable
+import dev.surefold.actor.become
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.counter
 import dev.surefold.actor.deadLetter
@@ -20,7 +21,6 @@ import dev.surefold.actor.onSignal
 import dev.surefold.actor.spawn
 import dev.surefold.actor.stay
 import dev.surefold.actor.tagMetrics
-import dev.surefold.actor.watch
 import dev.surefold.clock
 import dev.surefold.fail.nonFatalOrThrow
 import dev.surefold.increment
@@ -74,17 +74,16 @@ fun <F> Scope<F>.node(
     // Every metric of this scope names the node it runs, so several nodes in one JVM are told apart (spec 0081).
     tagMetrics("node" to name)
     val node = RemoteNode(Node(name, host, port), this, unreachableAfter, tls)
+    // The node's own actor keeps the watches other nodes hold here and the timers on peers gone quiet, and closes the
+    // transport when it stops: the scope has no hook of its own for close, and an actor's Stopping is one. Spawned
+    // before the transport listens, so no watch arrives before it is there.
+    node.keeper = spawn("remote-$name", node.keeping())
     node.transport.listen()
-    // The scope has no hook of its own for close, and an actor's Stopping is one: the node closes with it.
-    spawn(
-        "remote-$name",
-        behaviour<Unit, Unit>(Unit) { _, _, _ -> stay() }.onSignal { _, _, signal ->
-            if (signal == Signal.Stopping) node.transport.close()
-            stay()
-        },
-    )
     return node
 }
+
+/** The watches a node's keeper holds: each actor, with the peers that hear when it ends and the address each knows. */
+private typealias Watchers = Map<ActorRef<*>, Set<Pair<Node, Address>>>
 
 /** What a dead letter holds when the frame it came in could not be read: no codec was known for its path. */
 class UnreadMessage(val bytes: ByteArray)
@@ -206,13 +205,8 @@ class RemoteNode internal constructor(
         if (!watched.add(peer to address)) return
         val actor = exposed[address.path]?.ref
             ?.takeIf { address.incarnation == 0L || it.address.incarnation == address.incarnation }
-        val terminated = Frame(TERMINATED, 0, target(address))
-        if (actor == null) return send(peer, terminated)
-        Thread.ofVirtual().name("surefold-remote-watch").start {
-            scope.watch(actor).await()
-            watched -= peer to address
-            send(peer, terminated)
-        }
+        if (actor == null) return send(peer, Frame(TERMINATED, 0, target(address)))
+        keeper.tell(Keep.Watch(peer, address, actor))
     }
 
     private fun terminated(address: Address) = watching.remove(address)?.forEach { it() }
@@ -220,15 +214,69 @@ class RemoteNode internal constructor(
     /** [peer] went: if it has not come back after [unreachableAfter], every watch on it ends. */
     private fun maybeUnreachable(peer: Node) {
         if (membershipEndsWatches || !timing.add(peer)) return
-        Thread.ofVirtual().name("surefold-remote-unreachable").start {
-            try {
-                time.sleep(unreachableAfter)
-            } catch (_: InterruptedException) {
-                return@start
-            } finally {
-                timing -= peer
+        keeper.tell(Keep.Quiet(peer))
+    }
+
+    /** The keeper's timer on [peer] is up: it ends every watch there, unless the peer has come back meanwhile. */
+    private fun unreachable(peer: Node) {
+        timing -= peer
+        if (up.none { it.first == peer }) watching.keys.filter { it.node == peer.toString() }.forEach(::terminated)
+    }
+
+    /** What the node's keeper handles: a watch another node holds here, a peer gone quiet, and its timer ending. */
+    internal sealed interface Keep {
+        data class Watch(val peer: Node, val address: Address, val actor: ActorRef<*>) : Keep
+
+        data class Quiet(val peer: Node) : Keep
+
+        data class Unreachable(val peer: Node) : Keep
+    }
+
+    @Volatile
+    internal lateinit var keeper: ActorRef<Keep>
+
+    /**
+     * The node's own actor: it watches each actor another node watches here and tells that node when it ends, and
+     * waits out [unreachableAfter] on the scope's clock, so neither holds a thread, and both stop with the scope.
+     */
+    internal fun keeping() = behaviour<Keep, Watchers>(emptyMap()) { ctx, watchers, message ->
+        when (message) {
+            is Keep.Watch -> try {
+                ctx.watch(message.actor)
+                val peers = watchers[message.actor].orEmpty() + (message.peer to message.address)
+                become(watchers + (message.actor to peers))
+            } catch (unwatchable: IllegalArgumentException) {
+                // Not an actor on threads: it never ends as far as this node can tell, as before.
+                watched -= message.peer to message.address
+                log.log(
+                    LogLine(
+                        LogLevel.Warn,
+                        "surefold-actor-remote: ${message.peer} cannot watch ${message.actor}: $unwatchable",
+                        time.now(),
+                        unwatchable,
+                        origin = RemoteNode::class.java.name,
+                    ),
+                )
+                stay()
             }
-            if (up.none { it.first == peer }) watching.keys.filter { it.node == peer.toString() }.forEach(::terminated)
+
+            is Keep.Quiet -> stay().also {
+                ctx.timers.after(message.peer, unreachableAfter, Keep.Unreachable(message.peer))
+            }
+
+            is Keep.Unreachable -> stay().also { unreachable(message.peer) }
+        }
+    }.onSignal { _, watchers, signal ->
+        when (signal) {
+            is Signal.Terminated -> {
+                watchers[signal.ref].orEmpty().forEach { (peer, address) ->
+                    watched -= peer to address
+                    send(peer, Frame(TERMINATED, 0, target(address)))
+                }
+                become(watchers - signal.ref)
+            }
+
+            Signal.Stopping -> stay().also { transport.close() }
         }
     }
 
