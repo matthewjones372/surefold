@@ -82,6 +82,9 @@ a test of a cache's expiry should not.
       Done when: none of them calls `Thread.sleep` to wait, and their run time drops.
 - [ ] **`spec-0307-clock-cluster`** — the same for `surefold-cluster` and `surefold-actor`.
       Done when: the same, for those modules.
+- [ ] **`spec-0307-no-sleep`** — a detekt rule against `Thread.sleep` in test sources, each file that still needs it
+      listed in `detekt.yml` with its reason (question 3).
+      Done when: a new test that sleeps fails `./gradlew build` until its file is listed with a reason.
 
 ## Acceptance
 
