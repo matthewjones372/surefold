@@ -1,5 +1,8 @@
 package dev.surefold.cluster.saga
 
+import dev.surefold.Schedule
+import dev.surefold.Shared
+import dev.surefold.actor.AskFailure
 import dev.surefold.actor.EventCodec
 import dev.surefold.actor.PersistenceId
 import dev.surefold.actor.Reply
@@ -16,19 +19,23 @@ import dev.surefold.actor.stay
 import dev.surefold.cluster.Cluster
 import dev.surefold.cluster.MemberEvent
 import dev.surefold.cluster.singleton
+import dev.surefold.fail.Either
+import dev.surefold.fail.bind
+import dev.surefold.retrying
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.util.WeakHashMap
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 private const val SAGAS = "surefold-sagas"
 
-/** How long a runner waits for the waker to list a saga before it asks again. */
+/** How long a runner waits for the waker to list a saga, and then how long before it asks again. */
 private val LIST_WITHIN = 5.seconds
+private val ASK_AGAIN_AFTER = 100.milliseconds
 
 /** One saga, by its kind and id. */
 private data class Saga(val kind: String, val id: String)
@@ -56,6 +63,7 @@ private sealed interface Listing {
     data class Unlisted(override val saga: Saga) : Listing
 }
 
+// Locked rather than a `Shared`: making a waker spawns its singleton, and a step may run more than once.
 private val wakers = WeakHashMap<Cluster, Waker>()
 
 /** This node's part in the cluster's `surefold-sagas` singleton: one per cluster, however many kinds run on it. */
@@ -66,20 +74,26 @@ internal fun Cluster.waker(): Waker = synchronized(wakers) { wakers.getOrPut(thi
  * when a member is removed, and this node's way to reach it. Only the kinds run on the node it runs on are woken.
  */
 internal class Waker(private val cluster: Cluster) {
-    private val kinds = ConcurrentHashMap<String, (String) -> Unit>()
+    private val kinds = Shared(emptyMap<String, (String) -> Unit>(), "surefold.sagas.kinds")
 
     private val singleton = cluster.singleton(SAGAS, WakesCodec) { waking() }
 
     /** Lets the waker on this node wake [kind]'s sagas through [wake]. */
     fun kind(kind: String, wake: (id: String) -> Unit) {
-        require(kinds.putIfAbsent(kind, wake) == null) { "the saga kind $kind already runs on this cluster" }
+        val added = kinds.modify { known -> if (kind in known) known to false else (known + (kind to wake)) to true }
+        require(added) { "the saga kind $kind already runs on this cluster" }
         singleton.tell(Wakes.Known(kind))
     }
 
-    /** Lists the saga before it is started, waiting as long as it takes: unlisted, a crash would leave it asleep. */
-    fun began(kind: String, id: String) {
+    /**
+     * Lists the saga before it is started, asking as long as it takes, so this never answers on the left: unlisted, a
+     * crash would leave it asleep.
+     */
+    fun began(kind: String, id: String): Either<AskFailure, Unit> {
         val saga = Saga(kind, id)
-        while (singleton.ask<Wakes, Unit>(LIST_WITHIN) { reply -> Wakes.Began(saga, reply) }.isLeft()) continue
+        return Schedule.spaced<AskFailure>(ASK_AGAIN_AFTER).retrying {
+            singleton.ask<Wakes, Unit>(LIST_WITHIN) { reply -> Wakes.Began(saga, reply) }.bind()
+        }
     }
 
     /** Takes an ended saga off the list; one whose word is lost is taken off when it is next woken. */
@@ -115,7 +129,7 @@ internal class Waker(private val cluster: Cluster) {
         ctx.timers.after(Wakes.WakeAll, Duration.ZERO, Wakes.WakeAll)
     }
 
-    private fun wake(sagas: Iterable<Saga>) = sagas.forEach { saga -> kinds[saga.kind]?.invoke(saga.id) }
+    private fun wake(sagas: Iterable<Saga>) = sagas.forEach { saga -> kinds.peek()[saga.kind]?.invoke(saga.id) }
 }
 
 private object WakesCodec : MessageCodec<Wakes> {

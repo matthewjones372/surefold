@@ -1,7 +1,10 @@
 package dev.surefold.cluster.saga
 
+import dev.surefold.Clock
+import dev.surefold.Metrics
+import dev.surefold.actor.ActorRef
 import dev.surefold.actor.AskFailure
-import dev.surefold.actor.Ctx
+import dev.surefold.actor.Behaviour
 import dev.surefold.actor.Reply
 import dev.surefold.actor.ask
 import dev.surefold.actor.become
@@ -12,6 +15,7 @@ import dev.surefold.actor.remote.WireException
 import dev.surefold.actor.remote.WireIn
 import dev.surefold.actor.remote.WireOut
 import dev.surefold.actor.stay
+import dev.surefold.actor.stop
 import dev.surefold.clock
 import dev.surefold.cluster.Cluster
 import dev.surefold.cluster.Sharded
@@ -41,14 +45,28 @@ class Sagas<I, E, A> internal constructor(
 
 /**
  * This saga run on [cluster], as one sharded entity per id on whichever member owns it. Every node calls this with
- * the same saga. An entity stopped for [passivateAfter] while its body runs leaves the body running, and is started
- * again by the next message, which reads the journal anew.
+ * the same saga, on its cluster's scope, as it calls `cluster` and `sharding`: a body reads the clock and metrics
+ * bound there. An entity has nothing for [passivateAfter] only once its body has stopped.
  */
 fun <I, E, A> Durable<I, E, A>.on(cluster: Cluster, passivateAfter: Duration = 10.minutes): Sagas<I, E, A> {
     val waker = cluster.waker()
-    val sharded = cluster.sharding("saga-$kind", SagaCodec, passivateAfter) { id -> entity(id, waker) }
-    waker.kind(kind) { id -> sharded.entity(id).tell(SagaCommand.Wake) }
+    val runs = Runs(clock.get(), metrics.get(), waker, passivateAfter / 2)
+    val sharded = cluster.sharding("saga-$kind", SagaCodec, passivateAfter) { id -> entity(id, runs) }
+    runs.wake = { id -> sharded.entity(id).tell(SagaCommand.Wake) }
+    waker.kind(kind, runs.wake)
     return Sagas(this, sharded)
+}
+
+/**
+ * What every run of a kind's sagas on this node shares: the clock and metrics bound where `on` was called, since a
+ * turn runs on a runner that inherits neither, as `Scope.cluster` reads its clock; the waker; and a word to an entity
+ * through its region, sent every [keepEvery] while its body runs, so its idle timer never stops it part way.
+ */
+private class Runs(val time: Clock, val measured: Metrics, val waker: Waker, val keepEvery: Duration) {
+    @Volatile
+    lateinit var wake: (id: String) -> Unit
+
+    fun <T> bound(block: () -> T): T = clock.locally(time) { metrics.locally(measured, block) }
 }
 
 /** How long past its own wait an `await` gives the answer to cross back. */
@@ -84,6 +102,9 @@ internal sealed interface SagaCommand {
     /** Drive the saga if nothing here is: the `surefold-sagas` waker's word after a member is removed. */
     data object Wake : SagaCommand
 
+    /** A running entity's own timer: word to itself through its region, which counts as not idle. */
+    data object Busy : SagaCommand
+
     /** The runner found `Started` in the journal, or wrote it. */
     data object Begun : SagaCommand
 
@@ -108,12 +129,18 @@ private sealed interface Phase {
 }
 
 /**
- * The entity of the saga [id]. Its turns never block: the body runs on a virtual thread of its own and tells the
- * entity how it went. A second runner, on a node the shard has just left, is stopped by the journal as [Overtaken].
+ * The entity of the saga [id]. Its turns never block: the body runs in a child's turn, which may, and tells the entity
+ * how it went. The child stops with the entity and the node's scope, and a second runner, on a node the shard has
+ * just left, is stopped by the journal as [Overtaken].
  */
-private fun <I, E, A> Durable<I, E, A>.entity(id: String, waker: Waker) =
-    behaviour<SagaCommand, Phase>(Phase.Fresh) { ctx, phase, message ->
-        val run = { input: ByteArray?, running: Phase.Running -> running.also { launch(ctx, id, input, waker) } }
+private fun <I, E, A> Durable<I, E, A>.entity(id: String, runs: Runs): Behaviour<SagaCommand, Phase, Nothing> {
+    var launched = 0
+    return behaviour<SagaCommand, Phase>(Phase.Fresh) { ctx, phase, message ->
+        val run = { input: ByteArray?, running: Phase.Running ->
+            ctx.spawn("run-${++launched}", runner(id, input, ctx.self, runs)).tell(Go)
+            ctx.timers.every(SagaCommand.Busy, runs.keepEvery, SagaCommand.Busy)
+            running
+        }
         when (message) {
             is SagaCommand.Start -> starting(phase, message, run)
 
@@ -129,10 +156,15 @@ private fun <I, E, A> Durable<I, E, A>.entity(id: String, waker: Waker) =
 
             SagaCommand.Wake -> if (phase == Phase.Fresh) become(run(null, Phase.Running(false, null))) else stay()
 
+            SagaCommand.Busy -> stay().also {
+                if (phase is Phase.Running) runs.wake(id) else ctx.timers.cancel(SagaCommand.Busy)
+            }
+
             SagaCommand.Begun, is SagaCommand.Ran, is SagaCommand.Expired ->
                 (phase as? Phase.Running)?.let { become(heard(it, message, run)) } ?: stay()
         }
     }
+}
 
 private fun starting(phase: Phase, start: SagaCommand.Start, run: (ByteArray?, Phase.Running) -> Phase.Running) =
     when (phase) {
@@ -162,7 +194,7 @@ private fun heard(phase: Phase.Running, message: SagaCommand, run: (ByteArray?, 
             phase.copy(awaiting = phase.awaiting - message.reply)
         }
 
-        is SagaCommand.Start, is SagaCommand.Await, SagaCommand.Wake, is SagaCommand.Expired -> phase
+        is SagaCommand.Start, is SagaCommand.Await, SagaCommand.Wake, SagaCommand.Busy, is SagaCommand.Expired -> phase
     }
 
 /** Where a runner's end leaves the entity: a start that came while it found nothing is run now. */
@@ -175,21 +207,22 @@ private fun ran(ending: Ending?, phase: Phase.Running, run: (ByteArray?, Phase.R
     return if (ending == null) Phase.Fresh else Phase.Ended(ending)
 }
 
-/** Drives the saga [id] on a virtual thread, with the turn's clock and metrics, telling the entity how it went. */
-private fun <I, E, A> Durable<I, E, A>.launch(ctx: Ctx<SagaCommand>, id: String, input: ByteArray?, waker: Waker) {
-    val self = ctx.self
-    val journal = ctx.journal
-    val time = clock.get()
-    val measured = metrics.get()
-    Thread.ofVirtual().name("saga-$kind-$id").start {
-        clock.locally(time) {
-            metrics.locally(measured) {
-                val ending = ending(journal, id, input, { waker.began(kind, id) }) { self.tell(SagaCommand.Begun) }
-                if (ending != null && ending !is Ending.Stuck) waker.ended(kind, id)
-                self.tell(SagaCommand.Ran(ending))
-            }
-        }
+/** What starts a runner. */
+private data object Go
+
+/** A child that drives the saga [id] in one turn, bound as [runs] says, tells [entity] how it went, and stops. */
+private fun <I, E, A> Durable<I, E, A>.runner(
+    id: String,
+    input: ByteArray?,
+    entity: ActorRef<SagaCommand>,
+    runs: Runs,
+) = behaviour<Go, Unit>(Unit) { ctx, _, _ ->
+    val ending = runs.bound {
+        ending(ctx.journal, id, input, { runs.waker.began(kind, id) }) { entity.tell(SagaCommand.Begun) }
     }
+    if (ending != null && ending !is Ending.Stuck) runs.waker.ended(kind, id)
+    entity.tell(SagaCommand.Ran(ending))
+    stop()
 }
 
 private object EndingCodec : MessageCodec<Ending> {
@@ -241,7 +274,8 @@ internal object SagaCodec : MessageCodec<SagaCommand> {
 
         SagaCommand.Wake -> out.int(WAKE)
 
-        SagaCommand.Begun, is SagaCommand.Ran, is SagaCommand.Expired -> error("$message never leaves its node")
+        SagaCommand.Busy, SagaCommand.Begun, is SagaCommand.Ran, is SagaCommand.Expired ->
+            error("$message never leaves its node")
     }
 
     override fun read(input: WireIn): SagaCommand = when (val tag = input.int()) {
