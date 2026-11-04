@@ -74,6 +74,10 @@ fun Cluster.outcome(id: String) = transfers(accounts).on(this).await(id)        
 - **An unsettled step or an undo that still fails after its policy** leaves the saga `Stuck`, undoing nothing
   further. It stays in the journal, is counted in
   `surefold.saga.stuck`, and is retried by `resume(id)`, from code or an admin page.
+- **Nothing unfinished is left asleep.** A `surefold-sagas` singleton follows the saga kinds' journals for sagas
+  not yet ended. When a member is `Removed`, and when the cluster starts, it tells each one `Wake`, and the saga's
+  replay decides what is next. A `Wake` to a running or ended saga does nothing. This covers the gaps no reliable
+  answer is in flight for: after `Started`, between one step's `Ended` and the next command, and after `Undoing`.
 - **Answers reach any node.** `start` is idempotent on the id, and `await` asks the entity, so a caller can poll or
   wait from wherever it is.
 - **surefold-bank's `Transfer` is rewritten on it**, and `SagaSuite` and `CrashSuite` pass unchanged.
@@ -96,8 +100,9 @@ already talk to entities, with jobs left as a later backend.
       without a crash.
 - [ ] **`spec-0299-undo`** — journalled undos, `Stuck`, `resume`, the `stuck` gauge.
       Done when: an undo failing past its policy leaves `Stuck`, and `resume` after the fix ends it `Undone`.
-- [ ] **`spec-0299-cluster`** — `on(cluster)`, `start`/`await` from any node, and recovery when a node leaves.
-      Done when: a three-node test kills the saga's node between steps and the saga ends `Done` elsewhere.
+- [ ] **`spec-0299-cluster`** — `on(cluster)`, `start`/`await` from any node, and the `surefold-sagas` waker.
+      Done when: a three-node test kills the saga's node in each gap (after `Started`, between steps, after
+      `Undoing`) and every saga ends elsewhere as it would have without the crash.
 - [ ] **`spec-0299-keyed`** — `keyed` in `surefold-actor`, and `entityStep` over it.
       Done when: a key sent twice is applied once and answered the same both times, and an `entityStep` whose
       answer is dropped settles through `Applied` without a second command.
@@ -132,3 +137,5 @@ already talk to entities, with jobs left as a later backend.
 6. **How long does a `keyed` entity remember a key?** Answered (maintainer, 2026-11-04): a window per kind,
    30 days by default, dropped at a snapshot (0076). `resume` refuses a saga stuck for longer than the window of
    any kind it sends to, so a forgotten key can't be sent again.
+7. **Who wakes a saga whose node died while no answer was in flight?** Answered (maintainer, 2026-11-04): a
+   `surefold-sagas` singleton, as `surefold-producers` does for outboxes (0099), not the service.
