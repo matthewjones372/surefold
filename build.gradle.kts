@@ -330,10 +330,13 @@ subprojects {
 
     // Every module's Jupiter tests get ThreadsOnTimeout: every thread's stack, virtual ones included, before a timed-out
     // test is interrupted (spec 0308). A source shared by path rather than a module, so nothing is published for it.
-    extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
-        sourceSets.named("test") {
-            kotlin.srcDir(rootProject.file("config/threads-on-timeout/kotlin"))
-            resources.srcDir(rootProject.file("config/threads-on-timeout/resources"))
+    // Only where there are tests: a module with none, a benchmark's, would otherwise fail for discovering none.
+    if (file("src/test").isDirectory) {
+        extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+            sourceSets.named("test") {
+                kotlin.srcDir(rootProject.file("config/threads-on-timeout/kotlin"))
+                resources.srcDir(rootProject.file("config/threads-on-timeout/resources"))
+            }
         }
     }
 
