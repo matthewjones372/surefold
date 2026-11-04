@@ -124,7 +124,9 @@ already talk to entities, with jobs left as a later backend.
 3. **Reading the clock or a random id in the body** gives a different answer on replay. Make them steps
    (`now()` and `uuid()` journalled), or document it? Answered (maintainer, 2026-11-04): journalled helpers, plus
    a test in the `testActors` unkind runtime (0128) that crashes at every step boundary.
-4. **Keep `await` for a finished saga forever?** Recommended: until its events are pruned, then answer `Forgotten`.
+4. **Keep `await` for a finished saga forever?** Answered (maintainer, 2026-11-04): until its events are pruned
+   (0076), then `Forgotten`, never "not found". A pruned saga keeps a snapshot of its ending, so `start` with its
+   id is still refused and an old transfer can't run again. Audit belongs in a read model (0075).
 5. **`entityStep` and `keyed` here or in a spec of their own?** Answered (maintainer, 2026-11-04): here, as
    `spec-0299-keyed`, because the bank rewrite that proves this spec uses them for both steps.
 6. **How long does a `keyed` entity remember a key?** Recommended: until a snapshot older than the longest saga's
