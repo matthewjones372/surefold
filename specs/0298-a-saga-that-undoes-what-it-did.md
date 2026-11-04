@@ -97,8 +97,8 @@ be held" look like an ordinary refusal; recommended is the undeclared `NotUndone
 
 ## Open questions
 
-1. **Should `resourceScope` also tell a `Failed` apart, rather than adding `saga`?** Recommended: no. Its
-   `ExitCase` is public, and a saga needs `E`, which `ExitCase` has no type for.
+1. **Should `resourceScope` also tell a `Failed` apart, rather than adding `saga`?** Answered (maintainer,
+   2026-11-04): no, `saga` stays separate. `ExitCase` is public and has no type for `E`.
 2. **Who settles a step whose outcome is unknown?** Answered (maintainer, 2026-11-04): the step declares a
    `check`; without one the saga is unsettled and undoes nothing.
 3. **Default `undo` policy:** none, or a few retries with backoff? Recommended: none, so a saga with no policy does
