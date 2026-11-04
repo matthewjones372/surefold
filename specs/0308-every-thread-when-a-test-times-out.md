@@ -83,7 +83,7 @@ published. The dump code itself (`dumpThreads` into a temp directory, then read)
 - [x] **`spec-0308-jupiter-dump`** ([#1083](https://github.com/surefold/surefold-core/pull/1083)): `ThreadsOnTimeout` moves to the shared test source, registered for every
       module. `surefold-kafka`'s copy and its autodetection line are deleted.
       Done when: `ThreadsOnTimeoutTest` passes in `:surefold` and `:surefold-kafka`, and `surefold-kafka` has no copy.
-- [ ] **`spec-0308-names`**: the runtime threads and test fixtures in the table get names.
+- [x] **`spec-0308-names`** ([#1090](https://github.com/surefold/surefold-core/pull/1090)): the runtime threads and test fixtures in the table get names.
       Done when: `grep -rn 'Thread.ofVirtual()\.\(start\|unstarted\)' --include=*.kt */*/src/main` lists only
       `VirtualThreads.kt`, examples and benchmarks, and a `RuntimeSuite` test sees a runner named
       `surefold-actor-runner-`.
