@@ -79,8 +79,8 @@ grep -c 'module("data"' settings.gradle.kts       # 0 here
 
 1. **Move Kafka, SNS and SQS too?** Recommended: not in this spec. They sit on `surefold-stream` and Pekko, which
    stay, and moving them is a separate call to make once this one has settled.
-2. **What is the new repository called?** Recommended: `surefold/surefold-platform`. Creating it is yours to do;
-   no agent can.
+2. **What is the new repository called?** Answered (maintainer, 2026-11-04): `surefold/surefold-platform`.
+   Creating it is the maintainer's to do; no agent can.
 3. **Versions: in lockstep with Surefold, or their own?** Recommended: their own, starting at the version that
    moves (0.19.0), each release naming the Surefold version it was built against.
 4. **Does the last Surefold release that still contains `data/` get a notice in its README?** Recommended: yes,
