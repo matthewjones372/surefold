@@ -80,4 +80,3 @@ module("bench", "surefold-stream-benchmarks")
 module("bench", "surefold-actor-benchmarks")
 module("bench", "surefold-kafka-benchmarks")
 module("bench", "surefold-jdbc-otel-bench")
-
