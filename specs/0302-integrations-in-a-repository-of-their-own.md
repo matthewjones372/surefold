@@ -97,7 +97,9 @@ Recommended (maintainer, 2026-11-04): a third repository.
    test and build tooling is exempt, and never reaches a service's runtime classpath.
 2. **`surefold-bank`** uses `surefold-app-liquibase` and Postgres. Answered (maintainer, 2026-11-04): it moves to
    `surefold-platform` (0301), keeping `app-liquibase`. Core proves its sagas with its own tests (0299).
-3. **Order of 0301 and 0302.** Recommended: both seed from the same last single-repository release (0.19.0), 0302
-   first, so the platform repository's first build after the split already resolves integrations from Central.
+3. **Order of 0301 and 0302.** Answered (maintainer, 2026-11-04): release 0.19.0 from the single repository, seed
+   `surefold-integrations` (0302), seed `surefold-platform` (0301), remove the moved modules here, then rename this
+   repository `surefold-core`. Sagas (0298–0300) are built here after 0.19.0 and ship in core's first release
+   after the split.
 4. **A composite build across the repositories?** Answered (maintainer, 2026-11-04): yes, opt-in by checking the
    repositories out side by side; CI stays on published artifacts.
