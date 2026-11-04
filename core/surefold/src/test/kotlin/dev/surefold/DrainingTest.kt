@@ -190,15 +190,45 @@ class DrainingTest {
             answer = uninterruptible(onInterrupted = { observed.countDown() }) { gate.await(); "joined" }
             restored = Thread.interrupted()
         }
-        var tries = 0
-        while (!observed.await(10, TimeUnit.MILLISECONDS) && tries++ < 500) waiter.interrupt()
-        withClue("the waiter never observed an interrupted wait") { observed.count shouldBe 0L }
-        waiter.isAlive shouldBe true
-        gate.countDown()
-        waiter.join()
+        try {
+            var tries = 0
+            while (!observed.await(10, TimeUnit.MILLISECONDS) && tries++ < 500) waiter.interrupt()
+            withClue("the waiter never observed an interrupted wait") { observed.count shouldBe 0L }
+            waiter.isAlive shouldBe true
+        } finally {
+            gate.countDown()
+            waiter.join()
+        }
         virtual shouldBe true
         answer shouldBe "joined"
         restored shouldBe true
+    }
+
+    @Test
+    fun `uninterruptible clears a pending interrupt on entry so the wait runs once`() {
+        resourceScope {
+            onRelease { Thread.interrupted() }
+            var attempts = 0
+            var observed = 0
+            Thread.currentThread().interrupt()
+            uninterruptible(onInterrupted = { observed++ }) {
+                attempts++
+                Thread.sleep(1)
+                "waited"
+            } shouldBe "waited"
+            attempts shouldBe 1
+            observed shouldBe 0
+            Thread.interrupted() shouldBe true
+        }
+    }
+
+    @Test
+    fun `a throw observer that rethrows its cause surfaces the original without self-suppression`() {
+        val original = IllegalStateException("original")
+        shouldThrow<IllegalStateException> {
+            onThrow({ throw it }) { throw original }
+        } shouldBeSameInstanceAs original
+        original.suppressed.toList() shouldBe emptyList()
     }
 
     @Test

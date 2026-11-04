@@ -9,7 +9,7 @@ inline fun <A> draining(block: () -> A): A {
         interrupted = true
         throw failure
     } finally {
-        if (interrupted || Thread.interrupted()) Thread.currentThread().interrupt()
+        if (interrupted) Thread.currentThread().interrupt()
     }
 }
 
@@ -31,7 +31,7 @@ inline fun <A> uninterruptible(
             }
         }
     } finally {
-        if (interrupted || Thread.interrupted()) Thread.currentThread().interrupt()
+        if (interrupted) Thread.currentThread().interrupt()
     }
 }
 

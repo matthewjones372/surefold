@@ -22,18 +22,32 @@ class DrainingCompileTest {
     }
 
     @Test
-    fun `an interruptible wait inside the primitives draws no eaten-failure diagnostic`() {
+    fun `the eaten-failure checker flags a raw interrupt catch around await but not the primitives`() {
         val compiled = compile(
             """
             import dev.surefold.draining
+            import dev.surefold.fail.Either
+            import dev.surefold.fail.attempt
+            import dev.surefold.fail.bind
+            import dev.surefold.onThrow
+            import dev.surefold.scope
             import dev.surefold.uninterruptible
-            import java.util.concurrent.CountDownLatch
-            fun join(latch: CountDownLatch) = draining { uninterruptible { latch.await() } }
+            val rows: Either<String, Int> = Either.Right(1)
+            fun raw(): Int = scope {
+                val d = async { 1 }
+                try { d.await() } catch (e: InterruptedException) { 0 }
+            }
+            fun drained(): Int = scope {
+                val d = async { 1 }
+                draining { uninterruptible { d.await() } }
+            }
+            fun observed() = attempt<String, Int> { onThrow({ println(it) }) { rows.bind() } }
             """,
         )
         withClue(compiled.messages.joinToString("\n")) {
             compiled.exit shouldBe ExitCode.OK
-            compiled.surefold shouldBe emptyList()
+            compiled.surefold.size shouldBe 1
+            ("catch (e: InterruptedException) takes what await ends with" in compiled.surefold.single()) shouldBe true
         }
     }
 
