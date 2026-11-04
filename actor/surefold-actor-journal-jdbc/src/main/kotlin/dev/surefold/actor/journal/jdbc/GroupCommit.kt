@@ -1,15 +1,16 @@
 package dev.surefold.actor.journal.jdbc
 
+import dev.surefold.Promise
+import dev.surefold.Shared
 import dev.surefold.actor.JournalConflict
 import dev.surefold.actor.PersistenceId
 import dev.surefold.fail.Either
+import dev.surefold.fail.fold
 import dev.surefold.logDebug
+import dev.surefold.transact
 import java.sql.Connection
 import java.sql.SQLException
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionException
 import java.util.concurrent.ConcurrentLinkedQueue
-import java.util.concurrent.atomic.AtomicInteger
 import javax.sql.DataSource
 
 /**
@@ -28,10 +29,11 @@ internal class Append(val id: PersistenceId, val expected: Long, val events: Lis
 
 /**
  * Takes whatever appends are queued and commits them together: [group] writes them all on one connection in one
- * round trip, and one commit follows. There is no timer: a lone append goes at once, and appends that arrive while a
- * commit is in flight form the next group. A committer ends when it finds nothing queued, so an idle journal holds
- * no thread. A group whose writing fails, as two writers racing for one id do, is rolled back and each of its appends
- * is made [alone], as it would have been without group commit.
+ * round trip, and one commit follows. There is no timer and no thread of its own: an append that finds a place free,
+ * and appends queued, commits groups on its caller's thread until its own is answered, then gives the place up to an
+ * append still waiting. A lone append goes at once, and appends that arrive while a commit is in flight form the next
+ * group, as at most [GroupCommit.committers] groups commit at once. A group whose writing fails, as two writers racing
+ * for one id do, is rolled back and each of its appends is made [alone], as it would have been without group commit.
  */
 internal class Committer(
     private val dataSource: DataSource,
@@ -40,11 +42,13 @@ internal class Committer(
     private val alone: (Append) -> Either<JournalConflict, Long>,
 ) {
     private class Pending(val append: Append) {
-        val answer = CompletableFuture<Either<JournalConflict, Long>>()
+        val answer = Promise<Throwable, Either<JournalConflict, Long>>("surefold.journal.append")
     }
 
     private val queue = ConcurrentLinkedQueue<Pending>()
-    private val running = AtomicInteger()
+
+    // How many appends are committing groups now, each on its own caller's thread.
+    private val committing = Shared(0, "surefold.journal.committers")
 
     /** How many appends wait for a committer, for tests. */
     fun queued(): Int = queue.size
@@ -52,33 +56,31 @@ internal class Committer(
     fun append(append: Append): Either<JournalConflict, Long> {
         val pending = Pending(append)
         queue.add(pending)
-        if (claim()) Thread.ofVirtual().name("surefold-journal-committer").start(::run)
-        return try {
-            pending.answer.join()
-        } catch (failed: CompletionException) {
-            throw failed.cause ?: failed
-        }
-    }
-
-    /** A committer's place, if fewer than [GroupCommit.committers] are running. */
-    private fun claim(): Boolean {
         while (true) {
-            val now = running.get()
-            if (now >= settings.committers) return false
-            if (running.compareAndSet(now, now + 1)) return true
-        }
-    }
-
-    private fun run() {
-        while (true) {
-            val taken = generateSequence { queue.poll() }.take(settings.maxAppends).toList()
-            if (taken.isEmpty()) {
-                running.decrementAndGet()
-                // An append queued between the empty poll and the decrement found every place taken: it is ours.
-                if (queue.isEmpty() || !claim()) return
-            } else {
-                commit(taken)
+            // Answered, or a place to commit from: whichever comes first. A wait wakes when either changes.
+            val answered = transact("surefold.journal.committers") {
+                pending.answer.peek() ?: if (committing.get() < settings.committers && queue.isNotEmpty()) {
+                    committing.set(committing.get() + 1)
+                    null
+                } else {
+                    pending.answer.await()
+                }
             }
+            if (answered != null) return answered.fold({ throw it }, { it })
+            try {
+                commitUntil(pending)
+            } finally {
+                committing.update { it - 1 }
+            }
+        }
+    }
+
+    /** Commits groups until [own] is answered, or until nothing is queued because another group holds it. */
+    private fun commitUntil(own: Pending) {
+        while (own.answer.peek() == null) {
+            val taken = generateSequence { queue.poll() }.take(settings.maxAppends).toList()
+            if (taken.isEmpty()) return
+            commit(taken)
         }
     }
 
@@ -109,21 +111,21 @@ internal class Committer(
                     throw failed
                 }
                 taken.zip(results).forEach { (pending, result) ->
-                    result.fold({ pending.answer.complete(it) }, { pending.answer.completeExceptionally(it) })
+                    result.fold({ pending.answer.succeed(it) }, { pending.answer.fail(it) })
                 }
             }
         } catch (failed: Throwable) {
             // No append is answered as written unless its group committed.
-            taken.forEach { it.answer.completeExceptionally(failed) }
+            taken.forEach { it.answer.fail(failed) }
         }
     }
 
     @Suppress("TooGenericExceptionCaught") // As above: the append's own failure is its caller's to throw.
     private fun answerAlone(pending: Pending) {
         try {
-            pending.answer.complete(alone(pending.append))
+            pending.answer.succeed(alone(pending.append))
         } catch (failed: Throwable) {
-            pending.answer.completeExceptionally(failed)
+            pending.answer.fail(failed)
         }
     }
 }
