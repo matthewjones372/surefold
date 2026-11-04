@@ -1,3 +1,0 @@
-databaseChangeLog:
-  - include:
-      file: surefold/jobs/postgres.sql

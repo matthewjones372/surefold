@@ -1,5 +1,0 @@
-databaseChangeLog:
-  - include:
-      file: surefold/jobs/postgres.sql
-  - include:
-      file: db/liquibase/shop.sql

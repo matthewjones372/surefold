@@ -69,10 +69,6 @@ Facts worth having before anything else:
   `config<Settings>("section")` with no block.
 - `surefold-app-liquibase`: a changelog as a node (`migrations`); readers take
   `surefold-app`'s `Migrated`.
-- `surefold-app-flyway`: SQL scripts on Flyway as a node (`flyway`, `migrate`),
-  on the graph's `DataSource` or one `connect` opens; readers take `Migrated`. The
-  data modules' scripts by `SurefoldSchema`, and `fromLiquibase` to hand a
-  database over from Liquibase once.
 - `surefold-app-openfeature`: `openFeature { provider }`, the provider as a node; a
   `Client` node and `Flag.value()` read it, and readiness follows it.
 - `surefold-app-openfeature-flagd`: `flagdFlags("flags")`, flags in flagd's schema
@@ -126,25 +122,9 @@ Facts worth having before anything else:
 - `surefold-actor`: an actor as a value, taking one turn per message on virtual
   threads, with no actor system.
 - `surefold-actor-journal-jdbc`: `surefold-actor`'s journal and snapshots on JDBC.
-- `surefold-jobs`: durable jobs on Postgres, enqueued in the caller's own transaction.
-- `surefold-app-jobs`: a job worker as a `surefold-app` node, started after the migrations.
-- `surefold-jobs-otel`: a span per run of a job, linked to the span that enqueued it.
-- `surefold-files`: files on any S3-compatible store, with typed failures and an in-memory fake.
-- `surefold-files-test`: MinIO in Testcontainers, a fresh bucket a call, for a service's own tests.
-- `surefold-tenancy`: a tenant forks inherit, Postgres row-level security set for every transaction, and a system path through definer functions only.
-- `surefold-tenancy-test`: checks that a service's tables keep two tenants apart, and that its system role reaches rows only through its functions.
-- `surefold-tenancy-crypto`: a key per tenant under a KMS root key no backup holds, and an in-memory KMS.
-- `surefold-tenancy-crypto-aws`: `AwsKms`, one AWS KMS key per tenant, found by alias.
-- `surefold-jobs-tenancy`: each job's handler runs as the tenant its row names.
-- `surefold-idempotency`: idempotency keys on Postgres, reserved atomically across instances, answers replayed.
-- `surefold-ratelimit`: token buckets in memory or on Postgres, shared by every instance.
-- `surefold-postgres-notify`: Postgres's `LISTEN` as a `Stream` of notifications in commit order, and `notify` to send.
-- `surefold-cache-postgres`: `invalidating(cache) { payload -> key }`, a `Cache` told by `NOTIFY` that a row changed.
-- `surefold-cache-tenancy`: `TenantCache`, a cache keyed by the bound tenant; `NoTenant` with none bound.
-- `surefold-openfeature-postgres`: `PostgresFlags`, flags per tenant from a Postgres table: the tenant's row, then the null row.
-- `surefold-cache-redis`: `RedisLayer`, a cache layer every instance shares on Redis, and `RedisInvalidations` over pub/sub.
-- `surefold-auth`: sessions and credentials: Argon2id passwords, rotating sessions, magic links, TOTP, roles.
-- `surefold-auth-oidc`: OpenID Connect sign-in on Nimbus: the code flow with PKCE, every ID token check.
+Jobs, files, tenancy and its keys, auth, idempotency, rate limits, Postgres notifications and the caches on them,
+per-tenant flags, Flyway migrations and the example bank are in
+[surefold-platform](https://github.com/surefold/surefold-platform) (spec 0301).
 - `surefold-actor-projection`: a journal as a `Stream`, for a read model that
   resumes where it left off.
 - `surefold-actor-remote`: `surefold-actor` across nodes over one TCP connection per
@@ -196,6 +176,6 @@ Facts worth having before anything else:
 - [Core](https://github.com/surefold/surefold-core/blob/main/docs/core.md): forks, cancellation, errors, resources, schedules, timeouts, policies, context, Pekko dispatchers.
 - [Applications](https://github.com/surefold/surefold-core/blob/main/docs/app.md): the graph, starting and stopping, probes, testing, the Gradle and compiler plugins.
 - [Application cookbook](https://github.com/surefold/surefold-core/blob/main/docs/cookbook.md): one recipe per task, most compiled by a test.
-- [Streams](https://github.com/surefold/surefold-core/blob/main/docs/stream.md), [Kafka](https://github.com/surefold/surefold-core/blob/main/docs/kafka.md), [SQS](https://github.com/surefold/surefold-core/blob/main/docs/sqs.md), [SNS](https://github.com/surefold/surefold-core/blob/main/docs/sns.md), [Actors](https://github.com/surefold/surefold-core/blob/main/docs/actors.md), [Remoting and clusters](https://github.com/surefold/surefold-core/blob/main/docs/cluster.md), [Jobs](https://github.com/surefold/surefold-core/blob/main/docs/jobs.md), [Migrations on Flyway](https://github.com/surefold/surefold-core/blob/main/docs/flyway.md), [Files](https://github.com/surefold/surefold-core/blob/main/docs/files.md), [Tenancy](https://github.com/surefold/surefold-core/blob/main/docs/tenancy.md), [Idempotency and rate limits](https://github.com/surefold/surefold-core/blob/main/docs/http-stores.md), [Sign-in and sessions](https://github.com/surefold/surefold-core/blob/main/docs/auth.md).
+- [Streams](https://github.com/surefold/surefold-core/blob/main/docs/stream.md), [Kafka](https://github.com/surefold/surefold-core/blob/main/docs/kafka.md), [SQS](https://github.com/surefold/surefold-core/blob/main/docs/sqs.md), [SNS](https://github.com/surefold/surefold-core/blob/main/docs/sns.md), [Actors](https://github.com/surefold/surefold-core/blob/main/docs/actors.md), [Remoting and clusters](https://github.com/surefold/surefold-core/blob/main/docs/cluster.md), [Jobs](https://github.com/surefold/surefold-platform/blob/main/docs/jobs.md), [Migrations on Flyway](https://github.com/surefold/surefold-platform/blob/main/docs/flyway.md), [Files](https://github.com/surefold/surefold-platform/blob/main/docs/files.md), [Tenancy](https://github.com/surefold/surefold-platform/blob/main/docs/tenancy.md), [Idempotency and rate limits](https://github.com/surefold/surefold-platform/blob/main/docs/http-stores.md), [Sign-in and sessions](https://github.com/surefold/surefold-platform/blob/main/docs/auth.md).
 - [Observability](https://github.com/surefold/surefold-core/blob/main/docs/observability.md) and [Testing](https://github.com/surefold/surefold-core/blob/main/docs/testing.md).
 - [Feature flags](https://github.com/surefold/surefold-core/blob/main/docs/flags.md): `Flag`, `evaluatedFor`, `featureClient`.

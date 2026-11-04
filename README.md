@@ -32,7 +32,7 @@ the dependency group, and the plugin ids, which become `dev.surefold.wiring` and
 coordinates relocate to the new ones at 0.18.0. It is a source change only in the names, but not a binary one: code
 compiled against 0.17.0 or earlier names the old packages and has to be recompiled.
 
-[Explicit AWS KMS operations](docs/kms-operations.md) covers regional clients and the AWS adapter, from 0.18.0.
+[Explicit AWS KMS operations](https://github.com/surefold/surefold-platform/blob/main/docs/kms-operations.md) covers regional clients and the AWS adapter, from 0.18.0.
 
 From 0.18.0, `Either.cond(condition, right = { value }, left = { error })` constructs lazily on a
 condition; [the core guide](docs/core.md) shows how it complements `attempt` and accumulating validation.
@@ -217,8 +217,8 @@ enforces 90% line coverage. That said:
 - **The API is not stable.** Releases are `0.x`, and any release can change or
   remove API. There is no binary-compatibility check. Pin an exact version.
 - **No production use is known.** Apart from its tests, the code is exercised by
-  [`surefold-bank`](docs/modules.md#the-example-application), an example
-  application in this repository, and by the related projects listed below.
+  [`surefold-bank`](https://github.com/surefold/surefold-platform/tree/main/examples/surefold-bank), an example
+  application in surefold-platform, and by the related projects listed below.
 - **Maturity varies.** The core, `surefold-app` and `surefold-stream` are the most
   established. The actor, cluster and Kafka modules are newer.
 - **Some numbers are provisional.** Benchmark results were measured on JDK 21
@@ -412,8 +412,8 @@ diagram, and aspects such as `flaky`, `nonFlaky`, `timeout`, `tag` and
 - [Applications](docs/app.md): the dependency graph and the build-time checks.
 - [Modules](docs/modules.md): what to depend on, what each module brings,
   maturity, performance and limitations.
-- [`surefold-bank`](docs/modules.md#the-example-application): three nodes of a
-  small bank, using actors, persistence, remoting and clustering together.
+- [`surefold-bank`](https://github.com/surefold/surefold-platform/tree/main/examples/surefold-bank), in surefold-platform: three nodes
+  of a small bank, using actors, persistence, remoting and clustering together.
 
 **Using a capability**
 

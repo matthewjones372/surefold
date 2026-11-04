@@ -274,7 +274,7 @@ Each integration is a separate module that makes something a node:
 | `surefold-app-typesafe` | `config<T>("section") { … }`, a HOCON section read into a type, with every fault in a bad file reported at once; `secret(path)`; where each setting came from | [Configuration](cookbook.md#configuration-a-module-owns) |
 | `surefold-app-kotlinx` | `config<T>("section")`, the section read from `T`'s own `@Serializable` properties, every fault at once | [Configuration](cookbook.md#configuration-a-module-owns) |
 | `surefold-app-liquibase` | `migrations("db/changelog.xml")`, a node providing `surefold-app`'s `Migrated`, so readers of the database start after migrations | [Migrations](cookbook.md#run-migrations-as-a-step) |
-| `surefold-app-flyway` | `flyway(service = "classpath:db/migration")`, the same `Migrated` from Flyway's SQL scripts, with `clean` disabled and validation on | [Flyway](flyway.md) |
+| `surefold-app-flyway` (surefold-platform) | `flyway(service = "classpath:db/migration")`, the same `Migrated` from Flyway's SQL scripts, with `clean` disabled and validation on | [Flyway](https://github.com/surefold/surefold-platform/blob/main/docs/flyway.md) |
 | `surefold-app-openfeature` | `openFeature { provider }`, an OpenFeature provider set before anything reads a flag, keyed by `Client`, ready while the provider is, and shut down on release | [Feature flags](flags.md) |
 | `surefold-app-pekko` | `actor<T>("name") { … }`, a Pekko typed actor keyed by `ActorRef<T>`, stopped with `gracefulStop` | [Pekko actor](cookbook.md#spawn-a-pekko-actor) |
 | `surefold-app-actor` | `actors()`, a `surefold-actor` scope that lives as long as the application, and `actor("name") { … }`, keyed by Surefold's `ActorRef<M>` | [Surefold actor](cookbook.md#spawn-a-surefold-actor) |
@@ -424,9 +424,9 @@ and the method profiles the training run gathered
 needs no surefold code: the cache belongs to whatever launches the
 application.
 
-`surefold-bank` is the worked example (spec 0278). Its `--train` run starts
+`surefold-bank`, in surefold-platform, is the worked example (spec 0278). Its `--train` run starts
 the bank, moves money through its HTTP API, closes everything and returns. The
-JVM writes the cache as it leaves:
+JVM writes the cache as it leaves. In a checkout of surefold-platform:
 
 ```bash
 ./gradlew :surefold-bank:aotCache                          # writes build/aot/bank.aot
