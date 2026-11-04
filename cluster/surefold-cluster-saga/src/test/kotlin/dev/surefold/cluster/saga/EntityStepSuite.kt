@@ -111,7 +111,7 @@ private object Says : StateCodec<String> {
 private typealias Account = Keyed<Move, Funds>
 
 /** A keyed account whose balance can't go below nothing. */
-private fun account(id: String) = keyed<Move, Move, Long, Funds>(
+private fun keyedAccount(id: String) = keyed<Move, Move, Long, Funds>(
     id = PersistenceId("account", id),
     empty = 0L,
     codec = Moves,
@@ -147,7 +147,7 @@ private class Seen {
 
     /** The account [id], in front of which every message is counted, and an answer lost while [toLose] says so. */
     fun account(id: String) = behaviour<Account, ActorRef<Account>?>(null) { ctx, child, message ->
-        val inner = child ?: ctx.spawn("keyed", account(id))
+        val inner = child ?: ctx.spawn("keyed", keyedAccount(id))
         val passed = when (message) {
             is Keyed.Apply -> {
                 applied.update { it + (id to it[id].orEmpty() + message.key) }
@@ -155,7 +155,7 @@ private class Seen {
                 if (lose) message.copy(reply = Lost) else message
             }
 
-            is Keyed.Applied -> message.also { asked.update { it + 1 } }
+            is Keyed.Applied -> message.also { asked.update { count -> count + 1 } }
         }
         inner.tell(passed)
         become(inner)
@@ -163,17 +163,21 @@ private class Seen {
 }
 
 /** A one-node cluster with the accounts sharded on it, on a scope of its own, until [close]. */
-private class Bank(seen: Seen) : AutoCloseable {
+private class Branch(seen: Seen) : AutoCloseable {
     private val done = Promise<Nothing, Unit>()
     private val opened = Promise<Throwable, Sharded<Account>>()
     private val running = surefoldFuture {
         scope {
             journal(InMemoryJournal())
             val port = freePort()
-            val gossip = Gossiping(probeEvery = 200.milliseconds, ackWithin = 100.milliseconds, formAfter = 200.milliseconds)
+            val gossip =
+                Gossiping(probeEvery = 200.milliseconds, ackWithin = 100.milliseconds, formAfter = 200.milliseconds)
             val cluster = cluster(node("bank", port), Discovery.static(Node("", "127.0.0.1", port)), gossip)
-            val accounts = cluster.sharding("account", Keyed.codec(MoveCodec, FundsWire), 1.minutes, entity = seen::account)
-            eventually(30.seconds) { check(cluster.view.members.any { it.status == Status.Up }) { "the bank is not up" } }
+            val wire = Keyed.codec(MoveCodec, FundsWire)
+            val accounts = cluster.sharding("account", wire, 1.minutes, entity = seen::account)
+            eventually(30.seconds) {
+                check(cluster.view.members.any { it.status == Status.Up }) { "the bank is not up" }
+            }
             opened.succeed(accounts)
             done.await()
         }
@@ -203,9 +207,14 @@ private class Crashing(private val inner: Journal, private val dieAt: Int) : Jou
 /** Pays [pence] from `a` into `b`: a credit of `a` first, so an undo has something to take back. */
 private fun payment(accounts: Sharded<Account>) = durableSaga("payment", Says, Says, Says) { pence ->
     val amount = pence.toLong()
-    entityStep("top-up", accounts, "a", refused = { "funds" }, undo = { Move.Debit(amount) }, within = 300.milliseconds) {
-        Move.Credit(amount)
-    }
+    entityStep(
+        "top-up",
+        accounts,
+        "a",
+        refused = { "funds" },
+        undo = { Move.Debit(amount) },
+        within = 300.milliseconds,
+    ) { Move.Credit(amount) }
     entityStep("debit-b", accounts, "b", refused = { "funds" }, within = 300.milliseconds) { Move.Debit(amount) }
     "paid $amount"
 }
@@ -222,7 +231,7 @@ object EntityStepSuite : Suite() {
     init {
         test("an entityStep whose answer is dropped settles through Applied without a second command") {
             val seen = Seen()
-            Bank(seen).use { bank ->
+            Branch(seen).use { bank ->
                 seen.toLose.update { 1 }
 
                 credit(bank.accounts).run(InMemoryJournal(), "t", "400") shouldBe "credited 400".right()
@@ -234,16 +243,17 @@ object EntityStepSuite : Suite() {
 
         test("a refusal fails the saga with its error and undoes the steps before it, not the one refused") {
             val seen = Seen()
-            Bank(seen).use { bank ->
+            Branch(seen).use { bank ->
                 payment(bank.accounts).run(InMemoryJournal(), "t", "400") shouldBe "funds".left()
 
-                seen.applied.peek() shouldBe mapOf("a" to listOf("t/top-up", "t/top-up/undo"), "b" to listOf("t/debit-b"))
+                seen.applied.peek() shouldBe
+                    mapOf("a" to listOf("t/top-up", "t/top-up/undo"), "b" to listOf("t/debit-b"))
             }
         }
 
         test("a step begun and not ended when its node died is settled by Applied on resume, sent once") {
             val seen = Seen()
-            Bank(seen).use { bank ->
+            Branch(seen).use { bank ->
                 val journal = InMemoryJournal()
                 // Started, the step's time, Begun, then the node dies before the step's end.
                 shouldThrow<IllegalStateException> { credit(bank.accounts).run(Crashing(journal, 4), "t", "400") }
@@ -256,7 +266,7 @@ object EntityStepSuite : Suite() {
 
         test("resume refuses a saga stuck past the window its entities remember a key for, and sends nothing") {
             val seen = Seen()
-            Bank(seen).use { bank ->
+            Branch(seen).use { bank ->
                 val journal = InMemoryJournal()
                 val time = TestClock(Instant.parse("2026-11-04T12:00:00Z"))
                 clock.locally(time) {
