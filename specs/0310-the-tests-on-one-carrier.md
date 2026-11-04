@@ -76,16 +76,16 @@ mode needs no test changes and covers every test. Recommended: this, as a sweep 
 
 ## Open questions
 
-1. **Cap `maxPoolSize` at the same number?** Without the cap, a thread that blocks in a way the JDK compensates
-   for (`Object.wait`, some file I/O) gets a temporary extra carrier, which hides exactly the starvation this
-   looks for. Recommend: cap it. A thread that needs compensation then shows up as a hang with a dump, and that is
-   a finding.
-2. **Run on pull requests too?** It doubles CI time, and a pull request already builds only what it affects.
-   Recommend: `main` and manual runs only, so a failure shows up within one merge and a pull request can still run
-   it by hand.
+1. **Cap `maxPoolSize` at the same number?** Without the cap, a thread that blocks in a way the JDK compensates for
+   (`Object.wait`, some file I/O) gets a temporary extra carrier, which hides exactly the starvation this looks for.
+   Answered (maintainer, 2026-11-04), as recommended: cap it. A thread that needs compensation then shows up as a
+   hang with a dump, and that is a finding.
+2. **Run on pull requests too?** It doubles CI time, and a pull request already builds only what it affects. Answered
+   (maintainer, 2026-11-04), as recommended: `main` and manual runs only, so a failure shows up within one merge and
+   a pull request can still run it by hand.
 3. **One carrier, or two as well?** Two finds the bugs where exactly two threads hand work to each other, and one
-   finds more besides. Recommend: one alone, and add two only if the first run turns up something one carrier
-   cannot.
-4. **Should the watchdog move for every run, or only under `-PvtParallelism`?** Recommend: every run. A watchdog
-   that does not depend on the scheduler it watches is right on any number of carriers, and having one code path
-   keeps it simple.
+   finds more besides. Answered (maintainer, 2026-11-04), as recommended: one alone, and add two only if the first
+   run turns up something one carrier cannot.
+4. **Should the watchdog move for every run, or only under `-PvtParallelism`?** Answered (maintainer, 2026-11-04), as
+   recommended: every run. A watchdog that does not depend on the scheduler it watches is right on any number of
+   carriers, and having one code path keeps it simple.
