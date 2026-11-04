@@ -92,7 +92,9 @@ private fun <E> Fail<E>.surface(failure: Failure<E>): Nothing = when (failure) {
  * An interrupt landing on the closing thread must not leave a fork running, so the join is retried
  * and the flag handed back to the caller afterwards.
  */
-private fun Thread.joinFully() {
+
+/** Waits for this thread to end whatever interrupts the caller, and passes on any interrupt once it has. */
+internal fun Thread.joinFully() {
     var interrupted = false
     while (isAlive) {
         try { join() } catch (stop: InterruptedException) { interrupted = true }

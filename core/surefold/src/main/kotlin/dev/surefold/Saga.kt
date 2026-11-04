@@ -2,6 +2,11 @@ package dev.surefold
 
 import dev.surefold.fail.Fail
 import dev.surefold.fail.Failed
+import java.time.Instant
+import java.util.concurrent.TimeoutException
+import kotlin.time.Duration
+import kotlin.time.toJavaDuration
+import kotlin.time.toKotlinDuration
 
 /** Why a saga's undos are running, as each undo is told it (spec 0298). */
 sealed class Undo<out E> {
@@ -55,14 +60,16 @@ class NotUndone(
 ) : RuntimeException("saga $saga left ${notUndone.joinToString()} done after $why", causeOf(why))
 
 /** Runs [block] as the saga [id], undoing its finished steps, newest first, if it ends any way but returning. */
-fun <A> saga(id: String, block: SagaScope<Nothing>.() -> A): A = Unraisable.saga(id, block)
+fun <A> saga(id: String, undo: Policy? = null, block: SagaScope<Nothing>.() -> A): A = Unraisable.saga(id, undo, block)
 
 /**
  * Runs [block] as the saga [id], undoing its finished steps, newest first, if it ends any way but returning; the
- * ending then carries on, unless an undo failed, when the saga throws [NotUndone] instead.
+ * ending then carries on, unless an undo failed, when the saga throws [NotUndone] instead. Undos and checks run on
+ * a virtual thread of their own, which an interrupt of this one does not reach, each through [undo]; its deadline,
+ * if it has one, bounds all of them together.
  */
-fun <E, A> Fail<E>.saga(id: String, block: SagaScope<E>.() -> A): A {
-    val steps = Steps<E>(id, root())
+fun <E, A> Fail<E>.saga(id: String, undo: Policy? = null, block: SagaScope<E>.() -> A): A {
+    val steps = Steps<E>(id, root(), Undoing(undo))
     return try {
         steps.block()
     } catch (t: Throwable) {
@@ -81,7 +88,57 @@ private class Done<E, A>(val name: String, val value: A, val undo: (String, A, U
 /** A step nobody could settle, and the check's own throw if it had one. */
 private class Unsettled(val name: String, val checkFailed: Throwable?)
 
-private class Steps<E>(override val id: String, private val root: Fail<*>) : SagaScope<E> {
+/** How a saga's undos and checks are run: shielded, each through the policy, all inside its deadline. */
+private class Undoing(policy: Policy?) {
+    private val each = policy?.let { Policy(it.name, it.steps.filterNot { step -> step is Policy.Step.Deadline }) }
+    private val total = policy?.steps?.filterIsInstance<Policy.Step.Deadline>()?.minOfOrNull { it.total }
+    private var until: Instant? = null
+
+    fun <A> run(call: () -> A): A = shielded {
+        val left = left()
+        when {
+            left == null -> through(call)
+            left.isPositive() -> timeout(left) { through(call) }
+            else -> throw TimeoutException("the undo policy's deadline of $total has passed")
+        }
+    }
+
+    private fun <A> through(call: () -> A): A = each?.invoke(call) ?: call()
+
+    // The deadline starts with the first undo or check, not with the saga.
+    private fun left(): Duration? = total?.let { deadline ->
+        val end = until ?: clock.get().now().plus(deadline.toJavaDuration()).also { until = it }
+        java.time.Duration.between(clock.get().now(), end).toKotlinDuration()
+    }
+}
+
+/** [block] on a virtual thread of its own carrying this thread's locals, waited for whatever interrupts this one. */
+private fun <A> shielded(block: () -> A): A {
+    val bound = Bindings.snapshot()
+    val ended = ShieldedEnd<A>()
+    Thread.ofVirtual().start { ended.from { Bindings.under(bound, block) } }.joinFully()
+    return ended.answer()
+}
+
+private class ShieldedEnd<A> {
+    private var value: A? = null
+    private var thrown: Throwable? = null
+
+    fun from(block: () -> A) {
+        try {
+            value = block()
+        } catch (t: Throwable) {
+            thrown = t
+        }
+    }
+
+    // Read only after the thread that wrote it was joined.
+    @Suppress("UNCHECKED_CAST")
+    fun answer(): A = thrown?.let { throw it } ?: value as A
+}
+
+private class Steps<E>(override val id: String, private val root: Fail<*>, private val undoing: Undoing) :
+    SagaScope<E> {
 
     private val names = mutableSetOf<String>()
     private val done = mutableListOf<Done<E, *>>()
@@ -114,7 +171,7 @@ private class Steps<E>(override val id: String, private val root: Fail<*>) : Sag
             return
         }
         try {
-            when (val settled = check(key)) {
+            when (val settled = undoing.run { check(key) }) {
                 is Settled.Happened -> done += Done(name, settled.value, undo)
                 Settled.DidNot -> Unit
             }
@@ -154,7 +211,7 @@ private class Steps<E>(override val id: String, private val root: Fail<*>) : Sag
 
     private fun <A> Done<E, A>.undone(why: Undo<E>): Throwable? =
         try {
-            undo("$id/$name/undo", value, why)
+            undoing.run { undo("$id/$name/undo", value, why) }
             null
         } catch (t: Throwable) {
             t
