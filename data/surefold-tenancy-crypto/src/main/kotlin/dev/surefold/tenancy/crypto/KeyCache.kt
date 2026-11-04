@@ -5,6 +5,7 @@ import dev.surefold.HandoffDecision
 import dev.surefold.Resource
 import dev.surefold.Shared
 import dev.surefold.SingleFlight
+import dev.surefold.checkNotInTransaction
 import dev.surefold.clock
 import dev.surefold.fail.Either
 import dev.surefold.fail.flatMap
@@ -361,4 +362,90 @@ internal class KeyCacheLedger {
     }
 
     private fun retired(): Nothing = throw CancellationException("the key load is no longer admitted")
+}
+
+/** Admission and the final unwind boundary of this cache's callers. */
+internal class KeyCallers {
+    private class Ticket {
+        val finished = HandoffDecision<Unit>()
+    }
+
+    private data class CallerState(
+        val closed: Boolean = false,
+        val tickets: List<Ticket> = emptyList(),
+    )
+
+    private class Invocation {
+        val failures = mutableListOf<Throwable>()
+        var admitted = false
+
+        fun record(failure: Throwable) {
+            if (failures.none { it === failure }) failures.add(failure)
+        }
+
+        fun assembled(): Throwable? {
+            val primary = failures.firstOrNull() ?: return null
+            failures.drop(1).forEach { later ->
+                val seen = mutableListOf<Throwable>()
+                if (!contains(primary, later, seen)) primary.addSuppressed(later)
+            }
+            return primary
+        }
+
+        private fun contains(root: Throwable, target: Throwable, seen: MutableList<Throwable>): Boolean {
+            if (root === target) return true
+            if (seen.any { it === root }) return false
+            seen.add(root)
+            return root.suppressed.any { contains(it, target, seen) }
+        }
+    }
+
+    private val identity = Any()
+    private val active = surefoldLocal<Set<Any>> { emptySet() }
+    private val state = Shared(CallerState())
+
+    // Lifecycle capture retains opaque Fail and interruption until all owned frames have unwound.
+    @Suppress("TooGenericExceptionCaught")
+    fun call(body: () -> Unit) {
+        checkNotInTransaction()
+        val ticket = Ticket()
+        val invocation = Invocation()
+        try {
+            try {
+                active.locally(active.get() + identity) {
+                    try {
+                        if (admit(ticket, invocation)) body()
+                    } catch (failure: Throwable) {
+                        invocation.record(failure)
+                    }
+                }
+            } catch (restoration: Throwable) {
+                invocation.record(restoration)
+            }
+            val failure = invocation.assembled()
+            if (failure != null) throw failure
+        } finally {
+            ticket.finished.tryComplete(Unit)
+        }
+    }
+
+    // A committed observer failure cannot undo acceptance or license body entry.
+    @Suppress("TooGenericExceptionCaught")
+    private fun admit(ticket: Ticket, invocation: Invocation): Boolean {
+        val terminal = state.peek().tickets.filter { it.finished.peek() != null }
+        try {
+            invocation.admitted = state.modify { current ->
+                if (current.closed) current to false
+                else current.copy(
+                    tickets = current.tickets.filterNot { old -> terminal.any { it === old } } + ticket,
+                ) to true
+            }
+        } catch (failure: Throwable) {
+            invocation.record(failure)
+            invocation.admitted = state.peek().tickets.any { it === ticket }
+            return false
+        }
+        check(invocation.admitted) { "the key cache is closed" }
+        return true
+    }
 }

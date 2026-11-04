@@ -1,6 +1,8 @@
 package dev.surefold.tenancy.crypto
 
 import dev.surefold.Counter
+import dev.surefold.ExitCase
+import dev.surefold.HandoffDecision
 import dev.surefold.Metrics
 import dev.surefold.NoMetrics
 import dev.surefold.Promise
@@ -13,8 +15,10 @@ import dev.surefold.Turns
 import dev.surefold.awaitValue
 import dev.surefold.clock
 import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
+import dev.surefold.junit.shouldBeLeft
 import dev.surefold.junit.shouldThrow
 import dev.surefold.metrics
 import dev.surefold.resourceScope
@@ -606,6 +610,190 @@ internal object RetainedKeyDeliverySuite : Suite(concurrent = false, isolated = 
             registrationPrecommitFault(false)
         }
         test("view registration interruption before commit admits no view") { registrationPrecommitFault(true) }
+    }
+}
+
+object RetainedKeyCallersSuite : Suite(concurrent = false, isolated = true) {
+    init {
+        test("an accepted body owns its Resource release before call returns") {
+            val callers = KeyCallers()
+            val events = Shared(emptyList<String>())
+            callers.call {
+                resourceScope {
+                    onRelease { _ -> events.update { it + "release" } }
+                    events.update { it + "body" }
+                }
+            }
+            events.update { it + "returned" }
+            events.peek() shouldBe listOf("body", "release", "returned")
+        }
+
+        test("a committed admission observer throw preserves original and runs no body") {
+            val callers = KeyCallers()
+            val marker = IllegalStateException("synthetic admission observer")
+            val body = HandoffDecision<Unit>()
+            atDeliveryCommit({ stack -> stack.any { it.methodName == "admit" } }, { throw marker }) {
+                shouldThrow<IllegalStateException>({ callers.call { body.tryComplete(Unit) } }) {
+                    (it === marker) shouldBe true
+                }
+            }
+            body.peek() shouldBe null
+            callers.call { body.tryComplete(Unit) }
+            body.peek() shouldBe Unit
+        }
+
+        test("ordinary interrupt and cancellation retain ordered owned releases") {
+            val ordinary = IllegalStateException("synthetic caller")
+            val interrupted = InterruptedException("synthetic caller")
+            val cancelled = CancellationException("synthetic caller")
+            listOf(
+                ordinary to ExitCase.Failure(ordinary),
+                interrupted to ExitCase.Cancelled(interrupted),
+                cancelled to ExitCase.Completed,
+            ).forEach { (primary, exit) -> callerFailure(primary, exit) }
+        }
+
+        test("a suppression-disabled original retains identity and all ordered release attempts") {
+            val callers = KeyCallers()
+            val primary = object : Throwable("synthetic caller", null, false, false) {}
+            val first = IllegalStateException("synthetic outer release")
+            val second = IllegalStateException("synthetic inner release")
+            val releases = Shared(emptyList<Pair<Int, ExitCase>>())
+            shouldThrow<Throwable>({
+                callers.call {
+                    resourceScope {
+                        onRelease { exit ->
+                            releases.update { it + (1 to exit) }
+                            throw first
+                        }
+                        onRelease { exit ->
+                            releases.update { it + (2 to exit) }
+                            throw second
+                        }
+                        throw primary
+                    }
+                }
+            }) { (it === primary) shouldBe true }
+            releases.peek() shouldBe listOf(2 to ExitCase.Failure(primary), 1 to ExitCase.Failure(primary))
+            primary.suppressed.toList() shouldBe emptyList()
+        }
+
+        test("a release failure after normal body remains the original failure") {
+            val callers = KeyCallers()
+            val primary = IllegalStateException("synthetic release")
+            val exits = Shared(emptyList<ExitCase>())
+            shouldThrow<IllegalStateException>({
+                callers.call {
+                    resourceScope {
+                        onRelease { exit ->
+                            exits.update { it + exit }
+                            throw primary
+                        }
+                    }
+                }
+            }) { (it === primary) shouldBe true }
+            exits.peek() shouldBe listOf(ExitCase.Completed)
+        }
+
+        test("an opaque Fail crosses caller and foreign attempt with cleanup intact") {
+            val callers = KeyCallers()
+            val error = IllegalArgumentException("synthetic declared error")
+            val prior = IllegalStateException("synthetic prior diagnostic")
+            val first = IllegalStateException("synthetic outer release")
+            val second = IllegalStateException("synthetic inner release")
+            val original = HandoffDecision<Throwable>()
+            val foreignTail = HandoffDecision<Unit>()
+            val events = Shared(emptyList<Int>())
+            val exits = Shared(emptyList<ExitCase>())
+            error.addSuppressed(prior)
+            val answer = attempt<Throwable, Unit> {
+                val owner = this
+                shouldThrow<Throwable>({
+                    attempt<String, Unit> {
+                        callers.call {
+                            resourceScope {
+                                onRelease { exit ->
+                                    events.update { it + 1 }
+                                    exits.update { it + exit }
+                                    throw first
+                                }
+                                onRelease { exit ->
+                                    events.update { it + 2 }
+                                    exits.update { it + exit }
+                                    throw second
+                                }
+                                shouldThrow<Throwable>({ owner.fail(error) }) { signal ->
+                                    original.tryComplete(signal)
+                                    signal.stackTrace.toList() shouldBe emptyList()
+                                    throw signal
+                                }
+                            }
+                        }
+                        foreignTail.tryComplete(Unit)
+                    }
+                }) { crossed ->
+                    (crossed === original.peek()) shouldBe true
+                    crossed.stackTrace.toList() shouldBe emptyList()
+                    crossed.suppressed.toList() shouldBe listOf(second, first)
+                    throw crossed
+                }
+            }
+            answer.shouldBeLeft { (it === error) shouldBe true }
+            error.suppressed.toList() shouldBe listOf(prior)
+            events.peek() shouldBe listOf(2, 1)
+            exits.peek() shouldBe listOf(ExitCase.Completed, ExitCase.Completed)
+            foreignTail.peek() shouldBe null
+        }
+
+        test("the call guard refuses ordinary nested and forced solo steps before admission") {
+            listOf("ordinary", "nested", "solo").forEach { mode -> callerGuard(mode) }
+        }
+
+        test("call refusal preserves an already entered step and interrupt flag") {
+            val callers = KeyCallers()
+            val thread = Thread.currentThread()
+            val before = thread.isInterrupted
+            val value = Shared(0)
+            val body = HandoffDecision<Unit>()
+            try {
+                Thread.interrupted()
+                transact {
+                    thread.interrupt()
+                    shouldThrow<IllegalStateException>({ callers.call { body.tryComplete(Unit) } }) {
+                        it.message shouldBe "the operation cannot run inside a transaction"
+                    }
+                    thread.isInterrupted shouldBe true
+                    Thread.interrupted()
+                    value.set(1)
+                }
+                value.peek() shouldBe 1
+                body.peek() shouldBe null
+            } finally {
+                Thread.interrupted()
+                if (before) thread.interrupt()
+            }
+        }
+
+        test("caller failure preserves a cyclic existing suppressed graph") {
+            val callers = KeyCallers()
+            val primary = IllegalStateException("synthetic primary")
+            val nested = IllegalStateException("synthetic nested")
+            val release = IllegalStateException("synthetic release")
+            primary.addSuppressed(nested)
+            nested.addSuppressed(primary)
+            shouldThrow<IllegalStateException>({
+                callers.call {
+                    resourceScope {
+                        onRelease { _ -> throw release }
+                        throw primary
+                    }
+                }
+            }) {
+                (it === primary) shouldBe true
+                it.suppressed.toList() shouldBe listOf(nested, release)
+                nested.suppressed.toList() shouldBe listOf(primary)
+            }
+        }
     }
 }
 
@@ -1234,4 +1422,55 @@ private fun deliveryRecursionRefuses() {
             }
         }
     }
+}
+
+private fun callerFailure(primary: Throwable, expectedExit: ExitCase) {
+    val callers = KeyCallers()
+    val first = IllegalStateException("synthetic outer release")
+    val second = IllegalStateException("synthetic inner release")
+    val released = Shared(emptyList<Pair<Int, ExitCase>>())
+    shouldThrow<Throwable>({
+        callers.call {
+            resourceScope {
+                onRelease { exit ->
+                    released.update { it + (1 to exit) }
+                    throw first
+                }
+                onRelease { exit ->
+                    released.update { it + (2 to exit) }
+                    throw second
+                }
+                throw primary
+            }
+        }
+    }) {
+        (it === primary) shouldBe true
+        it.suppressed.toList() shouldBe listOf(second, first)
+    }
+    released.peek() shouldBe listOf(2 to expectedExit, 1 to expectedExit)
+}
+
+private fun callerGuard(mode: String) {
+    val callers = KeyCallers()
+    val body = HandoffDecision<Unit>()
+    val commits = Shared(0)
+    val invoke = {
+        atDeliveryCommit({ stack -> stack.any { it.methodName == "admit" } }, {
+            commits.update { it + 1 }
+        }) {
+            shouldThrow<IllegalStateException>({ callers.call { body.tryComplete(Unit) } }) {
+                it.message shouldBe "the operation cannot run inside a transaction"
+            }
+        }
+    }
+    when (mode) {
+        "ordinary" -> transact { invoke() }
+        "nested" -> transact { transact { invoke() } }
+        "solo" -> transact(soloAfter = 0) { invoke() }
+        else -> throw DeliveryProbeSetupFailure()
+    }
+    body.peek() shouldBe null
+    commits.peek() shouldBe 0
+    callers.call { body.tryComplete(Unit) }
+    body.peek() shouldBe Unit
 }
