@@ -121,9 +121,13 @@ fun <E, A> Fail<E>.guarded(policy: Policy, ifRejected: (Rejected) -> E, block: F
 /**
  * Runs [block] under this policy with its answer kept as a value (spec 0272). A left [countsAsFailure] picks is a
  * failed call to every step: retried, counted by a breaker that counts it, and learnt from by a limit. Any other left
- * is the dependency's answer and a success. What [block] throws, and a guard's refusal or timeout, is handled as
- * `policy { }` handles it and answered on the left. A fatal, an interrupt, a cancellation or a `fail` on its way out
- * goes up instead, even when [block] returned it on the left.
+ * is the dependency's answer and a success: it resets a breaker's failure streak and closes a half-open one, so the
+ * selector should spare only errors the dependency itself answered with. What [block] throws, and a guard's refusal
+ * or timeout, is handled as `policy { }` handles it and answered on the left. A fatal, an interrupt, a cancellation
+ * or a `fail` on its way out goes up instead, even when [block] returned it on the left.
+ *
+ * [countsAsFailure] is asked once an attempt, inside the attempt: within its timeout's fork and the time a limit
+ * measures. A selector that throws is a throw from [block], retried, counted and answered on the left as one.
  */
 fun <A> Policy.guardResult(
     countsAsFailure: (Throwable) -> Boolean = { true },

@@ -8,6 +8,7 @@ import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
 import dev.surefold.fail.Either
 import dev.surefold.fail.Fail
+import dev.surefold.fail.Failed
 import dev.surefold.fail.attempt
 import org.junit.jupiter.api.Test
 import java.util.concurrent.CancellationException
@@ -257,6 +258,68 @@ class PolicyResultTest {
         partner.guardResult(transportOnly) { Either.Left(Transport()) }
         withClue("a failure is a dropped one") { limit.current shouldBe 90 }
         limit.inFlight shouldBe 0
+    }
+
+    @Test
+    fun `an unselected left is a measured sample an adaptive limit grows on`() {
+        val limit = Limit.adaptive("partner", initial = 1, max = 10)
+        val partner = policy("partner") { guard(limit) }
+
+        // One full window: sixteen calls, each with the limit's one permit, none queueing behind another.
+        repeat(16) { partner.guardResult(transportOnly) { Either.Left(Refusal()) } }
+        withClue("a window of answers, not of dropped or unmeasured calls, grows the limit") {
+            limit.current shouldBe 2
+        }
+    }
+
+    @Test
+    fun `a selected left that is a refusal from another policy is counted as that refusal`() {
+        val breaker = breaker()
+        val partner = policy("partner") { guard(breaker) }
+        partner.guardResult { Either.Left(Transport()) }
+
+        capturingMetrics { measured ->
+            partner.guardResult { Either.Left(Rejected.BulkheadFull("inner")) }
+                .shouldBeLeft().shouldBeInstanceOf<Rejected.BulkheadFull>()
+            measured.tags("surefold.policy.calls") shouldBe
+                mapOf("policy" to "partner", "outcome" to "rejected", "refused_by" to "bulkhead")
+        }
+        withClue("the breaker's default predicate leaves a refusal uncounted") {
+            breaker.state shouldBe CircuitBreaker.State.Closed(1)
+        }
+    }
+
+    @Test
+    fun `a selector that throws is a throw from the block`() {
+        val breaker = breaker(maxFailures = 2)
+        val calls = AtomicInteger()
+        val broken = IllegalStateException("selector")
+        val partner = policy("partner") { retry(Schedule.recurs(1)); guard(breaker) }
+
+        partner.guardResult({ throw broken }) { calls.incrementAndGet(); Either.Left(Transport()) }
+            .shouldBeLeft() shouldBe broken
+        withClue("retried, counted and answered on the left") {
+            calls.get() shouldBe 2
+            breaker.state.shouldBeInstanceOf<CircuitBreaker.State.Open>()
+        }
+    }
+
+    @Test
+    fun `a foreign fail returned on the left goes up uncounted and unretried`() {
+        val breaker = breaker(maxFailures = 1)
+        val calls = AtomicInteger()
+        val partner = policy("partner") { retry(Schedule.recurs(2)); guard(breaker) }
+
+        capturingMetrics { measured ->
+            attempt<String, Int> {
+                val outside = this
+                partner.guardResult<Int> { calls.incrementAndGet(); Either.Left(Failed("outside", outside)) }
+                42
+            } shouldBe Either.Left("outside")
+            measured.counter("surefold.policy.calls") shouldBe 0.0
+        }
+        calls.get() shouldBe 1
+        breaker.state shouldBe CircuitBreaker.State.Closed(0)
     }
 
     @Test

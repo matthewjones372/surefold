@@ -576,12 +576,20 @@ A call already captured with `Either.catch` keeps its `Either` through the
 policy with `guardResult` (spec 0272, unreleased). Its `countsAsFailure` picks
 which lefts are the dependency failing: those are retried, counted by the
 breaker (when its own `countsAsFailure` counts them too) and learnt from by a
-`Limit`. Any other left is the dependency's answer, a success that resets the
-breaker and is not retried. Every left comes back as the same instance. What
-the block throws, and a guard's refusal or a timeout, is handled as
-`partner { }` handles it and answered on the left; a fatal error, an
-interrupt, a cancellation or a `fail` still goes up. Map to your own error
-type after the policy.
+`Limit`. Any other left is the dependency's answer: not retried, and a
+success to the breaker, so it resets the failure streak and closes a half-open
+breaker. A thrown error the breaker leaves uncounted does neither, so let the
+selector spare only errors that came back from the dependency, such as a
+declined card, never your own or the network's. Every left comes back as the
+same instance. What the block throws, and a guard's refusal or a timeout, is
+handled as `partner { }` handles it and answered on the left; a fatal error, an
+interrupt, a cancellation or a `fail` still goes up. As on the thrown path, a
+fatal error inside an adaptive `Limit` is a dropped sample. Map to your own
+error type after the policy.
+
+The selector is asked once an attempt, inside it: within the attempt timeout's
+fork and the time a `Limit` measures. A selector that throws is a throw from
+the block, retried, counted and answered on the left as one.
 
 <!-- core-policy-result -->
 ```kotlin
@@ -600,7 +608,7 @@ class Payments(private val charge: (Long) -> String) {
         guard(CircuitBreaker("payments", maxFailures = 5, resetAfter = Schedule.spaced(30.seconds)))
     }
 
-    // A decline is the provider answering: it neither trips the breaker nor is retried.
+    // A decline is the provider answering: a breaker success that is not retried.
     fun charged(pence: Long): Either<Throwable, String> =
         payments.guardResult(countsAsFailure = { it !is Declined }) { Either.catch { charge(pence) } }
 }
