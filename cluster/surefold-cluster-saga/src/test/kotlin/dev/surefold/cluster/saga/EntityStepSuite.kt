@@ -1,5 +1,6 @@
 package dev.surefold.cluster.saga
 
+import dev.surefold.Promise
 import dev.surefold.Shared
 import dev.surefold.TestClock
 import dev.surefold.actor.ActorRef
@@ -33,15 +34,16 @@ import dev.surefold.cluster.Status
 import dev.surefold.cluster.cluster
 import dev.surefold.cluster.sharding
 import dev.surefold.fail.Either
+import dev.surefold.fail.fold
 import dev.surefold.fail.left
 import dev.surefold.fail.right
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldThrow
 import dev.surefold.scope
+import dev.surefold.surefoldFuture
+import dev.surefold.test.eventually
 import java.time.Instant
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -160,37 +162,29 @@ private class Seen {
     }
 }
 
-/** A one-node cluster with the accounts sharded on it, on a scope and a thread of its own, until [close]. */
+/** A one-node cluster with the accounts sharded on it, on a scope of its own, until [close]. */
 private class Bank(seen: Seen) : AutoCloseable {
-    private val done = CountDownLatch(1)
-    private val ready = CountDownLatch(1)
-    private val opened = AtomicReference<Sharded<Account>>()
-    private val thread = Thread.ofPlatform().start {
+    private val done = Promise<Nothing, Unit>()
+    private val opened = Promise<Throwable, Sharded<Account>>()
+    private val running = surefoldFuture {
         scope {
             journal(InMemoryJournal())
             val port = freePort()
             val gossip = Gossiping(probeEvery = 200.milliseconds, ackWithin = 100.milliseconds, formAfter = 200.milliseconds)
             val cluster = cluster(node("bank", port), Discovery.static(Node("", "127.0.0.1", port)), gossip)
             val accounts = cluster.sharding("account", Keyed.codec(MoveCodec, FundsWire), 1.minutes, entity = seen::account)
-            val deadline = System.nanoTime() + 30.seconds.inWholeNanoseconds
-            while (cluster.view.members.none { it.status == Status.Up } && System.nanoTime() < deadline) {
-                Thread.sleep(20)
-            }
-            opened.set(accounts)
-            ready.countDown()
+            eventually(30.seconds) { check(cluster.view.members.any { it.status == Status.Up }) { "the bank is not up" } }
+            opened.succeed(accounts)
             done.await()
         }
-    }
+    }.whenComplete { _, thrown -> thrown?.let(opened::fail) }
 
     val accounts: Sharded<Account>
-        get() {
-            ready.await()
-            return opened.get()
-        }
+        get() = opened.await().fold({ throw IllegalStateException("the bank did not open", it) }, { it })
 
     override fun close() {
-        done.countDown()
-        thread.join()
+        done.succeed(Unit)
+        running.join()
     }
 }
 
