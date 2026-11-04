@@ -169,7 +169,7 @@ which is no order to release in.
 - **Configuration.** Each `config` section logs the settings it read, where
   each came from and what it overrode, as it is read, refusal included; nothing
   in `main` asks for it. See the
-  [cookbook](cookbook.md#where-a-setting-came-from).
+  [cookbook](https://github.com/surefold/surefold-integrations/blob/main/docs/configuration.md#where-a-setting-came-from).
 - **Exit code.** `runApp` returns an `ExitCode` and prints what went wrong to
   stderr; it never ends the process itself. The `exitProcess` is yours, and
   worth calling: a stray non-daemon thread would otherwise keep the JVM alive.

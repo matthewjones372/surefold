@@ -1,11 +1,11 @@
 # Application cookbook
 
 Recipes for [`surefold-app`](app.md), in roughly the order a service needs them.
-Each Kotlin fence marked for it is compiled by `CookbookTest`, together with
+Each Kotlin fence marked for it is compiled by `CookbookSuite`, together with
 the fixtures below, so a recipe that stops matching the library fails the
-build. Of the configuration fences only the class form is compiled, and the
-`surefold-app-liquibase` fences are not, because that module is not on its
-classpath.
+build. Its classpath is surefold-app and the core alone, so the
+`surefold-app-liquibase` fences are not compiled; recipes for the modules that
+wrap an outside library are in surefold-integrations' guides.
 
 [Applications](app.md) explains how the graph behaves; this page shows how to
 write each piece.
@@ -42,8 +42,6 @@ The types the recipes are written against:
 
 <!-- cookbook-fixtures -->
 ```kotlin
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
 import dev.surefold.ExitCase
 import dev.surefold.app.HealthRegistry
 import dev.surefold.app.Module
@@ -53,11 +51,7 @@ import dev.surefold.app.Sys
 import dev.surefold.app.boundTo
 import dev.surefold.app.closingOf
 import dev.surefold.app.findings
-import dev.surefold.app.kotlinx.Naming
-import dev.surefold.app.kotlinx.Secret
-import dev.surefold.app.kotlinx.config
 import dev.surefold.app.overriding
-import dev.surefold.app.pekko.actor
 import dev.surefold.app.probe
 import dev.surefold.app.render
 import dev.surefold.app.report
@@ -67,11 +61,6 @@ import dev.surefold.app.singleOf
 import dev.surefold.app.subgraph
 import dev.surefold.app.testApp
 import dev.surefold.app.validate
-import kotlinx.serialization.Serializable
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.actor.typed.ActorRef
-import org.apache.pekko.actor.typed.Behavior
-import org.apache.pekko.actor.typed.javadsl.Behaviors
 import kotlin.system.exitProcess
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -466,229 +455,11 @@ requests.
 ## Configuration a module owns
 
 `surefold-app-typesafe` makes a HOCON section a node, read by the module that
-needs it. `surefold-app-kotlinx` reads it from a `@Serializable` class, each
-property a path named after it.
-
-```kotlin
-plugins {
-    kotlin("plugin.serialization") version "2.4.10"
-}
-
-dependencies {
-    implementation("dev.surefold:surefold-app-kotlinx:0.18.0")
-}
-```
-
-<!-- cookbook -->
-```kotlin
-@Serializable
-data class PoolSettings(val url: String, val poolSize: Int = 8, val idle: Duration, val password: Secret)
-
-val pool: Module =
-    single<Config> { ConfigFactory.load() } +
-        config<PoolSettings>("database", Naming.Kebab) +
-        closingOf { db: PoolSettings -> Hikari(DbConfig(db.url)) }.boundTo<Pool>()
-```
-
-A nested class is a nested section. A default or a nullable makes a key
-optional, and an enum names its entries when the file says something else.
-`Duration` reads `30s`; `Secret` reads a string that prints as the mask.
-`Naming.Kebab` reads `poolSize` from `pool-size`, and `@SerialName` names one
-key, itself kebab-cased under `Naming.Kebab` if it has capitals. Every fault is
-named at once, as the block form names them.
-`Secrets.default.andSecretsOf<PoolSettings>("database", Naming.Kebab)` masks
-each `Secret` path in the report below, given the naming `config` was given;
-and `config.choosing<Settings>(path) { settings -> … }`
-reads the class the same way.
-
-The block form says what a class cannot: a size in bytes, a value computed
-from two keys, or anything else read from the `Config` directly. Nothing is
-wrapped: `of` hands over the real `com.typesafe.config.Config`, so
-substitution, merging, `getDuration` and `getMemorySize` all still work.
-
-```kotlin
-dependencies {
-    implementation("dev.surefold:surefold-app-typesafe:0.18.0")
-}
-```
-
-```kotlin
-import com.typesafe.config.Config
-import com.typesafe.config.ConfigFactory
-import dev.surefold.app.typesafe.config
-
-data class DbSettings(val url: String, val poolSize: Int, val idle: kotlin.time.Duration)
-
-val database: Module =
-    single<Config> { ConfigFactory.load() } +
-    config<DbSettings>("database") { DbSettings(string("url"), int("poolSize"), duration("idle")) } +
-    closingOf { db: DbSettings -> Hikari(DbConfig(db.url)) }.boundTo<Pool>()
-```
-
-The readers are `string`, `int`, `long`, `boolean`, `duration` (a Kotlin
-`Duration`), `bytes`, `strings` and `secret`; `of(default) { … }` reads
-anything else from the `Config` directly.
-
-A failed read records its fault and the block carries on, so a bad file
-produces one message listing every fault, in Typesafe Config's own words with
-the file and line, rather than one deploy per fault. Each module owns its
-section, so adding one does not mean editing a root configuration type.
-
-### Where a setting came from
-
-Each section logs what it read as the graph starts, before anything is built
-on it, to the `surefold-app` logger at `INFO`. There is nothing to wire: a service
-whose `main` is `runApp(Petshop)` prints one block per section, and the
-logger's level is how to turn it off. `config<Settings>("petshop") { … }` that
-read `port`, `db.pool` and `secret("db.password")` logs:
-
-<!-- cookbook-section-report -->
-```
-surefold-app configuration: petshop
-
-petshop.port         9090          application.conf:2
-                     overrides 8080 at reference.conf:2
-petshop.db.pool      16            application.conf:4
-                     overrides 4 at reference.conf:3
-petshop.db.password  ●●●●●●        application.conf:5
-```
-
-Only the paths the section read are printed. A path read with `secret(path)`,
-or as a `Secret` property, is masked as well as those `Secrets.default` masks
-by name. A section that refuses the start logs what it read first, with any
-path it could not find marked `not set`. Over `loadedConfig()` the block says
-what each setting overrode; over a `Config` written by hand, only where each
-came from.
-
-The whole document, rather than one section, is a report of its own.
-A hierarchy of files resolves to one document. `origins()` says which file each
-value came from and what it overrode:
-
-```kotlin
-import dev.surefold.app.typesafe.layeredConfig
-import dev.surefold.app.typesafe.origins
-
-layeredConfig().origins().report()
-```
-
-<!-- cookbook-config-report -->
-```
-surefold-app configuration
-
-petshop.arrivalsEvery  30s           reference.conf:4
-petshop.db.password    ●●●●●●        application.conf:5
-petshop.db.pool        16            application.conf:4
-                       overrides 4 at reference.conf:3
-petshop.port           9090          application.conf:2
-                       overrides 8080 at reference.conf:2
-```
-
-`ReportedSuite` holds this output to what the code prints. `layeredConfig()`
-reads what `ConfigFactory.load()` reads, layer by layer — `CONFIG_FORCE_`
-variables under `-Dconfig.override_with_env_vars`, system properties,
-`config.file`/`resource`/`url` or else `application.conf`, `.json` and
-`.properties`, then `reference.conf` — and keeps them apart so it can report
-what was overridden. `loadedConfig()` and the other sources put a `Layered` in
-the graph beside the `Config` it merges to. `config.origins()` on an already merged
-`Config` gives the same report without the override lines, because
-`withFallback` keeps only the winner.
-
-**Values are redacted by default.** Names such as `password`, `token` and
-`key` are masked, but that misses a secret with an ordinary name, so add exact
-paths:
-
-```kotlin
-import dev.surefold.app.typesafe.Secrets
-
-config.origins(Secrets.default.and("petshop.db.url")).report()   // jdbc:…//user:pass@host
-```
-
-For the value itself, `secret(path)` reads a `Secret`, which prints as the mask
-through `toString` and gives its value only to `reveal()`, so a log line or an
-exception message cannot leak it:
-
-```kotlin
-import dev.surefold.app.typesafe.Secret
-
-data class Credentials(val url: Secret, val poolSize: Int)
-
-config<Credentials>("database") { Credentials(secret("url"), int("poolSize")) }
-```
-
-Two details of HOCON that the report handles: an environment variable is not
-a layer, other than a forced `CONFIG_FORCE_` one, and only takes effect where a
-file wrote `${?FOO}`; and
-`ConfigFactory.defaultReference()` already includes system properties, so
-`layeredConfig` reads `reference.conf` unresolved to avoid attributing a `-D`
-value to it.
-
-### Configuration in a test
-
-```kotlin
-import dev.surefold.app.typesafe.configFromResource
-import dev.surefold.app.typesafe.configOf
-import dev.surefold.app.typesafe.loadedConfig
-import dev.surefold.app.typesafe.overridingConfig
-
-loadedConfig()                              // what the service reads: application.conf and its reference
-configFromResource("test.conf")             // a file beside the test
-configOf("database.poolSize = 1")           // a document written in the test
-```
-
-Changing one key without restating the file:
-
-```kotlin
-testApp(app.overridingConfig("petshop.port = 0")) { server: HttpServer -> server }
-```
-
-`overridingConfig` puts the document on top of what the service would read, so
-the port changes while everything else still comes from `application.conf`.
-It uses `overriding`, so a key the graph does not use fails the test rather
-than being silently ignored.
-
-### A setting that picks a module
-
-A setting such as `useCache` does not configure a repository; it chooses
-between two. Surefold builds every node in a graph, so the branch not taken must
-not be in it.
-
-`choice` is a node that depends on the setting and provides what every branch
-provides. Its value is the module Surefold builds into the graph once the setting
-is built.
-
-```kotlin
-import dev.surefold.app.choice
-import dev.surefold.app.typesafe.config
-import dev.surefold.app.typesafe.loadedConfig
-
-data class RepoSettings(val useCache: Boolean, val ttl: kotlin.time.Duration)
-
-val choosing: Module =
-    config<RepoSettings>("repo") { RepoSettings(boolean("useCache"), duration("ttl")) } +
-        choice<RepoSettings, UserRepo> { repo -> if (repo.useCache) cachingRepo else plainRepo }
-
-object Shop : SurefoldApp<UserRepo>() {
-    override val module = loadedConfig() + choosing
-}
-```
-
-The branch not taken contributes no node. Before anything runs, the choice is
-one node providing `UserRepo`, so `validate`, `render` and the compiler check
-the rest of the graph against it; a chosen branch that does not provide
-`UserRepo`, or needs something nothing builds, refuses the start.
-`overridingConfig("repo.useCache = false")` flips it in a test, and
-`overriding` can replace a node that only the chosen branch brings.
-
-`Config.choosing(path, read) { settings -> module }` makes the same choice
-while the graph is assembled, from a `Config` already in hand. Where the
-setting is a plain value already, `Module` is a value, so `when` works:
-
-```kotlin
-val carts: Module = when (settings.getString("cartStore")) {
-    "postgres" -> postgresCarts
-    else -> redisCarts
-}
-```
+needs it, and `surefold-app-kotlinx` reads one from a `@Serializable` class.
+They wrap outside libraries, so they live in surefold-integrations, and their
+guide, with where a setting came from, configuration in a test and a setting
+that picks a module, is
+[configuration](https://github.com/surefold/surefold-integrations/blob/main/docs/configuration.md).
 
 ## Run migrations as a step
 
@@ -733,50 +504,9 @@ val database: Module =
 ## Spawn a Pekko actor
 
 `surefold-app-pekko` makes a Pekko typed actor a node keyed by the `ActorRef<T>`
-of its protocol. It needs a classic `ActorSystem` node:
-
-<!-- cookbook-pekko -->
-```kotlin
-data class Ingest(val line: String)
-
-fun ingesting(users: UserRepo): Behavior<Ingest> =
-    Behaviors.receive(Ingest::class.java)
-        .onMessage(Ingest::class.java) { Behaviors.same() }
-        .build()
-
-val actors: Module =
-    single<ActorSystem> { install({ ActorSystem.create("app") }) { system, _ -> system.terminate() } } +
-    single { pool: Pool -> PgUserRepo(pool) as UserRepo } +
-    actor("ingest") { users: UserRepo -> ingesting(users) }
-
-val sending: Module = single { ingest: ActorRef<Ingest> -> Routes2(ingest) }
-
-class Routes2(private val ingest: ActorRef<Ingest>) {
-    fun accept(line: String) = ingest.tell(Ingest(line))
-}
-```
-
-The protocol is inferred from the behaviour's type. Write it out,
-`actor<Ingest>(…)`, only where the actor takes no dependencies: with one type
-argument given, the overloads that take dependencies cannot apply.
-
-Two protocols are two keys, and a dependent declares the protocol it sends.
-The actor is stopped through `gracefulStop` and awaited, so it has given back
-what it held before the nodes it depends on are released.
-
-Asking an actor, and why the reply type is bound to `Any`:
-
-```kotlin
-import dev.surefold.actor.pekko.ask
-
-fun find(ref: ActorRef<Shop>, system: ActorSystem, id: PetId): Option<Pet> =
-    ref.ask(system, 3.seconds) { replyTo -> Find(id, replyTo) }
-```
-
-Pekko refuses a `null` message, so an actor that answers "no such pet" with
-`null` throws instead of answering, and `ActorRef<Pet?>` compiles, so neither
-Kotlin nor the typed protocol stops it. Binding the reply to `Any` does:
-absence has to be modelled as an `Option`, a sealed reply or an empty list.
+of its protocol. It wraps an outside library, so it lives in
+surefold-integrations, and its recipe is
+[a Pekko actor in an application](https://github.com/surefold/surefold-integrations/blob/main/docs/pekko.md#spawn-a-pekko-actor-in-an-application).
 
 ## Spawn a Surefold actor
 
