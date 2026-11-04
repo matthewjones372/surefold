@@ -259,8 +259,6 @@ style:
       - '**/actor/surefold-actor/src/main/kotlin/dev/surefold/actor/Wheel.kt'
       # The transport's accept, read and write loops, one per socket.
       - '**/actor/surefold-actor-remote/src/main/kotlin/dev/surefold/actor/remote/Wire.kt'
-      # spec-0309-actor-remote moves the watch and unreachable threads onto the node's scope.
-      - '**/actor/surefold-actor-remote/src/main/kotlin/dev/surefold/actor/remote/Remote.kt'
       # spec-0309-journal-jdbc moves the committer onto a fork.
       - '**/actor/surefold-actor-journal-jdbc/src/main/kotlin/dev/surefold/actor/journal/jdbc/GroupCommit.kt'
       # A shutdown hook: Runtime.addShutdownHook takes an unstarted Thread, which the JDK starts as the process ends.
