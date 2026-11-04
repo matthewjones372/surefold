@@ -247,6 +247,8 @@ style:
       - '**/core/surefold-structured/src/main/kotlin/dev/surefold/structured/Tasks.kt'
       # The watcher that ends a deterministic order, and must run outside the order it watches.
       - '**/core/surefold-replay/src/main/kotlin/dev/surefold/replay/Order.kt'
+      # A test's timeout watchdog: a platform thread, so a test that never yields its carrier cannot starve it (spec 0310).
+      - '**/core/surefold-junit/src/main/kotlin/dev/surefold/junit/Watchdog.kt'
       # The runners every actor turn runs on.
       - '**/actor/surefold-actor/src/main/kotlin/dev/surefold/actor/Runners.kt'
       # The timer wheel every actor timer waits on.
