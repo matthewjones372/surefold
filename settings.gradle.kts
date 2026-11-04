@@ -24,6 +24,7 @@ module("core", "surefold-junit")
 module("core", "surefold-junit-testkit")
 module("core", "surefold-structured")
 module("core", "surefold-cache")
+module("core", "surefold-guides")
 
 module("stream", "surefold-stream")
 module("stream", "surefold-stream-pekko")
@@ -41,6 +42,7 @@ module("actor", "surefold-actor-journal-jdbc")
 module("actor", "surefold-actor-projection")
 
 module("cluster", "surefold-cluster")
+module("cluster", "surefold-cluster-saga")
 module("cluster", "surefold-cluster-kubernetes")
 module("cluster", "surefold-cluster-aws")
 

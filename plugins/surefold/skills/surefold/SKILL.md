@@ -115,12 +115,13 @@ All on Maven Central as `dev.surefold:<module>`, on one version.
 - `surefold-actor-remote-avro`: remote messages in Avro.
 - `surefold-actor-remote-kotlinx`: remote messages from `@Serializable` classes.
 - `surefold-cluster`: gossip membership and downing.
+- `surefold-cluster-saga`: durable sagas, replayed after a crash.
 - `surefold-cluster-kubernetes`: cluster seeds and a Lease on Kubernetes.
 - `surefold-cluster-aws`: cluster seeds and a lease on AWS.
 
 ## More
 
-`llms.txt` at https://github.com/surefold/surefold/blob/main/llms.txt has the
+`llms.txt` at https://github.com/surefold/surefold-core/blob/main/llms.txt has the
 facts, the full table and links to every guide; `docs/cookbook.md` has one
 recipe per application task, and `docs/core.md` covers retries, timeouts and
 policies.

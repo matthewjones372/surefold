@@ -29,6 +29,9 @@ private class SlowPool {
 
 /** Spec 0105: the slice table is read by one caller at a time, however many appends want it. */
 object JdbcSliceTableSuite : Suite() {
+    // The refreshers by name, so a dump of a hung refresh shows which (spec 0308).
+    private val named = Thread.ofVirtual().name("slice-table-", 0).factory()
+
     init {
         test("a thousand appends asking a stale table at once read it once, and go on with the map they have") {
             val pool = SlowPool()
@@ -39,7 +42,7 @@ object JdbcSliceTableSuite : Suite() {
 
             val go = CountDownLatch(1)
             // Each thread hands back the map it saw, so a thread that saw another map fails the test.
-            val seen = Executors.newVirtualThreadPerTaskExecutor().use { threads ->
+            val seen = Executors.newThreadPerTaskExecutor(named).use { threads ->
                 val asked = List(1_000) {
                     threads.submit(
                         Callable {
@@ -63,7 +66,7 @@ object JdbcSliceTableSuite : Suite() {
             pool.opened.set(0)
 
             val go = CountDownLatch(1)
-            Executors.newVirtualThreadPerTaskExecutor().use { threads ->
+            Executors.newThreadPerTaskExecutor(named).use { threads ->
                 repeat(200) { threads.submit { go.await().also { table.refresh() } } }
                 go.countDown()
             }

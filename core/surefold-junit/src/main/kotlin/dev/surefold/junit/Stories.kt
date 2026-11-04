@@ -6,6 +6,7 @@ import dev.surefold.clock
 import dev.surefold.logger
 import dev.surefold.test.Story
 import dev.surefold.test.StorySeam
+import dev.surefold.test.Transcript
 import dev.surefold.test.storyTitle
 import dev.surefold.test.storyTranscript
 import dev.surefold.test.tellStory
@@ -25,8 +26,16 @@ fun story(title: String = storyTitle.get() ?: "a story", block: Story.() -> Unit
     tellStory(title, failedStep, block)
 }
 
-/** Runs [block] with its stories titled [test] and their transcripts logged, so they are reported with its logs. */
+/**
+ * Runs [block] with its stories titled [test] and their plain transcripts logged, so they are reported with its logs.
+ * Each one's console copy goes into [consoleCopies], keyed by the message logged, for [Report] to print instead.
+ */
 @OptIn(StorySeam::class)
-internal fun <A> tellingStories(test: String, block: () -> A): A = storyTitle.locally(test) {
-    storyTranscript.locally({ logger.get().log(LogLine(LogLevel.Info, it, clock.get().now())) }, block)
-}
+internal fun <A> tellingStories(test: String, consoleCopies: MutableMap<String, String>, block: () -> A): A =
+    storyTitle.locally(test) {
+        val tell: (Transcript) -> Unit = { transcript ->
+            consoleCopies[transcript.plain] = transcript.coloured
+            logger.get().log(LogLine(LogLevel.Info, transcript.plain, clock.get().now()))
+        }
+        storyTranscript.locally(tell, block)
+    }

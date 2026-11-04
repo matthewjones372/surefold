@@ -1,5 +1,6 @@
 package dev.surefold.actor.journal.jdbc
 
+import dev.surefold.Schedule
 import dev.surefold.actor.OffsetStore
 import dev.surefold.actor.PersistenceId
 import dev.surefold.actor.ShardedJournal
@@ -108,17 +109,13 @@ class SliceMover(
      * running when the fence committed: once the oldest still running is newer than all of them. Elsewhere, [settle].
      */
     // The mover runs on its operator's thread, never in an actor's step: waiting there stalls nothing else.
-    @Suppress("ForbiddenMethodCall")
     private fun drain(connection: Connection) {
-        if (connection.metaData.databaseProductName != "PostgreSQL") return Thread.sleep(settle.inWholeMilliseconds)
+        if (connection.metaData.databaseProductName != "PostgreSQL") return time.sleep(settle)
         val before = connection.snapshot("xmax")
-        val started = TimeSource.Monotonic.markNow()
-        while (connection.snapshot("xmin") < before) {
-            check(started.elapsedNow() < drainWithin) {
-                "appends still running after $drainWithin; the move is abandoned and the range unfenced"
-            }
-            Thread.sleep(POLL.inWholeMilliseconds)
-        }
+        val running = { connection.snapshot("xmin") < before }
+        // Asked again every POLL, on the inherited clock, until none is running or drainWithin has passed.
+        Schedule.spaced<Boolean>(POLL).and(Schedule.upTo(drainWithin)).doWhile { still, _ -> still }.repeat(running)
+        check(!running()) { "appends still running after $drainWithin; the move is abandoned and the range unfenced" }
     }
 
     private fun database(name: String): DataSource =

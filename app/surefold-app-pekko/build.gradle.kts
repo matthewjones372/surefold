@@ -21,8 +21,8 @@ dependencies {
     testImplementation(project(":surefold-assert"))
     // For the flags guide, which declares and reads flags over the OpenFeature SDK.
     testImplementation(project(":surefold-openfeature"))
-    // For its section on flags per tenant, which reads them from Postgres.
-    testImplementation(project(":surefold-openfeature-postgres"))
+    // For the core guide's cache examples, and CacheCallerCompatibilityTest's 0.16 caller.
+    testImplementation(project(":surefold-cache"))
 }
 
 // The serialization plugin, handed to the embedded compiler as a reader's build applies it, so a
@@ -41,12 +41,9 @@ val repoRoot = rootProject.projectDir.absolutePath
 // rather than leaving a stale answer behind.
 val documentedRecipes = files(
     rootProject.layout.projectDirectory.file("docs/cookbook.md"),
-    rootProject.layout.projectDirectory.file("docs/core.md"),
     rootProject.layout.projectDirectory.file("docs/observability.md"),
-    rootProject.layout.projectDirectory.file("docs/testing.md"),
     rootProject.layout.projectDirectory.file("docs/arrow.md"),
     rootProject.layout.projectDirectory.file("docs/flags.md"),
-    rootProject.layout.projectDirectory.file("README.md"),
 )
 
 tasks.test {

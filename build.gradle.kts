@@ -151,6 +151,7 @@ val moduleDescriptions = mapOf(
         "surefold-actor-remote's messages, events and snapshots from @Serializable data classes, " +
         "in ProtoBuf by default.",
     "surefold-cluster" to "surefold-actor as a cluster: discovery, gossip membership and downing, with no coordinator.",
+    "surefold-cluster-saga" to "Durable sagas: plain step code journalled and replayed, so a saga outlives its node.",
     "surefold-cluster-aws" to
         "surefold-cluster on AWS: seeds from Cloud Map or ECS, and a DynamoDB lease to break an even split.",
     "surefold-cluster-kubernetes" to
@@ -228,9 +229,9 @@ val benchmarkModules =
 
 // Built and tested, never published: surefold-structured calls StructuredTaskScope, a preview API until
 // JDK 28 (JEP 543), and a release must not promise an API the JDK has not. surefold-bank is an application
-// to run, not a library to depend on (spec 0094).
+// to run, not a library to depend on (spec 0094). surefold-guides holds only tests, of the guides (spec 0302).
 val unpublished =
-    setOf("surefold-structured", "surefold-stream-parity", "surefold-bank") + benchmarkModules
+    setOf("surefold-structured", "surefold-stream-parity", "surefold-bank", "surefold-guides") + benchmarkModules
 
 // What llms.txt and the surefold skill must name, no more and no fewer: AgentDocsSuite in surefold-app reads it.
 extra["publishedModules"] = subprojects.map { it.name }.filterNot { it in unpublished }.sorted()
@@ -322,6 +323,21 @@ subprojects {
         systemProperty("junit.jupiter.execution.timeout.default", "60s")
         // The same default for surefold-junit suites, which Jupiter's property does not reach (spec 0193).
         systemProperty("surefold.junit.timeout.default", "60s")
+        // ThreadsOnTimeout, from the shared source below, and no other library's autodetected extension (spec 0308).
+        systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
+        systemProperty("junit.jupiter.extensions.autodetection.include", "dev.surefold.*")
+    }
+
+    // Every module's Jupiter tests get ThreadsOnTimeout: every thread's stack, virtual ones included, before a timed-out
+    // test is interrupted (spec 0308). A source shared by path rather than a module, so nothing is published for it.
+    // Only where there are tests: a module with none, a benchmark's, would otherwise fail for discovering none.
+    if (file("src/test").isDirectory) {
+        extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+            sourceSets.named("test") {
+                kotlin.srcDir(rootProject.file("config/threads-on-timeout/kotlin"))
+                resources.srcDir(rootProject.file("config/threads-on-timeout/resources"))
+            }
+        }
     }
 
     if (name !in testedByRunningABuild + benchmarkModules) {
@@ -399,7 +415,7 @@ subprojects {
         pom {
             name.set(this@subprojects.name)
             description.set(moduleDescriptions[this@subprojects.name] ?: "Part of Surefold.")
-            url.set("https://github.com/surefold/surefold")
+            url.set("https://github.com/surefold/surefold-core")
             licenses {
                 license {
                     name.set("The Apache License, Version 2.0")
@@ -413,9 +429,9 @@ subprojects {
                 }
             }
             scm {
-                url.set("https://github.com/surefold/surefold")
-                connection.set("scm:git:https://github.com/surefold/surefold.git")
-                developerConnection.set("scm:git:ssh://git@github.com/surefold/surefold.git")
+                url.set("https://github.com/surefold/surefold-core")
+                connection.set("scm:git:https://github.com/surefold/surefold-core.git")
+                developerConnection.set("scm:git:ssh://git@github.com/surefold/surefold-core.git")
             }
         }
     }
@@ -444,7 +460,7 @@ subprojects {
             // workflow's token as `githubPackagesUsername`/`githubPackagesPassword`. Releases stay on Central.
             maven {
                 name = "githubPackages"
-                url = uri("https://maven.pkg.github.com/surefold/surefold")
+                url = uri("https://maven.pkg.github.com/surefold/surefold-core")
                 credentials(PasswordCredentials::class)
             }
         }

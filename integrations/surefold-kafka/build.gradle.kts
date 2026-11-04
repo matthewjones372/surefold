@@ -26,8 +26,6 @@ dependencies {
 }
 
 tasks.test {
-    // ThreadsOnTimeout, from the test resources' service file: every thread's stack when a test times out.
-    systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
     systemProperty("org.slf4j.simpleLogger.defaultLogLevel", "error")
     val mainRuntime = configurations.runtimeClasspath
     inputs.files(mainRuntime).withPropertyName("mainRuntimeClasspath")

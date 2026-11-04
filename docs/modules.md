@@ -30,13 +30,13 @@ not yet released are marked where they are documented.
 
 **Snapshots.** An untagged commit builds as the next patch version with
 `-SNAPSHOT` (after `v0.18.0`, `0.18.1-SNAPSHOT`). Every push to `main` publishes
-one to GitHub Packages, at `https://maven.pkg.github.com/surefold/surefold`, and
+one to GitHub Packages, at `https://maven.pkg.github.com/surefold/surefold-core`, and
 it does not expire. GitHub Packages asks for a token even to read a public
 package: put a classic personal access token with only `read:packages` in
 `~/.gradle/gradle.properties` as `gpr.user` and `gpr.key`, and add
 
 ```kotlin
-maven("https://maven.pkg.github.com/surefold/surefold") {
+maven("https://maven.pkg.github.com/surefold/surefold-core") {
     credentials {
         username = providers.gradleProperty("gpr.user").get()
         password = providers.gradleProperty("gpr.key").get()
@@ -90,6 +90,7 @@ against; the library's own transitive dependencies come with it.
 | `surefold-replay` | a test's forks in seeded orders: `explore` finds the one that breaks it, `replay` runs it again (spec 0042) | `surefold` | none | yes |
 | `surefold-compiler` | a K2 checker: a `Deferred`, `Channel` or `Scope` returned from a scope or kept in a property is an error (spec 0041); applied by `dev.surefold.compiler` | none | the Kotlin compiler, already present | yes |
 | `surefold-cache` | `Cache`: one lookup per key, a ttl by result, the last good value while the source fails (spec 0246) | `surefold` | none | yes |
+| `surefold-guides` | tests only: the guides' examples compiled against the core (spec 0302) | | | no |
 | `surefold-structured` | `parZip`, `parMap`, `raceN`, `timeout` on the JDK's `StructuredTaskScope` (preview in JDK 27) | `surefold` | none | no |
 | `surefold-core-benchmarks` | JMH benchmarks of locals, log lines, forks and `transact` ([results](../bench/surefold-core-benchmarks/README.md)) | | JMH | no |
 
@@ -154,6 +155,7 @@ against; the library's own transitive dependencies come with it.
 | `surefold-actor-remote-avro` | message codecs from Avro specific records | `surefold-actor-remote` | `avro` 1.12.2 | yes |
 | `surefold-actor-remote-kotlinx` | message, event and state codecs from `@Serializable` classes | `surefold-actor-remote` | `kotlinx-serialization-protobuf` 1.11.0 | yes |
 | `surefold-cluster` | membership, downing, sharding, singletons, reliable delivery, topics ([guide](cluster.md#a-cluster)) | `surefold-actor-remote` | none | yes |
+| `surefold-cluster-saga` | durable sagas: step code journalled and replayed after a crash, as sharded entities (spec 0299) | `surefold-cluster` | none | yes |
 | `surefold-cluster-kubernetes` | seeds from the pods API, and a `Lease` for an even split | `surefold-cluster` | `io.fabric8:kubernetes-client-api` 7.9.0 | yes |
 | `surefold-cluster-aws` | seeds from Cloud Map or ECS, and a DynamoDB lease | `surefold-cluster` | AWS SDK 2.55.6 `servicediscovery`, `ecs`, `dynamodb` | yes |
 | `surefold-actor-benchmarks` | JMH benchmarks against Pekko ([results](../bench/surefold-actor-benchmarks/README.md)) | | JMH, Pekko | no |

@@ -1,7 +1,7 @@
 # Surefold
 
 [![Maven Central](https://img.shields.io/maven-central/v/dev.surefold/surefold?label=maven%20central)](https://central.sonatype.com/artifact/dev.surefold/surefold)
-[![Build](https://github.com/surefold/surefold/actions/workflows/build.yml/badge.svg)](https://github.com/surefold/surefold/actions/workflows/build.yml)
+[![Build](https://github.com/surefold/surefold-core/actions/workflows/build.yml/badge.svg)](https://github.com/surefold/surefold-core/actions/workflows/build.yml)
 [![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20enforced-brightgreen)](AGENTS.md#verifying)
 [![Kotlin](https://img.shields.io/badge/kotlin-2.4.10-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![JDK](https://img.shields.io/badge/jdk-25%2B-brightgreen)](https://openjdk.org/projects/jdk/25/)
@@ -60,6 +60,9 @@ and carries no context. Surefold adds:
   crosses a thread on its own, and `catch (e: Exception)` cannot swallow it.
 - **Resources and policies.** Acquire and release in reverse order on every
   exit path, and retry, time out, break or limit calls with composable values.
+- **Sagas.** `saga { step(…) }` undoes the steps that worked, newest first,
+  when a later one fails, and settles a step whose outcome is unknown before
+  undoing anything ([core guide](docs/core.md#sagas)).
 - **Shared state without locks.** `transact { }` changes several `Shared`
   values as one step, waits until the state allows it, and never deadlocks.
 - **Context that crosses forks.** Log annotations, metric tags, trace context
@@ -193,6 +196,7 @@ your classpath, and which are unpublished.
 | `surefold-actor-remote` | actors across nodes over TCP ([guide](docs/cluster.md)) | nothing |
 | `surefold-actor-journal-jdbc` | the event journal, snapshots and offsets on JDBC ([guide](docs/cluster.md)) | nothing |
 | `surefold-cluster` | membership, sharding, singletons, reliable delivery, topics ([guide](docs/cluster.md)) | nothing |
+| `surefold-cluster-saga` | sagas journalled step by step, that end on another node after a crash ([guide](docs/cluster.md#a-saga-that-outlives-its-node)) | nothing |
 | `surefold-kafka` | Kafka as a `Stream`, producers and transactions ([guide](docs/kafka.md)) | `kafka-clients` |
 | `surefold-sqs` | SQS as a `Stream`, deleted after the work, and sends ([guide](docs/sqs.md)) | AWS SDK `sqs` |
 | `surefold-sns` | publishing to SNS from a `Stream`, per-message outcomes ([guide](docs/sns.md)) | AWS SDK `sns` |
@@ -436,7 +440,7 @@ ships and which call to use for a task. In Claude Code, the Surefold plugin load
 the same guidance whenever code uses Surefold:
 
 ```
-/plugin marketplace add surefold/surefold
+/plugin marketplace add surefold/surefold-core
 /plugin install surefold@surefold
 ```
 

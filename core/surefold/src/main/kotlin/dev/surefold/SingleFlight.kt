@@ -73,7 +73,8 @@ class SingleFlight<K : Any, E, V>(private val name: String = "single-flight") {
     @Suppress("TooGenericExceptionCaught") // Startup and lookup failures belong to the callers, not this boundary.
     private fun fly(key: K, flight: Promise<Throwable, Either<E, V>>, block: () -> Either<E, V>) {
         val inherited = Bindings.snapshot()
-        val worker = Thread.ofVirtual().unstarted {
+        // Not named by the key, which may hold user data, and which a thread dump would then print (spec 0308).
+        val worker = Thread.ofVirtual().name("surefold-single-flight").unstarted {
             Bindings.under(inherited) {
                 val ended: Either<Throwable, Either<E, V>> = try {
                     Either.Right(block())

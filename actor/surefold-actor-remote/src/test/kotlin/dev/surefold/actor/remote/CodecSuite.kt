@@ -4,6 +4,8 @@ import dev.surefold.actor.ActorRef
 import dev.surefold.actor.Address
 import dev.surefold.actor.Confirmed
 import dev.surefold.actor.Delivery
+import dev.surefold.actor.KeyAnswer
+import dev.surefold.actor.Keyed
 import dev.surefold.actor.Reply
 import dev.surefold.actor.protocolFaults
 import dev.surefold.junit.Suite
@@ -87,6 +89,38 @@ private fun Clinic.roundTrip(refs: Refs): Clinic = clinicCodec.decode(clinicCode
 
 object CodecSuite : Suite() {
     init {
+        test("a keyed command crosses with its key, and its answer comes back through its reply, refusal included") {
+            val refs = AddressedRefs()
+            val keyed = Keyed.codec(Codecs.long, Codecs.string)
+            val asked = refs.reply(Address("bank-1@10.0.0.6:25520", "/temp/ask-9", 1), Codecs.int)
+            val answered = refs.reply(Address("bank-1@10.0.0.6:25520", "/temp/ask-10", 1), Codecs.int)
+            val replies = listOf(asked, answered).map { reply ->
+                object : Reply<KeyAnswer<String>> {
+                    override val address = reply.address
+
+                    override fun invoke(answer: KeyAnswer<String>) = Unit
+                }
+            }
+
+            val apply = keyed.decode(keyed.encode(Keyed.Apply("t-1/debit", 400L, replies[0]), refs), refs)
+            val applied = keyed.decode(keyed.encode(Keyed.Applied("t-1/debit", replies[1]), refs), refs)
+
+            apply.shouldBeInstanceOf<Keyed.Apply<Long, String>> { sent ->
+                sent.key shouldBe "t-1/debit"
+                sent.command shouldBe 400L
+                sent.reply(KeyAnswer.Refused("funds"))
+                sent.reply.address shouldBe asked.address
+            }
+            applied.shouldBeInstanceOf<Keyed.Applied<String>> { asking ->
+                asking.key shouldBe "t-1/debit"
+                asking.reply(KeyAnswer.Accepted)
+            }
+            refs.told shouldContainExactly listOf(
+                asked.address to KeyAnswer.Refused("funds"),
+                answered.address to KeyAnswer.Accepted,
+            )
+        }
+
         test("a message of plain fields comes back equal, a missing note included") {
             val refs = AddressedRefs()
             Book("rex", 50, "limps").roundTrip(refs) shouldBe Book("rex", 50, "limps")

@@ -20,14 +20,13 @@ import dev.surefold.actor.watch
 import dev.surefold.app.Module
 import dev.surefold.app.Wiring
 import dev.surefold.app.single
-import dev.surefold.awaitValue
-import dev.surefold.clock
+import dev.surefold.fail.fold
 import dev.surefold.logDebug
-import dev.surefold.logger
-import dev.surefold.metricTags
-import dev.surefold.metrics
+import dev.surefold.logError
 import dev.surefold.scope
+import dev.surefold.surefoldFuture
 import dev.surefold.transact
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.FutureTask
 
@@ -36,7 +35,12 @@ import java.util.concurrent.FutureTask
  * waits until the node is released, and releasing it closes the scope: its close hooks run first, and then every
  * actor stops after its running step. Everything here is the scope's own call.
  */
-class Actors internal constructor(private val scope: Scope<Nothing>, private val tasks: Tasks) {
+class Actors internal constructor(
+    private val scope: Scope<Nothing>,
+    private val tasks: Tasks,
+    // The thread holding the scope open.
+    private val holder: Thread,
+) {
 
     fun <M : Any, S, E> spawn(
         name: String,
@@ -73,13 +77,14 @@ class Actors internal constructor(private val scope: Scope<Nothing>, private val
         }
     }
 
-    // The thread holding the scope open, set as soon as it has started.
-    internal lateinit var holder: Thread
+    // What holds the scope open, answered once it has closed.
+    internal lateinit var holding: CompletableFuture<Unit>
 
     /** Lets the scope close, and waits for it to have: every actor has stopped once this returns. */
     internal fun close() {
         tasks.close()
-        holder.join()
+        // A scope that failed as it closed was logged by the hook below; releasing the node goes on regardless.
+        holding.handle { _, _ -> }.join()
     }
 }
 
@@ -116,34 +121,28 @@ fun actors(onDeadLetter: (DeadLetter) -> Unit = { logDebug("dead letter: $it") }
 }
 
 /**
- * Opens a scope on a thread of its own, with the clock, metrics, metric tags and logger of the thread that asked, and
- * hands it back once it stands: a thread the scope did not fork inherits none of them.
+ * Opens a scope on a virtual thread of its own, with every binding of the thread that asked, as a fork has them, and
+ * hands it back once it stands: a thread the scope did not fork would inherit none of them.
  */
 private fun open(onDeadLetter: (DeadLetter) -> Unit): Actors {
-    val waits = clock.get()
-    val measured = metrics.get()
-    val tags = metricTags.get()
-    val logs = logger.get()
-    val opened = Promise<Nothing, Actors>("surefold.app.actors.opened")
+    val opened = Promise<Throwable, Actors>("surefold.app.actors.opened")
     val tasks = Tasks()
-    val holder = Thread.ofVirtual().name("surefold-app-actors").start {
-        clock.locally(waits) {
-            metrics.locally(measured) {
-                metricTags.locally(tags) {
-                    logger.locally(logs) {
-                        scope {
-                            // The guardian stands up here, on the scope's own thread, before any spawn from elsewhere.
-                            onDeadLetter(onDeadLetter)
-                            opened.succeed(Actors(this, tasks))
-                            // The scope's thread runs what `within` hands it until the node is released.
-                            generateSequence { tasks.take() }.takeWhile { it !== Close }.forEach(Runnable::run)
-                        }
-                    }
-                }
-            }
+    val holding = surefoldFuture {
+        scope {
+            // The guardian stands up here, on the scope's own thread, before any spawn from elsewhere.
+            onDeadLetter(onDeadLetter)
+            opened.succeed(Actors(this, tasks, Thread.currentThread()))
+            // The scope's thread runs what `within` hands it until the node is released.
+            generateSequence { tasks.take() }.takeWhile { it !== Close }.forEach(Runnable::run)
+        }
+    }.whenComplete { _, thrown ->
+        thrown?.let {
+            // Before it stood, the failure is the opener's to throw; after, there is no one left to tell but the log.
+            if (!opened.fail(it)) logError("the actors' scope failed as it closed: $it")
         }
     }
-    return opened.awaitValue().also { it.holder = holder }
+    val actors = opened.await().fold({ throw IllegalStateException("the actors' scope did not open", it) }, { it })
+    return actors.also { it.holding = holding }
 }
 
 /** Spawns [behaviour] on [actors] and stops it when the scope ends, waiting until it has stopped. */

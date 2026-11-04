@@ -111,7 +111,10 @@ the logger the classpath registered, or `StderrLogger`. To run a block as
 `Given`, `When`, `Then`, `And` and `But` steps that return values. When a step
 fails, the message shows the story up to that step and what it threw, in
 colour under IntelliJ or with `FORCE_COLOR` set (`NO_COLOR` turns it off, and
-`-Dsurefold.test.colour=always|never` overrides both).
+`-Dsurefold.test.colour=always|never` overrides both). In a `surefold-junit` suite
+the story is coloured on the console and plain in the report and the failure.
+IntelliJ is detected only when it runs the tests itself; under "Run tests using:
+Gradle", set `FORCE_COLOR=1` in the run configuration.
 
 `eventually(within) { }` retries a block every 20 ms by default until it stops
 throwing, and gives up with `GaveUp`, an `AssertionError`, once `within` has
@@ -682,7 +685,7 @@ so discovery reads tags and `ignore` without running anything.
 |---|---|---|
 | `flaky(n)` | runs the test up to `n` times, until an attempt passes | passed if one does, with an `attempts` report entry such as `2 of 3`, given on failure too |
 | `nonFlaky(n)` | runs the test `n` times, and every run must pass | failed at the first failing run: `run 7 of 50 failed: …` |
-| `timeout(d)` | interrupts the test if it runs longer than `d`, on Surefold's `timeout` | failed with a `TimeoutException`, `no answer within d` |
+| `timeout(d)` | interrupts the test if it runs longer than `d`, after writing every thread's stack, virtual threads included, to stderr | failed with a `TimeoutException`, `no answer within d`; the dump is in the test's output |
 | `ignore(why)` | does not run the test | skipped, with `why` |
 | `tag(name)` | a JUnit tag, which Gradle's `includeTags` and the IDE filter by | — |
 | `alone` | nothing else in the suite runs beside the test | — |
@@ -804,7 +807,7 @@ duplicated, delayed and crashed messages. See
 ## Surefold's own documentation tests
 
 The guides' examples are compiled against the library by tests that read the
-Markdown files: `ReadmeExampleSuite`, `CoreGuideTest`, `CookbookTest`,
+Markdown files: `CoreGuidesSuite`, `ReadmeExampleSuite`, `CookbookTest`,
 `ActorsGuideTest` and `GuideExampleTest`. A fence marked with an HTML comment
 such as `<!-- actors-actor -->` is extracted, compiled, and in some cases run,
 so a stale example fails the build.

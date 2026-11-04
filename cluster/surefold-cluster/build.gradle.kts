@@ -15,6 +15,8 @@ dependencies {
     // The guide's read model follows the journal on a stream (spec 0084).
     testImplementation(project(":surefold-actor-projection"))
     testImplementation(project(":surefold-stream-forks"))
+    // The guide's saga section runs a transfer as a durable saga (spec 0299).
+    testImplementation(project(":surefold-cluster-saga"))
     // The guide's stopping section wires a cluster into an application, and probes it.
     testImplementation(project(":surefold-app-actor"))
 }

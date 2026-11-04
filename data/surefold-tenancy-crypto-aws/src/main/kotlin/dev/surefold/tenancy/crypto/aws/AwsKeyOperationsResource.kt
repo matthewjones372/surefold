@@ -5,12 +5,9 @@ import dev.surefold.resource
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 import software.amazon.awssdk.awscore.retry.AwsRetryStrategy
 import software.amazon.awssdk.http.urlconnection.UrlConnectionHttpClient
-import software.amazon.awssdk.identity.spi.AwsCredentialsIdentity
-import software.amazon.awssdk.identity.spi.ResolveIdentityRequest
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.kms.KmsClient
 import software.amazon.awssdk.services.kms.KmsClientBuilder
-import java.util.concurrent.CompletableFuture
 
 /** Owns SDK clients only; the caller selects roles and retains ownership of its refreshing provider. */
 fun awsKeyOperations(
@@ -26,12 +23,7 @@ internal fun ownedKeyOperations(
     build: (KmsClientBuilder) -> KmsClient,
 ): Resource<AwsKeyOperations> {
     val selected = regions.toList()
-    // SDK configuration closes closeable providers; delegate identity resolution without transferring ownership.
-    val borrowed = object : AwsCredentialsProvider by credentialsProvider {
-        override fun identityType(): Class<AwsCredentialsIdentity> = credentialsProvider.identityType()
-        override fun resolveIdentity(request: ResolveIdentityRequest): CompletableFuture<AwsCredentialsIdentity> =
-            credentialsProvider.resolveIdentity(request)
-    }
+    val borrowed = borrowedAwsCredentialsProvider(credentialsProvider)
     return resource {
         fun client(region: String, attempts: Int) = install(
             acquire = {

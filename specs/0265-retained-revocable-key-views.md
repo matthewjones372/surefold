@@ -198,6 +198,55 @@ identity in observation order. Interruption alone becomes restored status after 
 No invented throwable for a flag-only interrupt; no self-suppression, defect retry or cancellation/Fail misclassification.
 No finite completion under unbounded interruption/unresponsive callers, no forced timeout or VM-fatal guarantee.
 
+### R4 diagnostic domain: proposed amendment, 3 November 2026
+
+Proposed by the delegated contract owner, 3 November 2026. Status at drafting: UNAPPROVED.
+Independent exact-amendment review and explicit adopted contract publication must precede this limitation taking
+effect; drafting or publishing an unadopted proposal is not source GO. No new numbered spec is proposed.
+
+This deliberately narrows R4's diagnostic guarantee for caller-supplied suppression-disabled Throwables; it is
+not an editorial clarification of the earlier unconditional wording. Exact original caller/body identity,
+all required cleanup attempts and every ownership, failure and interruption control law remain unchanged.
+On adoption, this section expressly qualifies earlier R4 unconditional diagnostic statements and acceptance rows.
+A caller-supplied Throwable that disables JVM suppression still propagates as that SAME object. Later failures
+cannot be guaranteed observable on it: Resource may already have discarded a release diagnostic before the
+boundary receives the original, and addSuppressed cannot attach a later boundary-captured root to it.
+For suppression-capable originals, distinct later roots remain suppressed by identity in observation order,
+without removing existing graph edges. The known opaque Fail signal is suppression-enabled under0294 and keeps
+its FULL ordered cleanup diagnostics before the owning attempt, exact routing/identity and unchanged final E/Left.
+This exception neither licenses disabling that signal's suppression nor adds diagnostics to E after attempt.
+A suppression-disabled Throwable-valued E does not exempt the Fail signal: the SAME E and its own diagnostics
+stay unchanged, while the opaque signal retains its existing suppression guarantee before the owning attempt.
+
+Diagnostic attachment is not control state. Every exact failure root actually received by a boundary's packet
+must be retained through its decisions, whether or not attachable to the selected primary. Classification reads
+ALL received roots and their complete observable suppressed graphs, cycle-safely by identity; it must not read
+only the selected primary's graph or infer interruption-only from an empty suppressed list. Any received or
+reachable noninterrupt failure makes the attempt noninterrupt/mixed and forbids an interruption-only retry.
+Caller/body primary still wins; otherwise the first observed noninterrupt close failure wins. Cancellation/Fail
+remain nonretryable. No unavailable pre-boundary diagnostic is invented or treated as proof that cleanup succeeded.
+An actually received admission, restoration, abort, fence, stop or drain failure cannot become success because
+its diagnostic cannot be attached. Preserve exact obligations, action-completed phases and committed-Ack finality;
+failed admission enters no body, unwind failure selects Abort, and Finished never means ownership discharged.
+B1 retains original/admission/unwind roots; B2/D/C retain all received roots through their existing classification,
+retry, primary-selection and ownership decisions; no new outward diagnostic channel is proposed.
+
+Only outward observability of later diagnostics on a caller-supplied suppression-disabled original is limited.
+No wrapper, side channel, reflection, signal inspection, new core/API, Resource rewrite or helper framework is added.
+All existing callback safety, membership/reconciliation, owner binding and quiet terminal ordering laws, privacy,
+tenancy and finite-cleanup/VM-fatal limits remain. Historical24 acceptance rows stay intact with this explicit
+qualification of diagnostic assertions; every E/S/D allocation and native-runtime NOT GREEN restriction remains.
+Exact source plans must show received-root control separately from outward attachment and qualify the narrowed
+case using a public test Throwable constructor, retaining ordinary/interrupt/cancellation/Fail diagnostics tests.
+Revised per-entry plans/catch inventories/fit, separate source GO and full acceptance remain mandatory.
+
+**Adoption decision, 3 November 2026:** the delegated contract owner adopts the preceding exact limitation for
+publication after independent review `b54b10d3871df109fb2ec1b8f1c5b3131cc66acc41af7d1c3d2a03ba9f75f2d5`.
+The UNAPPROVED label above records drafting history. The qualification becomes operative only after canonical
+and matching consumer contract publication pass required checks and reach main. This is a deliberate diagnostic
+guarantee narrowing, not source GO; all received-root control, cleanup, Failed and historical24 proof obligations
+remain. The rejected B1 plan still requires correction, exact independent approval and separate commissioning.
+
 ### Required source-plan gate
 
 Fail cleanup diagnostics require accepted spec0294 before caller-boundary source: preserve the same opaque
@@ -279,7 +328,14 @@ Alternative: a general retained-resource cache; broader than this key requiremen
 - [ ] **`codex/transaction-boundary-guard`** —0273's one-method prerequisite; target<60 main/docs lines.
 - [ ] **`codex/fail-suppression-contract`** —spec0294 plus this dependency amendment, exact review/spec-only main.
 - [ ] **`codex/fail-suppression`** —spec0294 one-flag prerequisite; accepted RED/GREEN, full PR/actual-main gates.
-- [ ] **`codex/key-callers-boundary`** —internal tickets/fence/wait and tests; target<170 main lines, no activation.
+- [ ] **`codex/key-callers-admission`** —B1 internal admission/Finished only; no pool/close, target90-120 main/150-220 test lines.
+- [ ] **`codex/key-callers-fence-probe`** —BQ same-file real Shared/Solo test fixture plus self-tests;0 main/140-220 test lines; no R4 row5 credit.
+- [ ] **`codex/key-callers-observation`** —B2 one supplied pool/fence/stop/observe/reap, all B executable proofs; target150-165 main/250-340 test lines.
+      B1/BQ/B2 require accepted G/H source/main and independently reviewed committed exact split/source plans.
+      Each follows the preceding entry's successful containing-main; BQ is machinery proof, B2 proves the full B union.
+      These are planning envelopes, not actual formatted fit. Report130 main/320 tests; STOP before170/400 and200 main/build/docs.
+      Review the complete ordinary-formatted B2 source/test layout before source; split/review again if it would exceed either cap.
+      Preserve all24 laws/E/S/D modes, D/C/P scopes and existing KeyCache.kt/RetainedKeyCacheSuite.kt path bounds; no activation/core API.
 - [ ] **`codex/key-callers-delivery`** —B2 outer packet/return/unwind integration; target<140 main lines.
 - [ ] **`codex/key-callers-close-drain`** —exact-phase interruption retries/Ack reconciliation; target<160 main lines.
 - [ ] **`codex/key-view-retention-policy`** — shared owner LRU, modes, success tickets and epochs; no public lease; ~175 main lines.

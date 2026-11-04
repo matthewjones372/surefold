@@ -204,6 +204,7 @@ class SurefoldEngineTest {
             "OrderSuite",
             "OrderedSuite",
             "OtherMeetingSuite",
+            "ParkedPastTimeoutSuite",
             "PartlyTaggedSuite",
             "RecordedSuite",
             "SequentialSuite",

@@ -18,6 +18,7 @@ dependencies {
     implementation("dev.surefold:surefold-cluster:0.18.0")            // membership, sharding, delivery, topics
     implementation("dev.surefold:surefold-actor-journal-jdbc:0.18.0") // a journal every node reaches
     implementation("dev.surefold:surefold-actor-projection:0.18.0")   // read models
+    implementation("dev.surefold:surefold-cluster-saga:0.18.0")       // sagas that outlive their node
 }
 ```
 
@@ -26,7 +27,8 @@ dependencies {
 3. [Entities](#entities)
 4. [State that survives](#state-that-survives)
 5. [Commands that must arrive](#commands-that-must-arrive)
-6. [Stopping, watching and telling everyone](#stopping-watching-and-telling-everyone)
+6. [A saga that outlives its node](#a-saga-that-outlives-its-node)
+7. [Stopping, watching and telling everyone](#stopping-watching-and-telling-everyone)
 
 ## Two nodes
 
@@ -721,6 +723,199 @@ fun status(sent: Either<NotSent, Unit>): Int = when (sent) {
     }
 }
 ```
+
+### A command answered once per key
+
+Reliable delivery keeps a command from being lost, and a persistent entity drops a resend of one it already
+handled. It does not answer the resend, and nothing can ask it "did you already apply this?". A `keyed` entity
+does both (spec 0300). Each command carries a key, such as `transfer-7/debit`. Its events and its key's answer are
+written in one append. A repeat of the key gets the same answer, a refusal included, and writes nothing.
+`Keyed.Applied(key)` answers what a key got, or `Unknown`, without deciding anything.
+
+<!-- cluster-keyed -->
+```kotlin
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.KeyAnswer
+import dev.surefold.actor.Keyed
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.StateCodec
+import dev.surefold.actor.ask
+import dev.surefold.actor.every
+import dev.surefold.actor.keyed
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.codec
+import dev.surefold.cluster.Cluster
+import dev.surefold.cluster.Sharded
+import dev.surefold.cluster.sharding
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+
+/** Pence into or out of a wallet, and the one reason a wallet says no. */
+object Overdrawn
+
+object PenceEvents : EventCodec<Long> {
+    override fun encode(event: Long): ByteArray = event.toString().toByteArray()
+
+    override fun decode(bytes: ByteArray): Long = String(bytes).toLong()
+}
+
+object OverdrawnEvents : EventCodec<Overdrawn> {
+    override fun encode(event: Overdrawn): ByteArray = ByteArray(0)
+
+    override fun decode(bytes: ByteArray): Overdrawn = Overdrawn
+}
+
+object Balance : StateCodec<Long> {
+    override fun encode(state: Long): ByteArray = state.toString().toByteArray()
+
+    override fun decode(bytes: ByteArray): Long = String(bytes).toLong()
+}
+
+/** A wallet: a negative amount is a withdrawal, refused when it would overdraw. Keys are kept for 30 days. */
+fun wallet(id: String) = keyed<Long, Long, Long, Overdrawn>(
+    id = PersistenceId("wallet", id),
+    empty = 0,
+    codec = PenceEvents,
+    refusals = OverdrawnEvents,
+    decide = { balance, pence -> if (balance + pence < 0) refuse(Overdrawn) else accept(pence) },
+    event = { balance, pence -> balance + pence },
+    remember = 30.days,
+    snapshots = every(100, Balance),
+)
+
+object OverdrawnWire : MessageCodec<Overdrawn> {
+    override fun write(message: Overdrawn, out: WireOut) = Unit
+
+    override fun read(input: WireIn): Overdrawn = Overdrawn
+}
+
+fun Cluster.wallets(): Sharded<Keyed<Long, Overdrawn>> =
+    sharding("wallet", Keyed.codec(Codecs.long, OverdrawnWire), passivateAfter = 5.minutes) { id -> wallet(id) }
+
+/** Withdraws under [key]: asking again with the same key, after a lost answer, never withdraws twice. */
+fun Sharded<Keyed<Long, Overdrawn>>.withdraw(wallet: String, key: String, pence: Long) =
+    entity(wallet).ask<Keyed<Long, Overdrawn>, KeyAnswer<Overdrawn>>(5.seconds) { Keyed.Apply(key, -pence, it) }
+```
+
+- **A key is remembered for `remember`,** 30 days by default. Each answer written drops the keys older than that,
+  the same way on every replay, so an entity's state does not grow forever. A repeat that arrives later is decided
+  again, so whatever resends a key must give up on it before then.
+- **A snapshot keeps the keys** with the state, so a start from it answers them as before.
+- **Across nodes,** `Keyed.codec(commands, refusals)` carries the key, the command and the reply the answer goes back
+  to.
+
+## A saga that outlives its node
+
+A transfer between two wallets is two commands, and a node can die between them. `surefold-cluster-saga` (spec
+0299) writes the transfer as plain blocking code, journals each step as it begins and ends, and runs each saga as an
+entity of its own, sharded by its id. After a crash the body runs again from the top on whichever node owns it now:
+a step already ended answers what it answered then, and calls nothing.
+
+<!-- cluster-saga -->
+```kotlin
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.Keyed
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.StateCodec
+import dev.surefold.actor.keyed
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.codec
+import dev.surefold.cluster.Cluster
+import dev.surefold.cluster.Sharded
+import dev.surefold.cluster.saga.Durable
+import dev.surefold.cluster.saga.Sagas
+import dev.surefold.cluster.saga.durableSaga
+import dev.surefold.cluster.saga.entityStep
+import dev.surefold.cluster.saga.on
+import dev.surefold.cluster.sharding
+import dev.surefold.fail.fold
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+
+object Overdrawn
+
+object PenceEvents : EventCodec<Long> {
+    override fun encode(event: Long): ByteArray = event.toString().toByteArray()
+
+    override fun decode(bytes: ByteArray): Long = String(bytes).toLong()
+}
+
+object OverdrawnEvents : EventCodec<Overdrawn> {
+    override fun encode(event: Overdrawn): ByteArray = ByteArray(0)
+
+    override fun decode(bytes: ByteArray): Overdrawn = Overdrawn
+}
+
+object OverdrawnWire : MessageCodec<Overdrawn> {
+    override fun write(message: Overdrawn, out: WireOut) = Unit
+
+    override fun read(input: WireIn): Overdrawn = Overdrawn
+}
+
+/** The wallet of the section above: pence in or out, refused when it would overdraw. */
+fun Cluster.wallets(): Sharded<Keyed<Long, Overdrawn>> =
+    sharding("wallet", Keyed.codec(Codecs.long, OverdrawnWire), passivateAfter = 5.minutes) { id ->
+        keyed<Long, Long, Long, Overdrawn>(
+            id = PersistenceId("wallet", id),
+            empty = 0,
+            codec = PenceEvents,
+            refusals = OverdrawnEvents,
+            decide = { balance, pence -> if (balance + pence < 0) refuse(Overdrawn) else accept(pence) },
+            event = { balance, pence -> balance + pence },
+        )
+    }
+
+data class Move(val from: String, val to: String, val pence: Long)
+
+object Moves : StateCodec<Move> {
+    override fun encode(state: Move): ByteArray = "${state.from}|${state.to}|${state.pence}".toByteArray()
+
+    override fun decode(bytes: ByteArray): Move =
+        String(bytes).split("|").let { (from, to, pence) -> Move(from, to, pence.toLong()) }
+}
+
+object Words : StateCodec<String> {
+    override fun encode(state: String): ByteArray = state.toByteArray()
+
+    override fun decode(bytes: ByteArray): String = String(bytes)
+}
+
+/** Every node calls this on its own scope, with the same saga. */
+fun Cluster.transfers(wallets: Sharded<Keyed<Long, Overdrawn>>): Sagas<Move, String, String> =
+    durableSaga("transfer", Moves, Words, Words) { move ->
+        entityStep("debit", wallets, move.from, refused = { "overdrawn" }, undo = { move.pence }) { -move.pence }
+        entityStep("credit", wallets, move.to, refused = { "overdrawn" }) { move.pence }
+        "moved ${move.pence} from ${move.from} to ${move.to}"
+    }.on(this)
+
+/** Starts the transfer [id], or finds it started, and waits up to ten seconds for how it ends. */
+fun Sagas<Move, String, String>.pay(id: String, move: Move): Durable.Outcome<String, String> =
+    start(id, move).fold({ Durable.Outcome.Running }) { await(id, within = 10.seconds) }
+```
+
+- **`entityStep`** has a keyed entity apply a command under the step's key, `"$sagaId/$stepName"`. A refusal fails the
+  saga with `refused` of its reason, and the steps before it are undone, newest first, under `…/undo`. An answer
+  lost on the way back is asked for with `Keyed.Applied`, so the command is sent again only if the entity never
+  had it. A plain `step(name, codec, action, check, undo)` does the same for anything else: `check` says whether a
+  step that began before a crash happened.
+- **`start` is idempotent on the id**, and answers once the saga's start is journalled. **`await`** can be called
+  from any node, and answers `Done`, `Refused`, `Running` (not ended within the wait), `Stuck` or `Forgotten` (the
+  journal holds nothing of it).
+- **Nothing unfinished is left asleep.** The `surefold-sagas` singleton lists each saga before it starts and wakes
+  every one not yet ended when it starts and when a member is removed, so a saga whose node died between two steps
+  ends elsewhere without anyone asking.
+- **`Stuck`** is an undo that kept failing, or a step that began and has nothing to settle it. It undoes nothing
+  further until `resume`. A saga stopped longer than an entity remembers a key (`remember`, 30 days by default)
+  refuses to resume as `Outlived`, since a forgotten key would answer `Unknown` for a command that was applied.
+- **`now()` and `uuid()`** in a body are journalled, so a replay sees the same time and the same id. `on` reads the
+  clock and metrics where it is called, so call it on the node's scope, as `cluster` and `sharding` are.
 
 ## Stopping, watching and telling everyone
 

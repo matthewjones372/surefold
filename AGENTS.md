@@ -1,5 +1,32 @@
 # Working in this repo
 
+## Three repositories
+
+Surefold is splitting into three repositories (specs 0301, 0302). Each depends only on the ones above it, through
+published artifacts:
+
+| Repository | Holds | May depend on |
+|---|---|---|
+| `surefold/surefold-core` (this one) | runtime modules on the JDK and Kotlin alone, plus test and build tooling | nothing outside the JDK and Kotlin at runtime |
+| `surefold/surefold-integrations` | every module that wraps one outside library | core |
+| `surefold/surefold-platform` | the `data/` modules, `surefold-bank`, `surefold-jobs-load`, and `surefold-bom` (0306) | core and integrations |
+
+Until 0302's and 0301's seed entries land, every module still lives here. Then:
+
+- **Don't add an outside library to a module that stays in core.** 0302's table says which modules move. A new
+  module that wraps a library belongs in `surefold-integrations`; a new platform feature belongs in `data/`, and
+  moves with it.
+- **Don't move, copy or delete modules ahead of 0302's stack.** The seed entries carry their history across.
+- **Coordinates never change.** Artifacts stay `dev.surefold:<name>`, packages stay `dev.surefold.*`.
+- **No Central release for now** (0301 question 5). Downstream repositories pin snapshots from GitHub Packages,
+  `https://maven.pkg.github.com/surefold/<repository>`, which `snapshot.yml` publishes on every push to main.
+- **Users take one version** through `dev.surefold:surefold-bom` from `surefold-platform` (0306), never three
+  versions picked by hand. No Surefold POM uses a version range.
+- **Working across repositories:** check them out side by side (`../surefold-core`, `../surefold-integrations`,
+  `../surefold-platform`). A downstream build includes the upstream ones it finds there, so a change to core
+  reaches platform's tests without publishing. CI never does this: it builds against the pinned snapshots.
+- **Specs stay where they were written.** The new repositories number their own from 0001.
+
 ## Specs come first
 
 Nothing is implemented without a spec file in `specs/`. An agent drafts it, a
@@ -89,9 +116,11 @@ Work out which of these a change can break:
 ### Examples in the docs are compiled
 
 The guides' Kotlin fences are compiled by tests that read the Markdown:
-`ReadmeExampleSuite` (README and `docs/stream.md`), `CoreGuideTest` and
-`CookbookTest` (`docs/core.md`, `observability.md`, `testing.md`,
-`cookbook.md`), `ActorsGuideTest` and `GuideExampleTest`. A fence is found by
+`CoreGuidesSuite` in `core/surefold-guides` (`docs/core.md`, `testing.md` and
+the README's suite, against the core alone), `ReadmeExampleSuite` (README and
+`docs/stream.md`), `CoreGuideTest` and `CookbookTest` (`observability.md`,
+`arrow.md`, `flags.md`, `cookbook.md`), `ActorsGuideTest` and
+`GuideExampleTest`. A fence is found by
 the HTML comment above it, such as `<!-- core-policy -->`, so keep the marker
 when editing an example, and add one to a new complete example. Each module's
 `build.gradle.kts` declares the pages it reads as test inputs.
@@ -149,7 +178,7 @@ Before saying it is done:
 ### Issue tracker
 
 Specs are the tickets: a spec's Stack entries are its work items, in blocking
-order. Other issues live in GitHub Issues for `surefold/surefold`, via the
+order. Other issues live in GitHub Issues for `surefold/surefold-core`, via the
 `gh` CLI. See `docs/agents/issue-tracker.md`.
 
 ### Triage labels

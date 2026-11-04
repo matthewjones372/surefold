@@ -1,5 +1,6 @@
 package dev.surefold.actor.remote
 
+import com.sun.management.HotSpotDiagnosticMXBean
 import dev.surefold.LogLevel
 import dev.surefold.LogLine
 import dev.surefold.Logger
@@ -30,6 +31,8 @@ import dev.surefold.junit.shouldContainExactly
 import dev.surefold.junit.withClue
 import dev.surefold.logger
 import dev.surefold.scope
+import java.lang.management.ManagementFactory
+import java.nio.file.Files
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.LinkedBlockingQueue
@@ -104,6 +107,14 @@ private fun ward() = behaviour<Ward, Admitted>(0 to emptyList()) { _, (grams, fo
 /** The second node, as a test sees it: where it listens, its ward, its dead letters, and a way to stop the ward. */
 private class Hospital(val port: Int, val ward: Address, val letters: ConcurrentLinkedQueue<DeadLetter>) {
     val stopWard = CountDownLatch(1)
+}
+
+/** The threads of this JVM named [name], virtual ones included, as a thread dump lists them. */
+private fun threadsNamed(name: String): List<String> {
+    val dump = Files.createTempDirectory("threads").resolve("dump.txt")
+    ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean::class.java)
+        .dumpThreads(dump.toString(), HotSpotDiagnosticMXBean.ThreadDumpFormat.TEXT_PLAIN)
+    return Files.readAllLines(dump).filter { "\"$name\"" in it }
 }
 
 /**
@@ -296,6 +307,20 @@ object RemoteSuite : Suite() {
             }
 
             heard shouldBeRight listOf("Terminated")
+        }
+
+        test("a watch from another node holds no thread on the watched actor's node while the actor runs") {
+            val holding = withWardNode { hospital ->
+                scope {
+                    val ward = clinic().remote(hospital.ward, wardCodec)
+                    val watched = watch(ward)
+                    // The watch has reached the hospital, since a Chart behind it came back.
+                    val _ = ward.ask(1.minutes) { Chart(it) }
+                    threadsNamed("surefold-remote-watch").also { watched.cancel() }
+                }
+            }
+
+            holding shouldBe emptyList()
         }
 
         test("a watch handed to a membership ends when it says the node is gone, while the actor still runs") {

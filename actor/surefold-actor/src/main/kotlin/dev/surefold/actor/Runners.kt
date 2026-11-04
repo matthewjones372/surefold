@@ -94,6 +94,9 @@ internal class Runners(private val parallelism: Int, private val cap: Int) {
 
     // Most recently parked first, so the warmest runner is woken and the coldest left to retire.
     private val parked = AtomicReference<Parked?>()
+
+    // A runner serves whichever actors are queued, so it is named by its number, not an actor's (spec 0308).
+    private val runnerThreads = Thread.ofVirtual().name("surefold-actor-runner-", 0).factory()
     private val lock = ReentrantLock()
     private val quiet = lock.newCondition()
 
@@ -128,7 +131,7 @@ internal class Runners(private val parallelism: Int, private val cap: Int) {
             if (active.compareAndSet(running, running + 1)) {
                 starts.incrementAndGet()
                 val runner = Runner()
-                runner.thread = Thread.ofVirtual().unstarted { run(runner) }
+                runner.thread = runnerThreads.newThread { run(runner) }
                 started.add(runner)
                 runner.thread.start()
                 return true
@@ -254,7 +257,9 @@ internal class Runners(private val parallelism: Int, private val cap: Int) {
 
     /** Starts the watcher, if it is not already watching. */
     private fun watch() {
-        if (!watching.get() && watching.compareAndSet(false, true)) Thread.ofVirtual().start(::watcher)
+        if (!watching.get() && watching.compareAndSet(false, true)) {
+            Thread.ofVirtual().name("surefold-actor-watcher").start(::watcher)
+        }
     }
 
     /**

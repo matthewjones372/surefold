@@ -1,5 +1,6 @@
 package dev.surefold.actor.journal.jdbc
 
+import com.sun.management.HotSpotDiagnosticMXBean
 import dev.surefold.actor.PersistenceId
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
@@ -8,8 +9,10 @@ import dev.surefold.junit.shouldBeEmpty
 import dev.surefold.junit.shouldBeLessThan
 import dev.surefold.junit.shouldThrow
 import dev.surefold.test.eventually
+import java.lang.management.ManagementFactory
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Proxy
+import java.nio.file.Files
 import java.sql.Connection
 import java.sql.SQLException
 import java.util.concurrent.Callable
@@ -30,13 +33,28 @@ object GroupCommitSuite : Suite() {
             val journal = JdbcJournal(source, groupCommit = GroupCommit())
             val ids = (1..200).map { PersistenceId("till", "t-$it") }
 
-            Executors.newVirtualThreadPerTaskExecutor().use { threads ->
-                ids.map { id -> threads.submit(Callable { journal.append(id, 0, listOf(byteArrayOf(1))) }) }
-                    .forAll { it.get().isRight() shouldBe true }
-            }
+            Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("group-commit-appender-", 0).factory())
+                .use { threads ->
+                    ids.map { id -> threads.submit(Callable { journal.append(id, 0, listOf(byteArrayOf(1))) }) }
+                        .forAll { it.get().isRight() shouldBe true }
+                }
 
             ids.forAll { id -> journal.read(id).size shouldBe 1 }
             source.commits.get() shouldBeLessThan ids.size
+        }
+
+        test("a group is committed on the thread of an append waiting in it, so no committer thread is started") {
+            val held = CountDownLatch(1)
+            val source = CountedCommits(Postgres.fresh(), holdFirst = held)
+            val journal = JdbcJournal(source, groupCommit = GroupCommit(committers = 1))
+            val first = appendLater { journal.append(PersistenceId("till", "a"), 0, listOf(byteArrayOf(1))) }
+            source.firstCommitStarted.await(10, TimeUnit.SECONDS) shouldBe true
+
+            val committers = threadsNamed("surefold-journal-committer")
+            held.countDown()
+
+            committers.shouldBeEmpty()
+            first.get(10, TimeUnit.SECONDS).getOrNull() shouldBe 1L
         }
 
         test("a conflicting append in a group is answered alone, and the rest of the group commits") {
@@ -91,7 +109,7 @@ object GroupCommitSuite : Suite() {
     @Suppress("TooGenericExceptionCaught") // The append's own failure is what the test asserts on.
     private fun <A> appendLater(append: () -> A): CompletableFuture<A> {
         val done = CompletableFuture<A>()
-        Thread.ofVirtual().start {
+        Thread.ofVirtual().name("group-commit-append-later").start {
             try {
                 done.complete(append())
             } catch (failed: Throwable) {
@@ -99,6 +117,14 @@ object GroupCommitSuite : Suite() {
             }
         }
         return done
+    }
+
+    /** The threads of this JVM named [name], virtual ones included, as a thread dump lists them. */
+    private fun threadsNamed(name: String): List<String> {
+        val dump = Files.createTempDirectory("threads").resolve("dump.txt")
+        ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean::class.java)
+            .dumpThreads(dump.toString(), HotSpotDiagnosticMXBean.ThreadDumpFormat.TEXT_PLAIN)
+        return Files.readAllLines(dump).filter { "\"$name\"" in it }
     }
 
     private fun waitUntil(condition: () -> Boolean) =

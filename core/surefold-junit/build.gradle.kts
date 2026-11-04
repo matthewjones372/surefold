@@ -27,6 +27,8 @@ dependencies {
 tasks.test {
     // Suites that fail on purpose, run only by the tests that select them, never by this task.
     exclude("**/junit/samples/**")
+    // StoryEngineTest checks a failing story's console copy is coloured and its report is not (spec 0296).
+    systemProperty("surefold.test.colour", "always")
 
     val mainRuntime = configurations.runtimeClasspath
     inputs.files(mainRuntime).withPropertyName("mainRuntimeClasspath")

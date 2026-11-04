@@ -1,4 +1,4 @@
-package dev.surefold.kafka
+package dev.surefold.threads
 
 import com.sun.management.HotSpotDiagnosticMXBean
 import com.sun.management.HotSpotDiagnosticMXBean.ThreadDumpFormat
@@ -9,8 +9,9 @@ import java.lang.management.ManagementFactory
 import java.nio.file.Files
 
 /**
- * Every thread's stack on stderr before JUnit interrupts a test that timed out. JUnit's own dump reads
- * `Thread.getAllStackTraces()`, which leaves out virtual threads, and every Forks body and feed is one.
+ * Every thread's stack on stderr before Jupiter interrupts a test that timed out (specs 0130, 0308). JUnit's own
+ * dump reads `Thread.getAllStackTraces()`, which leaves out virtual threads, and nearly every thread a hung test
+ * waits on is one. The root build adds this source to every module's tests and turns autodetection on for it.
  */
 class ThreadsOnTimeout : PreInterruptCallback {
 

@@ -32,7 +32,6 @@ import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
 import org.openjdk.jmh.annotations.Warmup
-import java.net.ServerSocket
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -46,8 +45,6 @@ private const val BURST = 2_000
 
 /** Far past any round trip on loopback: an ask that takes this long is a benchmark that has broken. */
 internal val ASK_WITHIN: Duration = Duration.ofSeconds(10)
-
-internal fun freePort(): Int = ServerSocket(0).use { it.localPort }
 
 /** The count down a burst's receiver makes, one per message: both nodes are in this JVM. */
 private val counted = AtomicReference(CountDownLatch(0))

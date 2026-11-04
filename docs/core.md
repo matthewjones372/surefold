@@ -14,21 +14,22 @@ dependencies {
 ```
 
 The complete examples on this page, the fences that carry their own imports,
-are compiled by `CoreGuideTest`.
+are compiled by `CoreGuidesSuite`, against the core alone.
 
 1. [Forking](#forking)
 2. [Failure and cancellation](#failure-and-cancellation)
 3. [Traversing a list](#traversing-a-list)
 4. [Collecting every error](#collecting-every-error)
 5. [Resources](#resources)
-6. [Schedules, retries and timeouts](#schedules-retries-and-timeouts)
-7. [Policies](#policies)
-8. [Values changed together](#values-changed-together)
-9. [What a fork inherits](#what-a-fork-inherits)
-10. [Running forks on Pekko](#running-forks-on-pekko)
-11. [Cache retention](#cache-retention)
-12. [Cache release](#cache-release)
-13. [Requirements and limitations](#requirements-and-limitations)
+6. [Sagas](#sagas)
+7. [Schedules, retries and timeouts](#schedules-retries-and-timeouts)
+8. [Policies](#policies)
+9. [Values changed together](#values-changed-together)
+10. [What a fork inherits](#what-a-fork-inherits)
+11. [Running forks on Pekko](#running-forks-on-pekko)
+12. [Cache retention](#cache-retention)
+13. [Cache release](#cache-release)
+14. [Requirements and limitations](#requirements-and-limitations)
 
 ## Forking
 
@@ -473,6 +474,84 @@ fun started(ready: CompletableFuture<Worker>, stopped: CompletableFuture<Unit>):
     }
 ```
 
+## Sagas
+
+A saga changes several outside systems one step at a time, and undoes the steps
+that worked when a later one fails. `saga(id) { }` runs a block of `step`s; each
+pairs an action with its undo, and both are handed a key built from the saga's
+id and the step's name, for the system they call to recognise a repeat:
+
+<!-- core-saga -->
+```kotlin
+import dev.surefold.Schedule
+import dev.surefold.Settled
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.policy
+import dev.surefold.saga
+import kotlin.time.Duration.Companion.seconds
+
+sealed interface Refused {
+    data object Funds : Refused
+    data object Closed : Refused
+}
+
+interface Bank {
+    fun debit(key: String, account: String, pence: Long): Long?
+    fun credit(key: String, account: String, pence: Long): Long?
+    fun find(key: String): Long?
+    fun refund(key: String, account: String, pence: Long)
+    fun reverse(key: String, account: String, pence: Long)
+}
+
+val undoing = policy("transfer.undo") {
+    deadline(30.seconds)
+    retry(Schedule.recurs(5))
+}
+
+fun transfer(bank: Bank, id: String, from: String, to: String, pence: Long): Either<Refused, Long> = attempt {
+    saga(id, name = "transfer", undo = undoing) {
+        val taken = step(
+            "debit",
+            action = { key -> bank.debit(key, from, pence) ?: fail(Refused.Funds) },
+            check = { key -> bank.find(key)?.let { Settled.Happened(it) } ?: Settled.DidNot },
+        ) { key, debited, _ -> bank.refund(key, from, debited) }
+        step(
+            "credit",
+            action = { key -> bank.credit(key, to, taken) ?: fail(Refused.Closed) },
+            check = { key -> bank.find(key)?.let { Settled.Happened(it) } ?: Settled.DidNot },
+        ) { key, credited, _ -> bank.reverse(key, to, credited) }
+    }
+}
+```
+
+- **A step ends one of three ways.** Its action returns, and its undo is
+  recorded. It calls `fail`, and it did not happen. Anything else (a throw, a
+  timeout, an interrupt) leaves it unknown, and its `check` settles it before
+  anything is undone: `Settled.Happened` counts it as done, `Settled.DidNot` as
+  not. With no check, or no answer, the saga undoes nothing at all and throws
+  `NotUndone`: refunding the debit while the credit may have landed is never
+  automatic.
+- **Undos run newest first**, each told why as an `Undo<E>`: `Failed(error)`,
+  `Threw(failure)` or `Cancelled(interrupt)`. The block's ending then carries on,
+  so the `attempt` above still answers `Left(Refused.Closed)`.
+- **Undos and checks are shielded.** They run on a virtual thread of their own,
+  carrying the saga's locals, which an interrupt of the saga's thread does not
+  reach. Each runs through `undo`, and the policy's `deadline` bounds all of
+  them together. Without a policy each runs once.
+- **An undo that still fails** does not stop the others; the saga then throws
+  `NotUndone`, naming the steps left done. It is undeclared on purpose: money
+  that may be held should page someone, not read as a refusal.
+- **Steps can be taken from `parZip` and `parMap` branches.** Undos run in the
+  reverse of the order their actions returned. A branch interrupted by its
+  sibling's failure mid-action is unknown too, so parallel steps want checks.
+- **Metrics.** `surefold.saga.runs` is tagged `saga` (the `name`, never the id)
+  and `outcome` (`done`, `undone`, `not-undone`); `surefold.saga.checks` is
+  tagged `saga` and `answer` (`happened`, `did-not`, `none`).
+
+A saga here lives in memory, like a `resourceScope`: a process that dies
+between steps leaves what was done done.
+
 ## Schedules, retries and timeouts
 
 A `Schedule<Input, Output>` is a value that answers each input with a
@@ -617,6 +696,50 @@ built, not on the first call. Each step is optional.
 
 Called as `partner { … }`, a refusal throws its `Rejected`, which is a
 `RuntimeException`. `guarded(policy, ifRejected) { }` turns it into a fail.
+
+### Results kept as values
+
+A call already captured with `Either.catch` keeps its `Either` through the
+policy with `guardResult` (spec 0272, unreleased). Its `countsAsFailure` picks
+which lefts are the dependency failing: those are retried, counted by the
+breaker (when its own `countsAsFailure` counts them too) and learnt from by a
+`Limit`. Any other left is the dependency's answer: not retried, and a
+success to the breaker, so it resets the failure streak and closes a half-open
+breaker. A thrown error the breaker leaves uncounted does neither, so let the
+selector spare only errors that came back from the dependency, such as a
+declined card, never your own or the network's. Every left comes back as the
+same instance. What the block throws, and a guard's refusal or a timeout, is
+handled as `partner { }` handles it and answered on the left; a fatal error, an
+interrupt, a cancellation or a `fail` still goes up. As on the thrown path, a
+fatal error inside an adaptive `Limit` is a dropped sample. Map to your own
+error type after the policy.
+
+The selector is asked once an attempt, inside it: within the attempt timeout's
+fork and the time a `Limit` measures. A selector that throws is a throw from
+the block, retried, counted and answered on the left as one.
+
+<!-- core-policy-result -->
+```kotlin
+import dev.surefold.CircuitBreaker
+import dev.surefold.Schedule
+import dev.surefold.fail.Either
+import dev.surefold.guardResult
+import dev.surefold.policy
+import kotlin.time.Duration.Companion.seconds
+
+class Declined(message: String) : RuntimeException(message)
+
+class Payments(private val charge: (Long) -> String) {
+    private val payments = policy("payments") {
+        retry(Schedule.recurs(2))
+        guard(CircuitBreaker("payments", maxFailures = 5, resetAfter = Schedule.spaced(30.seconds)))
+    }
+
+    // A decline is the provider answering: a breaker success that is not retried.
+    fun charged(pence: Long): Either<Throwable, String> =
+        payments.guardResult(countsAsFailure = { it !is Declined }) { Either.catch { charge(pence) } }
+}
+```
 
 Each guard records metrics through surefold's [metrics](observability.md#metrics):
 
@@ -885,71 +1008,10 @@ through an actor system.
 
 ## Running forks on Pekko
 
-A Pekko application already has one place that names, sizes and instruments
-its threads: the dispatcher configuration. `surefold-pekko` makes a dispatcher
-configured there the executor Surefold forks on, and lets a fork wait for Pekko's
-`CompletionStage`s and Scala `Future`s.
-
-```kotlin
-dependencies {
-    // brings surefold and pekko-actor
-    implementation("dev.surefold:surefold-pekko:0.18.0")
-}
-```
-
-The dispatcher is configured beside Pekko's own, and named by the part after
-`pekko.actor.`:
-
-```hocon
-pekko.actor.surefold {
-  executor = "virtual-thread-executor"
-}
-```
-
-<!-- core-pekko -->
-```kotlin
-import dev.surefold.await
-import dev.surefold.fail.Either
-import dev.surefold.fail.attempt
-import dev.surefold.fail.bind
-import dev.surefold.parZip
-import dev.surefold.pekko.surefoldDispatcher
-import org.apache.pekko.actor.ActorSystem
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
-
-data class Missing(val id: Int)
-
-fun price(id: Int): CompletionStage<Long> = CompletableFuture.completedFuture(100L * id)
-
-fun stock(id: Int): Either<Missing, Int> = Either.Right(3)
-
-fun offer(system: ActorSystem, id: Int): Either<Missing, Pair<Long, Int>> = attempt {
-    val surefold = system.surefoldDispatcher()   // pekko.actor.surefold; surefoldDispatcher("other") for another
-    parZip(on = surefold, { price(id).await() }, { stock(id).bind() }) { p, s -> p to s }
-}
-```
-
-- `surefoldDispatcher` accepts a dispatcher whose executor is
-  `virtual-thread-executor`, or one with `type = PinnedDispatcher`, whose thread
-  is not shared. It rejects any other executor, including Pekko's default
-  fork-join pool, with an `IllegalArgumentException` naming the setting: a
-  Surefold fork blocks, and blocking the pool Pekko sizes for its actors starves
-  them. Both the classic and the typed `ActorSystem` can call it.
-- `await()` parks the calling fork until the stage completes. A failed stage
-  rethrows the original cause, not the `CompletionException` around it. An
-  interrupt cancels the stage with `cancel(true)` and rethrows the
-  `InterruptedException`, so a value that arrives later is dropped.
-- `await()` is in `surefold` and takes any `CompletionStage` or `Future`, Pekko's
-  or not; Pekko's Scala futures have one of their own in `surefold-pekko`.
-- The other way round, `surefoldFuture { }` hands surefold to a caller that wants a
-  future: the block runs on a virtual thread of its own, with the caller's
-  bindings as a fork has them, and the future's `cancel` interrupts it, so its
-  forks stop. `CompletableFuture.supplyAsync` would ignore the cancel. A
-  coroutine awaiting it with kotlinx's own `await()` cancels it when the
-  coroutine is cancelled.
-- `await()` does not change what a stage holds. A stream run into `Sink.seq`
-  still collects every element before it completes.
+`surefold-pekko` makes a dispatcher configured in a Pekko application the
+executor forks run on, and lets a fork wait for Pekko's futures. It wraps an
+outside library, so it lives in surefold-integrations, and its guide is
+[forks on Pekko](https://github.com/surefold/surefold-integrations/blob/main/docs/pekko.md#running-forks-on-pekko).
 
 ## Futures and coroutines
 
