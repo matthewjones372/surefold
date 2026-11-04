@@ -60,6 +60,9 @@ and carries no context. Surefold adds:
   crosses a thread on its own, and `catch (e: Exception)` cannot swallow it.
 - **Resources and policies.** Acquire and release in reverse order on every
   exit path, and retry, time out, break or limit calls with composable values.
+- **Sagas.** `saga { step(…) }` undoes the steps that worked, newest first,
+  when a later one fails, and settles a step whose outcome is unknown before
+  undoing anything ([core guide](docs/core.md#sagas)).
 - **Shared state without locks.** `transact { }` changes several `Shared`
   values as one step, waits until the state allows it, and never deadlocks.
 - **Context that crosses forks.** Log annotations, metric tags, trace context
