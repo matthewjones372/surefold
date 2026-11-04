@@ -5,8 +5,13 @@ import dev.surefold.CircuitBreaker.Admission.Refused
 import dev.surefold.Policy.Step
 import dev.surefold.Schedule.Decision.Continue
 import dev.surefold.Schedule.Decision.Done
+import dev.surefold.fail.Either
 import dev.surefold.fail.Fail
 import dev.surefold.fail.Failed
+import dev.surefold.fail.flatMap
+import dev.surefold.fail.fold
+import dev.surefold.fail.getOrElse
+import dev.surefold.fail.nonFatalOrThrow
 import java.time.Instant
 import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeoutException
@@ -108,10 +113,36 @@ fun policy(name: String, build: PolicyBuilder.() -> Unit): Policy = PolicyBuilde
 /** Runs [block] under [policy], with a refusal answered as [ifRejected] of it rather than thrown. */
 fun <E, A> Fail<E>.guarded(policy: Policy, ifRejected: (Rejected) -> E, block: Fail<E>.() -> A): A =
     try {
-        runPolicy(policy, block)
+        runPolicy(policy, block = block)
     } catch (rejected: Rejected) {
         fail(ifRejected(rejected))
     }
+
+/**
+ * Runs [block] under this policy with its answer kept as a value (spec 0272). A left [countsAsFailure] picks is a
+ * failed call to every step: retried, counted by a breaker that counts it, and learnt from by a limit. Any other left
+ * is the dependency's answer and a success: it resets a breaker's failure streak and closes a half-open one, so the
+ * selector should spare only errors the dependency itself answered with. What [block] throws, and a guard's refusal
+ * or timeout, is handled as `policy { }` handles it and answered on the left. A fatal, an interrupt, a cancellation
+ * or a `fail` on its way out goes up instead, even when [block] returned it on the left.
+ *
+ * [countsAsFailure] is asked once an attempt, inside the attempt: within its timeout's fork and the time a limit
+ * measures. A selector that throws is a throw from [block], retried, counted and answered on the left as one.
+ */
+fun <A> Policy.guardResult(
+    countsAsFailure: (Throwable) -> Boolean = { true },
+    block: () -> Either<Throwable, A>,
+): Either<Throwable, A> = Either.catch {
+    Unraisable.runPolicy(this, Answer<A>::failure) { Answer(block(), countsAsFailure) }.result
+}.flatMap { it }
+
+// What a block answered, and the failure in it if the caller's selector picked one: asked once an attempt.
+private class Answer<A>(val result: Either<Throwable, A>, selected: (Throwable) -> Boolean) {
+    val failure: Throwable? = when (result) {
+        is Either.Right -> null
+        is Either.Left -> result.value.nonFatalOrThrow().takeIf(selected)
+    }
+}
 
 // The order the runner reads a plan in. A guard Surefold cannot see into has no place in it.
 private enum class Kind(val label: String) {
@@ -153,11 +184,18 @@ private class Budget(private val until: Instant?) {
         until?.let { java.time.Duration.between(clock.get().now(), it).toKotlinDuration() } ?: Duration.INFINITE
 }
 
-// A fail is the call's own answer and passes through uncounted, as it passes through every step.
-private fun <E, A> Fail<E>.runPolicy(policy: Policy, block: Fail<E>.() -> A): A {
+// A fail is the call's own answer and passes through uncounted, as it passes through every step. An answer [failure]
+// names is counted as the same throw would be.
+private fun <E, A> Fail<E>.runPolicy(
+    policy: Policy,
+    failure: (A) -> Throwable? = { null },
+    block: Fail<E>.() -> A,
+): A {
     var outcome: Pair<String, String>? = "failure" to "none"
     try {
-        return from(policy, 0, Budget(null), block).also { outcome = "success" to "none" }
+        return from(policy, 0, Budget(null), failure, block).also {
+            outcome = failure(it)?.let(::outcomeOf) ?: ("success" to "none")
+        }
     } catch (thrown: Throwable) {
         outcome = outcomeOf(thrown)
         throw thrown
@@ -197,26 +235,33 @@ private val Rejected.refusedBy: String
 /** The policy's deadline ran out, as against a timeout of the call's own or one attempt's. */
 private class DeadlinePassed : TimeoutException("the policy's deadline has passed")
 
-private fun <E, A> Fail<E>.from(policy: Policy, at: Int, budget: Budget, block: Fail<E>.() -> A): A {
+// [failure] names an answer the steps treat as a failed call although nothing was thrown; null for a success.
+private fun <E, A> Fail<E>.from(
+    policy: Policy,
+    at: Int,
+    budget: Budget,
+    failure: (A) -> Throwable?,
+    block: Fail<E>.() -> A,
+): A {
     if (at == policy.steps.size) {
         return if (policy.cutsBeforeTheCall) cut(budget.remaining(), budget, block) else block()
     }
-    val next: Fail<E>.() -> A = { from(policy, at + 1, budget, block) }
+    val next: Fail<E>.() -> A = { from(policy, at + 1, budget, failure, block) }
     return when (val step = policy.steps[at]) {
         is Step.Deadline -> {
             val until = clock.get().now().plusNanos(step.total.inWholeNanoseconds)
-            from(policy, at + 1, Budget(until), block)
+            from(policy, at + 1, Budget(until), failure, block)
         }
 
-        is Step.Retry -> step.schedule.within(budget).retry { next() }
+        is Step.Retry -> step.schedule.within(budget).retried(failure) { next() }
 
-        is Step.Breaker -> through(step.breaker, budget, next)
+        is Step.Breaker -> through(step.breaker, budget, failure, next)
 
         is Step.Limit -> paced(step.limiter, step.cost, budget, next)
 
         is Step.Bulkhead -> inside(step.bulkhead, budget, next)
 
-        is Step.Concurrency -> inside(step.limit, step.maxWait, budget, next)
+        is Step.Concurrency -> inside(step.limit, step.maxWait, budget, failure, next)
 
         is Step.AttemptTimeout -> cut(minOf(step.each, budget.remaining()), budget, next)
 
@@ -224,11 +269,41 @@ private fun <E, A> Fail<E>.from(policy: Policy, at: Int, budget: Budget, block: 
     }
 }
 
-private fun <E, A> Fail<E>.through(breaker: CircuitBreaker, budget: Budget, block: Fail<E>.() -> A): A {
+// The schedule's retry, run again as well on an answer [failure] names. When it ends on such an answer that answer is
+// returned, not thrown.
+private fun <A> Schedule<Throwable, *>.retried(failure: (A) -> Throwable?, action: () -> A): A {
+    var next = step
+    while (true) {
+        val tried = Either.catch(action)
+        val failed = tried.fold({ it }, failure) ?: return tried.getOrElse { throw it }
+        when (val decision = next(failed)) {
+            is Continue -> {
+                decision.delay.sleepOff()
+                next = decision.step
+            }
+
+            is Done -> return tried.getOrElse { throw it }
+        }
+    }
+}
+
+private fun <E, A> Fail<E>.through(
+    breaker: CircuitBreaker,
+    budget: Budget,
+    failure: (A) -> Throwable?,
+    block: Fail<E>.() -> A,
+): A {
     val admitted = admitted(breaker, budget)
     var result = CircuitBreaker.Result.UNCOUNTED
     try {
-        return block().also { result = CircuitBreaker.Result.SUCCESS }
+        return block().also { answer ->
+            val failed = failure(answer)
+            result = when {
+                failed == null -> CircuitBreaker.Result.SUCCESS
+                breaker.countsAsFailure(failed) -> CircuitBreaker.Result.FAILURE
+                else -> CircuitBreaker.Result.UNCOUNTED
+            }
+        }
     } catch (thrown: Throwable) {
         // Not for a fail or an interrupt, nor for what the JVM cannot recover from.
         if (thrown.isNonFatal() && breaker.countsAsFailure(thrown)) result = CircuitBreaker.Result.FAILURE
@@ -288,9 +363,15 @@ private fun <E, A> Fail<E>.inside(bulkhead: Bulkhead, budget: Budget, block: Fai
 }
 
 // The same for a limit: its wait cut to what the deadline leaves, and the call timed for an adaptive limit to learn.
-private fun <E, A> Fail<E>.inside(limit: Limit, maxWait: Duration, budget: Budget, block: Fail<E>.() -> A): A {
+private fun <E, A> Fail<E>.inside(
+    limit: Limit,
+    maxWait: Duration,
+    budget: Budget,
+    failure: (A) -> Throwable?,
+    block: Fail<E>.() -> A,
+): A {
     val found = limit.admit(minOf(maxWait, budget.remaining())) ?: throw Rejected.BulkheadFull(limit.name)
-    return limit.measured(found) { block() }
+    return limit.measured(found, { failure(it) != null }) { block() }
 }
 
 // One fork for an attempt, and none at all when nothing bounds it. A timeout that leaves no budget is the
