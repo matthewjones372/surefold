@@ -100,7 +100,15 @@ private fun Thread.joinFully() {
     if (interrupted) Thread.currentThread().interrupt()
 }
 
-private class Nest<E>(private val owner: Fail<E>, override val on: Executor) : Scope<E> {
+/** A [Fail] that raises into another, so a saga can tell whether a fail was raised into its own attempt. */
+internal interface Delegating {
+    val owner: Fail<*>
+}
+
+/** The [Fail] a fail on this one finally raises into. */
+internal fun Fail<*>.root(): Fail<*> = generateSequence(this) { (it as? Delegating)?.owner }.last()
+
+private class Nest<E>(override val owner: Fail<E>, override val on: Executor) : Scope<E>, Delegating {
 
     override fun fail(error: E): Nothing = owner.fail(error)
 

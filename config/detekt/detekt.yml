@@ -75,7 +75,9 @@ exceptions:
     # so one that throws must not stop the effects after it from running (spec 0211).
     # JobRun.kt is the fourteenth: a job's handler or codec may throw anything, and what it threw is the job's
     # retry or failure, never the worker's end; `nonFatalOrThrow` puts back what must not be caught (spec 0216).
-    excludes: ['**/JobRun.kt', '**/Transact.kt', '**/Scope.kt', '**/Resource.kt', '**/Retry.kt', '**/MapParStage.kt', '**/Defect.kt', '**/Spans.kt', '**/Outcome.kt', '**/Persistent.kt', '**/Story.kt', '**/Policy.kt', '**/Matchers.kt', '**/SurefoldEngine.kt']
+    # Saga.kt is the fifteenth: an undo that throws must not stop the undos after it, so its throw is caught and
+    # suppressed onto the saga's NotUndone (spec 0298).
+    excludes: ['**/Saga.kt', '**/JobRun.kt', '**/Transact.kt', '**/Scope.kt', '**/Resource.kt', '**/Retry.kt', '**/MapParStage.kt', '**/Defect.kt', '**/Spans.kt', '**/Outcome.kt', '**/Persistent.kt', '**/Story.kt', '**/Policy.kt', '**/Matchers.kt', '**/SurefoldEngine.kt']
   SwallowedException:
     excludes: ['**/test/**']
 
