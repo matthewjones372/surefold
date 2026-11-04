@@ -261,10 +261,6 @@ style:
       - '**/actor/surefold-actor-remote/src/main/kotlin/dev/surefold/actor/remote/Wire.kt'
       # A shutdown hook: Runtime.addShutdownHook takes an unstarted Thread, which the JDK starts as the process ends.
       - '**/app/surefold-app/src/main/kotlin/dev/surefold/app/Run.kt'
-      # spec-0309-app moves the holder of the application's actors.
-      - '**/app/surefold-app-actor/src/main/kotlin/dev/surefold/app/actor/Actors.kt'
-      # spec-0309-app moves the thread that ends a downed node's process.
-      - '**/app/surefold-app-cluster/src/main/kotlin/dev/surefold/app/cluster/Clustered.kt'
       # Changed in surefold-integrations once 0302 has moved it (0309 question 3).
       - '**/integrations/surefold-kafka/src/main/kotlin/dev/surefold/kafka/Keeper.kt'
       # Changed in surefold-integrations once 0302 has moved it (0309 question 3).

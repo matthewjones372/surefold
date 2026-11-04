@@ -23,6 +23,7 @@ import dev.surefold.cluster.Ready
 import dev.surefold.cluster.cluster
 import dev.surefold.logError
 import dev.surefold.logInfo
+import dev.surefold.surefoldFuture
 import kotlin.system.exitProcess
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
@@ -111,12 +112,13 @@ private fun logged(cluster: Cluster) = behaviour<MemberEvent, Unit>(Unit) { _, _
     stay()
 }
 
-// On a thread of its own: the exit runs the shutdown hooks, which close the scope this actor is stepping in.
+// Not in the turn, nor in a fork of the scope: the exit runs the shutdown hooks, which close the scope this actor is
+// stepping in, and the scope's close would interrupt a fork of its own. surefoldFuture's thread belongs to no scope.
 private fun exitWhenDowned(cluster: Cluster, exit: () -> Unit) = behaviour<MemberEvent, Unit>(Unit) { _, _, event ->
     // This life, not an earlier one at the same address: its downing reaches the life that replaced it (spec 0097).
     if (event is MemberEvent.Downed && cluster.isSelf(event.member)) {
         logError("${cluster.self} was downed by the others; ending the process so it can join again as a new node")
-        Thread.ofPlatform().name("surefold-cluster-downed").start(exit)
+        surefoldFuture(exit)
     }
     stay()
 }

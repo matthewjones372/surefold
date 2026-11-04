@@ -23,6 +23,7 @@ import dev.surefold.junit.shouldHaveSize
 import dev.surefold.junit.shouldNotBeNull
 import dev.surefold.metricTags
 import dev.surefold.metrics
+import dev.surefold.surefoldLocal
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.time.Duration.Companion.minutes
 
@@ -112,6 +113,16 @@ object ActorSuite : Suite() {
             }
 
             letters.toList() shouldBe listOf(Add(1))
+        }
+
+        test("within runs with every local bound where the actors were opened, not only clock, metrics and logger") {
+            val tenant = surefoldLocal { "nobody" }
+
+            val seen = tenant.locally("tills") {
+                testApp(actors()) { actors: Actors -> actors.within { tenant.get() } }
+            }
+
+            seen shouldBe "tills"
         }
 
         test("within, asked from the actors' own thread, runs there rather than waiting on itself") {
