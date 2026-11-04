@@ -91,5 +91,6 @@ grep -c 'module("data"' settings.gradle.kts       # 0 here
 3. **Versions: in lockstep with Surefold, or their own?** Answered (maintainer, 2026-11-04): each repository its own,
    all three starting at 0.19.0, each release naming the core and integrations versions it was built against. A
    BOM, if wanted, is a later spec.
-4. **Does the last Surefold release that still contains `data/` get a notice in its README?** Recommended: yes,
-   one line under Status saying where the modules went and that coordinates are unchanged.
+4. **Does the last Surefold release that still contains `data/` get a notice in its README?** Answered (maintainer,
+   2026-11-04): yes, one line under Status in 0.19.0 naming the three repositories and saying coordinates and
+   packages are unchanged.
