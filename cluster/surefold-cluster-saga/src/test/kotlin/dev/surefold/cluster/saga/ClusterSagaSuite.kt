@@ -1,34 +1,35 @@
 package dev.surefold.cluster.saga
 
+import dev.surefold.Clock
+import dev.surefold.Promise
 import dev.surefold.Settled
 import dev.surefold.Shared
+import dev.surefold.TestClock
 import dev.surefold.actor.InMemoryJournal
 import dev.surefold.actor.Journal
-import dev.surefold.actor.JournalConflict
-import dev.surefold.actor.PersistenceId
 import dev.surefold.actor.StateCodec
-import dev.surefold.actor.StoredEvent
 import dev.surefold.actor.journal
 import dev.surefold.actor.remote.Node
 import dev.surefold.actor.remote.freePort
 import dev.surefold.actor.remote.node
+import dev.surefold.awaitValue
+import dev.surefold.clock
 import dev.surefold.cluster.Cluster
 import dev.surefold.cluster.Discovery
 import dev.surefold.cluster.Downing
 import dev.surefold.cluster.Gossiping
 import dev.surefold.cluster.Status
 import dev.surefold.cluster.cluster
-import dev.surefold.fail.Either
+import dev.surefold.fail.fold
 import dev.surefold.fail.right
 import dev.surefold.junit.Suite
 import dev.surefold.junit.forAll
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.withClue
 import dev.surefold.scope
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.atomic.AtomicReference
+import dev.surefold.surefoldFuture
+import dev.surefold.test.eventually
+import java.time.Instant
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -50,6 +51,9 @@ private object Amount : StateCodec<Long> {
 private class Ledger {
     val applied = Shared(emptyMap<String, Long>())
 
+    /** The time each run of a body read, by node. */
+    val read = Shared(emptyMap<String, Instant>())
+
     fun move(key: String, pence: Long): Long {
         applied.update { if (key in it) it else it + (key to pence) }
         return applied.peek().getValue(key)
@@ -58,16 +62,12 @@ private class Ledger {
     fun find(key: String): Settled<Long> = applied.peek()[key]?.let { Settled.Happened(it) } ?: Settled.DidNot
 }
 
-/** Holds the first run that reaches [at], on whichever node it runs, until the test lets it go, then ends it. */
+/** Holds the first run that reaches [at], on whichever node it runs, for as long as that node lives. */
 private class Gate(private val at: String?) {
-    val reached = CompletableFuture<String>()
-    val release = CountDownLatch(1)
+    val reached = Promise<Nothing, String>()
 
     fun pass(point: String, node: String) {
-        if (point == at && reached.complete(node)) {
-            release.await()
-            error("$node was killed")
-        }
+        if (point == at && reached.succeed(node)) Promise<Nothing, Unit>().await()
     }
 }
 
@@ -75,6 +75,8 @@ private class Gate(private val at: String?) {
 private const val LIMIT = 1_000L
 
 private fun transfer(bank: Ledger, gate: Gate, node: String) = durableSaga("transfer", Amount, Words, Words) { pence ->
+    val at = now()
+    bank.read.update { it + (node to at) }
     gate.pass("started", node)
     step(
         "debit",
@@ -92,113 +94,70 @@ private fun transfer(bank: Ledger, gate: Gate, node: String) = durableSaga("tran
     "moved $credited"
 }
 
-/** The scope's journal, which a killed node no longer reaches: a runner still going there writes nothing. */
-private class Mortal(private val inner: Journal) : Journal by inner {
-    @Volatile
-    var dead = false
-
-    override fun append(id: PersistenceId, expected: Long, events: List<ByteArray>): Either<JournalConflict, Long> {
-        check(!dead) { "the node is dead" }
-        return inner.append(id, expected, events)
-    }
-
-    override fun read(id: PersistenceId, from: Long): List<StoredEvent> {
-        check(!dead) { "the node is dead" }
-        return inner.read(id, from)
-    }
-}
-
 private val calm = Gossiping(probeEvery = 500.milliseconds, ackWithin = 250.milliseconds, formAfter = 1.seconds)
 
-/** A node running the transfer saga, on a scope and a thread of its own, until [close] or [kill]. */
-private class Teller(val name: String, port: Int, seeds: Discovery, shared: Journal, bank: Ledger, gate: Gate) :
-    AutoCloseable {
-    private val journal = Mortal(shared)
-    private val done = CountDownLatch(1)
-    private val ready = CountDownLatch(1)
-    private val opened = AtomicReference<Pair<Cluster, Sagas<Long, String, String>>>()
-    private val failed = AtomicReference<Throwable>()
-    private val thread = Thread.ofPlatform()
-        .uncaughtExceptionHandler { _, thrown ->
-            failed.set(thrown)
-            ready.countDown()
+/** A node running the transfer saga, on a scope of its own, until [close]. */
+private class Teller(
+    val name: String,
+    port: Int,
+    seeds: Discovery,
+    journal: Journal,
+    bank: Ledger,
+    gate: Gate,
+    time: Clock,
+) : AutoCloseable {
+    private val done = Promise<Nothing, Unit>()
+    private val opened = Promise<Throwable, Pair<Cluster, Sagas<Long, String, String>>>()
+    private val running = surefoldFuture { opening(port, seeds, journal, bank, gate, time) }
+        .whenComplete { _, thrown -> thrown?.let(opened::fail) }
+
+    private fun opening(port: Int, seeds: Discovery, journal: Journal, bank: Ledger, gate: Gate, time: Clock) {
+        scope {
+            journal(journal)
+            // Every node goes as a crashed one does, without leaving.
+            val downing = Downing.keepMajority(stableAfter = 2.seconds)
+            val cluster = cluster(node(name, port), seeds, calm, downing, leaveWithin = Duration.ZERO)
+            // Only the sagas read [time]: gossip on a clock that never moves would never form the cluster.
+            opened.succeed(cluster to clock.locally(time) { transfer(bank, gate, name).on(cluster) })
+            done.await()
         }
-        .start {
-            scope {
-                journal(journal)
-                // Every node goes as a crashed one does, without leaving.
-                val downing = Downing.keepMajority(stableAfter = 2.seconds)
-                val cluster = cluster(node(name, port), seeds, calm, downing, leaveWithin = Duration.ZERO)
-                opened.set(cluster to transfer(bank, gate, name).on(cluster))
-                ready.countDown()
-                done.await()
-            }
-        }
+    }
 
     val cluster: Cluster get() = opened().first
 
     val sagas: Sagas<Long, String, String> get() = opened().second
 
-    private fun opened(): Pair<Cluster, Sagas<Long, String, String>> {
-        ready.await()
-        failed.get()?.let { throw IllegalStateException("$name did not open", it) }
-        return opened.get()
-    }
+    private fun opened() = opened.await().fold({ throw IllegalStateException("$name did not open", it) }, { it })
 
-    /** Stops the node as a crash would: its journal gone first, then its actors, and nothing said to the others. */
-    fun kill() {
-        journal.dead = true
-        close()
-    }
-
+    /** Stops the node as a crash does: its actors, and the saga body running in one, end with its scope. */
     override fun close() {
-        done.countDown()
-        thread.join()
+        done.succeed(Unit)
+        running.join()
     }
 }
 
 /** Three tellers on one shared journal and bank, all `Up`, handed to [test] and closed after it. */
-private fun tellers(bank: Ledger, gate: Gate, test: (List<Teller>) -> Unit) {
+private fun tellers(bank: Ledger, gate: Gate, time: Clock = clock.get(), test: (List<Teller>) -> Unit) {
     val journal = InMemoryJournal()
     val ports = List(3) { freePort() }
     val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
-    val tellers = ports.mapIndexed { i, port -> Teller("t${i + 1}", port, seeds, journal, bank, gate) }
+    val tellers = ports.mapIndexed { i, port -> Teller("t${i + 1}", port, seeds, journal, bank, gate, time) }
     try {
-        tellers.forAll { teller -> allUp(teller.cluster) shouldBe true }
+        tellers.forEach { teller ->
+            eventually(1.minutes) {
+                val up = teller.cluster.view.members.count { it.status == Status.Up }
+                check(up == 3) { "${teller.name} sees $up members up" }
+            }
+        }
         test(tellers)
     } finally {
         tellers.forEach(Teller::close)
     }
 }
 
-/** Whether [cluster]'s view has all three members `Up` within a minute. */
-private fun allUp(cluster: Cluster): Boolean {
-    val deadline = System.nanoTime() + 1.minutes.inWholeNanoseconds
-    while (cluster.view.members.count { it.status == Status.Up } < 3) {
-        if (System.nanoTime() > deadline) return false
-        Thread.sleep(50)
-    }
-    return true
-}
-
 /** What [id] ends as, asked of [teller] until it is no longer running. */
-private fun ending(teller: Teller, id: String): Durable.Outcome<String, String> {
-    val deadline = System.nanoTime() + 45.seconds.inWholeNanoseconds
-    var outcome = teller.sagas.await(id, within = 2.seconds)
-    while (outcome == Durable.Outcome.Running && System.nanoTime() < deadline) {
-        outcome = teller.sagas.await(id, within = 2.seconds)
-    }
-    return outcome
-}
-
-/** Whether [ledger] comes to hold [applied] within 45 seconds. */
-private fun settles(ledger: Ledger, applied: Map<String, Long>): Boolean {
-    val deadline = System.nanoTime() + 45.seconds.inWholeNanoseconds
-    while (ledger.applied.peek() != applied) {
-        if (System.nanoTime() > deadline) return false
-        Thread.sleep(50)
-    }
-    return true
+private fun ending(teller: Teller, id: String): Durable.Outcome<String, String> = eventually(45.seconds) {
+    teller.sagas.await(id, within = 2.seconds).also { check(it != Durable.Outcome.Running) { "$id is still running" } }
 }
 
 /** Where a node is killed, the transfer it runs, and how that ends with no crash at all. */
@@ -242,6 +201,17 @@ object ClusterSagaSuite : Suite(concurrent = false) {
             }
         }
 
+        test("a saga's body reads the clock bound where its node called on, not the runner's") {
+            val bank = Ledger()
+            val at = Instant.parse("2026-11-04T12:00:00Z")
+            tellers(bank, Gate(null), TestClock(at)) { tellers ->
+                tellers.first().sagas.start("t", 400) shouldBe Unit.right()
+
+                ending(tellers.first(), "t") shouldBe Durable.Outcome.Done("moved 400")
+                bank.read.peek().values.toSet() shouldBe setOf(at)
+            }
+        }
+
         test("a saga nobody started is awaited as forgotten") {
             tellers(Ledger(), Gate(null)) { tellers ->
                 tellers.last().sagas.await("never", within = 2.seconds) shouldBe Durable.Outcome.Forgotten
@@ -257,13 +227,14 @@ object ClusterSagaSuite : Suite(concurrent = false) {
             val gate = Gate(gap.at)
             tellers(ledger, gate) { tellers ->
                 tellers.first().sagas.start("t", gap.pence) shouldBe Unit.right()
-                val dying = gate.reached.get(30, TimeUnit.SECONDS)
+                val dying = checkNotNull(gate.reached.awaitValue(30.seconds)) { "no run reached ${gap.at}" }
                 val (killed, survivors) = tellers.partition { it.name == dying }
-                killed.single().kill()
-                gate.release.countDown()
+                killed.single().close()
 
                 // Nobody asks: the waker alone resumes the saga elsewhere.
-                withClue({ "the ledger holds ${ledger.applied.peek()}" }) { settles(ledger, gap.applied) shouldBe true }
+                eventually(45.seconds) {
+                    check(ledger.applied.peek() == gap.applied) { "the ledger holds ${ledger.applied.peek()}" }
+                }
                 survivors.forAll { survivor ->
                     withClue("asked of ${survivor.name}, after ${killed.single().name} was killed") {
                         ending(survivor, "t") shouldBe gap.outcome
