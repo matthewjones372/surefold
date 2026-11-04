@@ -125,7 +125,7 @@ private class Undoing(policy: Policy?) {
 private fun <A> shielded(block: () -> A): A {
     val bound = Bindings.snapshot()
     val ended = ShieldedEnd<A>()
-    Thread.ofVirtual().start { ended.from { Bindings.under(bound, block) } }.joinFully()
+    Thread.ofVirtual().name("surefold-saga-shielded").start { ended.from { Bindings.under(bound, block) } }.joinFully()
     return ended.answer()
 }
 

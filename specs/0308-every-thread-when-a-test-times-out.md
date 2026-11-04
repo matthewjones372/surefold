@@ -80,7 +80,7 @@ published. The dump code itself (`dumpThreads` into a temp directory, then read)
 - [x] **`spec-0308-suite-dump`** ([#1081](https://github.com/surefold/surefold-core/pull/1081)): `surefold-junit`'s `timeout` aspect dumps every thread before it interrupts.
       Done when: a sample suite whose test parks a named virtual thread and outlives `timeout(1.seconds)` fails with
       the same message as today, and that thread's name and parked frame are in the run's stderr.
-- [ ] **`spec-0308-jupiter-dump`**: `ThreadsOnTimeout` moves to the shared test source, registered for every
+- [x] **`spec-0308-jupiter-dump`** ([#1083](https://github.com/surefold/surefold-core/pull/1083)): `ThreadsOnTimeout` moves to the shared test source, registered for every
       module. `surefold-kafka`'s copy and its autodetection line are deleted.
       Done when: `ThreadsOnTimeoutTest` passes in `:surefold` and `:surefold-kafka`, and `surefold-kafka` has no copy.
 - [ ] **`spec-0308-names`**: the runtime threads and test fixtures in the table get names.

@@ -69,7 +69,8 @@ abstract class SnapshotContract {
         val sequences = (1L..64L).shuffled()
         val start = CountDownLatch(1)
 
-        Executors.newVirtualThreadPerTaskExecutor().use { savers ->
+        Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("snapshot-contract-saver-", 0).factory())
+            .use { savers ->
             val saves = sequences.map { sequence ->
                 savers.submit {
                     start.await()

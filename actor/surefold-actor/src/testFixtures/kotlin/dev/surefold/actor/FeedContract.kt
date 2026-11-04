@@ -68,7 +68,7 @@ abstract class FeedContract<J> where J : Journal, J : JournalFeed {
         val done = AtomicBoolean(false)
         val followed = mutableListOf<FeedEvent>()
 
-        Executors.newVirtualThreadPerTaskExecutor().use { threads ->
+        Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("feed-contract-", 0).factory()).use { threads ->
             val follower = threads.submit {
                 var last = 0L
                 // Reads until the writers are done and one more read after that finds nothing new.

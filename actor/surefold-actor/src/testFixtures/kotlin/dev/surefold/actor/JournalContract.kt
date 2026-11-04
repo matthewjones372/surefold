@@ -78,7 +78,8 @@ abstract class JournalContract {
         val journal = journal()
         val rounds = 50
 
-        Executors.newVirtualThreadPerTaskExecutor().use { writers ->
+        Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("journal-contract-writer-", 0).factory())
+            .use { writers ->
             for (last in 0 until rounds.toLong()) {
                 val start = CountDownLatch(1)
                 val answers = List(2) { writer ->
