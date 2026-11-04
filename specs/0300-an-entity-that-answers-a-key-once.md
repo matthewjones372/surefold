@@ -87,5 +87,5 @@ from the events. Recommended: in the append.
 1. **How long does a `keyed` entity remember a key?** Answered (maintainer, 2026-11-04): a window per kind,
    30 days by default, dropped at a snapshot (0076). 0299's `resume` refuses a saga stuck for longer than the
    window of any kind it sends to, so a forgotten key can't be sent again.
-2. **Should `Applied` on a passivated entity start it?** Recommended: yes. Starting it is a replay from the latest
-   snapshot, and the answer has to be definite for a saga to settle.
+2. **Should `Applied` on a passivated entity start it?** Answered (maintainer, 2026-11-04): yes. Starting it is a
+   replay from the latest snapshot, and the answer has to be definite for a saga to settle.
