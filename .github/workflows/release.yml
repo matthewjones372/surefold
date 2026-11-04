@@ -117,9 +117,6 @@ jobs:
       # A tag can be re-run, and Central refuses a version it already has — with a
       # message about the upload rather than about the re-run. Saying so here is
       # the difference between a red job somebody has to read and a green one.
-      #
-      # Asked once per namespace, since each is a deployment of its own (below): a re-run after only
-      # one of them was released publishes the other.
       - id: already
         run: |
           version="${{ steps.version.outputs.value }}"
@@ -129,10 +126,8 @@ jobs:
             [ "$code" = "200" ] && echo yes || echo no
           }
           released=$(on_central dev/surefold)
-          relocated=$(on_central io/github/matthewjones372)
           echo "released=$released" >> "$GITHUB_OUTPUT"
-          echo "relocated=$relocated" >> "$GITHUB_OUTPUT"
-          echo "$version under dev.surefold on Central: $released; its relocation POMs: $relocated"
+          echo "$version under dev.surefold on Central: $released"
 
       # Every module's javadoc jar, six modules to a Gradle run. Dokka's worker
       # process keeps the classes of each module it renders, so one run rendering
@@ -140,7 +135,7 @@ jobs:
       # mid-publish, which is how v0.11.0 and v0.12.0 failed after their builds
       # had passed. A run of its own ends its workers; the publish below then finds
       # every javadoc up to date.
-      - if: steps.already.outputs.released != 'yes' || steps.already.outputs.relocated != 'yes'
+      - if: steps.already.outputs.released != 'yes'
         name: Javadoc, six modules at a time
         run: |
           ./gradlew --stop
@@ -150,21 +145,13 @@ jobs:
       # Staged rather than released: the Portal is where somebody looks at what
       # is about to become permanent and presses the button.
       #
-      # Two deployments, one per namespace: the Portal refuses a deployment with
-      # files for both, and a Gradle run uploads one. `centralNamespace` (the
-      # root build) picks which publications a run sends; dev.surefold is the
-      # default, and the relocation POMs at the old group (spec 0277) go second.
+      # dev.surefold only. The relocation POMs at io.github.matthewjones372 (spec 0277) were
+      # one release, 0.18.0, and that release already points every module at dev.surefold.
       - if: steps.already.outputs.released != 'yes'
         name: dev.surefold to Central
         run: ./gradlew publishToMavenCentral --no-configuration-cache --max-workers=2
 
-      - if: steps.already.outputs.relocated != 'yes'
-        name: The relocation POMs at io.github.matthewjones372 to Central
-        run: >
-          ./gradlew publishToMavenCentral --no-configuration-cache --max-workers=2
-          -PcentralNamespace=io.github.matthewjones372
-
-      # Last, and only after both deployments are staged: the tag is the record
+      # Last, and only once the deployment is staged: the tag is the record
       # of what was released. A dispatch without a version ran on a tag that is
       # already pushed.
       - name: Push the tag
