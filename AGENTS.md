@@ -1,5 +1,32 @@
 # Working in this repo
 
+## Three repositories
+
+Surefold is splitting into three repositories (specs 0301, 0302). Each depends only on the ones above it, through
+published artifacts:
+
+| Repository | Holds | May depend on |
+|---|---|---|
+| `surefold/surefold-core` (this one) | runtime modules on the JDK and Kotlin alone, plus test and build tooling | nothing outside the JDK and Kotlin at runtime |
+| `surefold/surefold-integrations` | every module that wraps one outside library | core |
+| `surefold/surefold-platform` | the `data/` modules, `surefold-bank`, `surefold-jobs-load`, and `surefold-bom` (0306) | core and integrations |
+
+Until 0302's and 0301's seed entries land, every module still lives here. Then:
+
+- **Don't add an outside library to a module that stays in core.** 0302's table says which modules move. A new
+  module that wraps a library belongs in `surefold-integrations`; a new platform feature belongs in `data/`, and
+  moves with it.
+- **Don't move, copy or delete modules ahead of 0302's stack.** The seed entries carry their history across.
+- **Coordinates never change.** Artifacts stay `dev.surefold:<name>`, packages stay `dev.surefold.*`.
+- **No Central release for now** (0301 question 5). Downstream repositories pin snapshots from GitHub Packages,
+  `https://maven.pkg.github.com/surefold/<repository>`, which `snapshot.yml` publishes on every push to main.
+- **Users take one version** through `dev.surefold:surefold-bom` from `surefold-platform` (0306), never three
+  versions picked by hand. No Surefold POM uses a version range.
+- **Working across repositories:** check them out side by side (`../surefold-core`, `../surefold-integrations`,
+  `../surefold-platform`). A downstream build includes the upstream ones it finds there, so a change to core
+  reaches platform's tests without publishing. CI never does this: it builds against the pinned snapshots.
+- **Specs stay where they were written.** The new repositories number their own from 0001.
+
 ## Specs come first
 
 Nothing is implemented without a spec file in `specs/`. An agent drafts it, a
