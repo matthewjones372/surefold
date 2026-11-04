@@ -12,9 +12,8 @@ same release as the core.
 
 ## Not doing
 
-- **Moving sagas, actors, streams, the cluster, the app modules or the observability integrations.** They stay.
-  Sagas (0298–0300) are built here.
-- **Moving the Kafka, SNS and SQS integrations** in this spec (open question 1).
+- **Moving sagas, actors, streams or the cluster.** They stay in core. Sagas (0298–0300) are built here.
+- **Moving the integrations.** 0302 moves every module that wraps an outside library to `surefold-integrations`.
 - **Renaming anything.** Artifacts keep `dev.surefold:<same name>`, and packages keep `dev.surefold.*`.
 - **Changing behaviour.** This is a move. No module's API changes in it.
 
@@ -31,7 +30,9 @@ A new repository, `surefold/surefold-platform` (open question 2), holding:
 - **The same rules:** `AGENTS.md`, `CODING_STANDARDS.md`, specs first, `NoOtherDependenciesTest`, Kover at 90%,
   detekt and spotless, and copies of the workflows.
 
-It depends on Surefold's published artifacts, never on a source checkout:
+It depends on the published artifacts of `surefold-core` and `surefold-integrations` (0302), never on a source
+checkout; `surefold-jobs-otel` and `surefold-openfeature-postgres`, for instance, need `surefold-otel` and
+`surefold-openfeature`:
 
 ```kotlin
 // surefold-platform/data/surefold-jobs/build.gradle.kts
@@ -77,8 +78,8 @@ grep -c 'module("data"' settings.gradle.kts       # 0 here
 
 ## Open questions
 
-1. **Move Kafka, SNS and SQS too?** Recommended: not in this spec. They sit on `surefold-stream` and Pekko, which
-   stay, and moving them is a separate call to make once this one has settled.
+1. **Move Kafka, SNS and SQS too?** Answered (maintainer, 2026-11-04): yes, with every other integration, to a
+   repository of their own, `surefold-integrations` (0302), not into this one.
 2. **What is the new repository called?** Answered (maintainer, 2026-11-04): `surefold/surefold-platform`.
    Creating it is the maintainer's to do; no agent can.
 3. **Versions: in lockstep with Surefold, or their own?** Recommended: their own, starting at the version that
