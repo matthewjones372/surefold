@@ -171,6 +171,24 @@ object DurableSagaSuite : Suite() {
             answer shouldBe seen.peek().first().right()
         }
 
+        test("uuid is a version 7 UUID whose first 48 bits are the clock's millisecond") {
+            val at = Instant.parse("2026-11-04T12:00:00.123Z")
+            val made = clock.locally(TestClock(at)) {
+                durableSaga("ids", Pence, Text, Text) { _ -> uuid() }.run(InMemoryJournal(), "i", 0)
+            }
+            val id = java.util.UUID.fromString((made as Either.Right).value)
+
+            id.version() shouldBe 7
+            id.variant() shouldBe 2
+            (id.mostSignificantBits ushr 16) shouldBe at.toEpochMilli()
+        }
+
+        test("ids made later sort after ids made earlier") {
+            val ids = (0L..50L).map { uuidV7(1_700_000_000_000 + it).toString() }
+
+            ids.sorted() shouldBe ids
+        }
+
         test("two steps with one name in a saga are refused") {
             val twice = durableSaga("twice", Pence, Text, Text) { _ ->
                 step("a", Pence, { _ -> 1L })
