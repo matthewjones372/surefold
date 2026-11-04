@@ -20,7 +20,7 @@ class GuideExampleTest {
     private val markers =
         listOf(
             "remote", "tls", "membership", "entities", "persistent", "read-model", "sharded", "reliable",
-            "reliable-answers", "operating", "topic",
+            "reliable-answers", "keyed", "operating", "topic",
         )
             .map { "<!-- cluster-$it -->" }
 

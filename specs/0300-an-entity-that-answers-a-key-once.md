@@ -59,7 +59,8 @@ accounts.entity("a").ask(2.seconds) { Keyed.Applied("t-1/debit", it) }          
 - **`Applied(key)`** answers `Accepted`, `Refused(reason)` or `Unknown` from the entity's state, without a turn of
   `decide`.
 - **Sent reliably,** a `Keyed.Apply` is confirmed after its append, as `delivered` does, and every copy is answered.
-- **Keys are kept for `remember`** and dropped at the first snapshot after that, so state doesn't grow forever.
+- **Keys are kept for `remember`.** Each answer written drops the keys older than that, the same way on every
+  replay, so state doesn't grow forever. A snapshot keeps the keys still remembered.
   An `Apply` whose key was dropped is applied again, which is why 0299's `resume` refuses sagas older than it.
 - **`Keyed.codec(commandCodec, refusedCodec)`** carries the key, the delivery and the reply across nodes.
 
@@ -73,9 +74,10 @@ from the events. Recommended: in the append.
 
 - [ ] **`spec-0300-keyed`** — `keyed`, `accept`/`refuse`, same answer for a repeat, `Applied`, in `surefold-actor`.
       Done when: a key sent twice is applied once and both copies get the same answer, and `Applied` answers it.
-- [ ] **`spec-0300-window`** — `remember`, keys dropped at a snapshot, `Keyed.codec`, and a `docs/cluster.md`
+- [ ] **`spec-0300-window`** — `remember`, keys dropped as answers are written, snapshots, `Keyed.codec`, and a `docs/cluster.md`
       section with a compiled fence.
-      Done when: a key older than `remember` is gone after the next snapshot, and `GuideExampleTest` compiles it.
+      Done when: a key older than `remember` is gone once another answer is written, replay forgets the same keys,
+      a snapshot keeps them, and `GuideExampleTest` compiles it.
 
 ## Acceptance
 
@@ -87,7 +89,8 @@ from the events. Recommended: in the append.
 ## Open questions
 
 1. **How long does a `keyed` entity remember a key?** Answered (maintainer, 2026-11-04): a window per kind,
-   30 days by default, dropped at a snapshot (0076). 0299's `resume` refuses a saga stuck for longer than the
+   30 days by default, dropped as later answers are written (built that way: dropping only at a snapshot would
+   make a replay without one remember more than the live entity did). 0299's `resume` refuses a saga stuck for longer than the
    window of any kind it sends to, so a forgotten key can't be sent again.
 2. **Should `Applied` on a passivated entity start it?** Answered (maintainer, 2026-11-04): yes. Starting it is a
    replay from the latest snapshot, and the answer has to be definite for a saga to settle.

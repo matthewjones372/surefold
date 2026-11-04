@@ -722,6 +722,90 @@ fun status(sent: Either<NotSent, Unit>): Int = when (sent) {
 }
 ```
 
+### A command answered once per key
+
+Reliable delivery keeps a command from being lost, and a persistent entity drops a resend of one it already
+handled. It does not answer the resend, and nothing can ask it "did you already apply this?". A `keyed` entity
+does both (spec 0300). Each command carries a key, such as `transfer-7/debit`. Its events and its key's answer are
+written in one append. A repeat of the key gets the same answer, a refusal included, and writes nothing.
+`Keyed.Applied(key)` answers what a key got, or `Unknown`, without deciding anything.
+
+<!-- cluster-keyed -->
+```kotlin
+import dev.surefold.actor.EventCodec
+import dev.surefold.actor.KeyAnswer
+import dev.surefold.actor.Keyed
+import dev.surefold.actor.PersistenceId
+import dev.surefold.actor.StateCodec
+import dev.surefold.actor.ask
+import dev.surefold.actor.every
+import dev.surefold.actor.keyed
+import dev.surefold.actor.remote.Codecs
+import dev.surefold.actor.remote.MessageCodec
+import dev.surefold.actor.remote.WireIn
+import dev.surefold.actor.remote.WireOut
+import dev.surefold.actor.remote.codec
+import dev.surefold.cluster.Cluster
+import dev.surefold.cluster.Sharded
+import dev.surefold.cluster.sharding
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
+
+/** Pence into or out of a wallet, and the one reason a wallet says no. */
+object Overdrawn
+
+object PenceEvents : EventCodec<Long> {
+    override fun encode(event: Long): ByteArray = event.toString().toByteArray()
+
+    override fun decode(bytes: ByteArray): Long = String(bytes).toLong()
+}
+
+object OverdrawnEvents : EventCodec<Overdrawn> {
+    override fun encode(event: Overdrawn): ByteArray = ByteArray(0)
+
+    override fun decode(bytes: ByteArray): Overdrawn = Overdrawn
+}
+
+object Balance : StateCodec<Long> {
+    override fun encode(state: Long): ByteArray = state.toString().toByteArray()
+
+    override fun decode(bytes: ByteArray): Long = String(bytes).toLong()
+}
+
+/** A wallet: a negative amount is a withdrawal, refused when it would overdraw. Keys are kept for 30 days. */
+fun wallet(id: String) = keyed<Long, Long, Long, Overdrawn>(
+    id = PersistenceId("wallet", id),
+    empty = 0,
+    codec = PenceEvents,
+    refusals = OverdrawnEvents,
+    decide = { balance, pence -> if (balance + pence < 0) refuse(Overdrawn) else accept(pence) },
+    event = { balance, pence -> balance + pence },
+    remember = 30.days,
+    snapshots = every(100, Balance),
+)
+
+object OverdrawnWire : MessageCodec<Overdrawn> {
+    override fun write(message: Overdrawn, out: WireOut) = Unit
+
+    override fun read(input: WireIn): Overdrawn = Overdrawn
+}
+
+fun Cluster.wallets(): Sharded<Keyed<Long, Overdrawn>> =
+    sharding("wallet", Keyed.codec(Codecs.long, OverdrawnWire), passivateAfter = 5.minutes) { id -> wallet(id) }
+
+/** Withdraws under [key]: asking again with the same key, after a lost answer, never withdraws twice. */
+fun Sharded<Keyed<Long, Overdrawn>>.withdraw(wallet: String, key: String, pence: Long) =
+    entity(wallet).ask<Keyed<Long, Overdrawn>, KeyAnswer<Overdrawn>>(5.seconds) { Keyed.Apply(key, -pence, it) }
+```
+
+- **A key is remembered for `remember`,** 30 days by default. Each answer written drops the keys older than that,
+  the same way on every replay, so an entity's state does not grow forever. A repeat that arrives later is decided
+  again, so whatever resends a key must give up on it before then.
+- **A snapshot keeps the keys** with the state, so a start from it answers them as before.
+- **Across nodes,** `Keyed.codec(commands, refusals)` carries the key, the command and the reply the answer goes back
+  to.
+
 ## Stopping, watching and telling everyone
 
 ### Stopping
