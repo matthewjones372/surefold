@@ -33,10 +33,11 @@ object GroupCommitSuite : Suite() {
             val journal = JdbcJournal(source, groupCommit = GroupCommit())
             val ids = (1..200).map { PersistenceId("till", "t-$it") }
 
-            Executors.newVirtualThreadPerTaskExecutor().use { threads ->
-                ids.map { id -> threads.submit(Callable { journal.append(id, 0, listOf(byteArrayOf(1))) }) }
-                    .forAll { it.get().isRight() shouldBe true }
-            }
+            Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("group-commit-appender-", 0).factory())
+                .use { threads ->
+                    ids.map { id -> threads.submit(Callable { journal.append(id, 0, listOf(byteArrayOf(1))) }) }
+                        .forAll { it.get().isRight() shouldBe true }
+                }
 
             ids.forAll { id -> journal.read(id).size shouldBe 1 }
             source.commits.get() shouldBeLessThan ids.size
@@ -108,7 +109,7 @@ object GroupCommitSuite : Suite() {
     @Suppress("TooGenericExceptionCaught") // The append's own failure is what the test asserts on.
     private fun <A> appendLater(append: () -> A): CompletableFuture<A> {
         val done = CompletableFuture<A>()
-        Thread.ofVirtual().start {
+        Thread.ofVirtual().name("group-commit-append-later").start {
             try {
                 done.complete(append())
             } catch (failed: Throwable) {

@@ -279,7 +279,7 @@ class Transport(
                 writing = true
                 // The peer never writes after its hello: a read that returns is the connection ending.
                 val writer = Thread.currentThread()
-                val watch = Thread.ofVirtual().start {
+                val watch = Thread.ofVirtual().name("surefold-remote-watch-$peer-${lane.name.lowercase()}").start {
                     try {
                         input.read()
                     } catch (_: IOException) {

@@ -7,6 +7,7 @@ import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldBeRight
 import dev.surefold.junit.shouldContainExactlyInAnyOrder
 import dev.surefold.junit.shouldNotBe
+import dev.surefold.junit.shouldStartWith
 import dev.surefold.junit.withClue
 import dev.surefold.scope
 import java.util.concurrent.CountDownLatch
@@ -80,6 +81,14 @@ object RuntimeSuite : Suite() {
             }
 
             thread.isVirtual shouldBe true
+        }
+
+        test("a step runs on a runner named for its number, so a thread dump says what it is") {
+            val thread = scope {
+                spawn("log", log()).ask(1.minutes) { Where(it) }.getOrNull()!!
+            }
+
+            thread.name shouldStartWith "surefold-actor-runner-"
         }
 
         test("one sender's messages arrive in the order they were told") {
