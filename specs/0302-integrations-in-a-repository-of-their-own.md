@@ -92,8 +92,9 @@ Recommended (maintainer, 2026-11-04): a third repository.
 
 1. **Test and build tooling** (`surefold-junit`, `-junit-testkit`, `-assert`, `-compiler`, `-app-compiler`,
    `-app-gradle`, JMH benchmarks) depends on JUnit, opentest4j, the Kotlin compiler, Gradle or JMH. Keep it in core?
-   Recommended: yes, as the one exception. Every core test runs on it, so moving it would make core depend on
-   another repository to test itself.
+   Answered (maintainer, 2026-11-04): yes, as the one exception. Every core test runs on it, so moving it would
+   make core depend on another repository to test itself. The rule reads: runtime modules are JDK and Kotlin only;
+   test and build tooling is exempt, and never reaches a service's runtime classpath.
 2. **`surefold-bank`** uses `surefold-app-liquibase` and Postgres. Recommended: stays in core, running the journal's
    changelog through the journal's own setup rather than `app-liquibase`, because it proves the sagas (0299).
 3. **Order of 0301 and 0302.** Recommended: both seed from the same last single-repository release (0.19.0), 0302
