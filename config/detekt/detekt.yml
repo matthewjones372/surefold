@@ -263,6 +263,8 @@ style:
       - '**/actor/surefold-actor-remote/src/main/kotlin/dev/surefold/actor/remote/Remote.kt'
       # spec-0309-journal-jdbc moves the committer onto a fork.
       - '**/actor/surefold-actor-journal-jdbc/src/main/kotlin/dev/surefold/actor/journal/jdbc/GroupCommit.kt'
+      # A shutdown hook: Runtime.addShutdownHook takes an unstarted Thread, which the JDK starts as the process ends.
+      - '**/app/surefold-app/src/main/kotlin/dev/surefold/app/Run.kt'
       # spec-0309-app moves the holder of the application's actors.
       - '**/app/surefold-app-actor/src/main/kotlin/dev/surefold/app/actor/Actors.kt'
       # spec-0309-app moves the thread that ends a downed node's process.

@@ -14,7 +14,8 @@ private data class Excused(val glob: String, val why: String)
  * still does, so the list only shrinks as files move onto Surefold's own primitives.
  */
 object ThreadRuleSuite : Suite() {
-    private val starts = Regex("""Thread\.ofVirtual\(|Thread\.ofPlatform\(|(?<![\w.])Thread\(""")
+    // `Thread(…)` and `Thread { … }` alike: a constructor called with a trailing lambda has no parenthesis.
+    private val starts = Regex("""Thread\.ofVirtual\(|Thread\.ofPlatform\(|(?<![\w.])Thread\s*[({]""")
 
     private fun repoRoot(then: (String) -> Unit) =
         System.getProperty("surefold.app.repoRoot")?.let(then)
