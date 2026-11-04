@@ -38,12 +38,15 @@ checkout; `surefold-jobs-otel` and `surefold-openfeature-postgres`, for instance
 ```kotlin
 // surefold-platform/data/surefold-jobs/build.gradle.kts
 dependencies {
-    api("dev.surefold:surefold:0.19.0")
-    implementation("dev.surefold:surefold-stream-forks:0.19.0")
-    testImplementation(testFixtures("dev.surefold:surefold-actor-journal-jdbc:0.19.0"))
+    api("dev.surefold:surefold:$surefoldCore")        // a pinned snapshot, e.g. 0.19.0-SNAPSHOT
+    implementation("dev.surefold:surefold-stream-forks:$surefoldCore")
+    testImplementation(testFixtures("dev.surefold:surefold-actor-journal-jdbc:$surefoldCore"))
 }
 ```
 
+- **Upstream comes from GitHub Packages, not Central, until the first release** (question 5): each repository
+  pins the snapshot versions it builds on in `gradle.properties` and reads them from
+  `maven.pkg.github.com/surefold/<repository>`, which `snapshot.yml` (0281) fills on every push to main.
 - **The same side-by-side composite build as 0302**: `settings.gradle.kts` includes `../surefold-core` and
   `../surefold-integrations` when they are checked out there, so one build spans all three; CI never does.
 - **Surefold publishes `surefold-actor-journal-jdbc`'s test fixtures** (its Postgres for tests), which eight
@@ -63,13 +66,14 @@ checkout but none of the smaller build or reading. **Alternative:** split by mod
 
 ## Stack
 
-- [ ] **`spec-0301-fixtures`** (here) — publish `surefold-actor-journal-jdbc`'s test fixtures and release.
-      Done when: a project outside this build resolves `testFixtures("dev.surefold:surefold-actor-journal-jdbc")`.
-- [ ] **`spec-0301-seed`** (new repository) — the filtered history, the build on published 0.19.0, gates, CI and
+- [ ] **`spec-0301-fixtures`** (here) — publish `surefold-actor-journal-jdbc`'s test fixtures with its snapshot.
+      Done when: a project outside this build resolves its `testFixtures(...)` from GitHub Packages.
+- [ ] **`spec-0301-seed`** (new repository) — the filtered history, the build on pinned upstream snapshots, gates, CI and
       the composite build.
-      Done when: `./gradlew build` there is green against Maven Central artifacts only, and with both upstreams
+      Done when: `./gradlew build` there is green against GitHub Packages snapshots only, and with both upstreams
       checked out beside it a change to their source reaches the platform's tests without publishing.
-- [ ] **`spec-0301-release`** (new repository) — the release and snapshot workflows publishing the same coordinates.
+- [ ] **`spec-0301-release`** (new repository) — the snapshot workflow, and a release workflow kept ready but unused
+      until the first release (question 5).
       Done when: a snapshot of every moved artifact is published from there.
 - [ ] **`spec-0301-remove`** (here) — delete `data/`, `surefold-bank`, `surefold-jobs-load` and the moved tests, and
       add the pointers.
@@ -89,8 +93,11 @@ grep -c 'module("data"' settings.gradle.kts       # 0 here
 2. **What is the new repository called?** Answered (maintainer, 2026-11-04): `surefold/surefold-platform`.
    Creating it is the maintainer's to do; no agent can.
 3. **Versions: in lockstep with Surefold, or their own?** Answered (maintainer, 2026-11-04): each repository its own,
-   all three starting at 0.19.0, each release naming the core and integrations versions it was built against. A
+   each release naming the core and integrations versions it was built against. A
    BOM, if wanted, is a later spec.
 4. **Does the last Surefold release that still contains `data/` get a notice in its README?** Answered (maintainer,
-   2026-11-04): yes, one line under Status in 0.19.0 naming the three repositories and saying coordinates and
-   packages are unchanged.
+   2026-11-04): yes, one line under Status in the first release after the split (question 5), naming the three
+   repositories and saying coordinates and packages are unchanged.
+5. **Release before the split?** Answered (maintainer, 2026-11-04): no. Nobody depends on Surefold yet, so the
+   repositories build against pinned snapshots on GitHub Packages, and the first Central release of each comes
+   once all three are proven to work together.

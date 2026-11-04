@@ -52,13 +52,14 @@ surefold/surefold-platform      core + integrations (0301)
   `observability.md`, `kafka.md`, `sqs.md`, `sns.md` and the Pekko sections move with their modules.
 - **One build when you ask for it.** With the repositories checked out side by side, a repository's
   `settings.gradle.kts` includes the ones it depends on, and Gradle substitutes their source for the published
-  artifacts by group and name. CI never checks them out, so it always builds against Central:
+  artifacts by group and name. CI never checks them out, so it always builds against the pinned snapshots on GitHub Packages (0301
+  question 5):
 
   ```kotlin
   // surefold-integrations/settings.gradle.kts (and surefold-platform's, with both upstreams)
   listOf("../surefold-core").filter { file(it).exists() }.forEach { includeBuild(it) }
   ```
-- **Each repository has its own version** (0301 question 3), all starting at 0.19.0. An integrations release says
+- **Each repository has its own version** (0301 question 3), released to Central only once all three are proven. An integrations release says
   which core version it was built against, and a platform release names both.
 
 ## Why this shape
@@ -70,12 +71,13 @@ Recommended (maintainer, 2026-11-04): a third repository.
 
 ## Stack
 
-- [ ] **`spec-0302-seed`** (new repository) — the filtered history, the build on published core 0.19.0, gates, CI,
+- [ ] **`spec-0302-seed`** (new repository) — the filtered history, the build on a pinned core snapshot, gates, CI,
       and the side-by-side composite build with its layout in `AGENTS.md`.
-      Done when: `./gradlew build` there is green against Maven Central artifacts only, and with `surefold-core`
+      Done when: `./gradlew build` there is green against GitHub Packages snapshots only, and with `surefold-core`
       checked out beside it a change to core's source reaches the integrations' tests without publishing.
-- [ ] **`spec-0302-release`** (new repository) — release and snapshot workflows for the same coordinates.
-      Done when: a snapshot of every moved artifact is published from there.
+- [ ] **`spec-0302-release`** (new repository) — the snapshot workflow, and a release workflow kept ready but
+      unused until the first release.
+      Done when: a snapshot of every moved artifact is published from there to GitHub Packages.
 - [ ] **`spec-0302-remove`** (here) — delete the moved modules, keep the pointers.
       Done when: `./gradlew build` is green here and every remaining module's runtime classpath is JDK and Kotlin
       only, apart from the tooling question 1 keeps.
@@ -97,9 +99,8 @@ Recommended (maintainer, 2026-11-04): a third repository.
    test and build tooling is exempt, and never reaches a service's runtime classpath.
 2. **`surefold-bank`** uses `surefold-app-liquibase` and Postgres. Answered (maintainer, 2026-11-04): it moves to
    `surefold-platform` (0301), keeping `app-liquibase`. Core proves its sagas with its own tests (0299).
-3. **Order of 0301 and 0302.** Answered (maintainer, 2026-11-04): release 0.19.0 from the single repository, seed
-   `surefold-integrations` (0302), seed `surefold-platform` (0301), remove the moved modules here, then rename this
-   repository `surefold-core`. Sagas (0298–0300) are built here after 0.19.0 and ship in core's first release
-   after the split.
+3. **Order of 0301 and 0302.** Answered (maintainer, 2026-11-04): seed `surefold-integrations` (0302) from a snapshot of
+   this repository, seed `surefold-platform` (0301), remove the moved modules here, then rename this repository
+   `surefold-core`. No release first (0301 question 5). Sagas (0298–0300) are built here meanwhile.
 4. **A composite build across the repositories?** Answered (maintainer, 2026-11-04): yes, opt-in by checking the
-   repositories out side by side; CI stays on published artifacts.
+   repositories out side by side; CI stays on pinned snapshots.
