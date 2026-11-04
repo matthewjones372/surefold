@@ -794,6 +794,69 @@ object RetainedKeyCallersSuite : Suite(concurrent = false, isolated = true) {
                 nested.suppressed.toList() shouldBe listOf(primary)
             }
         }
+
+        test("the Solo probe interrupts a real pending Shared commit without changing its value") {
+            val probe = CallerFenceProbe()
+            val state = Shared(0)
+            val failed = HandoffDecision<InterruptedException>()
+            withCallerFenceContention(probe, { state.peek() shouldBe 0 }) {
+                shouldThrow<InterruptedException>({ state.update { it + 1 } }) {
+                    failed.tryComplete(it)
+                    it.stackTrace.any { frame -> frame.methodName == "awaitFree" } shouldBe true
+                    it.stackTrace.any { frame -> frame.methodName == "commit\$dev_surefold_surefold" } shouldBe true
+                }
+                Thread.currentThread().isInterrupted shouldBe false
+            }
+            (failed.peek() != null) shouldBe true
+            state.peek() shouldBe 0
+            state.update { it + 1 }
+            state.peek() shouldBe 1
+            probe.target.awaitValue().isAlive shouldBe false
+            probe.holder.awaitValue().isAlive shouldBe false
+        }
+
+        test("a fresh commit after the Solo interruption survives its observer failure and owned unwind") {
+            val probe = CallerFenceProbe()
+            val state = Shared(0)
+            val observed = HandoffDecision<Int>()
+            val released = HandoffDecision<ExitCase>()
+            val marker = IllegalStateException("synthetic probe observer")
+            withCallerFenceContention(probe, { state.peek() shouldBe 0 }) {
+                shouldThrow<InterruptedException>({ state.update { it + 1 } }) {
+                    it.stackTrace.any { frame -> frame.methodName == "awaitFree" } shouldBe true
+                }
+                shouldThrow<IllegalStateException>({
+                    resourceScope {
+                        onRelease { exit -> released.tryComplete(exit) }
+                        atDeliveryCommit({ stack -> stack.any { it.methodName == "modify" } }, {
+                            observed.tryComplete(state.peek())
+                            throw marker
+                        }) { state.modify { it + 1 to Unit } }
+                    }
+                }) { (it === marker) shouldBe true }
+            }
+            observed.peek() shouldBe 1
+            state.peek() shouldBe 1
+            released.peek() shouldBe ExitCase.Failure(marker)
+        }
+
+        test("an assertion failure while Solo is held releases every gate and joins both workers") {
+            val probe = CallerFenceProbe()
+            val state = Shared(0)
+            val marker = AssertionError("synthetic probe assertion")
+            shouldThrow<AssertionError>({
+                withCallerFenceContention(probe, { throw marker }) { state.update { it + 1 } }
+            }) { (it === marker) shouldBe true }
+            probe.target.awaitValue().isAlive shouldBe false
+            probe.holder.awaitValue().isAlive shouldBe false
+            probe.blocker.sleepers() shouldBe 0
+            probe.holderStart.sleepers() shouldBe 0
+            probe.targetStart.sleepers() shouldBe 0
+            probe.pause.sleepers() shouldBe 0
+            state.peek() shouldBe 0
+            state.update { it + 1 }
+            state.peek() shouldBe 1
+        }
     }
 }
 
@@ -1474,3 +1537,88 @@ private fun callerGuard(mode: String) {
     callers.call { body.tryComplete(Unit) }
     body.peek() shouldBe Unit
 }
+
+private fun withCallerFenceContention(
+    probe: CallerFenceProbe,
+    whileBlocked: () -> Unit,
+    invoke: () -> Unit,
+) {
+    clock.locally(SystemClock) {
+        timeout(10.seconds) {
+            scope {
+                val blocker = async { probe.blocker.sleep(1.seconds) }
+                resourceScope {
+                    onRelease { _ -> blocker.cancel() }
+                    val holder = async {
+                        probe.holder.succeed(Thread.currentThread())
+                        probe.holderStart.sleep(1.seconds)
+                        transact(soloAfter = 0) { blocker.await() }
+                    }
+                    val target = async {
+                        probe.target.succeed(Thread.currentThread())
+                        probe.targetStart.sleep(1.seconds)
+                        probe.run(invoke)
+                    }
+                    val holderThread = probe.holder.awaitValue()
+                    val targetThread = probe.target.awaitValue()
+                    eventually(5.seconds) { probe.blocker.sleepers() shouldBe 1 }
+                    eventually(5.seconds) { probe.holderStart.sleepers() shouldBe 1 }
+                    eventually(5.seconds) { probe.targetStart.sleepers() shouldBe 1 }
+                    probe.holderStart.adjust(1.seconds)
+                    eventually(5.seconds) { (LockSupport.getBlocker(holderThread) === blocker) shouldBe true }
+                    probe.targetStart.adjust(1.seconds)
+                    eventually(5.seconds) { probe.pause.sleepers() shouldBe 1 }
+                    (probe.waiting.peek() === targetThread) shouldBe true
+                    whileBlocked()
+                    probe.blocker.adjust(1.seconds)
+                    holder.await()
+                    probe.pause.adjust(1.seconds)
+                    target.await()
+                }
+            }
+        }
+    }
+}
+
+@OptIn(TurnSeam::class)
+private class CallerFenceProbe {
+    val holder = Promise<Nothing, Thread>()
+    val target = Promise<Nothing, Thread>()
+    val blocker = TestClock(Instant.EPOCH)
+    val holderStart = TestClock(Instant.EPOCH)
+    val targetStart = TestClock(Instant.EPOCH)
+    val pause = TestClock(Instant.EPOCH)
+    val waiting = HandoffDecision<Thread>()
+
+    fun run(invoke: () -> Unit) {
+        val current = Thread.currentThread()
+        val turns = object : Turns {
+            override fun forking(): Any = this
+            override fun started(ticket: Any) = Unit
+            override fun ended() = Unit
+            override fun woke() = Unit
+            override fun waking(thread: Thread) = Unit
+            override fun parking(): Boolean {
+                if (Thread.currentThread() !== current) return true
+                val stack = current.stackTrace
+                val nearest = stack.firstOrNull {
+                    (it.className == "dev.surefold.Solo" && it.methodName == "awaitFree") ||
+                        (it.className == "dev.surefold.TestClock" && it.methodName == "awaitUntil")
+                }
+                if (nearest?.className != "dev.surefold.Solo") return true
+                if (stack.none {
+                        it.className == "dev.surefold.Transaction" && it.methodName == "commit\$dev_surefold_surefold"
+                    } ||
+                    !waiting.tryComplete(current)
+                ) throw CallerFenceProbeSetupFailure()
+                // The nested clock park passes through this seam without selecting the outer Solo frame again.
+                pause.sleep(1.seconds)
+                current.interrupt()
+                return false
+            }
+        }
+        takingTurns(turns, invoke)
+    }
+}
+
+private class CallerFenceProbeSetupFailure : IllegalStateException("synthetic caller fence probe setup failed")
