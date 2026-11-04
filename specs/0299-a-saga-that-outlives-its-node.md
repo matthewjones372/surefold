@@ -78,8 +78,13 @@ fun Cluster.outcome(id: String) = transfers(accounts).on(this).await(id)        
   not yet ended. When a member is `Removed`, and when the cluster starts, it tells each one `Wake`, and the saga's
   replay decides what is next. A `Wake` to a running or ended saga does nothing. This covers the gaps no reliable
   answer is in flight for: after `Started`, between one step's `Ended` and the next command, and after `Undoing`.
-- **Answers reach any node.** `start` is idempotent on the id, and `await` asks the entity, so a caller can poll or
-  wait from wherever it is.
+- **Answers reach any node.** `start` is idempotent on the id, and `await(id, within)` asks the entity, so a caller
+  can poll or wait from wherever it is. It answers a `Durable.Outcome`: `Done(value)`, `Refused(error)`, `Running`,
+  `Stuck(reason)` or `Forgotten`.
+- **Codecs.** The saga's input, error and answer are read through `StateCodec`s, wrapped in `versioned` (0091)
+  when they change shape; no new codec interface. A keyed kind's wire codec is
+  `Keyed.codec(commandCodec, refusedCodec)`, which carries the key, the delivery and the reply. `keyed` takes
+  `remember` (the key window, 30 days by default) and `snapshots` as `persistent` does.
 - **surefold-bank's `Transfer` is rewritten on it**, and `SagaSuite` and `CrashSuite` pass unchanged.
 
 ## Why this shape
