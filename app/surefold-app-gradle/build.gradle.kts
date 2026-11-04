@@ -25,7 +25,7 @@ gradlePlugin {
 mavenPublishing {
     configure(
         com.vanniktech.maven.publish.GradlePlugin(
-            javadocJar = com.vanniktech.maven.publish.JavadocJar.Dokka("dokkaGeneratePublicationHtml"),
+            javadocJar = com.vanniktech.maven.publish.JavadocJar.Empty(),
             sourcesJar = true,
         ),
     )
