@@ -21,7 +21,8 @@ every graph that uses it.
 - `app/surefold-app-compiler/.../Reader.kt`: add an `extension("…", "…")` entry for
   the factory. `ReaderKnowsFactoriesTest` fails when one is missing.
 - `app/surefold-app-gradle/build.gradle.kts`: `surefoldAppUnderTest(project(":…"))`, and a
-  case in `SurefoldWiringPluginTest`.
+  case in `SurefoldWiringPluginTest`. A module in surefold-integrations is added to its
+  `surefold-app-wiring-tests` instead, with a case in `WiringPluginTest`.
 - `docs/app.md`: the list of shapes the checker follows.
 
 ## A module whose docs fences compile

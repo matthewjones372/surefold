@@ -194,18 +194,6 @@ class SurefoldWiringPluginTest {
     }
 
     @Test
-    fun `the reader's copy of what surefold's own factories need has not gone stale`(@TempDir dir: File) {
-        project(dir, "surefoldWiring { verbose = true }", LIBRARY)
-
-        val result = runner(dir, "compileKotlin").build()
-
-        withClue("actor takes an ActorSystem, config a Config, and loadedConfig gives its Layered too") {
-            result.output shouldContain
-                "provides [ActorRef<Ping>, ActorSystem, Config, Layered, Settings], and is short of []"
-        }
-    }
-
-    @Test
     fun `surefold-app-actor's actors and actor are read from the reader's list too`(@TempDir dir: File) {
         project(dir, "surefoldWiring { verbose = true }", LIBRARY_ACTORS)
 
@@ -213,20 +201,6 @@ class SurefoldWiringPluginTest {
 
         withClue("actors needs nothing, and actor takes Actors and then what its behaviour does") {
             result.output shouldContain "provides [ActorRef<Ping>, Actors, Ledger], and is short of []"
-        }
-    }
-
-    @Test
-    fun `surefold-app-kotlinx's config is read from the reader's list too`(@TempDir dir: File) {
-        project(dir, "surefoldWiring { verbose = true }", LIBRARY_KOTLINX)
-
-        val result = runner(dir, "compileKotlin").build()
-
-        withClue("config with no block takes a Config, as the block form does") {
-            result.output shouldContain "provides [Config, Layered, Settings], and is short of []"
-        }
-        withClue("the Config a source provides is its Layered's merge, so reaching one reaches both") {
-            result.output shouldNotContain "nothing reaches Layered"
         }
     }
 
@@ -450,20 +424,6 @@ class SurefoldWiringPluginTest {
     }
 
     @Test
-    fun `a secret read as a string in main code is named, with secret beside it`(@TempDir dir: File) {
-        project(dir, "", SOUND)
-        source(dir, "main", SECRETS)
-
-        val result = runner(dir, "compileKotlin").build()
-
-        result.output shouldContain "string(\"db.password\") reads a secret as a String that prints itself"
-        result.output shouldContain "read it with secret(\"db.password\")"
-        withClue("passwordPolicy is not a password, and a path the compiler cannot read is left alone") {
-            result.output.split("reads a secret").size shouldBe 2
-        }
-    }
-
-    @Test
     fun `a run that parks on its root is named, with awaitShutdown beside it`(@TempDir dir: File) {
         project(dir, "", PARKED)
 
@@ -631,37 +591,10 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /**
- * Every surefold factory the reader knows by name, compiled against the real modules.
- *
- * The reader holds its own copy of what each of these takes — `actor` an `ActorSystem`, `config` a
- * `Config`, `loadedConfig` nothing — and this is the only build that would notice that copy going
- * stale. Change one of those in the library and this test says so.
+ * surefold-app-actor's factories, compiled against the real module. The reader holds its own copy of what each takes,
+ * and this is the only build that would notice that copy going stale. surefold-integrations does the same for the
+ * factories its modules ship.
  */
-private const val LIBRARY = """
-import dev.surefold.app.AppScope
-import dev.surefold.app.SurefoldApp
-import dev.surefold.app.Module
-import dev.surefold.app.single
-import dev.surefold.app.pekko.actor
-import dev.surefold.app.typesafe.config
-import dev.surefold.app.typesafe.loadedConfig
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.actor.typed.javadsl.Behaviors
-
-class Ping
-class Settings(val port: Int)
-
-object Under : SurefoldApp<Settings>() {
-    override val module: Module =
-        single<ActorSystem> { ActorSystem.create("under") } +
-            loadedConfig() +
-            config<Settings>("under") { Settings(int("port")) } +
-            actor<Ping>("ping") { Behaviors.empty<Ping>() }
-    override fun AppScope.run(root: Settings) = Unit
-}
-"""
-
-/** surefold-app-actor's factories, compiled against the real module, as [LIBRARY] does for the others. */
 private const val LIBRARY_ACTORS = """
 import dev.surefold.actor.ActorRef
 import dev.surefold.actor.behaviour
@@ -682,24 +615,6 @@ object Under : SurefoldApp<ActorRef<Ping>>() {
             single<Ledger> { Ledger() } +
             actor<Ping, Ledger>("ping") { _ -> behaviour<Ping, Unit>(Unit) { _, _, _ -> stay() } }
     override fun AppScope.run(root: ActorRef<Ping>) = Unit
-}
-"""
-
-/**
- * surefold-app-kotlinx's config, compiled against the real module; only the reader runs, so no serialization plugin.
- */
-private const val LIBRARY_KOTLINX = """
-import dev.surefold.app.AppScope
-import dev.surefold.app.SurefoldApp
-import dev.surefold.app.Module
-import dev.surefold.app.kotlinx.config
-import dev.surefold.app.typesafe.loadedConfig
-
-class Settings(val port: Int)
-
-object Under : SurefoldApp<Settings>() {
-    override val module: Module = loadedConfig() + config<Settings>("under")
-    override fun AppScope.run(root: Settings) = Unit
 }
 """
 
@@ -806,17 +721,6 @@ fun schedulers() = listOf(
     Timer(),
     Executors.newVirtualThreadPerTaskExecutor(),
 )
-"""
-
-/** One secret by its last segment, one name that only starts like one, and a path that is not a literal. */
-private const val SECRETS = """
-import dev.surefold.app.typesafe.config
-
-data class Db(val password: String, val policy: String, val other: String)
-
-val path = "db.password"
-
-val db = config<Db>("app") { Db(string("db.password"), string("passwordPolicy"), string(path)) }
 """
 
 /** A root whose own wait ends only when it is stopped, which is the release, after run returns. */
