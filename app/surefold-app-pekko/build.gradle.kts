@@ -21,8 +21,8 @@ dependencies {
     testImplementation(project(":surefold-assert"))
     // For the flags guide, which declares and reads flags over the OpenFeature SDK.
     testImplementation(project(":surefold-openfeature"))
-    // For its section on flags per tenant, which reads them from Postgres.
-    testImplementation(project(":surefold-openfeature-postgres"))
+    // For the core guide's cache examples, and CacheCallerCompatibilityTest's 0.16 caller.
+    testImplementation(project(":surefold-cache"))
 }
 
 // The serialization plugin, handed to the embedded compiler as a reader's build applies it, so a
