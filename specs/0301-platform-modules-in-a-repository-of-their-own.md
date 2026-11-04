@@ -67,22 +67,26 @@ checkout but none of the smaller build or reading. **Alternative:** split by mod
 
 ## Stack
 
-- [ ] **`spec-0301-fixtures`** (here) — publish `surefold-actor-journal-jdbc`'s test fixtures with its snapshot.
+- [x] **`spec-0301-fixtures`** ([#1077](https://github.com/surefold/surefold-core/pull/1077)) (here) — publish
+      `surefold-actor-journal-jdbc`'s test fixtures with its snapshot.
       Done when: a project outside this build resolves its `testFixtures(...)` from GitHub Packages.
-- [ ] **`spec-0301-seed`** (new repository) — the filtered history, the build on pinned upstream snapshots, gates, CI and
-      the composite build.
+- [x] **`spec-0301-seed`** ([surefold-platform#1](https://github.com/surefold/surefold-platform/pull/1)) (new
+      repository) — the filtered history, the build on pinned upstream snapshots, gates, CI and the composite build.
       Done when: `./gradlew build` there is green against GitHub Packages snapshots only, and with both upstreams
       checked out beside it a change to their source reaches the platform's tests without publishing.
-- [ ] **`spec-0301-release`** (new repository) — the snapshot workflow, and a release workflow kept ready but unused
-      until the first release (question 5).
+- [x] **`spec-0301-release`** ([surefold-platform#2](https://github.com/surefold/surefold-platform/pull/2)) (new
+      repository) — the snapshot workflow, and a release workflow kept ready but unused until the first release
+      (question 5).
       Done when: a snapshot of every moved artifact is published from there.
-- [ ] **`spec-0301-flags`** (`surefold-platform`, then here) — the Postgres section of `flags.md`, flags per tenant
-      on `surefold-openfeature-postgres`, moves to a platform guide with its compiled fence, and `CoreGuideTest`
-      stops depending on `surefold-openfeature-postgres`. It comes before 0302's `spec-0302-guides-out`, which
-      takes the rest of `flags.md` to `surefold-integrations`, since integrations cannot depend on platform.
+- [x] **`spec-0301-flags`** ([surefold-platform#3](https://github.com/surefold/surefold-platform/pull/3),
+      [#1085](https://github.com/surefold/surefold-core/pull/1085)) (`surefold-platform`, then here) — the Postgres
+      section of `flags.md`, flags per tenant on `surefold-openfeature-postgres`, moves to a platform guide with its
+      compiled fence, and `CoreGuideTest` stops depending on `surefold-openfeature-postgres`. It comes before 0302's
+      `spec-0302-guides-out`, which takes the rest of `flags.md` to `surefold-integrations`, since integrations cannot
+      depend on platform.
       Done when: no guide here names a platform module, and the section compiles in `surefold-platform`.
-- [ ] **`spec-0301-remove`** (here) — delete `data/`, `surefold-bank`, `surefold-jobs-load`, `surefold-app-flyway`
-      and the moved tests, and add the pointers.
+- [x] **`spec-0301-remove`** ([#1095](https://github.com/surefold/surefold-core/pull/1095)) (here) — delete `data/`,
+      `surefold-bank`, `surefold-jobs-load`, `surefold-app-flyway` and the moved tests, and add the pointers.
       Done when: `./gradlew build` is green here, and no `settings.gradle.kts` line names a moved module.
 
 ## Acceptance

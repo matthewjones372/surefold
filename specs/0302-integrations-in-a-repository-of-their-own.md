@@ -72,33 +72,44 @@ Recommended (maintainer, 2026-11-04): a third repository.
 
 ## Stack
 
-- [ ] **`spec-0302-seed`** (new repository) — the filtered history, the build on a pinned core snapshot, gates, CI,
-      and the side-by-side composite build with its layout in `AGENTS.md`.
+- [x] **`spec-0302-seed`** ([surefold-integrations#1](https://github.com/surefold/surefold-integrations/pull/1)) (new
+      repository) — the filtered history, the build on a pinned core snapshot, gates, CI, and the side-by-side composite
+      build with its layout in `AGENTS.md`.
       Done when: `./gradlew build` there is green against GitHub Packages snapshots only, and with `surefold-core`
       checked out beside it a change to core's source reaches the integrations' tests without publishing.
-- [ ] **`spec-0302-release`** (new repository) — the snapshot workflow, and a release workflow kept ready but
-      unused until the first release.
+- [x] **`spec-0302-release`** ([surefold-integrations#2](https://github.com/surefold/surefold-integrations/pull/2)) (new
+      repository) — the snapshot workflow, and a release workflow kept ready but unused until the first release.
       Done when: a snapshot of every moved artifact is published from there to GitHub Packages.
-- [ ] **`spec-0302-guides-out`** (`surefold-integrations`) — the sections of core's guides that need an
-      integration become integrations guides, compiled there: a Pekko page (`core.md`'s `core-pekko`, `stream.md`'s
-      Pekko backend, the cookbook's Pekko actor), the cookbook's configuration sections with `ReportedSuite`,
-      `cluster.md`'s HOCON section with `GuideConfigSuite`, and `flags.md` whole, after `spec-0301-flags` has taken
-      its Postgres section (maintainer, 2026-11-04). Split in two if it runs past ~200 lines.
+- [x] **`spec-0302-guides-out`** ([surefold-integrations#3](https://github.com/surefold/surefold-integrations/pull/3),
+      [#4](https://github.com/surefold/surefold-integrations/pull/4),
+      [#5](https://github.com/surefold/surefold-integrations/pull/5),
+      [#6](https://github.com/surefold/surefold-integrations/pull/6)) (`surefold-integrations`) — the sections of core's
+      guides that need an integration become integrations guides, compiled there: a Pekko page (`core.md`'s
+      `core-pekko`, `stream.md`'s Pekko backend, the cookbook's Pekko actor), the cookbook's configuration sections with
+      `ReportedSuite`, `cluster.md`'s HOCON section with `GuideConfigSuite`, and `flags.md` whole, after
+      `spec-0301-flags` has taken its Postgres section (maintainer, 2026-11-04). Split in two if it runs past ~200
+      lines.
       Done when: each of those sections compiles in `surefold-integrations`.
-- [ ] **`spec-0302-guides`** (here) — those sections leave core's pages for one-line links, the README's stream
-      example runs on the forks, actors and test backends (maintainer, 2026-11-04), and a new unpublished
-      test-only module, `core/surefold-guides`, compiles `README.md`, `stream.md`, `core.md`, `testing.md` and
-      `cookbook.md` (maintainer, 2026-11-04), in place of the suites in moving modules.
+- [x] **`spec-0302-guides`** ([#1091](https://github.com/surefold/surefold-core/pull/1091),
+      [#1096](https://github.com/surefold/surefold-core/pull/1096),
+      [#1097](https://github.com/surefold/surefold-core/pull/1097)) (here) — those sections leave core's pages for
+      one-line links, the README's stream example runs on the forks, actors and test backends (maintainer, 2026-11-04),
+      and a new unpublished test-only module, `core/surefold-guides`, compiles `README.md`, `stream.md`, `core.md`,
+      `testing.md` and `cookbook.md` (maintainer, 2026-11-04), in place of the suites in moving modules.
       Done when: those pages are compiled by `surefold-guides`, which names no moved module, and no guide here
       needs one.
-- [ ] **`spec-0302-wiring`** (`surefold-integrations`) — `surefold-app-gradle`'s TestKit tests of apps on
-      `app-pekko`, `-typesafe`, `-kotlinx`, `-openfeature` and `-openfeature-flagd`, run there against core's
-      published plugin (maintainer, 2026-11-04).
+- [x] **`spec-0302-wiring`** ([surefold-integrations#7](https://github.com/surefold/surefold-integrations/pull/7),
+      [#1098](https://github.com/surefold/surefold-core/pull/1098)) (`surefold-integrations`) — `surefold-app-gradle`'s
+      TestKit tests of apps on `app-pekko`, `-typesafe`, `-kotlinx`, `-openfeature` and `-openfeature-flagd`, run there
+      against core's published plugin (maintainer, 2026-11-04).
       Done when: those tests pass there, and `surefold-app-gradle`'s build here names no moved module.
-- [ ] **`spec-0302-remove`** (here) — delete the moved modules, keep the pointers.
+- [x] **`spec-0302-remove`** ([#1100](https://github.com/surefold/surefold-core/pull/1100),
+      [surefold-integrations#8](https://github.com/surefold/surefold-integrations/pull/8)) (here) — delete the moved
+      modules, keep the pointers.
       Done when: `./gradlew build` is green here and every remaining module's runtime classpath is JDK and Kotlin
       only, apart from the tooling question 1 keeps.
-- [ ] **`spec-0302-rename`** (here) — the repository renamed `surefold-core`, and every link and badge updated.
+- [x] **`spec-0302-rename`** ([#1062](https://github.com/surefold/surefold-core/pull/1062)) (here) — the repository
+      renamed `surefold-core`, and every link and badge updated.
       Done when: no file here links to `github.com/surefold/surefold/` except through the redirect notice.
 
 ## Acceptance
