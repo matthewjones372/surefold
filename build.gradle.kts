@@ -323,6 +323,21 @@ subprojects {
         systemProperty("junit.jupiter.execution.timeout.default", "60s")
         // The same default for surefold-junit suites, which Jupiter's property does not reach (spec 0193).
         systemProperty("surefold.junit.timeout.default", "60s")
+        // ThreadsOnTimeout, from the shared source below, and no other library's autodetected extension (spec 0308).
+        systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
+        systemProperty("junit.jupiter.extensions.autodetection.include", "dev.surefold.*")
+    }
+
+    // Every module's Jupiter tests get ThreadsOnTimeout: every thread's stack, virtual ones included, before a timed-out
+    // test is interrupted (spec 0308). A source shared by path rather than a module, so nothing is published for it.
+    // Only where there are tests: a module with none, a benchmark's, would otherwise fail for discovering none.
+    if (file("src/test").isDirectory) {
+        extensions.configure<org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension> {
+            sourceSets.named("test") {
+                kotlin.srcDir(rootProject.file("config/threads-on-timeout/kotlin"))
+                resources.srcDir(rootProject.file("config/threads-on-timeout/resources"))
+            }
+        }
     }
 
     if (name !in testedByRunningABuild + benchmarkModules) {

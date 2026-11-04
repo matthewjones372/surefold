@@ -4,6 +4,8 @@
 // here needs to know what is being served.
 dependencies {
     testImplementation(project(":surefold-assert"))
+    // ThreadsOnTimeoutTest runs a test that times out from inside a test, to see what its report says (spec 0308).
+    testImplementation("org.junit.platform:junit-platform-testkit")
 
     // Test only: surefoldFuture's cancel has to reach surefold from a coroutine awaiting it with kotlinx's own
     // await, and NoOtherDependenciesTest keeps it off the main runtime classpath.
