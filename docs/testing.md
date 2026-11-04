@@ -685,7 +685,7 @@ so discovery reads tags and `ignore` without running anything.
 |---|---|---|
 | `flaky(n)` | runs the test up to `n` times, until an attempt passes | passed if one does, with an `attempts` report entry such as `2 of 3`, given on failure too |
 | `nonFlaky(n)` | runs the test `n` times, and every run must pass | failed at the first failing run: `run 7 of 50 failed: …` |
-| `timeout(d)` | interrupts the test if it runs longer than `d`, on Surefold's `timeout` | failed with a `TimeoutException`, `no answer within d` |
+| `timeout(d)` | interrupts the test if it runs longer than `d`, after writing every thread's stack, virtual threads included, to stderr | failed with a `TimeoutException`, `no answer within d`; the dump is in the test's output |
 | `ignore(why)` | does not run the test | skipped, with `why` |
 | `tag(name)` | a JUnit tag, which Gradle's `includeTags` and the IDE filter by | — |
 | `alone` | nothing else in the suite runs beside the test | — |

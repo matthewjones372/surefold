@@ -10,6 +10,7 @@ import dev.surefold.junit.timeout
 import dev.surefold.resource
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.locks.LockSupport
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 
@@ -50,4 +51,29 @@ object DefaultTimeoutSuite : Suite() {
     }
 
     private const val SLEEP_PAST_DEFAULT_MILLIS = 500L
+}
+
+/** Spec 0308: a test that leaves a named virtual thread parked and outlives its timeout, for the dump to show. */
+object ParkedPastTimeoutSuite : Suite() {
+    const val PARKED = "parked-for-the-dump"
+
+    init {
+        test("parks a virtual thread and outlives its timeout", timeout(200.milliseconds)) {
+            val parked = Thread.ofVirtual().name(PARKED).start(::parkedForTheDump)
+            try {
+                sleptOnUntilInterrupted()
+            } finally {
+                parked.interrupt()
+            }
+            expect(true)
+        }
+    }
+
+    /** Parks until interrupted, so the dump finds this frame on the thread named [PARKED]. */
+    private fun parkedForTheDump() {
+        while (!Thread.currentThread().isInterrupted) LockSupport.park()
+    }
+
+    /** The test's own wait: in the dump only if it was taken before the interrupt. */
+    private fun sleptOnUntilInterrupted() = Thread.sleep(1.minutes.inWholeMilliseconds)
 }
