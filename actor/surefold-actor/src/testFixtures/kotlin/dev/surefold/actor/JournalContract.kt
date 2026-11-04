@@ -80,22 +80,22 @@ abstract class JournalContract {
 
         Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("journal-contract-writer-", 0).factory())
             .use { writers ->
-            for (last in 0 until rounds.toLong()) {
-                val start = CountDownLatch(1)
-                val answers = List(2) { writer ->
-                    writers.submit<Either<JournalConflict, Long>> {
-                        start.await()
-                        journal.append(sam, last, listOf(bytes("$last by $writer")))
+                for (last in 0 until rounds.toLong()) {
+                    val start = CountDownLatch(1)
+                    val answers = List(2) { writer ->
+                        writers.submit<Either<JournalConflict, Long>> {
+                            start.await()
+                            journal.append(sam, last, listOf(bytes("$last by $writer")))
+                        }
+                    }
+                    start.countDown()
+                    val won = answers.map { it.get() }
+                    withClue("after event $last, the two writers answered $won") {
+                        won.count { it == (last + 1).right() } shouldBe 1
+                        won.count { it == JournalConflict(sam, last, last + 1).left() } shouldBe 1
                     }
                 }
-                start.countDown()
-                val won = answers.map { it.get() }
-                withClue("after event $last, the two writers answered $won") {
-                    won.count { it == (last + 1).right() } shouldBe 1
-                    won.count { it == JournalConflict(sam, last, last + 1).left() } shouldBe 1
-                }
             }
-        }
 
         journal.read(sam).map { it.sequence } shouldContainExactly (1..rounds.toLong()).toList()
     }

@@ -32,9 +32,9 @@ object GroupCommitSuite : Suite() {
 
             Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("group-commit-appender-", 0).factory())
                 .use { threads ->
-                ids.map { id -> threads.submit(Callable { journal.append(id, 0, listOf(byteArrayOf(1))) }) }
-                    .forAll { it.get().isRight() shouldBe true }
-            }
+                    ids.map { id -> threads.submit(Callable { journal.append(id, 0, listOf(byteArrayOf(1))) }) }
+                        .forAll { it.get().isRight() shouldBe true }
+                }
 
             ids.forAll { id -> journal.read(id).size shouldBe 1 }
             source.commits.get() shouldBeLessThan ids.size
