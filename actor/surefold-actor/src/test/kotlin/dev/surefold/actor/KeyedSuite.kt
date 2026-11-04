@@ -4,22 +4,24 @@ import dev.surefold.fail.right
 import dev.surefold.junit.Suite
 import dev.surefold.junit.shouldBe
 import dev.surefold.junit.shouldContainExactly
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.days
 
-private sealed interface Move {
+internal sealed interface Move {
     data class Debit(val pence: Long) : Move
 
     data class Credit(val pence: Long) : Move
 }
 
-private sealed interface Moved {
+internal sealed interface Moved {
     data class Debited(val pence: Long) : Moved
 
     data class Credited(val pence: Long) : Moved
 }
 
-private data object Funds
+internal data object Funds
 
-private val movedCodec = object : EventCodec<Moved> {
+internal val movedCodec = object : EventCodec<Moved> {
     override fun encode(event: Moved): ByteArray = when (event) {
         is Moved.Debited -> "D:${event.pence}"
         is Moved.Credited -> "C:${event.pence}"
@@ -31,16 +33,22 @@ private val movedCodec = object : EventCodec<Moved> {
     }
 }
 
-private val fundsCodec = object : EventCodec<Funds> {
+internal val fundsCodec = object : EventCodec<Funds> {
     override fun encode(event: Funds): ByteArray = "funds".toByteArray()
 
     override fun decode(bytes: ByteArray): Funds = Funds
 }
 
-private fun accountOf(id: String) = PersistenceId("account", id)
+internal fun accountOf(id: String) = PersistenceId("account", id)
 
-private fun account(id: String) = keyed<Move, Moved, Long, Funds>(
+internal fun account(
+    id: String,
+    remember: Duration = 30.days,
+    snapshots: Snapshotting<Long>? = null,
+) = keyed<Move, Moved, Long, Funds>(
     id = accountOf(id),
+    remember = remember,
+    snapshots = snapshots,
     empty = 0L,
     codec = movedCodec,
     refusals = fundsCodec,
@@ -129,8 +137,9 @@ object KeyedSuite : Suite() {
                 val a = spawn("a", account("a"))
                 a.ask { Keyed.Apply("t-1/debit", Move.Debit(400), it) }
 
-                journal.events(accountOf("a"), keyedEvents(movedCodec, fundsCodec)) shouldContainExactly
-                    listOf(KeyedEvent.Answered("t-1/debit", Funds))
+                val written = journal.events(accountOf("a"), keyedEvents(movedCodec, fundsCodec))
+                written.map { (it as KeyedEvent.Answered).key to it.refused } shouldContainExactly
+                    listOf("t-1/debit" to Funds)
             }
         }
     }
