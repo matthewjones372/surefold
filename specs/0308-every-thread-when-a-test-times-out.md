@@ -99,12 +99,15 @@ grep -rn 'Thread.ofVirtual()\.\(start\|unstarted\)' --include=*.kt */*/src/main
 ## Open questions
 
 1. **Name fork threads too?** A constant name (`.name("surefold-fork")`, no counter) costs a field write rather
-   than a string concatenation. Recommend: measure that with `surefold-core-benchmarks`' fork benchmark in a
-   follow-up spec, and leave forks unnamed here.
-2. **Cap the dump?** A stress suite with 10,000 parked threads writes megabytes into its XML report. Recommend: no
-   cap for now, text format. Revisit if a report gets too big to open.
+   than a string concatenation. Answered (maintainer, 2026-11-04), as recommended: measure that with
+   `surefold-core-benchmarks`' fork benchmark in a follow-up spec, and leave forks unnamed here.
+2. **Cap the dump?** A stress suite with 10,000 parked threads writes megabytes into its XML report.
+   Answered (maintainer, 2026-11-04), as recommended: no cap, text format; revisit if a
+   report gets too big to open.
 3. **Autodetection everywhere.** With the `include` pattern, only `dev.surefold.*` extensions load. Any module
    that relies on a third-party extension being autodetected would then lose it. None does today (only
-   `surefold-kafka` turns autodetection on). Recommend: the pattern as above.
-4. **JDK 21 build-tool modules.** `dumpThreads` exists on 21, so the shared source compiles there too. Recommend:
-   register it in those modules as well. Their tests run Gradle builds, where a hang is just as silent.
+   `surefold-kafka` turns autodetection on). Answered (maintainer, 2026-11-04), as recommended: the pattern as
+   above.
+4. **JDK 21 build-tool modules.** `dumpThreads` exists on 21, so the shared source compiles there too.
+   Answered (maintainer, 2026-11-04), as recommended: register it there too;
+   their tests run Gradle builds, where a hang is just as silent.
