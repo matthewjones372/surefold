@@ -12,7 +12,7 @@ class NoOtherDependenciesTest {
     private val allowed = listOf("kotlin-stdlib", "annotations-", "surefold")
 
     @Test
-    fun `the main runtime classpath is surefold-actor and what it brings, and nothing else`() {
+    fun `the main runtime classpath is surefold-cluster and what it brings, and nothing else`() {
         val raw = System.getProperty("surefold.cluster.saga.runtimeClasspath")
         withClue("the build must pass -Dsurefold.cluster.saga.runtimeClasspath; see its build.gradle.kts") {
             raw.shouldNotBeNull()
@@ -22,7 +22,7 @@ class NoOtherDependenciesTest {
             .filter { it.isNotBlank() }
             .filterNot { entry -> allowed.any { entry.startsWith(it) } }
 
-        withClue("surefold-cluster-saga must stay surefold-actor and what it brings, but found: $unexpected") {
+        withClue("surefold-cluster-saga must stay surefold-cluster and what it brings, but found: $unexpected") {
             unexpected.shouldBeEmpty()
         }
     }

@@ -12,6 +12,7 @@ import dev.surefold.fail.Either
 import dev.surefold.fail.Fail
 import dev.surefold.fail.attempt
 import dev.surefold.fail.fold
+import dev.surefold.fail.nonFatalOrThrow
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.DataInputStream
@@ -28,7 +29,23 @@ class Durable<I, E, A> internal constructor(
     internal val answer: StateCodec<A>,
     internal val body: DurableScope<E>.(I) -> A,
     internal val undo: Policy?,
-)
+) {
+    /** How a saga stands, as `Sagas.await` answers from any node. */
+    sealed interface Outcome<out E, out A> {
+        data class Done<out A>(val value: A) : Outcome<Nothing, A>
+
+        data class Refused<out E>(val error: E) : Outcome<E, Nothing>
+
+        /** Not ended yet, or not answered within the wait. */
+        data object Running : Outcome<Nothing, Nothing>
+
+        /** Stopped [Stuck], [Unsettled] or [Diverged], undoing nothing further until `resume`. */
+        data class Stuck(val reason: String) : Outcome<Nothing, Nothing>
+
+        /** The journal holds nothing of it: never started, or pruned. */
+        data object Forgotten : Outcome<Nothing, Nothing>
+    }
+}
 
 /**
  * A durable saga of [kind]: [body] is plain blocking code whose steps are journalled as they begin and end. Run again
@@ -95,17 +112,51 @@ class Overtaken(val saga: String) : IllegalStateException("saga $saga was writte
  * Runs the saga [id] on [journal], or resumes it: an ended saga answers as it ended without running anything, a
  * started one replays its journal, and a new one is started with [input]. A declared fail ends it on the left.
  */
-fun <I, E, A> Durable<I, E, A>.run(journal: Journal, id: String, input: I): Either<E, A> {
-    val log = Log(journal, PersistenceId(kind, id))
-    log.ending()?.let { return it.decoded(this) }
-    return ran(log, id, log.started() ?: log.start(this.input.encode(input)))
-}
+fun <I, E, A> Durable<I, E, A>.run(journal: Journal, id: String, input: I): Either<E, A> =
+    checkNotNull(drive(journal, id, this.input.encode(input)))
 
 /** Runs the started saga [id] again: after a crash, or once whatever left it [Stuck] is fixed. */
-fun <I, E, A> Durable<I, E, A>.resume(journal: Journal, id: String): Either<E, A> {
+fun <I, E, A> Durable<I, E, A>.resume(journal: Journal, id: String): Either<E, A> =
+    requireNotNull(drive(journal, id, null)) { "saga $kind/$id was never started" }
+
+/**
+ * Runs, resumes or answers the saga [id], starting it with [input] if its journal holds nothing; null if it holds
+ * nothing and there is no [input]. [starting] is called before `Started` is written, [started] once it is there.
+ */
+internal fun <I, E, A> Durable<I, E, A>.drive(
+    journal: Journal,
+    id: String,
+    input: ByteArray?,
+    starting: () -> Unit = {},
+    started: () -> Unit = {},
+): Either<E, A>? {
     val log = Log(journal, PersistenceId(kind, id))
+    val begun = log.started() ?: input?.also { starting() }?.let(log::start) ?: return null
+    started()
     log.ending()?.let { return it.decoded(this) }
-    return ran(log, id, requireNotNull(log.started()) { "saga $kind/$id was never started" })
+    return ran(log, id, begun)
+}
+
+/**
+ * How the saga [id] ends when driven on this node, as its entity answers it; null when another runner overtook it.
+ * Whatever stops it short of an end, a [Stuck] or the journal failing, leaves it [Ending.Stuck] here.
+ */
+internal fun <I, E, A> Durable<I, E, A>.ending(
+    journal: Journal,
+    id: String,
+    input: ByteArray?,
+    starting: () -> Unit,
+    started: () -> Unit,
+): Ending? = try {
+    when (val ended = drive(journal, id, input, starting, started)) {
+        null -> Ending.Forgotten
+        is Either.Left -> Ending.Refused(error.encode(ended.value))
+        is Either.Right -> Ending.Done(answer.encode(ended.value))
+    }
+} catch (_: Overtaken) {
+    null
+} catch (stopped: Exception) {
+    Ending.Stuck(stopped.nonFatalOrThrow().message ?: stopped.toString())
 }
 
 private fun <I, E, A> Durable<I, E, A>.ran(log: Log, id: String, begun: ByteArray): Either<E, A> {
