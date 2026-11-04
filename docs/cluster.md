@@ -55,8 +55,9 @@ For commands that must arrive, see
 
 No serialisation library is chosen for you. A `MessageCodec` writes a message
 field by field; a `Reply` or an `ActorRef` inside a message crosses as an
-address, so an ask made on one node is answered from another. Three modules
-build codecs from classes you already have instead:
+address, so an ask made on one node is answered from another. Three modules in
+[surefold-integrations](https://github.com/surefold/surefold-integrations) build codecs from classes you already
+have instead:
 
 - `surefold-actor-remote-protobuf`: a codec for a generated message, `oneOf` for a
   protocol of several messages under fixed tags, and `asked` for an ask whose
@@ -180,7 +181,7 @@ seed and nobody answers. Membership is agreed by gossip, with no coordinator.
 
 - **Seeds.** `Discovery.static` for a fixed list, `Discovery.dns` for every
   address a name resolves to, and `Discovery.srv` for SRV records.
-  `surefold-cluster-kubernetes` finds seeds through the pods API, and
+  surefold-integrations' `surefold-cluster-kubernetes` finds seeds through the pods API, and
   `surefold-cluster-aws` through Cloud Map or ECS.
 - **The view.** `cluster.view` is this node's current view: every member with
   its status, the ones some member cannot reach, and the leader. A member is
@@ -368,7 +369,7 @@ entity's failure for its supervision to decide.
 For a cluster the journal must be one every node reaches. `JdbcJournal` keeps
 events in one table over the `DataSource` you give it, and ships its tables in
 the jar as a Liquibase changelog in formatted SQL, `surefold/journal/jdbc/postgres.sql`,
-for your changelog to include (or `surefold-app-liquibase`'s
+for your changelog to include (or surefold-integrations' `surefold-app-liquibase`'s
 `migrate` to run); nothing creates tables at start.
 
 - **Snapshots.** With `snapshots = every(100, codec)` the entity saves its state
@@ -927,7 +928,7 @@ as crashed.
 ### Watching
 
 Every scope records through surefold's `metrics`, so a service with
-`surefold-micrometer` installed exports these with nothing more to write. Each
+surefold-integrations' `surefold-micrometer` installed exports these with nothing more to write. Each
 carries a `node` tag naming the node it was recorded on.
 
 | Metric | Kind | What it tells an operator |

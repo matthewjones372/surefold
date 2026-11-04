@@ -19,7 +19,7 @@ sleep.
 | a story as a suite's test, returning its expectations | `story { }` | `surefold-junit` |
 | one class | its constructor, with fakes as arguments | nothing |
 | several nodes together, one faked | `testApp(module.subgraph<Root>().overriding(…)) { }` | `surefold-app` |
-| configuration for one test | `overridingConfig("key = value")` | `surefold-app-typesafe` |
+| configuration for one test | `overridingConfig("key = value")` | `surefold-app-typesafe` (surefold-integrations) |
 | a stream on a clock the test moves | `TestStreams(clock)` and `emitted()` | `surefold-stream-test` |
 | actors stepped on the calling thread | `behaviour.test()`, `testActors { }` | `surefold-actor` |
 

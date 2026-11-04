@@ -13,7 +13,6 @@ write each piece.
 ```kotlin
 dependencies {
     implementation("dev.surefold:surefold-app:0.18.0")
-    implementation("dev.surefold:surefold-app-pekko:0.18.0")  // Pekko actors only
 }
 ```
 
@@ -37,7 +36,7 @@ and the same-cache layer reentry restriction.
 | retain by result-specific expiry, with last-good fallback | `Cache(ttl = …, stale = …)` | `surefold-cache` |
 | finish shared cache work before releasing its dependencies | `Cache.closeAndJoin` in `onRelease` | `surefold-cache` |
 | explicit regional KMS roots, exact contexts and owned clients | [`KeyOperations`, `AwsKeyOperations`, `awsKeyOperations`](https://github.com/surefold/surefold-platform/blob/main/docs/kms-operations.md) | `surefold-tenancy-crypto-aws` (surefold-platform) |
-| trace JDBC executions without per-query wrapping | `DataSource.traced(openTelemetry)` | [`surefold-jdbc-otel`](jdbc-tracing.md) |
+| trace JDBC executions without per-query wrapping | `DataSource.traced(openTelemetry)` | [`surefold-jdbc-otel`](https://github.com/surefold/surefold-integrations/blob/main/docs/jdbc-tracing.md) |
 
 The types the recipes are written against:
 
@@ -464,15 +463,9 @@ that picks a module, is
 
 ## Run migrations as a step
 
-`surefold-app-liquibase` makes a changelog a node. Anything that reads the
+`surefold-app-liquibase`, in surefold-integrations, makes a changelog a node. Anything that reads the
 database takes a `Migrated`, which turns "after the migrations" into an edge
 the graph enforces and `render()` draws:
-
-```kotlin
-dependencies {
-    implementation("dev.surefold:surefold-app-liquibase:0.18.0")
-}
-```
 
 ```kotlin
 import dev.surefold.app.Migrated
@@ -542,14 +535,14 @@ as a node.
 | a fake in a test | `.overriding(single<T> { … })`, never plain `plus` |
 | a test of one class | its constructor, with fakes as arguments |
 | a test of the wiring | `.subgraph<Root>()` and `testApp(module) { root: Root -> … }` |
-| configuration | `config<Settings>("section") { … }` |
+| configuration | `config<Settings>("section") { … }`, from surefold-integrations' `surefold-app-typesafe` |
 | a password or token | `secret("path")` |
 | a setting that picks a module | `choice<Settings, Provided> { … }` |
 | migrations before anything reads | `migrations("db/changelog.xml")`, then take a `Migrated` |
-| an actor | `actor("name") { … }` from `surefold-app-pekko` or `surefold-app-actor` |
+| an actor | `actor("name") { … }` from `surefold-app-actor`, or surefold-integrations' `surefold-app-pekko` |
 | the wiring in review | `render()` against a golden file |
 
 Retries, timeouts, circuit breakers, rate limiters and bulkheads are in
 [Core](core.md#policies); logging, metrics and tracing in
-[Observability](observability.md); test clocks and captured logs in
+[Observability](https://github.com/surefold/surefold-integrations/blob/main/docs/observability.md); test clocks and captured logs in
 [Testing](testing.md).

@@ -2,7 +2,7 @@
 
 ## Three repositories
 
-Surefold is splitting into three repositories (specs 0301, 0302). Each depends only on the ones above it, through
+Surefold is split into three repositories (specs 0301, 0302). Each depends only on the ones above it, through
 published artifacts:
 
 | Repository | Holds | May depend on |
@@ -11,13 +11,10 @@ published artifacts:
 | `surefold/surefold-integrations` | every module that wraps one outside library | core |
 | `surefold/surefold-platform` | the `data/` modules, `surefold-bank`, `surefold-jobs-load`, and `surefold-bom` (0306) | core and integrations |
 
-The platform modules have moved (0301's remove entry). The integrations still live here until 0302's remove entry
-lands. Meanwhile:
+The platform and integration modules have moved, with their history (0301's and 0302's remove entries). So:
 
-- **Don't add an outside library to a module that stays in core.** 0302's table says which modules move. A new
-  module that wraps a library belongs in `surefold-integrations`; a new platform feature belongs in
-  `surefold-platform`.
-- **Don't move, copy or delete modules ahead of 0302's stack.** The seed entries carry their history across.
+- **Don't add an outside library to a module here.** A new module that wraps a library belongs in
+  `surefold-integrations`; a new platform feature belongs in `surefold-platform`.
 - **Coordinates never change.** Artifacts stay `dev.surefold:<name>`, packages stay `dev.surefold.*`.
 - **No Central release for now** (0301 question 5). Downstream repositories pin snapshots from GitHub Packages,
   `https://maven.pkg.github.com/surefold/<repository>`, which `snapshot.yml` publishes on every push to main.
@@ -71,8 +68,8 @@ entry): [`docs/agents/stacking.md`](docs/agents/stacking.md).
 
 ## Layout
 
-Modules are grouped by family into `core/`, `stream/`, `actor/`, `cluster/`, `app/`,
-`integrations/`, `bench/` and `examples/` (spec 0139). A module keeps its flat Gradle path,
+Modules are grouped by family into `core/`, `stream/`, `actor/`, `cluster/`, `app/` and
+`bench/` (spec 0139). A module keeps its flat Gradle path,
 `:surefold-stream` rather than `:stream:surefold-stream`; `settings.gradle.kts` says which folder it is in.
 A new module goes in its family's folder and gets a `module(...)` line there.
 
@@ -80,10 +77,10 @@ One Gradle module per capability, listed in `settings.gradle.kts`;
 [`docs/modules.md`](docs/modules.md) says what each is for. `surefold` depends on
 the Kotlin standard library and on the JDK, and on nothing else: no HTTP library, no JSON
 library, no coroutines, and virtual threads come from `java.lang.Thread`. Every
-other module depends on the Surefold modules it builds on and, at most, the one
-external library or SDK its name says it integrates: `surefold-pekko` adds
-`pekko-actor`, `surefold-stream` adds nothing, `surefold-stream-pekko` adds
-`pekko-stream`, `surefold-kafka` adds `kafka-clients`, and so on.
+runtime module depends on the Surefold modules it builds on and nothing else: `surefold-stream` adds nothing,
+`surefold-stream-actors` adds `surefold-actor`. Test and build tooling (`surefold-junit`, `-assert`, `-compiler`,
+`-app-compiler`, `-app-gradle`, the benchmarks) is the one exception (0302 question 1), and never reaches a
+service's runtime classpath. A module that wraps an external library is in `surefold-integrations`.
 
 Each claim is a test. `NoOtherDependenciesTest` asserts the module's main
 runtime classpath, in every module alike.
@@ -120,19 +117,11 @@ The guides' Kotlin fences are compiled by tests that read the Markdown:
 `CoreGuidesSuite` and `CookbookSuite` in `core/surefold-guides` (`docs/core.md`,
 `testing.md`, `cookbook.md` and the README's suite, against the core alone),
 `StreamGuidesSuite` beside them (`docs/stream.md` and the README's quick start,
-against the core alone), `CoreGuideTest` (`observability.md`, `arrow.md`),
-`ActorsGuideTest` and
+against the core alone), `ActorsGuideTest` and
 `GuideExampleTest`. A fence is found by
 the HTML comment above it, such as `<!-- core-policy -->`, so keep the marker
 when editing an example, and add one to a new complete example. Each module's
 `build.gradle.kts` declares the pages it reads as test inputs.
-
-### An actor system belongs to the test class
-
-`surefold-pekko` and `surefold-stream-pekko` tests need an `ActorSystem`. It is created in a
-`companion object` from a config string and stopped in `@AfterAll`, never by
-hand inside a test and never shared across classes — a system left running
-holds threads that make the next suite's thread assertions lie.
 
 Kover has a floor of 90% on `check`.
 

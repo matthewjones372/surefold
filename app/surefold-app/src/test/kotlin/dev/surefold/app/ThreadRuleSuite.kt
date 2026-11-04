@@ -44,7 +44,7 @@ object ThreadRuleSuite : Suite() {
 
     init {
         test("the thread rule excuses some files, so these checks judge something") {
-            repoRoot { root -> (excused(root).size > 10) shouldBe true }
+            repoRoot { root -> (excused(root).size > 5) shouldBe true }
         }
 
         test("every file the thread rule excuses says why, in a comment above it") {

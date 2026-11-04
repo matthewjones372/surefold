@@ -1,6 +1,0 @@
-flowchart TD
-    n0["Stream.from<br/>731 ns waiting · 100000 out"]
-    n1["groupedWithin(100, 1s)<br/>1.7 µs waiting · 1000 out"]
-    n0 --> n1
-    run["runFold · GroupedWithinBenchmark.kt:28"]
-    n1 --> run
