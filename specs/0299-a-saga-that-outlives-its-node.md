@@ -24,16 +24,21 @@ In a new module, `surefold-cluster-saga`, on `surefold-cluster` and nothing else
 import dev.surefold.cluster.Cluster
 import dev.surefold.cluster.saga.Durable
 import dev.surefold.cluster.saga.durableSaga
+import dev.surefold.saga.Settled
 
 data class Move(val from: String, val to: String, val pence: Long)
 
 val transfers: Durable<Move, Refused, Receipt> = durableSaga("transfer", MoveCodec, RefusedCodec, ReceiptCodec) { move ->
-    val debit = step("debit", DebitCodec, { key -> accounts.debit(key, move.from, move.pence) ?: fail(Refused.Funds) }) {
-        key, taken, _ -> accounts.credit(key, move.from, taken.pence)
-    }
-    step("credit", CreditCodec, { key -> accounts.credit(key, move.to, debit.pence) }) { key, _, _ ->
-        accounts.debit(key, move.to, debit.pence)
-    }
+    val debit = step(
+        "debit", DebitCodec,
+        action = { key -> accounts.debit(key, move.from, move.pence) ?: fail(Refused.Funds) },
+        check = { key -> accounts.debitFor(key)?.let { Settled.Happened(it) } ?: Settled.DidNot },
+    ) { key, taken, _ -> accounts.refund(key, move.from, taken.pence) }
+    step(
+        "credit", CreditCodec,
+        action = { key -> accounts.credit(key, move.to, debit.pence) },
+        check = { key -> accounts.creditFor(key)?.let { Settled.Happened(it) } ?: Settled.DidNot },
+    ) { key, _, _ -> accounts.debit(key, move.to, debit.pence) }
     Receipt(debit.id)
 }
 
@@ -41,16 +46,18 @@ fun Cluster.send(id: String, move: Move) = transfers.on(this).start(id, move)  /
 fun Cluster.outcome(id: String) = transfers.on(this).await(id)                   // Either<Refused, Receipt>, or NotUndone
 ```
 
-- **The body is plain blocking code**, the same `step(action, undo)` as 0298, with a name and a codec for what the
-  action returns. It runs as a persistent entity of its own kind, sharded by saga id.
+- **The body is plain blocking code**, the same `step(name, action, check, undo)` as 0298, with a codec for what
+  the action returns, and the same rule: only a declared `fail` means a step did not happen. It runs as a persistent entity of its own kind, sharded by saga id.
 - **Each step is journalled.** `Begun(step)` before the action, `Ended(step, value)` after it. A recovered saga runs
   the body again from the top, and a step already `Ended` returns its kept value without calling anything. A step
-  `Begun` but not `Ended` runs again.
-- **A step's key** is `"$sagaId/$stepName"`, the same on every run, for the action and the undo to hand to the
-  system they call, such as a reliable command's id or a job's dedupe key.
+  `Begun` but not `Ended` is unknown: its `check` decides whether it is `Ended` or runs again, and with no
+  `check` the saga stops `Stuck` before calling anything.
+- **A step's key** is `"$sagaId/$stepName"` (`…/undo` for its undo), the same on every run and every node, for
+  the system called to deduplicate on, such as a reliable command's id or a job's dedupe key.
 - **Undoing is journalled too** (`Undoing(why)`, `Undone(step)`), so a node that dies mid-undo resumes the undo
   elsewhere, never the forward steps.
-- **An undo that still fails after its policy** leaves the saga `Stuck`. It stays in the journal, is counted in
+- **An unsettled step or an undo that still fails after its policy** leaves the saga `Stuck`, undoing nothing
+  further. It stays in the journal, is counted in
   `surefold.saga.stuck`, and is retried by `resume(id)`, from code or an admin page.
 - **Answers reach any node.** `start` is idempotent on the id, and `await` asks the entity, so a caller can poll or
   wait from wherever it is.
@@ -68,7 +75,8 @@ already talk to entities, with jobs left as a later backend.
 ## Stack
 
 - [ ] **`spec-0299-journal`** — the module, `durableSaga`, steps journalled and replayed, keys, on one node.
-      Done when: a saga stopped after its first step and started again calls the second step's action only.
+      Done when: a saga stopped after its first step and started again calls the second step's action only, and
+      one stopped mid-step calls that step's `check` before anything else.
 - [ ] **`spec-0299-undo`** — journalled undos, `Stuck`, `resume`, the `stuck` gauge.
       Done when: an undo failing past its policy leaves `Stuck`, and `resume` after the fix ends it `Undone`.
 - [ ] **`spec-0299-cluster`** — `on(cluster)`, `start`/`await` from any node, and recovery when a node leaves.
