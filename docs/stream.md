@@ -27,8 +27,9 @@ whichever module it ships in.
 8. [One publisher, many readers](#one-publisher-many-readers)
 9. [Optimisation, rendering and profiling](#optimisation-rendering-and-profiling)
 10. [Time a test owns](#time-a-test-owns)
-11. [On Pekko Streams](#on-pekko-streams)
-12. [Dependencies](#dependencies)
+11. [A complete pipeline](#a-complete-pipeline)
+12. [On Pekko Streams](#on-pekko-streams)
+13. [Dependencies](#dependencies)
 
 ## Modules and backends
 
@@ -62,14 +63,15 @@ Pekko Streams or needs Pekko's own sources and sinks.
 ## One description, several backends
 
 A pipeline that fails with `Unpriced` when an order has no price, run on three
-backends. `ReadmeExampleSuite` compiles this against all three:
+backends. `StreamGuidesSuite` compiles this against the core alone:
 
 <!-- backend-example -->
 ```kotlin
+import dev.surefold.Scope
 import dev.surefold.TestClock
+import dev.surefold.stream.Actors
 import dev.surefold.stream.Exit
 import dev.surefold.stream.Forks
-import dev.surefold.stream.PekkoStreams
 import dev.surefold.stream.Run
 import dev.surefold.stream.Stream
 import dev.surefold.stream.TestStreams
@@ -78,7 +80,6 @@ import dev.surefold.stream.from
 import dev.surefold.stream.mapOrFail
 import dev.surefold.stream.run
 import dev.surefold.stream.runFold
-import org.apache.pekko.actor.ActorSystem
 import java.util.concurrent.CompletionStage
 
 data class Order(val id: Int, val pence: Long?)
@@ -94,12 +95,15 @@ val takings: Run<Unpriced, Long> =
         .filter { pence -> pence >= 1000 }
         .runFold(0L) { total, pence -> total + pence }
 
-val system: ActorSystem = ActorSystem.create("shop")
-
-val onPekko: CompletionStage<Exit<Unpriced, Long>> = takings.run(PekkoStreams(system))
 val onForks: CompletionStage<Exit<Unpriced, Long>> = takings.run(Forks())
 val inATest: CompletionStage<Exit<Unpriced, Long>> = takings.run(TestStreams(TestClock()))
+
+// The actors backend runs each stage in an actor of the scope it is given.
+fun onActors(scope: Scope<*>): CompletionStage<Exit<Unpriced, Long>> = takings.run(Actors(scope))
 ```
+
+The same description runs on Pekko Streams too: see surefold-integrations'
+[Streams on Pekko](https://github.com/surefold/surefold-integrations/blob/main/docs/pekko.md#streams-on-pekko).
 
 Each run answers the same `Exit`. `run` returns a `CompletionStage` of it;
 `start` returns a `Running` handle whose `exit` is the same stage, whose
@@ -414,8 +418,6 @@ import dev.surefold.stream.from
 import dev.surefold.stream.fromStage
 import dev.surefold.stream.orFailIfEmpty
 import dev.surefold.stream.single
-import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.javadsl.Source
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -428,7 +430,7 @@ fun lookup(id: Int): Customer? = if (id == 1) Customer(1, "ada") else null
 
 val id = 1
 val stage: CompletionStage<Customer> = CompletableFuture.completedFuture(Customer(id, "ada"))
-val rows: Source<Customer, NotUsed> = Source.empty()                    // a source surefold did not build
+val rows: List<Customer> = emptyList()                                  // what a query found, which can be nothing
 
 val one: Stream<Missing, Customer> =
     lookup(id)?.let { Stream.single(it) } ?: Stream.fail(Missing(id))   // absence is a failure with a name
@@ -460,8 +462,8 @@ where `customer` is a `String?`, does not compile:
 e: Return type mismatch: expected 'Any', actual 'String?'.
 ```
 
-`DoesNotCompileTest` compiles that line, and the `toSource()` case below, on
-every build and asserts the compiler's own message.
+`DoesNotCompileTest` compiles that line on every build and asserts the
+compiler's own message.
 
 Code that calls Pekko's absence-to-emptiness builders directly never enters
 Surefold. detekt's `ForbiddenMethodCall` can catch it, with type resolution on
@@ -626,136 +628,23 @@ reads what a collecting run on `TestStreams` has produced so far. A stage body
 that reads Surefold's `clock` reads the test's; a body that blocks on anything
 else blocks the test with it.
 
-## On Pekko Streams
+## A complete pipeline
 
-`surefold-stream-pekko` is both a backend and a typed layer over Pekko's own
-API. `Stream.from(source)` and `toSource()` convert in and out, `runWith(sink)`
-runs into a Pekko `Sink`, `divertLefts(to = sink)` splits a stream of `Either`
-into two sinks, and `run(system)` is short for `run(PekkoStreams(system))`.
-`toSource()` exists only on `Stream<Nothing, A>`, so a stream that can still
-fail has to say what a failure means, with `catchAll`, `either` or `orElse`,
-before it can become a plain Pekko `Source`.
-
-### What it changes
-
-A Kotlin service written directly against Pekko's `javadsl` has one error
-channel typed `Throwable` for the whole graph, and a `Supervision.Decider` set
-as an attribute some distance from the operator it governs. A team that keeps
-its failures in an `Either` puts one in every element, splits the stream
-with `divertTo(sink, predicate)` and casts the survivors back. Two things can
-then drop an element without a trace, and Pekko documents both: a `mapAsync`
-whose `CompletionStage` completes with `null` is not passed downstream, and a
-`Resume` decider drops the element and continues. The first is easy to write
-in Kotlin, as a nullable lookup lifted into a future, and nothing in the types
-warns about it.
-
-The same ingest written both ways, from shared fixtures:
-
-<!-- example-fixtures -->
-```kotlin
-import dev.surefold.fail.Either
-import dev.surefold.fail.attempt
-import dev.surefold.fail.fold
-import dev.surefold.fail.mapLeft
-import dev.surefold.stream.Stream
-import dev.surefold.stream.divertLefts
-import dev.surefold.stream.from
-import dev.surefold.stream.mapAsync
-import dev.surefold.stream.mapOrFail
-import org.apache.pekko.NotUsed
-import org.apache.pekko.stream.javadsl.Sink
-import org.apache.pekko.stream.javadsl.Source
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
-
-data class Row(val id: Int, val customer: String?)
-
-data class Customer(val id: Int, val name: String)
-
-data class Receipt(val id: Int)
-
-sealed interface IngestError
-
-data class NoCustomer(val id: Int) : IngestError
-
-data class Declined(val id: Int) : IngestError
-
-class Ledger {
-    fun settle(customer: Customer): CompletionStage<Either<Declined, Receipt>> =
-        CompletableFuture.completedFuture(Either.Right(Receipt(customer.id)))
-}
-
-val ledger = Ledger()
-val rows = listOf(Row(1, "ada"), Row(2, "grace"), Row(3, null))
-val declinedSink = Sink.foreach<Declined> { declined -> println("declined ${declined.id}") }
-```
-
-Raw Pekko `Source`:
-
-<!-- before-example -->
-```kotlin
-val receipts: Source<Either<IngestError, Receipt>, NotUsed> =
-    Source.from(rows)
-        .map { row ->                                        // Source<Either<IngestError, Customer>, NotUsed>
-            attempt<IngestError, Customer> { Customer(row.id, row.customer ?: fail(NoCustomer(row.id))) }
-        }
-        .mapAsync(4) { customer ->
-            customer.fold(
-                { e -> CompletableFuture.completedFuture<Either<IngestError, Receipt>>(Either.Left(e)) },
-                { c -> ledger.settle(c).thenApply { it.mapLeft { d -> d as IngestError } } },
-            )                                                // the Left carried past a stage that never wanted it,
-        }                                                    // and Declined widened to IngestError by hand
-        .divertTo(
-            declinedSink.contramap<Either<IngestError, Receipt>> { (it as Either.Left).value as Declined },
-            { it is Either.Left && it.value is Declined },    // a cast for the sink, a predicate on the subtype
-        )                                                    // and a NoCustomer Left is still in the stream
-```
-
-With `surefold-stream`:
-
-<!-- after-example -->
-```kotlin
-val receipts: Stream<IngestError, Receipt> =
-    Stream.from(rows)
-        .mapOrFail { row -> Customer(row.id, row.customer ?: fail(NoCustomer(row.id))) }   // a nullable body does not compile
-        .mapAsync(4) { customer -> ledger.settle(customer) }                                // the same mapAsync, E already on the stream
-        .divertLefts(to = declinedSink)                                                     // no predicate, no cast
-```
-
-Raw Pekko carries the failure in the element, so every stage after the first
-unwraps and rewraps one: the `mapAsync` that only wanted a customer carries a
-`Left` past itself, and `Declined` is widened to `IngestError` by hand. A
-diverted element and a failed pipeline then share one channel, told apart by a
-predicate on the error's subtype, so a `NoCustomer` that should end the run
-keeps flowing to the consumer, and the element type at the end is still
-`Either<IngestError, Receipt>`.
-
-With `surefold-stream` the failure is on the stream, not in the element:
-`mapAsync` sees a `Customer` and passes on the ledger's own `Either`,
-`divertLefts` splits on that without a predicate, and what reaches the end is
-a `Receipt`. Pekko runs the same three stages either way; what changes is
-what the types say and what they will not let you write.
-
-### A complete pipeline
-
-Rows in, receipts to one sink, declines to another, and the run's `Exit`
-turned back into an `Either` in the handler that started it:
+Rows in, a decline from the ledger failing the run with its name, and the run's
+`Exit` read where the run was started:
 
 <!-- readme-example -->
 ```kotlin
 import dev.surefold.fail.Either
-import dev.surefold.fail.attempt
+import dev.surefold.stream.Exit
+import dev.surefold.stream.Forks
 import dev.surefold.stream.Stream
-import dev.surefold.stream.awaitExit
-import dev.surefold.stream.divertLefts
+import dev.surefold.stream.absolve
 import dev.surefold.stream.from
 import dev.surefold.stream.mapAsync
 import dev.surefold.stream.mapOrFail
 import dev.surefold.stream.run
-import dev.surefold.stream.runWith
-import org.apache.pekko.Done
-import org.apache.pekko.actor.ActorSystem
-import org.apache.pekko.stream.javadsl.Sink
+import dev.surefold.stream.runCollect
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -776,32 +665,33 @@ class Ledger {
         CompletableFuture.completedFuture(Either.Right(Receipt(customer.id)))
 }
 
-val system: ActorSystem = ActorSystem.create("ingest")
 val ledger = Ledger()
 val rows = listOf(Row(1, "ada"), Row(2, "grace"), Row(3, null))
 
-// Where a decline goes and where a receipt goes: two sinks with names, rather than a decider that drops one.
-val declinedSink = Sink.foreach<Declined> { declined -> println("declined ${declined.id}") }
-val receiptSink = Sink.foreach<Receipt> { receipt -> println("receipt ${receipt.id}") }
+val settled: CompletionStage<Exit<IngestError, List<Receipt>>> =
+    Stream.from(rows)                                                  // Stream<Nothing, Row>
+        .mapOrFail { row ->                                            // Stream<IngestError, Customer>
+            Customer(row.id, row.customer ?: fail(NoCustomer(row.id)))
+        }
+        .mapAsync(4) { customer -> ledger.settle(customer) }            // up to four stages at once, in order
+        .absolve()                                                     // a Left fails the run: Declined is an IngestError
+        .runCollect()                                                  // Run<IngestError, List<Receipt>>
+        .run(Forks())
 
-val settled: Either<IngestError, Done> = attempt {
-    awaitExit(
-        Stream.from(rows)                                              // Stream<Nothing, Row>
-            .mapOrFail { row ->                                        // Stream<IngestError, Customer>
-                Customer(row.id, row.customer ?: fail(NoCustomer(row.id)))
-            }
-            .mapAsync(4) { customer -> ledger.settle(customer) }        // up to four stages at once, in order
-            .divertLefts(to = declinedSink)                            // Stream<IngestError, Receipt>
-            .runWith(receiptSink)                                      // Run<IngestError, Done>
-            .run(system),                                              // CompletionStage<Exit<IngestError, Done>>
-    )                                                                  // Done → the value, Failed → fail, Died → throw
+fun report(exit: Exit<IngestError, List<Receipt>>): String = when (exit) {
+    is Exit.Done -> "${exit.value.size} receipts"
+    is Exit.Failed -> "stopped at ${exit.error}"                       // NoCustomer(3): row 3 has no customer
+    is Exit.Died -> "died: ${exit.cause}"
 }
 ```
 
-`awaitExit` waits for the run inside a `Fail`: `Done` is the value, `Failed`
-fails, and `Died` throws. It waits through `surefold-pekko`'s
-[`await`](core.md#running-forks-on-pekko), so an interrupt cancels the run
-rather than abandoning it.
+## On Pekko Streams
+
+`surefold-stream-pekko` is a backend and a typed layer over Pekko's own API: the
+way in from a Pekko `Source`, `runWith(sink)`, `divertLefts(to = sink)` for a
+second sink, `awaitExit`, and the same ingest written against Pekko's `javadsl`
+and against `Stream` side by side. Its guide is surefold-integrations'
+[Streams on Pekko](https://github.com/surefold/surefold-integrations/blob/main/docs/pekko.md#streams-on-pekko).
 
 ## Dependencies
 
