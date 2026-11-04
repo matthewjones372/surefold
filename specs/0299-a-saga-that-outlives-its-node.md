@@ -19,44 +19,35 @@ re-decided every time. The in-memory saga (0298) reads as plain code, but forget
 
 ## Shape
 
-In a new module, `surefold-cluster-saga`, on `surefold-cluster` and nothing else:
+In a new module, `surefold-cluster-saga`, on `surefold-cluster` and nothing else, with accounts as keyed entities
+(0300):
 
 ```kotlin
-import dev.surefold.actor.keyed
-import dev.surefold.cluster.Cluster
+import dev.surefold.actor.Keyed
+import dev.surefold.cluster.Sharded
+import dev.surefold.cluster.saga.Durable
 import dev.surefold.cluster.saga.durableSaga
 import dev.surefold.cluster.saga.entityStep
 
 data class Move(val from: String, val to: String, val pence: Long)
 
-/** An account remembers each key's answer in the same append as its events, and answers "did you apply key k?". */
-fun account(id: String) = keyed(PersistenceId("account", id), empty = 0L, codec = AccountEvents,
-    decide = { balance: Long, command: AccountMsg -> when (command) {
-        is Debit -> if (balance < command.pence) refuse(AccountRefused.Funds) else accept(Debited(command.pence))
-        is Credit -> accept(Credited(command.pence))
-    } },
-    event = { balance, e -> when (e) { is Debited -> balance - e.pence; is Credited -> balance + e.pence } },
-)
-
-fun Cluster.transfers(accounts: Sharded<AccountMsg>) =
+fun transfers(accounts: Sharded<Keyed<AccountCommand>>): Durable<Move, Refused, Receipt> =
     durableSaga("transfer", MoveCodec, RefusedCodec, ReceiptCodec) { move ->
         entityStep("debit", accounts, move.from, refused = ::asTransfer,
-            undo = { Credit(move.pence) }) { Debit(move.pence) }
+            undo = { AccountCommand.Credit(move.pence) }) { AccountCommand.Debit(move.pence) }
         entityStep("credit", accounts, move.to, refused = ::asTransfer,
-            undo = { Debit(move.pence) }) { Credit(move.pence) }
+            undo = { AccountCommand.Debit(move.pence) }) { AccountCommand.Credit(move.pence) }
         Receipt(move)
     }
 
-fun Cluster.send(id: String, move: Move) = transfers(accounts).on(this).start(id, move)  // idempotent on id
-fun Cluster.outcome(id: String) = transfers(accounts).on(this).await(id)                // Either<Refused, Receipt>
+val running = transfers(accounts).on(cluster)
+running.start("t-1", Move("a", "b", 400))      // idempotent on the id
+running.await("t-1", within = 2.seconds)       // a Durable.Outcome
 ```
 
 - **The body is plain blocking code**, the same `step(name, action, check, undo)` as 0298, with a codec for what
   the action returns, and the same rule: only a declared `fail` means a step did not happen. It runs as a
   persistent entity of its own kind, sharded by saga id.
-- **`keyed(...)`** (in `surefold-actor`) is a persistent behaviour whose commands each carry a key. It writes the
-  key and its answer, accepted or refused, in the same append as the events; a key seen before gets the same answer
-  and writes nothing; and it answers `Applied(key)` from its state.
 - **`entityStep(name, sharded, id, refused, undo) { command }`** is a `step` whose action sends the command to a
   keyed entity through a durable reliable producer (0085, 0099) and waits for its answer, whose refusal is mapped
   through `refused` into the saga's `E`, and whose `check` is the entity's `Applied(key)`. A step on our own entities
@@ -82,9 +73,7 @@ fun Cluster.outcome(id: String) = transfers(accounts).on(this).await(id)        
   can poll or wait from wherever it is. It answers a `Durable.Outcome`: `Done(value)`, `Refused(error)`, `Running`,
   `Stuck(reason)` or `Forgotten`.
 - **Codecs.** The saga's input, error and answer are read through `StateCodec`s, wrapped in `versioned` (0091)
-  when they change shape; no new codec interface. A keyed kind's wire codec is
-  `Keyed.codec(commandCodec, refusedCodec)`, which carries the key, the delivery and the reply. `keyed` takes
-  `remember` (the key window, 30 days by default) and `snapshots` as `persistent` does.
+  when they change shape; no new codec interface.
 - **surefold-bank's `Transfer` is rewritten on it**, and `SagaSuite` and `CrashSuite` pass unchanged.
 
 ## Why this shape
@@ -108,9 +97,8 @@ already talk to entities, with jobs left as a later backend.
 - [ ] **`spec-0299-cluster`** — `on(cluster)`, `start`/`await` from any node, and the `surefold-sagas` waker.
       Done when: a three-node test kills the saga's node in each gap (after `Started`, between steps, after
       `Undoing`) and every saga ends elsewhere as it would have without the crash.
-- [ ] **`spec-0299-keyed`** — `keyed` in `surefold-actor`, and `entityStep` over it.
-      Done when: a key sent twice is applied once and answered the same both times, and an `entityStep` whose
-      answer is dropped settles through `Applied` without a second command.
+- [ ] **`spec-0299-entity-step`** — `entityStep` over 0300's keyed entities.
+      Done when: an `entityStep` whose answer is dropped settles through `Applied` without a second command.
 - [ ] **`spec-0299-bank`** — surefold-bank's transfer on `durableSaga` and its accounts on `keyed`, the bank's
       README and pages updated to match, plus a `docs/cluster.md` section.
       Done when: `SagaSuite` and `CrashSuite` pass with `Transfer.kt` deleted and `Account.kt` on `keyed`.
@@ -137,10 +125,9 @@ already talk to entities, with jobs left as a later backend.
 4. **Keep `await` for a finished saga forever?** Answered (maintainer, 2026-11-04): until its events are pruned
    (0076), then `Forgotten`, never "not found". A pruned saga keeps a snapshot of its ending, so `start` with its
    id is still refused and an old transfer can't run again. Audit belongs in a read model (0075).
-5. **`entityStep` and `keyed` here or in a spec of their own?** Answered (maintainer, 2026-11-04): here, as
-   `spec-0299-keyed`, because the bank rewrite that proves this spec uses them for both steps.
-6. **How long does a `keyed` entity remember a key?** Answered (maintainer, 2026-11-04): a window per kind,
-   30 days by default, dropped at a snapshot (0076). `resume` refuses a saga stuck for longer than the window of
-   any kind it sends to, so a forgotten key can't be sent again.
+5. **`entityStep` and `keyed` here or in a spec of their own?** Answered (maintainer, 2026-11-04): `entityStep`
+   here; `keyed` split out as 0300, which this spec builds on.
+6. **How long does a `keyed` entity remember a key?** Moved to 0300. Here: `resume` refuses a saga stuck for
+   longer than the `remember` window of any kind it sends to, so a forgotten key can't be sent again.
 7. **Who wakes a saga whose node died while no answer was in flight?** Answered (maintainer, 2026-11-04): a
    `surefold-sagas` singleton, as `surefold-producers` does for outboxes (0099), not the service.
