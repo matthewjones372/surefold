@@ -18,7 +18,7 @@ Add this public function in surefold-tenancy-crypto-aws and reuse it in the exis
 owned key-operations Resource factory:
 
 ```kotlin
-import io.github.matthewjones372.surefold.tenancy.crypto.aws.borrowedAwsCredentialsProvider
+import dev.surefold.tenancy.crypto.aws.borrowedAwsCredentialsProvider
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider
 
 fun clientCredentials(owner: AwsCredentialsProvider): AwsCredentialsProvider =
@@ -43,9 +43,9 @@ No source correction needs porting. Existing feature branches remain unchanged.
 
 ## Stack
 
-- [ ] **`codex/kms-borrowed-credentials-main-spec`** — this additive contract only, on main.
+- [x] **`codex/kms-borrowed-credentials-main-spec`** — this additive contract only, on main.
       Done when: independently reviewed spec merged to main; SpecsSuite/main CI green.
-- [ ] **`codex/kms-borrowed-credentials`** — on87c with the approved main spec: expose/reuse
+- [x] **`codex/kms-borrowed-credentials`** — on87c with the approved main spec: expose/reuse
       the view, tests and module docs.
       Done when: lazy forwarding, same identity/failure, refreshing values and actual
       SDK client-close retention tests pass; existing operations/resources stay green.
