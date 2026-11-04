@@ -2,7 +2,6 @@ package dev.surefold.app.pekko
 
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeEmpty
-import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldNotBeEmpty
 import dev.surefold.assert.shouldNotBeNull
 import dev.surefold.assert.withClue
@@ -12,20 +11,17 @@ import org.junit.jupiter.api.io.TempDir
 import java.io.File
 
 /**
- * The complete examples in `docs/core.md`, `docs/observability.md`, `docs/testing.md`, `docs/arrow.md`,
- * `docs/flags.md` and the README's suite, each compiled on its own: this module's test classpath holds the core,
- * surefold-cache, surefold-pekko, surefold-junit, surefold-arrow and surefold-openfeature, which is all they use.
+ * The complete examples in `docs/observability.md`, `docs/arrow.md` and `docs/flags.md`, each compiled on its own: this
+ * module's test classpath holds the core, surefold-pekko, surefold-arrow and surefold-openfeature, which is all they
+ * use. `docs/core.md`, `docs/testing.md` and the README are compiled in surefold-guides, against the core alone.
  */
 class CoreGuideTest {
 
     private val pages =
         listOf(
-            "docs/core.md" to "core",
             "docs/observability.md" to "observability",
-            "docs/testing.md" to "testing",
             "docs/arrow.md" to "arrow",
             "docs/flags.md" to "flags",
-            "README.md" to "readme",
         )
 
     @TempDir
@@ -58,44 +54,6 @@ class CoreGuideTest {
             }
             marked.forEach { (marker, source) -> withClue("$path $marker") { errors(source).shouldBeEmpty() } }
         }
-    }
-
-    @Test
-    fun `the core guide demonstrates each cache retention choice`() {
-        val examples = fences("docs/core.md", "core")
-        listOf("core-cache-zero", "core-cache-infinite", "core-cache-finite").forEach { marker ->
-            withClue("the retention guide needs a compiled example for $marker") {
-                examples.keys shouldContain marker
-            }
-        }
-    }
-
-    @Test
-    fun `the core guide demonstrates explicit awaited cache release`() {
-        withClue("the release guide needs a compiled resource example") {
-            fences("docs/core.md", "core").keys shouldContain "core-cache-release"
-        }
-    }
-
-    @Test
-    fun `the core guide demonstrates a nontransactional ownership boundary`() {
-        fences("docs/core.md", "core").keys shouldContain "core-transaction-boundary"
-    }
-
-    @Test
-    fun `the core guide demonstrates a saga`() {
-        fences("docs/core.md", "core").keys shouldContain "core-saga"
-    }
-
-    @Test
-    fun `the testing guide tells a story in a suite`() {
-        fences("docs/testing.md", "testing").keys shouldContain "testing-junit-story"
-    }
-
-    @Test
-    fun `an example that no longer matches the library fails to compile`() {
-        val forking = fences("docs/core.md", "core").getValue("core-forking")
-        errors(forking.replace("parZip(", "parZipped(")).shouldNotBeEmpty()
     }
 
     @Test

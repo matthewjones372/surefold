@@ -807,7 +807,7 @@ duplicated, delayed and crashed messages. See
 ## Surefold's own documentation tests
 
 The guides' examples are compiled against the library by tests that read the
-Markdown files: `ReadmeExampleSuite`, `CoreGuideTest`, `CookbookTest`,
+Markdown files: `CoreGuidesSuite`, `ReadmeExampleSuite`, `CookbookTest`,
 `ActorsGuideTest` and `GuideExampleTest`. A fence marked with an HTML comment
 such as `<!-- actors-actor -->` is extracted, compiled, and in some cases run,
 so a stale example fails the build.

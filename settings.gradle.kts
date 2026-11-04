@@ -24,6 +24,7 @@ module("core", "surefold-junit")
 module("core", "surefold-junit-testkit")
 module("core", "surefold-structured")
 module("core", "surefold-cache")
+module("core", "surefold-guides")
 
 module("stream", "surefold-stream")
 module("stream", "surefold-stream-pekko")
