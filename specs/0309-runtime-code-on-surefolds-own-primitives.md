@@ -62,8 +62,8 @@ and (b) is what `Keyed.kt` already got wrong. It costs one binding per activatio
       Done when: the rule lists neither file.
 - [ ] **`spec-0309-app`** — `surefold-app-actor`'s holder and `surefold-app-cluster`'s downed thread.
       Done when: the same, for those files.
-- [ ] **`spec-0309-integrations`** — `Keeper` and `Visibility` (question 3).
-      Done when: the same, for those files.
+- **`Keeper` and `Visibility`** are changed in `surefold-integrations` once 0302 has moved them (question 3).
+      Until then the rule lists both files with that reason.
 
 ## Acceptance
 
@@ -75,12 +75,14 @@ grep -n -A30 "ForbiddenMethodCall" config/detekt/detekt.yml
 
 ## Open questions
 
-1. **Bind locals in the runtime (a), or capture them per module (b)?** Recommended: (a). If a binding per
-   activation shows in `LocalsBenchmark`'s ping-pong, bind only when the scope has a binding that differs from the
-   default.
+1. **Bind locals in the runtime (a), or capture them per module (b)?** Recommended: (a). If a binding per activation
+   shows in `LocalsBenchmark`'s ping-pong, bind only when the scope has a binding that differs from the default.
+   Answered (maintainer, 2026-11-04), as recommended.
 2. **Is `AtomicReference` in the rule too?** Recommended: no. It is right in many hot paths, and `Shared` is a
-   transaction. Review keeps it to hot paths instead.
+   transaction. Review keeps it to hot paths instead. Answered (maintainer, 2026-11-04), as recommended.
 3. **Kafka and SQS:** change them here before 0302 moves them, or in `surefold-integrations` after? Recommended:
-   after, so the move carries no unreviewed change. The entry is then that repository's to number.
+   after, so the move carries no unreviewed change. The entry is then that repository's to number. Answered
+   (maintainer, 2026-11-04), as recommended.
 4. **A rule for locals read in a turn,** such as `clock.get()` inside a `behaviour` lambda? Recommended: no, if (a)
-   lands. Under (b) it would be needed, and detekt can't see a lambda's thread.
+   lands. Under (b) it would be needed, and detekt can't see a lambda's thread. Answered (maintainer, 2026-11-04), as
+   recommended.
