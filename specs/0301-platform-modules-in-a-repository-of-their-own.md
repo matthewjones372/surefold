@@ -76,9 +76,10 @@ checkout but none of the smaller build or reading. **Alternative:** split by mod
 - [ ] **`spec-0301-release`** (new repository) — the snapshot workflow, and a release workflow kept ready but unused
       until the first release (question 5).
       Done when: a snapshot of every moved artifact is published from there.
-- [ ] **`spec-0301-flags`** (here and `surefold-platform`) — the Postgres section of `flags.md`, flags per tenant
-      on `surefold-openfeature-postgres`, moves to a platform guide with its compiled fence; `CoreGuideTest`
-      stops depending on `surefold-openfeature-postgres`.
+- [ ] **`spec-0301-flags`** (`surefold-platform`, then here) — the Postgres section of `flags.md`, flags per tenant
+      on `surefold-openfeature-postgres`, moves to a platform guide with its compiled fence, and `CoreGuideTest`
+      stops depending on `surefold-openfeature-postgres`. It comes before 0302's `spec-0302-guides-out`, which
+      takes the rest of `flags.md` to `surefold-integrations`, since integrations cannot depend on platform.
       Done when: no guide here names a platform module, and the section compiles in `surefold-platform`.
 - [ ] **`spec-0301-remove`** (here) — delete `data/`, `surefold-bank`, `surefold-jobs-load`, `surefold-app-flyway`
       and the moved tests, and add the pointers.
