@@ -110,8 +110,8 @@ already talk to entities, with jobs left as a later backend.
 
 ## Open questions
 
-1. **Run steps in `parZip` branches in a durable saga?** Recommended: not in this spec. Replaying branches needs
-   per-branch journals, and the first users are sequential.
+1. **Run steps in `parZip` branches in a durable saga?** Answered (maintainer, 2026-11-04): not in this spec.
+   Replaying branches needs per-branch journals, and the first users are sequential; a later spec adds them.
 2. **A recovered body that calls a different step than the journal says:** stop as `Diverged`, or carry on from the
    first difference? Recommended: stop, with both names in the error. Carrying on silently skips work.
 3. **Reading the clock or a random id in the body** gives a different answer on replay. Make them steps
