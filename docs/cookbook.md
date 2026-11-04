@@ -28,6 +28,7 @@ and the same-cache layer reentry restriction.
 | catch one throwable type onto the left and rethrow the rest (unreleased) | [`Either.catchOrThrow`](core.md#catching-one-type) | `surefold` |
 | recover selected typed failures without rethrowing unmatched errors | [`Either.recover`](core.md) | `surefold` (from 0.18.0) |
 | refuse retryable ownership boundaries | [`checkNotInTransaction`](core.md#nontransactional-ownership-boundaries) | `surefold` |
+| finish a shutdown wait despite interruption, or clean up after any throw (unreleased) | [`draining`, `uninterruptible`, `onThrow`, `checkInterrupted`](core.md#interruption-preserving-cleanup) | `surefold` |
 | run a call captured as `Either` under a policy, with chosen lefts counted as failures (unreleased) | [`Policy.guardResult`](core.md#results-kept-as-values) | `surefold` |
 | share one in-flight block per key | `SingleFlight.run` | `surefold` |
 | record a quiet final ownership decision | [`HandoffDecision.tryComplete` / `peek`](core.md#quiet-handoff-decisions) | `surefold` |

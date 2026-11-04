@@ -85,6 +85,11 @@ class CoreGuidesSuite {
     }
 
     @Test
+    fun `the core guide demonstrates interruption-preserving cleanup`() {
+        fences("docs/core.md", "core").keys shouldContain "core-draining"
+    }
+
+    @Test
     fun `the testing guide tells a story in a suite`() {
         fences("docs/testing.md", "testing").keys shouldContain "testing-junit-story"
     }

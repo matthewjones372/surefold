@@ -11,6 +11,10 @@ dependencies {
     testImplementation(project(":surefold-app"))
     // For the core guide's coroutine examples, which compile against kotlinx's own `await`.
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    // For the stream guide and the README's quick start: a description, and the three backends that stay in core.
+    testImplementation(project(":surefold-stream-forks"))
+    testImplementation(project(":surefold-stream-actors"))
+    testImplementation(project(":surefold-stream-test"))
     // For the testing guide's suites, which compile against surefold-junit and surefold-test.
     testImplementation(project(":surefold-test"))
     testImplementation(project(":surefold-assert"))
@@ -20,6 +24,7 @@ dependencies {
 val repoRoot = rootProject.projectDir.absolutePath
 val guides = files(
     rootProject.layout.projectDirectory.file("docs/core.md"),
+    rootProject.layout.projectDirectory.file("docs/stream.md"),
     rootProject.layout.projectDirectory.file("docs/testing.md"),
     rootProject.layout.projectDirectory.file("docs/cookbook.md"),
     rootProject.layout.projectDirectory.file("README.md"),

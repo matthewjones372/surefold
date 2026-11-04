@@ -426,6 +426,54 @@ suppressed.
 In an application, the graph in [`surefold-app`](app.md) uses the same `install`
 for each node, and releases nodes in reverse dependency order.
 
+### Interruption-preserving cleanup
+
+`draining { cleanup() }` clears an existing interrupt for cleanup and restores it when the block returns,
+throws or returns non-locally. `uninterruptible { waitForCompletion() }` retries only `InterruptedException`
+and restores interruption after the wait finishes. Its block must be safe to repeat after interruption:
+use it for joins and completion waits, not ordinary work. `onInterrupted = { cause -> ... }` may observe
+an interrupted wait; an observer failure propagates with interruption restored. A pending interrupt is
+cleared on entry, so the first wait runs, and is handed back when the wait ends.
+
+`uninterruptible` is for waits known to end soon: by design it outlasts the interrupt a scope or `timeout`
+cancels with. The wait itself must survive an interrupt. Surefold's `Future.await()` cancels the future
+when interrupted, so a retry would only see that cancellation; wait on something repeatable instead, such
+as `Promise.await()`, a latch, `Thread.join()` or the JDK's `Future.get()`.
+
+`onThrow(action = { cause -> ... }) { acquire() }` observes every escaping throw, including cancellation,
+fatal failure and a `fail` unwinding, for partial-acquisition cleanup. It rethrows the original object and
+suppresses any observer failure onto it, setting the interrupt flag again if that failure was an interrupt.
+The observer cannot return non-locally and recover the failure. The cause may be the signal of a `fail`
+unwinding, which belongs to its own thread: wrap it before handing it to a promise another thread awaits. `checkInterrupted()` is a cancellation
+checkpoint for synchronous adapters; it throws and leaves the interrupt flag set. Prefer `Resource` and `use`
+for normal resource ownership, and `Either.catch` or `recover` for ordinary failure values.
+Unreleased: in the snapshots after 0.18.0, not in 0.18.0 itself.
+
+<!-- core-draining -->
+```kotlin
+import dev.surefold.checkInterrupted
+import dev.surefold.draining
+import dev.surefold.onThrow
+import dev.surefold.uninterruptible
+import java.util.concurrent.CompletableFuture
+
+class Worker(private val stopped: CompletableFuture<Unit>) {
+    fun stop() = Unit
+
+    fun close() {
+        // finishes the shutdown wait even when the closing thread was interrupted, then hands the interrupt back
+        draining { stop() }
+        uninterruptible { stopped.get() }
+    }
+}
+
+fun started(ready: CompletableFuture<Worker>, stopped: CompletableFuture<Unit>): Worker =
+    onThrow({ cause -> ready.completeExceptionally(IllegalStateException("the worker did not start", cause)) }) {
+        checkInterrupted()
+        Worker(stopped).also { ready.complete(it) }
+    }
+```
+
 ## Sagas
 
 A saga changes several outside systems one step at a time, and undoes the steps
