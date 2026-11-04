@@ -103,7 +103,7 @@ fun timeout(duration: Duration): Aspect =
             raceN(test) {
                 clock.get().sleep(duration)
                 ThreadDump.toStderr("a test timed out after $duration")
-            }.fold({ it }, { throw TimeoutException("no answer within $duration") })
+            }.fold({ }, { throw TimeoutException("no answer within $duration") })
         },
         timed = true,
     )
