@@ -13,8 +13,8 @@ Facts worth having before anything else:
   `https://central.sonatype.com/repository/maven-snapshots/`.
 - Experimental: everything is tested, and the API can change in any `0.x`
   release. Pin an exact version.
-- Each module brings at most the one external library or SDK it integrates,
-  so depend only on the modules the code uses.
+- The modules here bring nothing beyond the JDK and Kotlin. A module that brings
+  one external library is in surefold-integrations, so depend only on the ones the code uses.
 - Blocking is fine: every fork is a virtual thread. Do not reach for
   `suspend`, a dispatcher or a `CompletableFuture` where a surefold call exists.
 - A service is a `Module` (a dependency graph) run by `SurefoldApp` and `runApp`.
@@ -41,16 +41,12 @@ Facts worth having before anything else:
 - `surefold-compiler`: a K2 checker for surefold's structure rules; a `Deferred`,
   `Channel` or `Scope` returned from a scope or kept in a property fails to compile.
   Applied by the Gradle plugin `dev.surefold.compiler`, in `surefold-app-gradle`.
-- `surefold-pekko`: a Pekko dispatcher as the executor, and Pekko's Scala futures
-  awaited from a fork.
 - `surefold-cache`: `Cache(ttl, stale) { lookup }`, one lookup per key however many ask,
   a ttl read from each result so failures are kept too, and the last good value while the source fails.
 - `surefold-stream`: `Stream<E, A>` as a description, with its failure in the type
   and no backend named.
 - `surefold-stream-forks`: runs a `Stream` as a pull loop on one virtual thread;
   the usual backend.
-- `surefold-stream-pekko`: runs a `Stream` on Pekko Streams, with the operators
-  that take Pekko's types.
 - `surefold-stream-actors`: runs a `Stream` on `surefold-actor`, an actor per run.
 - `surefold-stream-test`: `TestStreams` and `TestClock`, every stage on the calling
   thread and time the test moves.
@@ -62,83 +58,35 @@ Facts worth having before anything else:
 - `surefold-app`: an application as a value: `single`, `singleOf`, `closingOf`,
   `boundTo`, `overriding`, `subgraph`, probes, health, `testApp`, `SurefoldApp`,
   `awaitShutdown`.
-- `surefold-app-typesafe`: a HOCON section as a node (`config`), every fault at
-  once, `secret`, `Config.choosing`, `overridingConfig`, and where each setting
-  came from (`origins`).
-- `surefold-app-kotlinx`: a HOCON section read from its `@Serializable` class,
-  `config<Settings>("section")` with no block.
-- `surefold-app-liquibase`: a changelog as a node (`migrations`); readers take
-  `surefold-app`'s `Migrated`.
-- `surefold-app-openfeature`: `openFeature { provider }`, the provider as a node; a
-  `Client` node and `Flag.value()` read it, and readiness follows it.
-- `surefold-app-openfeature-flagd`: `flagdFlags("flags")`, flags in flagd's schema
-  as a HOCON section, evaluated in-process; brings gRPC and netty.
-  `flagdFlags("flags", declared)` also checks every variant against its declared `Flag` at start.
-- `surefold-actor-pekko`: `ref.ask(system, within) { replyTo -> … }`, asking a Pekko typed actor on the
-  calling virtual thread; `receive { message -> when (message) { … } }`, `same()`, `stopped()` and
-  `replyTo.answer(reply)` to write one; `context.pipeToSelf(::Loaded) { … }` runs a `Fail<E>` block on a virtual
-  thread and sends its `Either` back as a message. No wiring graph.
-- `surefold-app-pekko`: a Pekko typed actor as a node, keyed by its `ActorRef<T>`.
 - `surefold-app-actor`: a `surefold-actor` scope as a node, and an actor as a node.
-- `surefold-app-cluster`: a `surefold-cluster` membership as a node, joined as a HOCON
-  section says.
 - `surefold-app-gradle`: the Gradle plugin `dev.surefold.wiring`,
   which checks and draws every graph as it compiles, and `dev.surefold.compiler`,
   which applies `surefold-compiler`. It is on Maven Central,
   not the Plugin Portal, so `pluginManagement` needs `mavenCentral()`.
 - `surefold-app-compiler`: the K2 checker behind it, which shows the same faults
   and warnings in the editor.
-- `surefold-otel`: an OpenTelemetry `Context` that crosses a fork; on the classpath
-  and nothing else.
-- `surefold-jdbc-otel`: JDBC query tracing with a privacy boundary before OpenTelemetry observers.
-- `surefold-openfeature`: `evaluatedFor(key, …) { }` and `useSurefold()`, so a flag read
-  in a fork or an actor handler answers for the request that started it.
-- `surefold-arrow`: Surefold's `Either`, `NonEmptyList` and `Fail` to and from
-  Arrow's: `toArrow()`, `toSurefold()`, `surefold { }` and `arrow { }`.
 - `surefold-assert`: checks for tests: `shouldBe`, `shouldBeRight` and `shouldBeLeft`
   for Surefold's `Either`, the string, collection and map matchers, and `withClue`; a
   failure names the test's line and its source.
-- `surefold-slf4j`: surefold's log lines through SLF4J, annotations in the MDC; on the
-  classpath and nothing else.
-- `surefold-micrometer`: surefold's counters, gauges and timers on Micrometer's
-  registry; on the classpath and nothing else.
-- `surefold-kafka`: Kafka as a `Stream` on any backend: commit after the work,
-  dead letters, transactions.
-- `surefold-kafka-pekko`: `surefold-kafka` through Pekko's Kafka connector.
-- `surefold-sqs`: SQS as a `Stream` on any backend: delete after the work, visibility
-  renewed while a message is handled, sends with per-message outcomes.
-- `surefold-sns`: SNS publishing from a `Stream` on any backend, passing an element on
-  once SNS has it; from an SQS queue, each message deleted only after its publish.
-- `surefold-sns-test`: SNS topics in the test JVM that deliver to `surefold-sqs-test`'s
-  queues, raw or in SNS's envelope, for a service's own tests.
-- `surefold-sqs-pekko`: `surefold-sqs` through Pekko's SQS connector: parallel receives
-  and batched asynchronous deletes.
-- `surefold-sqs-test`: an SQS queue in the test JVM on ElasticMQ for a service's own
-  tests, with helpers to create, send, receive and count.
-- `surefold-otel-test`: a tracer that keeps the spans it ends, for a service's own
-  tests, without displacing `surefold-otel`'s context storage.
-- `surefold-kafka-test`: a Kafka broker in the test JVM for a service's own tests,
-  with helpers to send, read and see what a group committed.
 - `surefold-actor`: an actor as a value, taking one turn per message on virtual
   threads, with no actor system.
 - `surefold-actor-journal-jdbc`: `surefold-actor`'s journal and snapshots on JDBC.
-Jobs, files, tenancy and its keys, auth, idempotency, rate limits, Postgres notifications and the caches on them,
-per-tenant flags, Flyway migrations and the example bank are in
-[surefold-platform](https://github.com/surefold/surefold-platform) (spec 0301).
 - `surefold-actor-projection`: a journal as a `Stream`, for a read model that
   resumes where it left off.
 - `surefold-actor-remote`: `surefold-actor` across nodes over one TCP connection per
   pair.
-- `surefold-actor-remote-protobuf`: remote messages in Protobuf.
-- `surefold-actor-remote-avro`: remote messages in Avro.
-- `surefold-actor-remote-kotlinx`: remote messages from `@Serializable` classes.
 - `surefold-cluster`: gossip membership, discovery and downing with no
   coordinator.
 - `surefold-cluster-saga`: durable sagas, journalled step by step and replayed
   after a crash.
-- `surefold-cluster-kubernetes`: cluster seeds from the pods API, and a Lease.
-- `surefold-cluster-aws`: cluster seeds from Cloud Map or ECS, and a DynamoDB
-  lease.
+
+Jobs, files, tenancy and its keys, auth, idempotency, rate limits, Postgres notifications and the caches on them,
+per-tenant flags, Flyway migrations and the example bank are in
+[surefold-platform](https://github.com/surefold/surefold-platform) (spec 0301).
+Every module that wraps a library outside the JDK and Kotlin (Pekko, Kafka, SQS, SNS, Typesafe Config,
+kotlinx configuration, Liquibase, OpenFeature, the remote codecs, cluster discovery on Kubernetes and AWS, SLF4J,
+Micrometer, OpenTelemetry and Arrow) is in [surefold-integrations](https://github.com/surefold/surefold-integrations)
+(spec 0302). Coordinates are unchanged.
 
 ## What to reach for
 
@@ -148,10 +96,10 @@ per-tenant flags, Flyway migrations and the example bank are in
 | a value that must be closed, and is `AutoCloseable` | `closingOf(::Thing)` |
 | a value given back some other way | `singleOf(::Thing, Thing::stop)` |
 | `main` | `object App : SurefoldApp<Root>()` and `exitProcess(runApp(App).code)`; `run` parks on `awaitShutdown()` by default |
-| configuration | `config<Settings>("section") { … }` from `surefold-app-typesafe` |
+| configuration | `config<Settings>("section") { … }` from surefold-integrations' `surefold-app-typesafe` |
 | a password or token | `secret("password")`, never `string(…)` |
 | a setting that picks a module | `choice<Settings, Provided> { … }` inside the graph, or `conf.choosing("section", read) { … }` |
-| migrations | `migrations("db/changelog.sql")`, then take a `Migrated` |
+| migrations | `migrations("db/changelog.sql")` from surefold-integrations' `surefold-app-liquibase`, then take a `Migrated` |
 | readiness | `.probe(name, timeout, attempts, interval) { … }` |
 | background work on an interval | `Stream.tick(every)` started on the graph's `StreamBackend` |
 | a call to something unreliable | `policy("…") { deadline(…); retry(…); attemptTimeout(…) }` |
@@ -173,9 +121,9 @@ per-tenant flags, Flyway migrations and the example bank are in
 
 - [README](https://github.com/surefold/surefold-core/blob/main/README.md): what Surefold is, a first example, and where to go next.
 - [Modules](https://github.com/surefold/surefold-core/blob/main/docs/modules.md): every module, what it adds, maturity, performance and limitations.
-- [Core](https://github.com/surefold/surefold-core/blob/main/docs/core.md): forks, cancellation, errors, resources, schedules, timeouts, policies, context, Pekko dispatchers.
+- [Core](https://github.com/surefold/surefold-core/blob/main/docs/core.md): forks, cancellation, errors, resources, schedules, timeouts, policies, context.
 - [Applications](https://github.com/surefold/surefold-core/blob/main/docs/app.md): the graph, starting and stopping, probes, testing, the Gradle and compiler plugins.
 - [Application cookbook](https://github.com/surefold/surefold-core/blob/main/docs/cookbook.md): one recipe per task, most compiled by a test.
-- [Streams](https://github.com/surefold/surefold-core/blob/main/docs/stream.md), [Kafka](https://github.com/surefold/surefold-core/blob/main/docs/kafka.md), [SQS](https://github.com/surefold/surefold-core/blob/main/docs/sqs.md), [SNS](https://github.com/surefold/surefold-core/blob/main/docs/sns.md), [Actors](https://github.com/surefold/surefold-core/blob/main/docs/actors.md), [Remoting and clusters](https://github.com/surefold/surefold-core/blob/main/docs/cluster.md), [Jobs](https://github.com/surefold/surefold-platform/blob/main/docs/jobs.md), [Migrations on Flyway](https://github.com/surefold/surefold-platform/blob/main/docs/flyway.md), [Files](https://github.com/surefold/surefold-platform/blob/main/docs/files.md), [Tenancy](https://github.com/surefold/surefold-platform/blob/main/docs/tenancy.md), [Idempotency and rate limits](https://github.com/surefold/surefold-platform/blob/main/docs/http-stores.md), [Sign-in and sessions](https://github.com/surefold/surefold-platform/blob/main/docs/auth.md).
-- [Observability](https://github.com/surefold/surefold-core/blob/main/docs/observability.md) and [Testing](https://github.com/surefold/surefold-core/blob/main/docs/testing.md).
-- [Feature flags](https://github.com/surefold/surefold-core/blob/main/docs/flags.md): `Flag`, `evaluatedFor`, `featureClient`.
+- [Streams](https://github.com/surefold/surefold-core/blob/main/docs/stream.md), [Kafka](https://github.com/surefold/surefold-integrations/blob/main/docs/kafka.md), [SQS](https://github.com/surefold/surefold-integrations/blob/main/docs/sqs.md), [SNS](https://github.com/surefold/surefold-integrations/blob/main/docs/sns.md), [Actors](https://github.com/surefold/surefold-core/blob/main/docs/actors.md), [Remoting and clusters](https://github.com/surefold/surefold-core/blob/main/docs/cluster.md), [Jobs](https://github.com/surefold/surefold-platform/blob/main/docs/jobs.md), [Migrations on Flyway](https://github.com/surefold/surefold-platform/blob/main/docs/flyway.md), [Files](https://github.com/surefold/surefold-platform/blob/main/docs/files.md), [Tenancy](https://github.com/surefold/surefold-platform/blob/main/docs/tenancy.md), [Idempotency and rate limits](https://github.com/surefold/surefold-platform/blob/main/docs/http-stores.md), [Sign-in and sessions](https://github.com/surefold/surefold-platform/blob/main/docs/auth.md).
+- [Observability](https://github.com/surefold/surefold-integrations/blob/main/docs/observability.md) and [Testing](https://github.com/surefold/surefold-core/blob/main/docs/testing.md).
+- [Feature flags](https://github.com/surefold/surefold-integrations/blob/main/docs/flags.md): `Flag`, `evaluatedFor`, `featureClient`.

@@ -1,3 +1,0 @@
-Stream.from                                           731 ns waiting · 100000 out
-groupedWithin(100, 1s)                                1.7 µs waiting · 1000 out
-runFold                 GroupedWithinBenchmark.kt:28

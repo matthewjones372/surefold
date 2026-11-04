@@ -13,8 +13,9 @@ threads, with ordinary blocking code and no coroutines. Its core gives you
 structured concurrency, resource safety, retries and timeouts, with typed
 errors in Surefold's own `Fail` and `Either`. Further modules build on that core:
 an application wired as a checked dependency graph, typed streams, actors,
-persistence, clustering, Kafka, and integrations for logging, metrics and
-tracing.
+persistence and clustering, on the JDK and Kotlin alone. The modules that wrap
+another library (Pekko, Kafka, SQS, Typesafe Config, logging, metrics, tracing
+and more) are in [surefold-integrations](https://github.com/surefold/surefold-integrations).
 
 Each module is a separate dependency. You can use the core on its own, or add
 only the pieces a service needs.
@@ -73,8 +74,8 @@ The core depends on the JDK and the Kotlin standard library, and nothing
 else. Its combinators have the same names and shapes as
 `arrow-fx-coroutines`, so moving a function across usually means removing
 `suspend`, writing `attempt` for `either` and `fail` for `raise`, and changing
-an import. [Coming from Arrow](docs/arrow.md) has the rest, and
-`surefold-arrow` converts between the two for code that keeps both.
+an import. [Coming from Arrow](https://github.com/surefold/surefold-integrations/blob/main/docs/arrow.md) has the rest, and
+surefold-integrations' `surefold-arrow` converts between the two for code that keeps both.
 
 ## A first look
 
@@ -104,8 +105,7 @@ running behind it.
 **Concurrent, resource-safe code.** [`surefold`](docs/core.md) provides `parZip`,
 `parMap`, `traverse`, `parTraverse`, `raceN`, `scope { async { } }`, `resourceScope`, `Schedule`,
 `timeout`, `policy`, which combines a deadline, retries, a circuit breaker,
-a rate limiter and a bulkhead, and `transact` over `Shared` values. `surefold-pekko` lets those forks run on a Pekko
-dispatcher.
+a rate limiter and a bulkhead, and `transact` over `Shared` values.
 
 [Awaited cache release](docs/core.md#cache-release) finishes work before dependencies are released.
 Available from 0.17.0.
@@ -116,13 +116,14 @@ graph is checked before anything is constructed, started in dependency order
 with independent nodes in parallel, waits for readiness probes, and is released
 in reverse order on shutdown. Tests can start a subgraph with fakes. A Gradle
 plugin and a K2 compiler plugin report a broken graph at build time and in the
-editor. Integrations make HOCON configuration, Liquibase migrations, Pekko
-actors and Surefold actors into nodes.
+editor. `surefold-app-actor` makes Surefold actors into nodes, and
+[surefold-integrations](https://github.com/surefold/surefold-integrations) does the same for HOCON configuration,
+Liquibase migrations and Pekko actors.
 
 **Typed streams.** [`surefold-stream`](docs/stream.md) is `Stream<E, A>`, a
 pipeline whose declared failure is part of its type. A stream is a description,
-and you choose where it runs: a pull loop on a virtual thread, Pekko Streams,
-Surefold actors, or a test backend with a clock the test controls. Bytes travel
+and you choose where it runs: a pull loop on a virtual thread, Surefold
+actors, or a test backend with a clock the test controls. Bytes travel
 as `ByteChunk`s, read from an `InputStream` and written to an `OutputStream`.
 
 **Actors, persistence and clusters.** [`surefold-actor`](docs/actors.md) runs
@@ -132,17 +133,13 @@ event-sourced persistence and a deterministic test runtime.
 mutual TLS, gossip membership, sharded entities, singletons, reliable delivery,
 topics, a JDBC journal and read-model projections.
 
-**Kafka.** [`surefold-kafka`](docs/kafka.md) reads a topic as a `Stream` on any
-backend. Offsets are committed only after the work on a record is done, and
-transactions give exactly-once output to `read_committed` readers, with
-one caveat at the end of a run that the guide describes.
-[`surefold-sqs`](docs/sqs.md) does the same for an SQS queue: a message is
-deleted only after the work on it is done, and [`surefold-sns`](docs/sns.md)
-publishes to a topic from any stream.
-
-**Observability.** Logging, metrics and tracing calls are part of the core and
-cross forks. Adding [`surefold-slf4j`, `surefold-micrometer` or `surefold-otel`](docs/observability.md)
-sends them to the backend a service already uses.
+**Kafka, SQS, SNS and observability.** In [surefold-integrations](https://github.com/surefold/surefold-integrations):
+[`surefold-kafka`](https://github.com/surefold/surefold-integrations/blob/main/docs/kafka.md) reads a topic as a `Stream` on any backend, committing only after
+the work on a record is done; [`surefold-sqs`](https://github.com/surefold/surefold-integrations/blob/main/docs/sqs.md) and
+[`surefold-sns`](https://github.com/surefold/surefold-integrations/blob/main/docs/sns.md) do the same for SQS and SNS. Logging, metrics and tracing calls are
+part of the core and cross forks, and
+[`surefold-slf4j`, `surefold-micrometer` and `surefold-otel`](https://github.com/surefold/surefold-integrations/blob/main/docs/observability.md) send them to
+the backend a service already uses.
 
 **Tests that do not wait.** [Testing utilities](docs/testing.md) include
 `TestClock`, `story { Given / When / Then }`, `eventually`, `testApp` for a
@@ -155,20 +152,18 @@ to Gradle, the IDE and CI as JUnit does.
 
 ```mermaid
 graph BT
-    surefold --> surefoldarrow[surefold-arrow]
     surefold --> app[surefold-app]
     surefold --> stream[surefold-stream]
     surefold --> actor[surefold-actor]
-    stream --> backends["surefold-stream-forks / -pekko / -actors / -test"]
+    stream --> backends["surefold-stream-forks / -actors / -test"]
     actor --> backends
-    stream --> kafka[surefold-kafka]
     actor --> remote[surefold-actor-remote]
     remote --> cluster[surefold-cluster]
     actor --> journal[surefold-actor-journal-jdbc]
     actor --> projection[surefold-actor-projection]
     stream --> projection
-    app --> appint["surefold-app-typesafe / -liquibase / -pekko / -actor / -cluster"]
-    surefold --> obs["surefold-slf4j / surefold-micrometer / surefold-otel"]
+    app --> appactor[surefold-app-actor]
+    actor --> appactor
 ```
 
 An arrow points from a module to the modules that build on it. Everything runs
@@ -177,8 +172,8 @@ coroutine dispatcher.
 
 ## Modules
 
-Each module sits in its family's folder: `core/`, `stream/`, `actor/`, `cluster/`, `app/`,
-`integrations/`, with the benchmarks in `bench/` and an example service in `examples/`.
+Each module sits in its family's folder: `core/`, `stream/`, `actor/`, `cluster/` and `app/`, with the
+benchmarks in `bench/`.
 
 The main modules, all under the group `dev.surefold`. The
 [module guide](docs/modules.md) lists every module, what each one adds to
@@ -187,25 +182,20 @@ your classpath, and which are unpublished.
 | Module | Use it for | Adds |
 |---|---|---|
 | `surefold` | forks, errors, resources, schedules, policies, shared state, context, logs and metrics ([guide](docs/core.md)) | nothing |
-| `surefold-arrow` | Surefold's `Either`, `NonEmptyList` and `Fail` to and from Arrow's ([guide](docs/arrow.md)) | `arrow-core` |
 | `surefold-app` | an application as a checked dependency graph ([guide](docs/app.md)) | nothing |
 | `surefold-stream` | `Stream<E, A>` as a description ([guide](docs/stream.md)) | nothing |
 | `surefold-stream-forks` | the stream backend on a virtual thread | nothing |
-| `surefold-stream-pekko` | the stream backend on Pekko Streams | `pekko-stream` |
 | `surefold-actor` | actors, supervision, persistence and actor tests ([guide](docs/actors.md)) | nothing |
 | `surefold-actor-remote` | actors across nodes over TCP ([guide](docs/cluster.md)) | nothing |
 | `surefold-actor-journal-jdbc` | the event journal, snapshots and offsets on JDBC ([guide](docs/cluster.md)) | nothing |
 | `surefold-cluster` | membership, sharding, singletons, reliable delivery, topics ([guide](docs/cluster.md)) | nothing |
 | `surefold-cluster-saga` | sagas journalled step by step, that end on another node after a crash ([guide](docs/cluster.md#a-saga-that-outlives-its-node)) | nothing |
-| `surefold-kafka` | Kafka as a `Stream`, producers and transactions ([guide](docs/kafka.md)) | `kafka-clients` |
-| `surefold-sqs` | SQS as a `Stream`, deleted after the work, and sends ([guide](docs/sqs.md)) | AWS SDK `sqs` |
-| `surefold-sns` | publishing to SNS from a `Stream`, per-message outcomes ([guide](docs/sns.md)) | AWS SDK `sns` |
-| `surefold-slf4j`, `surefold-micrometer`, `surefold-otel` | logs, metrics and traces to an existing backend ([guide](docs/observability.md)) | the library named |
 | `surefold-test` | `story` and `eventually` for service tests ([guide](docs/testing.md)) | nothing |
 | `surefold-junit` | suites whose tests run together, expectations as values, aspects ([guide](docs/testing.md#suites)) | `junit-platform-engine` |
 
 "Adds" is the external dependency a module brings beyond the Surefold modules it
-builds on. Each module has a `NoOtherDependenciesTest` that checks its runtime
+builds on: only test tooling here, since a runtime module that adds a library is in
+[surefold-integrations](https://github.com/surefold/surefold-integrations). Each module has a `NoOtherDependenciesTest` that checks its runtime
 classpath against that list, so a new transitive dependency fails the build.
 
 ## Status
@@ -220,7 +210,7 @@ enforces 90% line coverage. That said:
   [`surefold-bank`](https://github.com/surefold/surefold-platform/tree/main/examples/surefold-bank), an example
   application in surefold-platform, and by the related projects listed below.
 - **Maturity varies.** The core, `surefold-app` and `surefold-stream` are the most
-  established. The actor, cluster and Kafka modules are newer.
+  established. The actor and cluster modules are newer.
 - **Some numbers are provisional.** Benchmark results were measured on JDK 21
   on a shared cloud machine, and the cluster benchmarks have not been run yet.
 
@@ -418,8 +408,7 @@ diagram, and aspects such as `flaky`, `nonFlaky`, `timeout`, `tag` and
 **Using a capability**
 
 - [Core](docs/core.md): `parZip`, `scope`, cancellation, `resourceScope`,
-  `Schedule`, `timeout`, `policy`, `SurefoldLocal` and the clock, and Pekko
-  dispatchers.
+  `Schedule`, `timeout`, `policy`, `SurefoldLocal` and the clock.
 - [Applications](docs/app.md) and the [application cookbook](docs/cookbook.md),
   one compiled recipe per task: wiring, lifecycle, configuration, probes,
   migrations, actors and testing.
@@ -428,12 +417,13 @@ diagram, and aspects such as `flaky`, `nonFlaky`, `timeout`, `tag` and
   persistence and testing on one node.
 - [Remoting and clusters](docs/cluster.md): nodes, membership, sharding, a
   shared journal, read models, reliable delivery and topics.
-- [Kafka](docs/kafka.md): consuming, committing, producing and transactions.
-- [Observability](docs/observability.md): logs, metrics and traces.
+- [Pekko](https://github.com/surefold/surefold-integrations/blob/main/docs/pekko.md), [Kafka](https://github.com/surefold/surefold-integrations/blob/main/docs/kafka.md),
+  [SQS](https://github.com/surefold/surefold-integrations/blob/main/docs/sqs.md), [observability](https://github.com/surefold/surefold-integrations/blob/main/docs/observability.md) and the other
+  integrations, in surefold-integrations.
 - [Testing](docs/testing.md): the test utilities in one place, and
   `surefold-junit` suites.
-- [Feature flags](docs/flags.md): OpenFeature flags declared once, and read
-  for the request in every fork and actor.
+- [Feature flags](https://github.com/surefold/surefold-integrations/blob/main/docs/flags.md), in surefold-integrations: OpenFeature flags declared
+  once, and read for the request in every fork and actor.
 
 **Writing code with an agent.** [`llms.txt`](llms.txt) summarises what Surefold
 ships and which call to use for a task. In Claude Code, the Surefold plugin loads
@@ -476,7 +466,7 @@ types Arrow made familiar in Kotlin, and `parZip`, `parMap`, `raceN` and their
 `OrAccumulate` forms keep the names and shapes of `arrow-fx-coroutines`, so code
 moves between the two with little change. Surefold's versions are written from
 scratch for blocking code on virtual threads rather than taken from Arrow.
-Anyone already using Arrow can keep it alongside: [`surefold-arrow`](docs/arrow.md)
+Anyone already using Arrow can keep it alongside: [`surefold-arrow`](https://github.com/surefold/surefold-integrations/blob/main/docs/arrow.md)
 converts between the two.
 
 ## Licence

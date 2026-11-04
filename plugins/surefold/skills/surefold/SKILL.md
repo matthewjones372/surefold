@@ -24,13 +24,13 @@ Before writing any of the code below, use the surefold call beside it.
 | a retry loop, `Thread.sleep` between attempts | `Schedule.exponential(…)` or `Schedule.spaced(…)`, in a `policy { retry(…) }` |
 | a down-detector, a failure counter around a client | `policy("…") { guard(CircuitBreaker("…", maxFailures, resetAfter)) }` |
 | a stream that dies on one bad dependency call | `restartOnDefect(schedule)` |
-| `ConfigFactory.load().getString(…)` in a node | `config<Settings>("section") { Settings(string(…), duration(…)) }` |
+| `ConfigFactory.load().getString(…)` in a node | `config<Settings>("section") { Settings(string(…), duration(…)) }` from surefold-integrations' `surefold-app-typesafe` |
 | `string("password")` | `secret("password")`, a `Secret` that prints as a mask |
 | `if (config.getString("kind") == …)` choosing a module | `choice<Settings, Provided> { chosen -> … }` or `conf.choosing("section", read) { chosen -> … }` |
-| `CREATE TABLE IF NOT EXISTS` at start-up | `migrations("db/changelog.sql")` from `surefold-app-liquibase`; readers take a `Migrated` |
+| `CREATE TABLE IF NOT EXISTS` at start-up | `migrations("db/changelog.sql")` from surefold-integrations' `surefold-app-liquibase`; readers take a `Migrated` |
 | a startup wait for a dependency | `.probe(name, timeout, attempts, interval) { … }` |
-| a logger or `MeterRegistry` passed into a class | `logInfo(…)`, `counter(…).increment()`, `timed(…) { … }`; put `surefold-slf4j` and `surefold-micrometer` on the classpath |
-| MDC or a trace context carried by hand across threads | `logAnnotated(…) { … }`; `surefold-otel` on the classpath |
+| a logger or `MeterRegistry` passed into a class | `logInfo(…)`, `counter(…).increment()`, `timed(…) { … }`; put surefold-integrations' `surefold-slf4j` and `surefold-micrometer` on the classpath |
+| MDC or a trace context carried by hand across threads | `logAnnotated(…) { … }`; surefold-integrations' `surefold-otel` on the classpath |
 | `Thread.sleep` in a test | `eventually(within) { … }` from `surefold-test` |
 | a test of something on a timer | `TestStreams` and `TestClock` from `surefold-stream-test` |
 | a fake swapped in by hand | `.overriding(single<T> { … })`, and `.subgraph<Root>()` for a smaller graph |
@@ -49,56 +49,28 @@ All on Maven Central as `dev.surefold:<module>`, on one version.
 - `surefold`: forks, resources, `Schedule`, `timeout`, `policy`, `Clock`, `TestClock`, logs and metrics, `capturingLogs`, `capturingMetrics`, `logger.unbound()` for what `main` reads.
 - `surefold-replay`: `explore` and `replay`, a test's forks in seeded orders.
 - `surefold-compiler`: a checker for forks that outlive their scope; plugin `dev.surefold.compiler`.
-- `surefold-pekko`: a Pekko dispatcher as the executor.
 - `surefold-cache`: a cache with one lookup per key and stale values while the source fails.
 - `surefold-stream`: `Stream<E, A>`, described once and run on a backend.
 - `surefold-stream-forks`: the usual backend, a pull loop on a virtual thread.
-- `surefold-stream-pekko`: the Pekko Streams backend.
 - `surefold-stream-actors`: the `surefold-actor` backend.
 - `surefold-stream-test`: `TestStreams` and `TestClock`.
 - `surefold-test`: `story`, `eventually`.
 - `surefold-junit`: `Suite` objects run by a JUnit Platform engine.
 - `surefold-junit-testkit`: `shouldHaveSucceeded`, `shouldHaveFailed` and `failureOf` on a suite's run.
 - `surefold-app`: the graph, `SurefoldApp`, `closingOf`, probes, `testApp`, `Migrated`.
-- `surefold-app-typesafe`: `config`, `secret`, `choosing`, `overridingConfig`.
-- `surefold-app-kotlinx`: `config<A>(path)` for a `@Serializable` class, no block.
-- `surefold-app-liquibase`: `migrations`, which provides `Migrated`.
-- `surefold-app-openfeature`: `openFeature { provider }`, a flag provider as a node.
-- `surefold-app-openfeature-flagd`: `flagdFlags(path)`, flags in the service's HOCON; `flagdFlags(path, declared)` checks their variants against the declared `Flag`s at start.
-- `surefold-actor-pekko`: `ask`, `receive`, `same`, `stopped`, `answer` and `pipeToSelf` for a Pekko typed actor, without the wiring graph.
-- `surefold-app-pekko`: a Pekko typed actor as a node.
 - `surefold-app-actor`: a `surefold-actor` scope and actors as nodes.
-- `surefold-app-cluster`: a cluster membership as a node.
 - `surefold-app-gradle`: the wiring plugin, and the plugin that applies `surefold-compiler`.
 - `surefold-app-compiler`: the checker behind the wiring plugin.
-- `surefold-otel`: traces across forks.
-- `surefold-jdbc-otel`: JDBC query tracing with safe automatic names and metadata.
-- `surefold-otel-test`: a tracer that keeps the spans it ends, for a service's own tests.
-- `surefold-openfeature`: OpenFeature's evaluation context across forks and messages.
-- `surefold-arrow`: Surefold's types to and from Arrow's.
 - `surefold-assert`: checks for tests, `shouldBe` to `shouldBeRight`, failing at the test's line.
-- `surefold-slf4j`: log lines through SLF4J.
-- `surefold-micrometer`: metrics on Micrometer.
-- `surefold-kafka`: Kafka as a `Stream`, commit after the work, dead letters, transactions.
-- `surefold-kafka-pekko`: `surefold-kafka` through Pekko's connector.
-- `surefold-kafka-test`: a Kafka broker in the test JVM, for a service's own tests.
-- `surefold-sqs`: SQS as a `Stream`, delete after the work, sends.
-- `surefold-sns`: SNS publishing from a `Stream`.
-- `surefold-sns-test`: SNS topics in the test JVM, delivering to test queues.
-- `surefold-sqs-pekko`: `surefold-sqs` through Pekko's SQS connector.
-- `surefold-sqs-test`: an SQS queue in the test JVM, for a service's own tests.
 - `surefold-actor`: actors as values on virtual threads.
 - `surefold-actor-journal-jdbc`: an actor's journal on JDBC.
-Jobs, files, tenancy, auth, idempotency, rate limits, Postgres notifications and their caches, per-tenant flags and Flyway migrations are in [surefold-platform](https://github.com/surefold/surefold-platform).
 - `surefold-actor-projection`: a journal as a resumable `Stream`.
 - `surefold-actor-remote`: actors across nodes.
-- `surefold-actor-remote-protobuf`: remote messages in Protobuf.
-- `surefold-actor-remote-avro`: remote messages in Avro.
-- `surefold-actor-remote-kotlinx`: remote messages from `@Serializable` classes.
 - `surefold-cluster`: gossip membership and downing.
 - `surefold-cluster-saga`: durable sagas, replayed after a crash.
-- `surefold-cluster-kubernetes`: cluster seeds and a Lease on Kubernetes.
-- `surefold-cluster-aws`: cluster seeds and a lease on AWS.
+
+Jobs, files, tenancy, auth, idempotency, rate limits, Postgres notifications and their caches, per-tenant flags and Flyway migrations are in [surefold-platform](https://github.com/surefold/surefold-platform).
+Every module that wraps a library outside the JDK and Kotlin (Pekko, Kafka, SQS, SNS, Typesafe Config, kotlinx configuration, Liquibase, OpenFeature, the remote codecs, cluster discovery, SLF4J, Micrometer, OpenTelemetry and Arrow) is in [surefold-integrations](https://github.com/surefold/surefold-integrations).
 
 ## More
 

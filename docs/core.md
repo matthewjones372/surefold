@@ -741,7 +741,7 @@ class Payments(private val charge: (Long) -> String) {
 }
 ```
 
-Each guard records metrics through surefold's [metrics](observability.md#metrics):
+Each guard records metrics through surefold's [metrics](https://github.com/surefold/surefold-integrations/blob/main/docs/observability.md#metrics):
 
 | Metric | Kind | Tags |
 |---|---|---|
@@ -930,7 +930,7 @@ class Seats(count: Int) {
 A step and a `Shared` can each take a name, `transact("hold") { }` and
 `Shared(120, name = "free.stalls")`, so that a step that keeps running again
 says which value it lost to. Each is recorded through
-[metrics](observability.md#metrics):
+[metrics](https://github.com/surefold/surefold-integrations/blob/main/docs/observability.md#metrics):
 
 | Metric | Kind | Tags |
 |---|---|---|
@@ -942,7 +942,7 @@ A step or a value without a name is `unnamed`. A name becomes a tag, so keep
 names to a fixed set: a `Shared` made per order is better left unnamed. A
 step that commits on its first run records one run and one attempt.
 
-With `surefold-otel` on the classpath, a step that ran more than once also adds
+With surefold-integrations' `surefold-otel` on the classpath, a step that ran more than once also adds
 one `transact.retried` event to the span it ran in when it commits, carrying
 `transact`, `attempts` and a `retries.<cause>` count for each value it lost to,
 and `solo` when it [ran alone](#when-a-step-keeps-losing).
@@ -998,8 +998,8 @@ Surefold's own context uses the same mechanism:
   test calls `adjust`. See [Testing](testing.md#time).
 - **Log annotations and metric tags.** `logAnnotated` and `metricTagged` bind
   values that every log line and measurement inside the block carries,
-  including on forks. See [Observability](observability.md).
-- **Trace context.** With `surefold-otel` on the classpath, OpenTelemetry's
+  including on forks. See [Observability](https://github.com/surefold/surefold-integrations/blob/main/docs/observability.md).
+- **Trace context.** With surefold-integrations' `surefold-otel` on the classpath, OpenTelemetry's
   `Context` is kept in a `SurefoldLocal`.
 
 The same context also travels with an actor message, local or remote, and is

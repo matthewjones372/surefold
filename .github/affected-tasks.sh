@@ -5,8 +5,8 @@
 # - SpecsSuite alone, when every change is under specs/, since it is the one test that reads them;
 # - each module a changed file is in, built with every module whose build file names it as a `project(":…")`, directly
 #   or through another, so a change to surefold-actor-remote builds and tests surefold-actor-remote, surefold-cluster
-#   and so on, and nothing else. Not Gradle's `buildDependents`: a module and its `-test` module (surefold-otel and
-#   surefold-otel-test) each name the other, and Gradle refuses that walk as a circular dependency;
+#   and so on, and nothing else. Not Gradle's `buildDependents`: a module and its `-test` module can each name the
+#   other, and Gradle refuses that walk as a circular dependency;
 # - each module whose build file names a changed module's task (`":surefold-compiler:publish..."`, as a TestKit test
 #   does to resolve it), tested, since a task is not a `project(":…")`;
 # - each module whose build file names a changed file outside the modules, such as a guide it holds to a compiled

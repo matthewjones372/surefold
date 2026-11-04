@@ -1,3 +1,0 @@
-Stream.from                         37.5 µs waiting · 10000 out
-mapPar(8)    MapParBenchmark.kt:27  100% · 431 ns busy · 425 ns waiting · 10000 out
-runFold      MapParBenchmark.kt:28

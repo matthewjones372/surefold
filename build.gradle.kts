@@ -1,7 +1,5 @@
 plugins {
     kotlin("jvm") version "2.4.10" apply false
-    // @Serializable classes: surefold-actor-remote-kotlinx's tests, and the services that use it (spec 0093).
-    kotlin("plugin.serialization") version "2.4.10" apply false
     // A failed `expect` in surefold-junit's suites draws its values (spec 0175).
     kotlin("plugin.power-assert") version "2.4.10" apply false
     id("com.diffplug.spotless") version "8.10.0"
@@ -73,17 +71,11 @@ val moduleDescriptions = mapOf(
     "surefold" to
         "Structured concurrency on virtual threads, without coroutines. " +
         "Plus checked application graphs, streams, actors and clusters.",
-    "surefold-pekko" to
-        "surefold on Pekko: a dispatcher as the executor, and Pekko's stages awaited from a virtual thread.",
     "surefold-stream" to "A stream that names its failure: Stream<E, A> described once, run on the backend you pick.",
-    "surefold-stream-pekko" to
-        "surefold-stream on Pekko Streams: the backend, and the operators that take Pekko's types.",
     "surefold-stream-forks" to "surefold-stream on surefold's own forks: a run is a pull loop on a virtual thread.",
     "surefold-stream-actors" to
         "surefold-stream on surefold-actor: a run is an actor, pulling its loop a batch at a time.",
     "surefold-stream-test" to "surefold-stream for tests: every stage on the calling thread, on a clock the test owns.",
-    "surefold-arrow" to
-        "Surefold's Either, NonEmptyList and Fail to and from Arrow's, for a codebase already on Arrow.",
     "surefold-assert" to
         "Checks for tests of surefold code that fail at the test's own line, Either matchers among them.",
     "surefold-test" to
@@ -92,22 +84,6 @@ val moduleDescriptions = mapOf(
     "surefold-junit-testkit" to
         "Checks on a suite's run, read from EngineTestKit: which tests passed, failed or were skipped.",
     "surefold-app" to "An application as a value: a dependency graph that validates, subsets and starts itself.",
-    "surefold-actor-pekko" to
-        "A Pekko typed actor from Kotlin: ask one on a virtual thread, without the wiring graph.",
-    "surefold-app-pekko" to "surefold-app on Pekko: an actor is a node, spawned in order and stopped in reverse.",
-    "surefold-otel" to "surefold on OpenTelemetry: a Context that crosses a fork, so a trace survives a parMap.",
-    "surefold-jdbc-otel" to "JDBC tracing with automatic query names and protective OpenTelemetry metadata defaults.",
-    "surefold-jdbc-otel-bench" to "The reproducible JDBC tracing workload and telemetry pipeline for spec 0266.",
-    "surefold-otel-test" to
-        "For tests of a traced service: a tracer that keeps the spans it ends, beside surefold-otel's storage.",
-    "surefold-slf4j" to "surefold's log lines through SLF4J, with a fork's annotations in the MDC.",
-    "surefold-micrometer" to "surefold's metrics into a Micrometer registry.",
-    "surefold-app-liquibase" to
-        "surefold-app on Liquibase: a migration is a node, and reading the database depends on it.",
-    "surefold-app-typesafe" to
-        "surefold-app on Typesafe Config: a section is a node, and a bad file says every fault at once.",
-    "surefold-app-kotlinx" to
-        "surefold-app-typesafe from a @Serializable class: the section read from the class itself.",
     "surefold-app-gradle" to "surefold-app as a build gate: every graph in a project checked and drawn as it compiles.",
     "surefold-app-compiler" to
         "surefold-app in the compiler: a K2 checker, so the IDE reports a graph's faults as you type.",
@@ -118,22 +94,6 @@ val moduleDescriptions = mapOf(
     "surefold-compiler" to
         "surefold's structure rules in the compiler: a Deferred that outlives its scope fails to compile.",
     "surefold-structured" to "surefold over the JDK's StructuredTaskScope: a scope the thread dump can see.",
-    "surefold-kafka" to
-        "Kafka as a surefold Stream on any backend: a record is committed only after the work on it is done.",
-    "surefold-kafka-pekko" to
-        "surefold-kafka through Pekko's own Kafka connector: prefetch, batched commits, a draining stop.",
-    "surefold-kafka-test" to
-        "A Kafka broker in the test JVM for a service's own tests: no Docker, and helpers to read what it did.",
-    "surefold-sqs" to
-        "SQS as a surefold Stream on any backend: a message is deleted only after the work on it is done.",
-    "surefold-sns" to
-        "SNS publishing from a surefold Stream on any backend: an element passes on once SNS has its message.",
-    "surefold-sqs-test" to
-        "An SQS queue in the test JVM on ElasticMQ for a service's own tests: no Docker, and helpers to read it.",
-    "surefold-sns-test" to
-        "SNS topics in the test JVM, delivering to ElasticMQ queues, for a service's own tests: no Docker.",
-    "surefold-sqs-pekko" to
-        "surefold-sqs through Pekko's own SQS connector: parallel receives, batched asynchronous deletes, a drain.",
     "surefold-actor" to
         "An actor as a value and a step, on virtual threads: no actor system, and tests that never wait.",
     "surefold-actor-journal-jdbc" to
@@ -141,28 +101,10 @@ val moduleDescriptions = mapOf(
     "surefold-actor-projection" to
         "surefold-actor's journal as a surefold Stream: a read model follows one kind, and resumes where it left off.",
     "surefold-actor-remote" to "surefold-actor across nodes: codecs you own, and one TCP connection per pair of nodes.",
-    "surefold-actor-remote-avro" to
-        "surefold-actor-remote's messages in Avro: specific records, resolved across versions, and asks.",
-    "surefold-actor-remote-protobuf" to
-        "surefold-actor-remote's messages in Protobuf: generated messages, protocols of them, and asks.",
-    "surefold-actor-remote-kotlinx" to
-        "surefold-actor-remote's messages, events and snapshots from @Serializable data classes, " +
-        "in ProtoBuf by default.",
     "surefold-cluster" to "surefold-actor as a cluster: discovery, gossip membership and downing, with no coordinator.",
     "surefold-cluster-saga" to "Durable sagas: plain step code journalled and replayed, so a saga outlives its node.",
-    "surefold-cluster-aws" to
-        "surefold-cluster on AWS: seeds from Cloud Map or ECS, and a DynamoDB lease to break an even split.",
-    "surefold-cluster-kubernetes" to
-        "surefold-cluster on Kubernetes: seeds from the pods API, and a Lease to break an even split.",
     "surefold-app-actor" to
         "surefold-app on surefold-actor: a scope is a node, and an actor is a node keyed by its protocol.",
-    "surefold-app-cluster" to "surefold-app on surefold-cluster: a cluster is a node, joined as a HOCON section says.",
-    "surefold-openfeature" to
-        "surefold on OpenFeature: who a flag is evaluated for, bound once and read in every fork and actor.",
-    "surefold-app-openfeature" to
-        "surefold-app on OpenFeature: the provider is a node, set before any flag is read and shut down on release.",
-    "surefold-app-openfeature-flagd" to
-        "surefold-app-openfeature on flagd: flags in flagd's schema as a section of the service's own HOCON.",
 )
 
 // A Gradle plugin publishes through `java-gradle-plugin`'s own marker publication, and what it does
@@ -182,16 +124,12 @@ val surefoldJunitRunsOn =
     setOf("surefold", "surefold-assert", "surefold-test", "surefold-junit", "surefold-junit-testkit")
 
 // Measured, not tested: a benchmark has no assertions for a coverage floor to count.
-val benchmarkModules =
-    setOf(
-        "surefold-core-benchmarks", "surefold-stream-benchmarks", "surefold-actor-benchmarks",
-        "surefold-kafka-benchmarks", "surefold-jdbc-otel-bench",
-    )
+val benchmarkModules = setOf("surefold-core-benchmarks")
 
 // Built and tested, never published: surefold-structured calls StructuredTaskScope, a preview API until
 // JDK 28 (JEP 543), and a release must not promise an API the JDK has not. surefold-guides holds only tests, of the
 // guides (spec 0302).
-val unpublished = setOf("surefold-structured", "surefold-stream-parity", "surefold-guides") + benchmarkModules
+val unpublished = setOf("surefold-structured", "surefold-guides") + benchmarkModules
 
 // What llms.txt and the surefold skill must name, no more and no fewer: AgentDocsSuite in surefold-app reads it.
 extra["publishedModules"] = subprojects.map { it.name }.filterNot { it in unpublished }.sorted()

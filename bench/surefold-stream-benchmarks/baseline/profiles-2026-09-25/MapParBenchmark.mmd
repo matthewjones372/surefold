@@ -1,9 +1,0 @@
-flowchart TD
-    n0["Stream.from<br/>37.5 µs waiting · 10000 out"]
-    n1["mapPar(8) · MapParBenchmark.kt:27<br/>100% · 431 ns busy · 425 ns waiting · 10000 out"]:::hot
-    n0 --> n1
-    run["runFold · MapParBenchmark.kt:28"]
-    n1 --> run
-    classDef hot fill:#f4a6a6,stroke:#b42318
-    classDef warm fill:#fbd38d,stroke:#b7791f
-    classDef cool fill:#c6f6d5,stroke:#2f855a

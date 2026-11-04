@@ -184,7 +184,7 @@ is the same without a `SurefoldApp`, for tests and one-file programs.
 `sys.property(name)` answer `String?`. Provide `single<Sys> { RealSys }` in the
 application and `FakeSys(mapOf("DB_URL" to "jdbc:…"))` in a test, so no test
 has to set a JVM-wide environment variable. For configuration files, use
-[`surefold-app-typesafe`](cookbook.md#configuration-a-module-owns), or
+surefold-integrations' [`surefold-app-typesafe`](https://github.com/surefold/surefold-integrations/blob/main/docs/configuration.md), or
 `surefold-app-kotlinx` to read a section from its `@Serializable` class.
 
 ## Readiness and health
@@ -267,18 +267,20 @@ below runs that check without one.
 
 ## Integrations
 
-Each integration is a separate module that makes something a node:
+Each integration is a separate module that makes something a node. Those that wrap a library outside the JDK and
+Kotlin are in [surefold-integrations](https://github.com/surefold/surefold-integrations) (spec 0302), and those on the
+platform's stores in surefold-platform:
 
 | Module | Provides | Recipe |
 |---|---|---|
-| `surefold-app-typesafe` | `config<T>("section") { … }`, a HOCON section read into a type, with every fault in a bad file reported at once; `secret(path)`; where each setting came from | [Configuration](cookbook.md#configuration-a-module-owns) |
-| `surefold-app-kotlinx` | `config<T>("section")`, the section read from `T`'s own `@Serializable` properties, every fault at once | [Configuration](cookbook.md#configuration-a-module-owns) |
-| `surefold-app-liquibase` | `migrations("db/changelog.xml")`, a node providing `surefold-app`'s `Migrated`, so readers of the database start after migrations | [Migrations](cookbook.md#run-migrations-as-a-step) |
+| `surefold-app-typesafe` (surefold-integrations) | `config<T>("section") { … }`, a HOCON section read into a type, with every fault in a bad file reported at once; `secret(path)`; where each setting came from | [Configuration](https://github.com/surefold/surefold-integrations/blob/main/docs/configuration.md) |
+| `surefold-app-kotlinx` (surefold-integrations) | `config<T>("section")`, the section read from `T`'s own `@Serializable` properties, every fault at once | [Configuration](https://github.com/surefold/surefold-integrations/blob/main/docs/configuration.md) |
+| `surefold-app-liquibase` (surefold-integrations) | `migrations("db/changelog.xml")`, a node providing `surefold-app`'s `Migrated`, so readers of the database start after migrations | [Migrations](cookbook.md#run-migrations-as-a-step) |
 | `surefold-app-flyway` (surefold-platform) | `flyway(service = "classpath:db/migration")`, the same `Migrated` from Flyway's SQL scripts, with `clean` disabled and validation on | [Flyway](https://github.com/surefold/surefold-platform/blob/main/docs/flyway.md) |
-| `surefold-app-openfeature` | `openFeature { provider }`, an OpenFeature provider set before anything reads a flag, keyed by `Client`, ready while the provider is, and shut down on release | [Feature flags](flags.md) |
-| `surefold-app-pekko` | `actor<T>("name") { … }`, a Pekko typed actor keyed by `ActorRef<T>`, stopped with `gracefulStop` | [Pekko actor](cookbook.md#spawn-a-pekko-actor) |
+| `surefold-app-openfeature` (surefold-integrations) | `openFeature { provider }`, an OpenFeature provider set before anything reads a flag, keyed by `Client`, ready while the provider is, and shut down on release | [Feature flags](https://github.com/surefold/surefold-integrations/blob/main/docs/flags.md) |
+| `surefold-app-pekko` (surefold-integrations) | `actor<T>("name") { … }`, a Pekko typed actor keyed by `ActorRef<T>`, stopped with `gracefulStop` | [Pekko actor](https://github.com/surefold/surefold-integrations/blob/main/docs/pekko.md#spawn-a-pekko-actor-in-an-application) |
 | `surefold-app-actor` | `actors()`, a `surefold-actor` scope that lives as long as the application, and `actor("name") { … }`, keyed by Surefold's `ActorRef<M>` | [Surefold actor](cookbook.md#spawn-a-surefold-actor) |
-| `surefold-app-cluster` | `cluster("path")`, a cluster membership joined as a HOCON section describes | [Joined from config](cluster.md#joined-from-config) |
+| `surefold-app-cluster` (surefold-integrations) | `cluster("path")`, a cluster membership joined as a HOCON section describes | [Joined from config](https://github.com/surefold/surefold-integrations/blob/main/docs/configuration.md#a-cluster-joined-from-config) |
 
 A choice between modules can also be made inside the graph:
 `choice<Settings, Provided> { settings -> if (…) moduleA else moduleB }` is a
@@ -351,7 +353,7 @@ checker that reports the same faults while you type, with no build:
 "surefold-app: PetShop needs ActorRef<Shop>, and nothing builds it".](editor-error.png)
 
 It reads the source rather than running it, so it follows only the shapes it
-knows:
+knows, the integrations' among them by name, without their jars:
 
 - `single`, `singleOf`, `closingOf` and `choice`;
 - `surefold-app-typesafe`'s `config` and its `loadedConfig`, `configOf`,

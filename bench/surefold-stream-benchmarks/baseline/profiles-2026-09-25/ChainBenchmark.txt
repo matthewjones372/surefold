@@ -1,7 +1,0 @@
-Stream.from                        1.4 µs waiting · 100000 out
-map          ChainBenchmark.kt:34  32% · 117 ns busy · 100000 out
-map          ChainBenchmark.kt:35  23% · 82 ns busy · 100000 out
-filter       ChainBenchmark.kt:36  25% · 90 ns busy · 50000 out
-map          ChainBenchmark.kt:37  10% · 70 ns busy · 50000 out
-mapOrFail    ChainBenchmark.kt:38  11% · 82 ns busy · 397 ns waiting · 50000 out
-runFold      ChainBenchmark.kt:39

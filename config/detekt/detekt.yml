@@ -159,10 +159,6 @@ style:
     # parameter and uses it for the test name, not in the body. That is the
     # whole of this rule's catch in the test sources.
     excludes: ['**/test/**']
-  ForbiddenVoid:
-    # `ActorSystem<Void>` is Pekko's Java DSL, not our choice:
-    # `Behaviors.empty<Void>()` is how a guardian with no protocol is spelled.
-    excludes: ['**/pekko/**']
   DestructuringDeclarationWithTooManyEntries:
     # `handledNow { (a, b, c, d) -> }` destructures the endpoint's declared
     # inputs. Six of them is a six-input endpoint.
@@ -259,10 +255,6 @@ style:
       - '**/actor/surefold-actor-remote/src/main/kotlin/dev/surefold/actor/remote/Wire.kt'
       # A shutdown hook: Runtime.addShutdownHook takes an unstarted Thread, which the JDK starts as the process ends.
       - '**/app/surefold-app/src/main/kotlin/dev/surefold/app/Run.kt'
-      # Changed in surefold-integrations once 0302 has moved it (0309 question 3).
-      - '**/integrations/surefold-kafka/src/main/kotlin/dev/surefold/kafka/Keeper.kt'
-      # Changed in surefold-integrations once 0302 has moved it (0309 question 3).
-      - '**/integrations/surefold-sqs/src/main/kotlin/dev/surefold/sqs/Visibility.kt'
   # A second instance of the rule, for main and test sources alike: the first excludes tests, which may sleep.
   ForbiddenMethodCall/runCatching:
     active: true

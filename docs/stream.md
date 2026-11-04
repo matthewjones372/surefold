@@ -37,7 +37,7 @@ whichever module it ships in.
 |---|---|---|
 | `surefold-stream` | `Stream`, `Pipe`, `Run`, `Exit`, every backend-neutral operator, `Hub` | none |
 | `surefold-stream-forks` | a run as a pull loop on a virtual thread | `Forks()` |
-| `surefold-stream-pekko` | a run as Pekko Streams stages, and the operators that take Pekko's types | `PekkoStreams(system)` |
+| `surefold-stream-pekko` (surefold-integrations) | a run as Pekko Streams stages, and the operators that take Pekko's types | `PekkoStreams(system)` |
 | `surefold-stream-actors` | a run as `surefold-actor` actors | `Actors(scope)` |
 | `surefold-stream-test` | every stage on the calling thread, on a `TestClock` | `TestStreams(clock)` |
 
@@ -47,8 +47,7 @@ Each backend module brings `surefold-stream` with it:
 dependencies {
     // a pull loop on a virtual thread: brings surefold-stream and nothing else
     implementation("dev.surefold:surefold-stream-forks:0.18.0")
-    // or Pekko Streams: brings surefold-stream, surefold-pekko and pekko-stream
-    // implementation("dev.surefold:surefold-stream-pekko:0.18.0")
+    // or Pekko Streams: surefold-stream-pekko, from surefold-integrations
     // or actors of a surefold-actor scope
     // implementation("dev.surefold:surefold-stream-actors:0.18.0")
 
@@ -113,7 +112,7 @@ of an [application node](app.md).
 
 ## Backends
 
-All four backends pass the same suite of pipelines in `surefold-stream-parity`,
+All four backends pass the same suite of pipelines in surefold-integrations' `surefold-stream-parity`,
 which checks that each gives the same answers. They differ in how a run uses
 threads and in what they accept.
 
@@ -130,7 +129,7 @@ threads and in what they accept.
   measured faster than Forks for `mapPar`, starting runs, `buffer` and `merge`,
   and about a quarter slower for a plain element-at-a-time chain, but those
   numbers predate spec 0172, which rebuilt Forks' `buffer`, `mapPar` and
-  `mapAsync`; re-run the [benchmarks](../bench/surefold-stream-benchmarks/README.md)
+  `mapAsync`; re-run the [benchmarks](https://github.com/surefold/surefold-integrations/tree/main/bench/surefold-stream-benchmarks/README.md)
   before choosing between them on speed.
 - **`TestStreams(clock)`** runs one stage at a time on the calling thread, in
   the same order every time, with every wait on the test's `TestClock`. See
@@ -147,7 +146,7 @@ reaches it. No backend runs a value that belongs to another.
 ## Operators
 
 Every operator below works on every backend except those marked *(Pekko)*,
-which are in `surefold-stream-pekko` and run only on `PekkoStreams`. Every
+which are in surefold-integrations' `surefold-stream-pekko` and run only on `PekkoStreams`. Every
 operator also exists on `Pipe`, a reusable middle section of a pipeline.
 
 | Operator | Answers |
@@ -228,7 +227,7 @@ operator also exists on `Pipe`, a reusable middle section of a pipeline.
 | `Run<E, R>.start(backend: StreamBackend): Running<E, R>` | the same run with a handle: `exit` is what `run` answers, `stop()` ends it now as `Done` with what the sink has, and `close()` stops and waits. A source that drains, such as a Kafka consumer, is stopped by draining, so what it already sent still reaches the end |
 | `Run<E, R>.run(system: ClassicActorSystemProvider): CompletionStage<Exit<E, R>>` | `run(PekkoStreams(system))` *(Pekko)* |
 | `Run<E, R>.start(system: ClassicActorSystemProvider): Running<E, R>` | `start(PekkoStreams(system))` *(Pekko)* |
-| `Fail<E>.awaitExit(stage: CompletionStage<Exit<E, R>>): R` | the run waited for inside a `Fail`: `Done` is the value, `Failed` fails, `Died` throws. In `surefold-stream-pekko`, but it waits for a run on any backend |
+| `Fail<E>.awaitExit(stage: CompletionStage<Exit<E, R>>): R` | the run waited for inside a `Fail`: `Done` is the value, `Failed` fails, `Died` throws. In surefold-integrations' `surefold-stream-pekko`, but it waits for a run on any backend |
 | **Pipes** | |
 | `Pipe.from(flow: Flow<In, Out, NotUsed>): Pipe<Nothing, In, Out>` | the way in from Pekko's `Flow` *(Pekko)* |
 | `Pipe.identity(): Pipe<Nothing, A, A>` | the pipe that changes nothing, where a chain starts |
@@ -592,7 +591,7 @@ runFold                                  Pipelines.kt:20
 
 `run.measured(Measured("ingest"))` reports each stage's element count, the
 time spent in its body and the time it waited for demand through Surefold's
-[metrics](observability.md#metrics), as `surefold.stream.elements`,
+[metrics](https://github.com/surefold/surefold-integrations/blob/main/docs/observability.md#metrics), as `surefold.stream.elements`,
 `surefold.stream.busy` and `surefold.stream.waiting`. A `Profiler` keeps those
 numbers, and `render(profile = profiler.profile())` shows where the time went:
 
@@ -698,7 +697,7 @@ and against `Stream` side by side. Its guide is surefold-integrations'
 `surefold-stream` puts only the Kotlin standard library and `surefold` on
 a consumer's classpath: a description names no backend. `surefold-stream-forks`
 and `surefold-stream-test` add nothing beyond Surefold modules, and
-`surefold-stream-actors` adds `surefold-actor`. `surefold-stream-pekko` adds `surefold-pekko`
+`surefold-stream-actors` adds `surefold-actor`. `surefold-stream-pekko`, in surefold-integrations, adds `surefold-pekko`
 and `pekko-stream`, with the Scala runtime, Typesafe Config, the Reactive
 Streams interfaces and `ssl-config-core` that Pekko brings. Each module's
 `NoOtherDependenciesTest` checks this list against its real runtime classpath.
