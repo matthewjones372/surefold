@@ -60,22 +60,31 @@ class NotUndone(
 ) : RuntimeException("saga $saga left ${notUndone.joinToString()} done after $why", causeOf(why))
 
 /** Runs [block] as the saga [id], undoing its finished steps, newest first, if it ends any way but returning. */
-fun <A> saga(id: String, undo: Policy? = null, block: SagaScope<Nothing>.() -> A): A = Unraisable.saga(id, undo, block)
+fun <A> saga(id: String, name: String = "unnamed", undo: Policy? = null, block: SagaScope<Nothing>.() -> A): A =
+    Unraisable.saga(id, name, undo, block)
 
 /**
  * Runs [block] as the saga [id], undoing its finished steps, newest first, if it ends any way but returning; the
  * ending then carries on, unless an undo failed, when the saga throws [NotUndone] instead. Undos and checks run on
  * a virtual thread of their own, which an interrupt of this one does not reach, each through [undo]; its deadline,
- * if it has one, bounds all of them together.
+ * if it has one, bounds all of them together. Steps may be taken from `parZip` and `parMap` branches; undos then run
+ * in the reverse of the order their actions returned. [name], not [id], tags the saga's metrics.
  */
-fun <E, A> Fail<E>.saga(id: String, undo: Policy? = null, block: SagaScope<E>.() -> A): A {
-    val steps = Steps<E>(id, root(), Undoing(undo))
-    return try {
+fun <E, A> Fail<E>.saga(id: String, name: String = "unnamed", undo: Policy? = null, block: SagaScope<E>.() -> A): A {
+    val steps = Steps<E>(id, name, root(), Undoing(undo))
+    val value = try {
         steps.block()
     } catch (t: Throwable) {
-        throw steps.undoAll(steps.why(t), t)
+        val ending = steps.undoAll(steps.why(t), t)
+        runs(name, if (ending is NotUndone) "not-undone" else "undone")
+        throw ending
     }
+    runs(name, "done")
+    return value
 }
+
+private fun runs(saga: String, outcome: String) =
+    counter("surefold.saga.runs", "saga" to saga, "outcome" to outcome).increment()
 
 private fun causeOf(why: Undo<*>): Throwable? = when (why) {
     is Undo.Failed -> null
@@ -137,12 +146,22 @@ private class ShieldedEnd<A> {
     fun answer(): A = thrown?.let { throw it } ?: value as A
 }
 
-private class Steps<E>(override val id: String, private val root: Fail<*>, private val undoing: Undoing) :
-    SagaScope<E> {
+private class Steps<E>(
+    override val id: String,
+    private val saga: String,
+    private val root: Fail<*>,
+    private val undoing: Undoing,
+) : SagaScope<E> {
 
+    // Steps may be taken from several forks at once; the undos are read once every fork has ended.
+    private val lock = Any()
     private val names = mutableSetOf<String>()
     private val done = mutableListOf<Done<E, *>>()
     private val unsettled = mutableListOf<Unsettled>()
+
+    private fun record(step: Done<E, *>) = synchronized(lock) { done += step }
+
+    private fun record(step: Unsettled) = synchronized(lock) { unsettled += step }
 
     override fun <A> step(
         name: String,
@@ -150,10 +169,10 @@ private class Steps<E>(override val id: String, private val root: Fail<*>, priva
         check: ((key: String) -> Settled<A>)?,
         undo: (String, A, Undo<E>) -> Unit,
     ): A {
-        require(names.add(name)) { "saga $id already has a step named $name" }
+        require(synchronized(lock) { names.add(name) }) { "saga $id already has a step named $name" }
         val key = "$id/$name"
         return try {
-            action(key).also { done += Done(name, it, undo) }
+            action(key).also { record(Done(name, it, undo)) }
         } catch (t: Throwable) {
             if (!declared(t)) settle(name, key, check, undo)
             throw t
@@ -166,27 +185,30 @@ private class Steps<E>(override val id: String, private val root: Fail<*>, priva
         check: ((String) -> Settled<A>)?,
         undo: (String, A, Undo<E>) -> Unit,
     ) {
-        if (check == null) {
-            unsettled += Unsettled(name, null)
-            return
-        }
-        try {
-            when (val settled = undoing.run { check(key) }) {
-                is Settled.Happened -> done += Done(name, settled.value, undo)
-                Settled.DidNot -> Unit
+        val answer = if (check == null) {
+            record(Unsettled(name, null))
+            "none"
+        } else {
+            try {
+                when (val settled = undoing.run { check(key) }) {
+                    is Settled.Happened -> "happened".also { record(Done(name, settled.value, undo)) }
+                    Settled.DidNot -> "did-not"
+                }
+            } catch (t: Throwable) {
+                "none".also { record(Unsettled(name, t)) }
             }
-        } catch (t: Throwable) {
-            unsettled += Unsettled(name, t)
         }
+        counter("surefold.saga.checks", "saga" to saga, "answer" to answer).increment()
     }
 
-    // Only a fail on this saga's own attempt carries an E; one into an outer attempt is, here, just a throw.
-    private fun declared(t: Throwable): Boolean = t is Failed && t.scope === root
+    // A fail is declared whichever attempt it leaves through, a fork's own included: the step did not happen.
+    private fun declared(t: Throwable): Boolean = t is Failed
 
     fun why(t: Throwable): Undo<E> = when {
-        declared(t) ->
+        // Only a fail on this saga's own attempt carries an E; one into an outer attempt is, here, just a throw.
+        t is Failed && t.scope === root ->
             @Suppress("UNCHECKED_CAST")
-            Undo.Failed((t as Failed).error as E)
+            Undo.Failed(t.error as E)
 
         t is InterruptedException -> Undo.Cancelled(t)
 

@@ -21,14 +21,15 @@ are compiled by `CoreGuideTest`.
 3. [Traversing a list](#traversing-a-list)
 4. [Collecting every error](#collecting-every-error)
 5. [Resources](#resources)
-6. [Schedules, retries and timeouts](#schedules-retries-and-timeouts)
-7. [Policies](#policies)
-8. [Values changed together](#values-changed-together)
-9. [What a fork inherits](#what-a-fork-inherits)
-10. [Running forks on Pekko](#running-forks-on-pekko)
-11. [Cache retention](#cache-retention)
-12. [Cache release](#cache-release)
-13. [Requirements and limitations](#requirements-and-limitations)
+6. [Sagas](#sagas)
+7. [Schedules, retries and timeouts](#schedules-retries-and-timeouts)
+8. [Policies](#policies)
+9. [Values changed together](#values-changed-together)
+10. [What a fork inherits](#what-a-fork-inherits)
+11. [Running forks on Pekko](#running-forks-on-pekko)
+12. [Cache retention](#cache-retention)
+13. [Cache release](#cache-release)
+14. [Requirements and limitations](#requirements-and-limitations)
 
 ## Forking
 
@@ -424,6 +425,84 @@ suppressed.
 
 In an application, the graph in [`surefold-app`](app.md) uses the same `install`
 for each node, and releases nodes in reverse dependency order.
+
+## Sagas
+
+A saga changes several outside systems one step at a time, and undoes the steps
+that worked when a later one fails. `saga(id) { }` runs a block of `step`s; each
+pairs an action with its undo, and both are handed a key built from the saga's
+id and the step's name, for the system they call to recognise a repeat:
+
+<!-- core-saga -->
+```kotlin
+import dev.surefold.Schedule
+import dev.surefold.Settled
+import dev.surefold.fail.Either
+import dev.surefold.fail.attempt
+import dev.surefold.policy
+import dev.surefold.saga
+import kotlin.time.Duration.Companion.seconds
+
+sealed interface Refused {
+    data object Funds : Refused
+    data object Closed : Refused
+}
+
+interface Bank {
+    fun debit(key: String, account: String, pence: Long): Long?
+    fun credit(key: String, account: String, pence: Long): Long?
+    fun find(key: String): Long?
+    fun refund(key: String, account: String, pence: Long)
+    fun reverse(key: String, account: String, pence: Long)
+}
+
+val undoing = policy("transfer.undo") {
+    deadline(30.seconds)
+    retry(Schedule.recurs(5))
+}
+
+fun transfer(bank: Bank, id: String, from: String, to: String, pence: Long): Either<Refused, Long> = attempt {
+    saga(id, name = "transfer", undo = undoing) {
+        val taken = step(
+            "debit",
+            action = { key -> bank.debit(key, from, pence) ?: fail(Refused.Funds) },
+            check = { key -> bank.find(key)?.let { Settled.Happened(it) } ?: Settled.DidNot },
+        ) { key, debited, _ -> bank.refund(key, from, debited) }
+        step(
+            "credit",
+            action = { key -> bank.credit(key, to, taken) ?: fail(Refused.Closed) },
+            check = { key -> bank.find(key)?.let { Settled.Happened(it) } ?: Settled.DidNot },
+        ) { key, credited, _ -> bank.reverse(key, to, credited) }
+    }
+}
+```
+
+- **A step ends one of three ways.** Its action returns, and its undo is
+  recorded. It calls `fail`, and it did not happen. Anything else (a throw, a
+  timeout, an interrupt) leaves it unknown, and its `check` settles it before
+  anything is undone: `Settled.Happened` counts it as done, `Settled.DidNot` as
+  not. With no check, or no answer, the saga undoes nothing at all and throws
+  `NotUndone`: refunding the debit while the credit may have landed is never
+  automatic.
+- **Undos run newest first**, each told why as an `Undo<E>`: `Failed(error)`,
+  `Threw(failure)` or `Cancelled(interrupt)`. The block's ending then carries on,
+  so the `attempt` above still answers `Left(Refused.Closed)`.
+- **Undos and checks are shielded.** They run on a virtual thread of their own,
+  carrying the saga's locals, which an interrupt of the saga's thread does not
+  reach. Each runs through `undo`, and the policy's `deadline` bounds all of
+  them together. Without a policy each runs once.
+- **An undo that still fails** does not stop the others; the saga then throws
+  `NotUndone`, naming the steps left done. It is undeclared on purpose: money
+  that may be held should page someone, not read as a refusal.
+- **Steps can be taken from `parZip` and `parMap` branches.** Undos run in the
+  reverse of the order their actions returned. A branch interrupted by its
+  sibling's failure mid-action is unknown too, so parallel steps want checks.
+- **Metrics.** `surefold.saga.runs` is tagged `saga` (the `name`, never the id)
+  and `outcome` (`done`, `undone`, `not-undone`); `surefold.saga.checks` is
+  tagged `saga` and `answer` (`happened`, `did-not`, `none`).
+
+A saga here lives in memory, like a `resourceScope`: a process that dies
+between steps leaves what was done done.
 
 ## Schedules, retries and timeouts
 
