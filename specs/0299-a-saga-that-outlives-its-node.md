@@ -3,8 +3,9 @@
 ## Problem
 
 A saga that spans entities, such as surefold-bank's transfer, has to survive the node it runs on dying between two
-steps. Today that means writing it by hand as a persistent sharded entity: `Transfer.kt` is about 60 lines of
-phases, events, a `when` over every phase × answer, and resends, for two steps and no undo. Each new saga repeats
+steps. Today that means writing it by hand as a persistent sharded entity: `Transfer.kt` is about 130 lines of
+phases, events, a codec and a `when` over every phase × answer, for two steps and no undo, and `Account.kt`
+keeps its own maps of transfers seen so a repeat is answered the same way. Each new saga repeats
 it, and the hard parts (what to redo after a crash, what to do with a late answer, an undo that keeps failing) are
 re-decided every time. The in-memory saga (0298) reads as plain code, but forgets everything when its node goes.
 
@@ -21,33 +22,45 @@ re-decided every time. The in-memory saga (0298) reads as plain code, but forget
 In a new module, `surefold-cluster-saga`, on `surefold-cluster` and nothing else:
 
 ```kotlin
+import dev.surefold.actor.keyed
 import dev.surefold.cluster.Cluster
-import dev.surefold.cluster.saga.Durable
 import dev.surefold.cluster.saga.durableSaga
-import dev.surefold.saga.Settled
+import dev.surefold.cluster.saga.entityStep
 
 data class Move(val from: String, val to: String, val pence: Long)
 
-val transfers: Durable<Move, Refused, Receipt> = durableSaga("transfer", MoveCodec, RefusedCodec, ReceiptCodec) { move ->
-    val debit = step(
-        "debit", DebitCodec,
-        action = { key -> accounts.debit(key, move.from, move.pence) ?: fail(Refused.Funds) },
-        check = { key -> accounts.debitFor(key)?.let { Settled.Happened(it) } ?: Settled.DidNot },
-    ) { key, taken, _ -> accounts.refund(key, move.from, taken.pence) }
-    step(
-        "credit", CreditCodec,
-        action = { key -> accounts.credit(key, move.to, debit.pence) },
-        check = { key -> accounts.creditFor(key)?.let { Settled.Happened(it) } ?: Settled.DidNot },
-    ) { key, _, _ -> accounts.debit(key, move.to, debit.pence) }
-    Receipt(debit.id)
-}
+/** An account remembers each key's answer in the same append as its events, and answers "did you apply key k?". */
+fun account(id: String) = keyed(PersistenceId("account", id), empty = 0L, codec = AccountEvents,
+    decide = { balance: Long, command: AccountMsg -> when (command) {
+        is Debit -> if (balance < command.pence) refuse(AccountRefused.Funds) else accept(Debited(command.pence))
+        is Credit -> accept(Credited(command.pence))
+    } },
+    event = { balance, e -> when (e) { is Debited -> balance - e.pence; is Credited -> balance + e.pence } },
+)
 
-fun Cluster.send(id: String, move: Move) = transfers.on(this).start(id, move)  // returns once Started is written
-fun Cluster.outcome(id: String) = transfers.on(this).await(id)                   // Either<Refused, Receipt>, or NotUndone
+fun Cluster.transfers(accounts: Sharded<AccountMsg>) =
+    durableSaga("transfer", MoveCodec, RefusedCodec, ReceiptCodec) { move ->
+        entityStep("debit", accounts, move.from, refused = ::asTransfer,
+            undo = { Credit(move.pence) }) { Debit(move.pence) }
+        entityStep("credit", accounts, move.to, refused = ::asTransfer,
+            undo = { Debit(move.pence) }) { Credit(move.pence) }
+        Receipt(move)
+    }
+
+fun Cluster.send(id: String, move: Move) = transfers(accounts).on(this).start(id, move)  // idempotent on id
+fun Cluster.outcome(id: String) = transfers(accounts).on(this).await(id)                // Either<Refused, Receipt>
 ```
 
 - **The body is plain blocking code**, the same `step(name, action, check, undo)` as 0298, with a codec for what
-  the action returns, and the same rule: only a declared `fail` means a step did not happen. It runs as a persistent entity of its own kind, sharded by saga id.
+  the action returns, and the same rule: only a declared `fail` means a step did not happen. It runs as a
+  persistent entity of its own kind, sharded by saga id.
+- **`keyed(...)`** (in `surefold-actor`) is a persistent behaviour whose commands each carry a key. It writes the
+  key and its answer, accepted or refused, in the same append as the events; a key seen before gets the same answer
+  and writes nothing; and it answers `Applied(key)` from its state.
+- **`entityStep(name, sharded, id, refused, undo) { command }`** is a `step` whose action sends the command to a
+  keyed entity through a durable reliable producer (0085, 0099) and waits for its answer, whose refusal is mapped
+  through `refused` into the saga's `E`, and whose `check` is the entity's `Applied(key)`. A step on our own entities
+  therefore always settles once the entity is reachable; only a failing undo leaves it `Stuck`.
 - **Each step is journalled.** `Begun(step)` before the action, `Ended(step, value)` after it. A recovered saga runs
   the body again from the top, and a step already `Ended` returns its kept value without calling anything. A step
   `Begun` but not `Ended` is unknown: its `check` decides whether it is `Ended` or runs again, and with no
@@ -81,8 +94,11 @@ already talk to entities, with jobs left as a later backend.
       Done when: an undo failing past its policy leaves `Stuck`, and `resume` after the fix ends it `Undone`.
 - [ ] **`spec-0299-cluster`** — `on(cluster)`, `start`/`await` from any node, and recovery when a node leaves.
       Done when: a three-node test kills the saga's node between steps and the saga ends `Done` elsewhere.
+- [ ] **`spec-0299-keyed`** — `keyed` in `surefold-actor`, and `entityStep` over it.
+      Done when: a key sent twice is applied once and answered the same both times, and an `entityStep` whose
+      answer is dropped settles through `Applied` without a second command.
 - [ ] **`spec-0299-bank`** — surefold-bank's transfer on `durableSaga`, plus a `docs/cluster.md` section.
-      Done when: `SagaSuite` and `CrashSuite` pass with `Transfer.kt` deleted.
+      Done when: `SagaSuite` and `CrashSuite` pass with `Transfer.kt` deleted and `Account.kt` on `keyed`.
 
 ## Acceptance
 
@@ -101,3 +117,7 @@ already talk to entities, with jobs left as a later backend.
    (`now()` and `uuid()` journalled), or document it? Recommended: journalled helpers, plus a test in the
    `testActors` unkind runtime (0128) that crashes at every step boundary.
 4. **Keep `await` for a finished saga forever?** Recommended: until its events are pruned, then answer `Forgotten`.
+5. **`entityStep` and `keyed` here or in a spec of their own?** Answered (maintainer, 2026-11-04): here, as
+   `spec-0299-keyed`, because the bank rewrite that proves this spec uses them for both steps.
+6. **How long does a `keyed` entity remember a key?** Recommended: until a snapshot older than the longest saga's
+   `resume` window prunes it, set per kind with a default of 30 days.
