@@ -1,7 +1,7 @@
 # Surefold
 
 [![Maven Central](https://img.shields.io/maven-central/v/dev.surefold/surefold?label=maven%20central)](https://central.sonatype.com/artifact/dev.surefold/surefold)
-[![Build](https://github.com/surefold/surefold/actions/workflows/build.yml/badge.svg)](https://github.com/surefold/surefold/actions/workflows/build.yml)
+[![Build](https://github.com/surefold/surefold-core/actions/workflows/build.yml/badge.svg)](https://github.com/surefold/surefold-core/actions/workflows/build.yml)
 [![Coverage](https://img.shields.io/badge/coverage-%E2%89%A590%25%20enforced-brightgreen)](AGENTS.md#verifying)
 [![Kotlin](https://img.shields.io/badge/kotlin-2.4.10-7F52FF?logo=kotlin&logoColor=white)](https://kotlinlang.org)
 [![JDK](https://img.shields.io/badge/jdk-25%2B-brightgreen)](https://openjdk.org/projects/jdk/25/)
@@ -439,7 +439,7 @@ ships and which call to use for a task. In Claude Code, the Surefold plugin load
 the same guidance whenever code uses Surefold:
 
 ```
-/plugin marketplace add surefold/surefold
+/plugin marketplace add surefold/surefold-core
 /plugin install surefold@surefold
 ```
 

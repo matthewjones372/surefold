@@ -399,7 +399,7 @@ subprojects {
         pom {
             name.set(this@subprojects.name)
             description.set(moduleDescriptions[this@subprojects.name] ?: "Part of Surefold.")
-            url.set("https://github.com/surefold/surefold")
+            url.set("https://github.com/surefold/surefold-core")
             licenses {
                 license {
                     name.set("The Apache License, Version 2.0")
@@ -413,9 +413,9 @@ subprojects {
                 }
             }
             scm {
-                url.set("https://github.com/surefold/surefold")
-                connection.set("scm:git:https://github.com/surefold/surefold.git")
-                developerConnection.set("scm:git:ssh://git@github.com/surefold/surefold.git")
+                url.set("https://github.com/surefold/surefold-core")
+                connection.set("scm:git:https://github.com/surefold/surefold-core.git")
+                developerConnection.set("scm:git:ssh://git@github.com/surefold/surefold-core.git")
             }
         }
     }
@@ -444,7 +444,7 @@ subprojects {
             // workflow's token as `githubPackagesUsername`/`githubPackagesPassword`. Releases stay on Central.
             maven {
                 name = "githubPackages"
-                url = uri("https://maven.pkg.github.com/surefold/surefold")
+                url = uri("https://maven.pkg.github.com/surefold/surefold-core")
                 credentials(PasswordCredentials::class)
             }
         }

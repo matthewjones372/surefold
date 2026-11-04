@@ -1,7 +1,7 @@
 name: snapshot
 
 # A snapshot of every push to main, and of a branch when dispatched from it, on
-# GitHub Packages (spec 0281): https://maven.pkg.github.com/surefold/surefold.
+# GitHub Packages (spec 0281): https://maven.pkg.github.com/surefold/surefold-core.
 # It does not expire, unlike Central's snapshot repository, so a version pinned
 # in a handoff keeps resolving. Releases stay on Central (release.yml).
 #

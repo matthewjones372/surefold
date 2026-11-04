@@ -120,7 +120,7 @@ All on Maven Central as `dev.surefold:<module>`, on one version.
 
 ## More
 
-`llms.txt` at https://github.com/surefold/surefold/blob/main/llms.txt has the
+`llms.txt` at https://github.com/surefold/surefold-core/blob/main/llms.txt has the
 facts, the full table and links to every guide; `docs/cookbook.md` has one
 recipe per application task, and `docs/core.md` covers retries, timeouts and
 policies.
