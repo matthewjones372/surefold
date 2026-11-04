@@ -70,9 +70,9 @@ BOM, but every release bumps all three repositories, the coupling 0302 split the
 
 ## Open questions
 
-1. **Calendar version or the platform's own version for the BOM?** Recommended: calendar (`2026.11.0`), so it never
+1. **Calendar version or the platform's own version for the BOM?** Answered (maintainer, 2026-11-04), as recommended: calendar (`2026.11.0`), so it never
    reads as one repository's version when it names three.
-2. **Does core's README show the BOM, though core doesn't publish it?** Recommended: yes, as the default way in, with
+2. **Does core's README show the BOM, though core doesn't publish it?** Answered (maintainer, 2026-11-04), as recommended: yes, as the default way in, with
    the plain core coordinate next to it for core-only users.
-3. **Ship the BOM from the first snapshot after the split, before any Central release?** Recommended: yes, so the
+3. **Ship the BOM from the first snapshot after the split, before any Central release?** Answered (maintainer, 2026-11-04), as recommended: yes, so the
    way users will depend on Surefold is what the proving period exercises.
