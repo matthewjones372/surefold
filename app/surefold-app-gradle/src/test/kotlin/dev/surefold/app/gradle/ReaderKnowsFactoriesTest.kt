@@ -17,7 +17,7 @@ import java.util.jar.JarFile
 class ReaderKnowsFactoriesTest {
 
     @Test
-    fun `the reader knows every factory the integration modules under test ship`() {
+    fun `the reader knows every factory the modules under test ship`() {
         val jars = System.getProperty("surefold.app.underTest").shouldNotBeNull().split(File.pathSeparator).map(::File)
         val reader = File(System.getProperty("surefold.checker.reader").shouldNotBeNull()).readText()
         val known = Regex("""extension\("(\w+)", "(\w+)"\)""").findAll(reader)
@@ -25,7 +25,7 @@ class ReaderKnowsFactoriesTest {
             .toSet()
 
         withClue("each needs an extension(\"module\", \"name\") in surefold-app-compiler's Reader.kt") {
-            factories(jars) - known - UNREAD shouldBe emptySet()
+            factories(jars) - known shouldBe emptySet()
         }
     }
 
@@ -51,12 +51,5 @@ class ReaderKnowsFactoriesTest {
 
     private companion object {
         const val APP = "dev.surefold.app"
-
-        /** Factories the reader gives up on by design, each with its reason. */
-        val UNREAD = setOf(
-            // The module is whatever `chosen` returns for a setting read at assembly, which no compiler can see.
-            "typesafe.choosing",
-            "kotlinx.choosing",
-        )
     }
 }

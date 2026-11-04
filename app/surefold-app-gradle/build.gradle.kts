@@ -42,15 +42,11 @@ dependencies {
 
     testImplementation(gradleTestKit())
     surefoldAppUnderTest(project(":surefold-app"))
-    // The modules whose factories the reader knows by name. A build that compiles a graph using
+    // The module here whose factories the reader knows by name. A build that compiles a graph using
     // them is the only thing that catches the reader's copy of their dependencies going stale, and
     // a stale copy is the one fault the design cannot tolerate: a red line under working code.
-    surefoldAppUnderTest(project(":surefold-app-pekko"))
+    // surefold-integrations checks the factories of its own surefold-app modules the same way.
     surefoldAppUnderTest(project(":surefold-app-actor"))
-    surefoldAppUnderTest(project(":surefold-app-typesafe"))
-    surefoldAppUnderTest(project(":surefold-app-kotlinx"))
-    surefoldAppUnderTest(project(":surefold-app-openfeature"))
-    surefoldAppUnderTest(project(":surefold-app-openfeature-flagd"))
     // Not a factory the reader knows: Hub.publish is one of the effects the step checker refuses (spec 0210).
     surefoldAppUnderTest(project(":surefold-stream"))
     testImplementation(project(":surefold-assert"))
