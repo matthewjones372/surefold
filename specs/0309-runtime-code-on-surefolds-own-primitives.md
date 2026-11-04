@@ -52,15 +52,20 @@ and (b) is what `Keyed.kt` already got wrong. It costs one binding per activatio
 
 ## Stack
 
-- [ ] **`spec-0309-rule`** — the detekt rule, every current use listed with its reason.
+- [x] **`spec-0309-rule`** ([#1087](https://github.com/surefold/surefold-core/pull/1087)) — the detekt rule, every
+      current use listed with its reason.
       Done when: a new `Thread.ofVirtual` in a main source fails `./gradlew build` until its file is listed.
 - [ ] **`spec-0309-turn-locals`** — the runtime binds the scope's locals around each activation (question 1).
       Done when: `clock.get()` in a turn reads a `TestClock` bound on the scope, `keyed`'s answer time included.
-- [ ] **`spec-0309-actor-remote`** — the remote watch and unreachable threads onto the node's scope.
+- [x] **`spec-0309-actor-remote`** ([#1088](https://github.com/surefold/surefold-core/pull/1088),
+      [#1087](https://github.com/surefold/surefold-core/pull/1087)) — the remote watch and unreachable threads onto the
+      node's scope.
       Done when: closing a node's scope leaves no `surefold-remote-watch` thread, and the rule lists neither.
-- [ ] **`spec-0309-journal-jdbc`** — `GroupCommit`'s thread and `SliceMover`'s sleep-poll onto `Schedule`/forks.
+- [x] **`spec-0309-journal-jdbc`** ([#1089](https://github.com/surefold/surefold-core/pull/1089)) — `GroupCommit`'s
+      thread and `SliceMover`'s sleep-poll onto `Schedule`/forks.
       Done when: the rule lists neither file.
-- [ ] **`spec-0309-app`** — `surefold-app-actor`'s holder and `surefold-app-cluster`'s downed thread.
+- [x] **`spec-0309-app`** ([#1093](https://github.com/surefold/surefold-core/pull/1093)) — `surefold-app-actor`'s holder
+      and `surefold-app-cluster`'s downed thread.
       Done when: the same, for those files.
 - **`Keeper` and `Visibility`** are changed in `surefold-integrations` once 0302 has moved them (question 3).
       Until then the rule lists both files with that reason.

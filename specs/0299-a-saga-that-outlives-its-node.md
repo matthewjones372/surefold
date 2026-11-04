@@ -89,19 +89,25 @@ already talk to entities, with jobs left as a later backend.
 
 ## Stack
 
-- [ ] **`spec-0299-journal`** — the module, `durableSaga`, steps journalled and replayed, keys, on one node.
+- [x] **`spec-0299-journal`** ([#1074](https://github.com/surefold/surefold-core/pull/1074)) — the module,
+      `durableSaga`, steps journalled and replayed, keys, on one node.
       Done when: a saga stopped after its first step and started again calls the second step's action only, and
       one stopped mid-step calls that step's `check` before anything else; `now()` and `uuid()` answer the same
       after a restart; and a 0128 unkind run that crashes at every step boundary ends every saga as it would have
       without a crash.
-- [ ] **`spec-0299-undo`** — journalled undos, `Stuck`, `resume`, the `stuck` gauge.
+- [x] **`spec-0299-undo`** ([#1075](https://github.com/surefold/surefold-core/pull/1075)) — journalled undos, `Stuck`,
+      `resume`, the `stuck` gauge.
       Done when: an undo failing past its policy leaves `Stuck`, and `resume` after the fix ends it `Undone`.
-- [ ] **`spec-0299-cluster`** — `on(cluster)`, `start`/`await` from any node, and the `surefold-sagas` waker.
+- [x] **`spec-0299-cluster`** ([#1076](https://github.com/surefold/surefold-core/pull/1076)) — `on(cluster)`,
+      `start`/`await` from any node, and the `surefold-sagas` waker.
       Done when: a three-node test kills the saga's node in each gap (after `Started`, between steps, after
       `Undoing`) and every saga ends elsewhere as it would have without the crash.
-- [ ] **`spec-0299-entity-step`** — `entityStep` over 0300's keyed entities.
+- [x] **`spec-0299-entity-step`** ([#1079](https://github.com/surefold/surefold-core/pull/1079),
+      [#1084](https://github.com/surefold/surefold-core/pull/1084)) — `entityStep` over 0300's keyed entities.
       Done when: an `entityStep` whose answer is dropped settles through `Applied` without a second command.
-- [ ] **`spec-0299-transfer`** — the test transfer above, and a `docs/cluster.md` section with a compiled fence.
+- [x] **`spec-0299-transfer`** ([#1086](https://github.com/surefold/surefold-core/pull/1086),
+      [#1084](https://github.com/surefold/surefold-core/pull/1084)) — the test transfer above, and a `docs/cluster.md`
+      section with a compiled fence.
       Done when: 200 seeded unkind runs of it move the money exactly once, and `GuideExampleTest` compiles it.
 - [ ] **`spec-0299-bank`** (in `surefold-platform`, or here if 0301 has not moved it yet) — surefold-bank's
       transfer on `durableSaga` and its accounts on `keyed`, its README and pages updated to match.
