@@ -154,7 +154,7 @@ against; the library's own transitive dependencies come with it.
 | `surefold-actor-remote-avro` | message codecs from Avro specific records | `surefold-actor-remote` | `avro` 1.12.2 | yes |
 | `surefold-actor-remote-kotlinx` | message, event and state codecs from `@Serializable` classes | `surefold-actor-remote` | `kotlinx-serialization-protobuf` 1.11.0 | yes |
 | `surefold-cluster` | membership, downing, sharding, singletons, reliable delivery, topics ([guide](cluster.md#a-cluster)) | `surefold-actor-remote` | none | yes |
-| `surefold-cluster-saga` | durable sagas: step code journalled and replayed after a crash (spec 0299) | `surefold-actor` | none | yes |
+| `surefold-cluster-saga` | durable sagas: step code journalled and replayed after a crash, as sharded entities (spec 0299) | `surefold-cluster` | none | yes |
 | `surefold-cluster-kubernetes` | seeds from the pods API, and a `Lease` for an even split | `surefold-cluster` | `io.fabric8:kubernetes-client-api` 7.9.0 | yes |
 | `surefold-cluster-aws` | seeds from Cloud Map or ECS, and a DynamoDB lease | `surefold-cluster` | AWS SDK 2.55.6 `servicediscovery`, `ecs`, `dynamodb` | yes |
 | `surefold-actor-benchmarks` | JMH benchmarks against Pekko ([results](../bench/surefold-actor-benchmarks/README.md)) | | JMH, Pekko | no |
