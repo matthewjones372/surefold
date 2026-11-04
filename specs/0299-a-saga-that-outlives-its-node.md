@@ -97,7 +97,8 @@ already talk to entities, with jobs left as a later backend.
 - [ ] **`spec-0299-keyed`** — `keyed` in `surefold-actor`, and `entityStep` over it.
       Done when: a key sent twice is applied once and answered the same both times, and an `entityStep` whose
       answer is dropped settles through `Applied` without a second command.
-- [ ] **`spec-0299-bank`** — surefold-bank's transfer on `durableSaga`, plus a `docs/cluster.md` section.
+- [ ] **`spec-0299-bank`** — surefold-bank's transfer on `durableSaga` and its accounts on `keyed`, the bank's
+      README and pages updated to match, plus a `docs/cluster.md` section.
       Done when: `SagaSuite` and `CrashSuite` pass with `Transfer.kt` deleted and `Account.kt` on `keyed`.
 
 ## Acceptance

@@ -101,7 +101,7 @@ be held" look like an ordinary refusal; recommended is the undeclared `NotUndone
    2026-11-04): no, `saga` stays separate. `ExitCase` is public and has no type for `E`.
 2. **Who settles a step whose outcome is unknown?** Answered (maintainer, 2026-11-04): the step declares a
    `check`; without one the saga is unsettled and undoes nothing.
-3. **Default `undo` policy:** none, or a few retries with backoff? Recommended: none, so a saga with no policy does
-   exactly what its code says.
+3. **Default `undo` policy:** none, or a few retries with backoff? Answered (maintainer, 2026-11-04): none. A saga
+   with no policy runs each undo once, and retries are asked for with `undo = policy(...)`.
 4. **A deadline for all undos together**, so a hung refund can't hold a request forever? Recommended: yes, through
    the policy's `deadline`, with no separate setting.
