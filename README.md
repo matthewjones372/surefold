@@ -196,6 +196,7 @@ your classpath, and which are unpublished.
 | `surefold-actor-remote` | actors across nodes over TCP ([guide](docs/cluster.md)) | nothing |
 | `surefold-actor-journal-jdbc` | the event journal, snapshots and offsets on JDBC ([guide](docs/cluster.md)) | nothing |
 | `surefold-cluster` | membership, sharding, singletons, reliable delivery, topics ([guide](docs/cluster.md)) | nothing |
+| `surefold-cluster-saga` | sagas journalled step by step, that end on another node after a crash ([guide](docs/cluster.md#a-saga-that-outlives-its-node)) | nothing |
 | `surefold-kafka` | Kafka as a `Stream`, producers and transactions ([guide](docs/kafka.md)) | `kafka-clients` |
 | `surefold-sqs` | SQS as a `Stream`, deleted after the work, and sends ([guide](docs/sqs.md)) | AWS SDK `sqs` |
 | `surefold-sns` | publishing to SNS from a `Stream`, per-message outcomes ([guide](docs/sns.md)) | AWS SDK `sns` |
