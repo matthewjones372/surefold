@@ -109,7 +109,7 @@ already talk to entities, with jobs left as a later backend.
       [#1084](https://github.com/surefold/surefold-core/pull/1084)) — the test transfer above, and a `docs/cluster.md`
       section with a compiled fence.
       Done when: 200 seeded unkind runs of it move the money exactly once, and `GuideExampleTest` compiles it.
-- [ ] **`spec-0299-bank`** (in `surefold-platform`, or here if 0301 has not moved it yet) — surefold-bank's
+- [x] **`spec-0299-bank`** ([surefold-platform#5](https://github.com/surefold/surefold-platform/pull/5)) — surefold-bank's
       transfer on `durableSaga` and its accounts on `keyed`, its README and pages updated to match.
       Done when: `SagaSuite` and `CrashSuite` pass with `Transfer.kt` deleted and `Account.kt` on `keyed`.
 
