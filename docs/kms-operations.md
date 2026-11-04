@@ -21,7 +21,8 @@ For other SDK clients, pass `borrowedAwsCredentialsProvider(provider)` (spec
 [0263](../specs/0263-borrowed-aws-credentials.md)). The public view resolves nothing on construction,
 forwards each credentials value and the exact identity-resolution future/failure, and is not AutoCloseable.
 It retains no credentials and adds no refresh mechanism. All borrowing clients must close before their
-caller-owned provider; the key-operations Resource uses this same view internally.
+caller-owned provider; the key-operations Resource uses this same view internally. Wrapping the borrowed view in another closeable provider (a chain, for example) makes that
+wrapper the owner again, so do not hand such a wrapper to clients that close it.
 
 The application selects separate runtime, provisioner and deletion role providers and operation instances.
 The library neither assumes STS roles nor reads SSM. `creationClients` separates retry settings; it grants
