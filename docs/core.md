@@ -14,7 +14,7 @@ dependencies {
 ```
 
 The complete examples on this page, the fences that carry their own imports,
-are compiled by `CoreGuideTest`.
+are compiled by `CoreGuidesSuite`, against the core alone.
 
 1. [Forking](#forking)
 2. [Failure and cancellation](#failure-and-cancellation)
@@ -960,71 +960,10 @@ through an actor system.
 
 ## Running forks on Pekko
 
-A Pekko application already has one place that names, sizes and instruments
-its threads: the dispatcher configuration. `surefold-pekko` makes a dispatcher
-configured there the executor Surefold forks on, and lets a fork wait for Pekko's
-`CompletionStage`s and Scala `Future`s.
-
-```kotlin
-dependencies {
-    // brings surefold and pekko-actor
-    implementation("dev.surefold:surefold-pekko:0.18.0")
-}
-```
-
-The dispatcher is configured beside Pekko's own, and named by the part after
-`pekko.actor.`:
-
-```hocon
-pekko.actor.surefold {
-  executor = "virtual-thread-executor"
-}
-```
-
-<!-- core-pekko -->
-```kotlin
-import dev.surefold.await
-import dev.surefold.fail.Either
-import dev.surefold.fail.attempt
-import dev.surefold.fail.bind
-import dev.surefold.parZip
-import dev.surefold.pekko.surefoldDispatcher
-import org.apache.pekko.actor.ActorSystem
-import java.util.concurrent.CompletableFuture
-import java.util.concurrent.CompletionStage
-
-data class Missing(val id: Int)
-
-fun price(id: Int): CompletionStage<Long> = CompletableFuture.completedFuture(100L * id)
-
-fun stock(id: Int): Either<Missing, Int> = Either.Right(3)
-
-fun offer(system: ActorSystem, id: Int): Either<Missing, Pair<Long, Int>> = attempt {
-    val surefold = system.surefoldDispatcher()   // pekko.actor.surefold; surefoldDispatcher("other") for another
-    parZip(on = surefold, { price(id).await() }, { stock(id).bind() }) { p, s -> p to s }
-}
-```
-
-- `surefoldDispatcher` accepts a dispatcher whose executor is
-  `virtual-thread-executor`, or one with `type = PinnedDispatcher`, whose thread
-  is not shared. It rejects any other executor, including Pekko's default
-  fork-join pool, with an `IllegalArgumentException` naming the setting: a
-  Surefold fork blocks, and blocking the pool Pekko sizes for its actors starves
-  them. Both the classic and the typed `ActorSystem` can call it.
-- `await()` parks the calling fork until the stage completes. A failed stage
-  rethrows the original cause, not the `CompletionException` around it. An
-  interrupt cancels the stage with `cancel(true)` and rethrows the
-  `InterruptedException`, so a value that arrives later is dropped.
-- `await()` is in `surefold` and takes any `CompletionStage` or `Future`, Pekko's
-  or not; Pekko's Scala futures have one of their own in `surefold-pekko`.
-- The other way round, `surefoldFuture { }` hands surefold to a caller that wants a
-  future: the block runs on a virtual thread of its own, with the caller's
-  bindings as a fork has them, and the future's `cancel` interrupts it, so its
-  forks stop. `CompletableFuture.supplyAsync` would ignore the cancel. A
-  coroutine awaiting it with kotlinx's own `await()` cancels it when the
-  coroutine is cancelled.
-- `await()` does not change what a stage holds. A stream run into `Sink.seq`
-  still collects every element before it completes.
+`surefold-pekko` makes a dispatcher configured in a Pekko application the
+executor forks run on, and lets a fork wait for Pekko's futures. It wraps an
+outside library, so it lives in surefold-integrations, and its guide is
+[forks on Pekko](https://github.com/surefold/surefold-integrations/blob/main/docs/pekko.md#running-forks-on-pekko).
 
 ## Futures and coroutines
 

@@ -41,12 +41,9 @@ val repoRoot = rootProject.projectDir.absolutePath
 // rather than leaving a stale answer behind.
 val documentedRecipes = files(
     rootProject.layout.projectDirectory.file("docs/cookbook.md"),
-    rootProject.layout.projectDirectory.file("docs/core.md"),
     rootProject.layout.projectDirectory.file("docs/observability.md"),
-    rootProject.layout.projectDirectory.file("docs/testing.md"),
     rootProject.layout.projectDirectory.file("docs/arrow.md"),
     rootProject.layout.projectDirectory.file("docs/flags.md"),
-    rootProject.layout.projectDirectory.file("README.md"),
 )
 
 tasks.test {

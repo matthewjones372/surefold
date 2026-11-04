@@ -116,9 +116,11 @@ Work out which of these a change can break:
 ### Examples in the docs are compiled
 
 The guides' Kotlin fences are compiled by tests that read the Markdown:
-`ReadmeExampleSuite` (README and `docs/stream.md`), `CoreGuideTest` and
-`CookbookTest` (`docs/core.md`, `observability.md`, `testing.md`,
-`cookbook.md`), `ActorsGuideTest` and `GuideExampleTest`. A fence is found by
+`CoreGuidesSuite` in `core/surefold-guides` (`docs/core.md`, `testing.md` and
+the README's suite, against the core alone), `ReadmeExampleSuite` (README and
+`docs/stream.md`), `CoreGuideTest` and `CookbookTest` (`observability.md`,
+`arrow.md`, `flags.md`, `cookbook.md`), `ActorsGuideTest` and
+`GuideExampleTest`. A fence is found by
 the HTML comment above it, such as `<!-- core-policy -->`, so keep the marker
 when editing an example, and add one to a new complete example. Each module's
 `build.gradle.kts` declares the pages it reads as test inputs.
