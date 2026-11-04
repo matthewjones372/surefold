@@ -74,7 +74,9 @@ running.await("t-1", within = 2.seconds)       // a Durable.Outcome
   `Stuck(reason)` or `Forgotten`.
 - **Codecs.** The saga's input, error and answer are read through `StateCodec`s, wrapped in `versioned` (0091)
   when they change shape; no new codec interface.
-- **surefold-bank's `Transfer` is rewritten on it**, and `SagaSuite` and `CrashSuite` pass unchanged.
+- **Proven here by a transfer of its own**: a test kind of two keyed accounts and a transfer saga in
+  `surefold-cluster-saga`'s tests, crashed at every step boundary. surefold-bank, which moves to
+  `surefold-platform` (0301), is rewritten on it there, from the first release that has this spec.
 
 ## Why this shape
 
@@ -99,14 +101,16 @@ already talk to entities, with jobs left as a later backend.
       `Undoing`) and every saga ends elsewhere as it would have without the crash.
 - [ ] **`spec-0299-entity-step`** — `entityStep` over 0300's keyed entities.
       Done when: an `entityStep` whose answer is dropped settles through `Applied` without a second command.
-- [ ] **`spec-0299-bank`** — surefold-bank's transfer on `durableSaga` and its accounts on `keyed`, the bank's
-      README and pages updated to match, plus a `docs/cluster.md` section.
+- [ ] **`spec-0299-transfer`** — the test transfer above, and a `docs/cluster.md` section with a compiled fence.
+      Done when: 200 seeded unkind runs of it move the money exactly once, and `GuideExampleTest` compiles it.
+- [ ] **`spec-0299-bank`** (in `surefold-platform`, or here if 0301 has not moved it yet) — surefold-bank's
+      transfer on `durableSaga` and its accounts on `keyed`, its README and pages updated to match.
       Done when: `SagaSuite` and `CrashSuite` pass with `Transfer.kt` deleted and `Account.kt` on `keyed`.
 
 ## Acceptance
 
 ```bash
-./gradlew :surefold-cluster-saga:test :surefold-bank:test
+./gradlew :surefold-cluster-saga:test
 ./gradlew spotlessApply && ./gradlew build
 ```
 

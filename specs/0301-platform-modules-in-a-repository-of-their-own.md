@@ -25,6 +25,7 @@ A new repository, `surefold/surefold-platform` (open question 2), holding:
   with `git filter-repo`, so `git log` and `blame` still work).
 - **Their guides:** `auth.md`, `files.md`, `http-stores.md`, `jobs.md`, `kms-operations.md`, `postgres-notify.md`,
   `tenancy.md`, `tenancy-crypto.md`, and the Postgres section of `flags.md`, with their compiled-fence tests.
+- **`examples/surefold-bank`** (0302 question 2), the example built on core, integrations and platform alike.
 - **`bench/surefold-jobs-load`**, and the `surefold-app-flyway` and `surefold-app-pekko` tests that migrate or read
   `data/` modules.
 - **The same rules:** `AGENTS.md`, `CODING_STANDARDS.md`, specs first, `NoOtherDependenciesTest`, Kover at 90%,
@@ -70,7 +71,8 @@ checkout but none of the smaller build or reading. **Alternative:** split by mod
       checked out beside it a change to their source reaches the platform's tests without publishing.
 - [ ] **`spec-0301-release`** (new repository) — the release and snapshot workflows publishing the same coordinates.
       Done when: a snapshot of every moved artifact is published from there.
-- [ ] **`spec-0301-remove`** (here) — delete `data/`, `surefold-jobs-load` and the moved tests, and add the pointers.
+- [ ] **`spec-0301-remove`** (here) — delete `data/`, `surefold-bank`, `surefold-jobs-load` and the moved tests, and
+      add the pointers.
       Done when: `./gradlew build` is green here, and no `settings.gradle.kts` line names a moved module.
 
 ## Acceptance

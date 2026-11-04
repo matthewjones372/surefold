@@ -43,8 +43,8 @@ surefold/surefold-platform      core + integrations (0301)
 
 **Stays in `surefold-core`**: `surefold`, `-replay`, `-cache`, `-structured`, `-app`, `-app-actor`, `-stream`,
 `-stream-forks`, `-stream-actors`, `-stream-test`, `-actor`, `-actor-journal-jdbc`, `-actor-projection`,
-`-actor-remote`, `-cluster`, `-test`, the test and build tooling (open question 1), `surefold-bank` (question 2) and
-`surefold-core-benchmarks`.
+`-actor-remote`, `-cluster`, `-test`, the test and build tooling (open question 1) and `surefold-core-benchmarks`.
+`surefold-bank` moves to `surefold-platform` with 0301 (question 2).
 
 - **This repository is renamed `surefold-core`** once the moves are done. GitHub redirects the old URL; badges,
   `llms.txt` and links are updated in the same step.
@@ -95,8 +95,8 @@ Recommended (maintainer, 2026-11-04): a third repository.
    Answered (maintainer, 2026-11-04): yes, as the one exception. Every core test runs on it, so moving it would
    make core depend on another repository to test itself. The rule reads: runtime modules are JDK and Kotlin only;
    test and build tooling is exempt, and never reaches a service's runtime classpath.
-2. **`surefold-bank`** uses `surefold-app-liquibase` and Postgres. Recommended: stays in core, running the journal's
-   changelog through the journal's own setup rather than `app-liquibase`, because it proves the sagas (0299).
+2. **`surefold-bank`** uses `surefold-app-liquibase` and Postgres. Answered (maintainer, 2026-11-04): it moves to
+   `surefold-platform` (0301), keeping `app-liquibase`. Core proves its sagas with its own tests (0299).
 3. **Order of 0301 and 0302.** Recommended: both seed from the same last single-repository release (0.19.0), 0302
    first, so the platform repository's first build after the split already resolves integrations from Central.
 4. **A composite build across the repositories?** Answered (maintainer, 2026-11-04): yes, opt-in by checking the
