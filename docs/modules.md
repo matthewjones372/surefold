@@ -102,7 +102,6 @@ against; the library's own transitive dependencies come with it.
 | `surefold-app-typesafe` | HOCON sections as nodes, every fault at once, where each setting came from ([cookbook](cookbook.md#configuration-a-module-owns)) | `surefold-app` | `com.typesafe:config` 1.4.3 | yes |
 | `surefold-app-kotlinx` | a HOCON section read from its `@Serializable` class ([cookbook](cookbook.md#configuration-a-module-owns)) | `surefold-app-typesafe` | `kotlinx-serialization-core` 1.11.0 | yes |
 | `surefold-app-liquibase` | a changelog as a node that readers of the database depend on ([cookbook](cookbook.md#run-migrations-as-a-step)) | `surefold-app` | `liquibase-core` 4.32.0 | yes |
-| `surefold-app-flyway` | SQL migrations on Flyway as a node that readers of the database depend on, the data modules' first ([guide](flyway.md)) | `surefold-app` | `flyway-core` and `flyway-database-postgresql` 13.9.0 (Community, Apache-2.0) | yes |
 | `surefold-app-openfeature` | an OpenFeature provider as a node, keyed by `Client`, in readiness and shut down on release ([guide](flags.md)) | `surefold-app`, `surefold-openfeature` | none | yes |
 | `surefold-app-openfeature-flagd` | flags in flagd's schema as a section of the service's HOCON, evaluated in-process ([guide](flags.md#flags-in-the-services-config)) | `surefold-app-openfeature`, `surefold-app-typesafe` | `dev.openfeature.contrib.providers:flagd` 0.15.0, with gRPC and netty | yes |
 | `surefold-actor-pekko` | `ask` for a Pekko typed actor on the calling virtual thread, without the wiring graph (spec 0058) | `surefold-pekko` | `pekko-actor-typed` 1.2.1 | yes |
@@ -162,28 +161,10 @@ against; the library's own transitive dependencies come with it.
 
 ### Data
 
-| Module | For | Surefold deps | Adds | Published |
-|---|---|---|---|---|
-| `surefold-jobs` | durable jobs on Postgres, enqueued in the caller's own transaction ([guide](jobs.md)) | `surefold`, `surefold-postgres-notify` | none (bring your own driver and pool) | yes |
-| `surefold-app-jobs` | a job worker as a node, started after the migrations and drained on release ([guide](jobs.md#a-kind-a-handler-and-a-worker)) | `surefold-app`, `surefold-jobs` | none: the service picks its migration tool | yes |
-| `surefold-jobs-load` | a Proofload load test: jobs enqueued at a fixed rate, drained by 1, 4 and 16 workers (`./gradlew :surefold-jobs-load:run`) | | Proofload, Testcontainers | no |
-| `surefold-files` | files on any S3-compatible store, with typed failures, presigned URLs and an in-memory fake ([guide](files.md)) | `surefold` | AWS SDK 2.55.6 `s3`, on its URL-connection client | yes |
-| `surefold-files-test` | MinIO in Testcontainers, a fresh bucket a call, for a service's own tests ([guide](files.md#testing)) | `surefold-files` | Testcontainers 2.0.5 | yes |
-| `surefold-tenancy` | a tenant forks and messages carry, and Postgres row-level security set for every transaction ([guide](tenancy.md)) | `surefold` | none (bring your own driver and pool) | yes |
-| `surefold-tenancy-test` | a check that a service's tables keep two tenants apart ([guide](tenancy.md#testing-isolation)) | `surefold-tenancy` | none | yes |
-| `surefold-tenancy-crypto` | a key per tenant under a root key a KMS holds and no backup does; `InMemoryKms` for tests ([guide](tenancy-crypto.md)) | `surefold-tenancy` | none | yes |
-| `surefold-tenancy-crypto-aws` | `AwsKms`: one customer managed key per tenant on AWS KMS, found by alias ([guide](tenancy-crypto.md#aws-kms)) | `surefold-tenancy-crypto` | AWS SDK 2.55.6 `kms`, on its URL-connection client | yes |
-| `surefold-jobs-tenancy` | each job's handler runs as the tenant its row names ([guide](tenancy.md#jobs)) | `surefold-jobs`, `surefold-tenancy` | none | yes |
-| `surefold-idempotency` | idempotency keys on Postgres, reserved atomically across instances, answers replayed ([guide](http-stores.md)) | `surefold`, `surefold-jobs` | none (bring your own driver and pool) | yes |
-| `surefold-ratelimit` | token buckets by key, in memory or on Postgres, shared by every instance ([guide](http-stores.md#rate-limits)) | `surefold` | none (bring your own driver and pool) | yes |
-| `surefold-postgres-notify` | Postgres's `LISTEN` as a `Stream` of notifications in commit order, on one connection of its own, and `notify` to send ([guide](postgres-notify.md)) | `surefold-stream` | none (bring your own driver) | yes |
-| `surefold-cache-postgres` | a `Cache` told by Postgres `NOTIFY` that a row changed: a payload drops its key, a gap drops every key (spec 0246) | `surefold-cache`, `surefold-postgres-notify` | none | yes |
-| `surefold-cache-tenancy` | `TenantCache`: a `Cache` whose every entry is one tenant's, looked up as that tenant (spec 0246) | `surefold-cache`, `surefold-tenancy` | none | yes |
-| `surefold-openfeature-postgres` | `PostgresFlags`, an OpenFeature provider of flags per tenant from a Postgres table, read under its row-level security policy, and told of a change by `NOTIFY` (spec 0240) | `surefold-openfeature`, `surefold-tenancy`, `surefold-cache`, `surefold-postgres-notify` | none beyond the OpenFeature SDK | yes |
-| `surefold-cache-redis` | `RedisLayer`, a `Cache` layer every instance shares on Redis, and `RedisInvalidations` over pub/sub (spec 0246) | `surefold-cache` | `lettuce-core` 6.5.0 | yes |
-| `surefold-auth` | sessions and credentials: Argon2id passwords, rotating sessions, magic links, TOTP, roles ([guide](auth.md)) | `surefold` | `bcprov-jdk18on` 1.85 | yes |
-| `surefold-auth-oidc` | sign-in with an OpenID Connect provider: the code flow with PKCE, and the ID token's signature, issuer, audience, expiry and nonce checked ([guide](auth.md#signing-in-elsewhere)) | `surefold-auth` | `oauth2-oidc-sdk` 11.37.2 | yes |
-| `surefold-jobs-otel` | a span per run of a job, in its own trace and linked to the span that enqueued it ([guide](jobs.md#traces)) | `surefold-jobs`, `surefold-otel` | none beyond `opentelemetry-api` | yes |
+Jobs, files, tenancy and its keys, auth, idempotency and rate limits, Postgres notifications and the caches on them,
+per-tenant flags and `surefold-app-flyway` moved to
+[surefold-platform](https://github.com/surefold/surefold-platform) (spec 0301), with their guides. Their coordinates
+did not change: they are still `dev.surefold:<name>`.
 
 ### Observability and testing
 
@@ -204,9 +185,8 @@ against; the library's own transitive dependencies come with it.
 
 ### Example
 
-| Module | For | Published |
-|---|---|---|
-| `surefold-bank` | an example application; see [below](#the-example-application) | no |
+The example bank, `surefold-bank`, moved to
+[surefold-platform](https://github.com/surefold/surefold-platform/tree/main/examples/surefold-bank) (spec 0301).
 
 ## Stability
 
@@ -219,7 +199,7 @@ line coverage, and the examples in the guides are compiled by tests. No
 production use is known. Maturity is uneven: the core, `surefold-app` and
 `surefold-stream` have been in place longest and are used by the related projects
 listed in the README; the actor, cluster and Kafka modules are newer, and
-outside their own tests are exercised mainly by `surefold-bank` and
+outside their own tests are exercised mainly by surefold-platform's example bank and
 [surefold-bank](https://github.com/surefold/surefold-bank).
 
 Some modules wrap APIs that are themselves experimental:
@@ -270,27 +250,7 @@ cluster benchmarks against Pekko Cluster are written but have not been run.
 
 ## The example application
 
-`surefold-bank` is a small bank built on the actor, persistence, remoting and
-cluster modules. Accounts and transfers are persistent sharded entities. A
-transfer is a saga that debits one account and credits another through durable
-reliable sends, so a node that dies in the middle delays a transfer without
-losing or doubling money. Each node publishes its numbers to a cluster topic,
-which the admin page reads.
+`surefold-bank`, three nodes of a bank on the actor, persistence, remoting and cluster modules, lives in
+[surefold-platform](https://github.com/surefold/surefold-platform/tree/main/examples/surefold-bank) now, with its
+README and how to run it.
 
-```bash
-./gradlew :surefold-bank:run
-```
-
-That starts three nodes in one JVM with the journal in memory. Each serves a
-page for sending money at <http://localhost:8081> to `8083`, and an admin page
-at `/admin` that streams the cluster's numbers and has buttons to generate load
-and to crash a node.
-
-- `--args="--jdbc URL"` keeps the journal in a Postgres database instead.
-- `--args="--node n2 --jdbc URL"` runs a single node in its own process;
-  `--node` requires `--jdbc` so the nodes share a journal.
-
-The HTTP server is the JDK's own `HttpServer`, and the pages are plain HTML and
-JavaScript, tested in headless Chromium through Playwright. It is not
-published and is not a real bank: there is no authentication, and an account
-is chosen by its id.

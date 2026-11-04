@@ -11,11 +11,12 @@ published artifacts:
 | `surefold/surefold-integrations` | every module that wraps one outside library | core |
 | `surefold/surefold-platform` | the `data/` modules, `surefold-bank`, `surefold-jobs-load`, and `surefold-bom` (0306) | core and integrations |
 
-Until 0302's and 0301's seed entries land, every module still lives here. Then:
+The platform modules have moved (0301's remove entry). The integrations still live here until 0302's remove entry
+lands. Meanwhile:
 
 - **Don't add an outside library to a module that stays in core.** 0302's table says which modules move. A new
-  module that wraps a library belongs in `surefold-integrations`; a new platform feature belongs in `data/`, and
-  moves with it.
+  module that wraps a library belongs in `surefold-integrations`; a new platform feature belongs in
+  `surefold-platform`.
 - **Don't move, copy or delete modules ahead of 0302's stack.** The seed entries carry their history across.
 - **Coordinates never change.** Artifacts stay `dev.surefold:<name>`, packages stay `dev.surefold.*`.
 - **No Central release for now** (0301 question 5). Downstream repositories pin snapshots from GitHub Packages,

@@ -104,8 +104,6 @@ val moduleDescriptions = mapOf(
     "surefold-micrometer" to "surefold's metrics into a Micrometer registry.",
     "surefold-app-liquibase" to
         "surefold-app on Liquibase: a migration is a node, and reading the database depends on it.",
-    "surefold-app-flyway" to
-        "surefold-app on Flyway: SQL migrations as a node, with the settings a production database wants pinned.",
     "surefold-app-typesafe" to
         "surefold-app on Typesafe Config: a section is a node, and a bad file says every fault at once.",
     "surefold-app-kotlinx" to
@@ -165,42 +163,6 @@ val moduleDescriptions = mapOf(
         "surefold-app on OpenFeature: the provider is a node, set before any flag is read and shut down on release.",
     "surefold-app-openfeature-flagd" to
         "surefold-app-openfeature on flagd: flags in flagd's schema as a section of the service's own HOCON.",
-    "surefold-jobs" to
-        "Durable jobs on Postgres, enqueued in the caller's own transaction so they commit with its change.",
-    "surefold-app-jobs" to
-        "surefold-app on surefold-jobs: a worker is a node, started after the migrations and drained on release.",
-    "surefold-jobs-otel" to
-        "surefold-jobs on OpenTelemetry: a span per run of a job, linked to the span that enqueued it.",
-    "surefold-files" to
-        "Files on any S3-compatible store: put, get, list and presigned URLs, typed failures, and a fake for tests.",
-    "surefold-files-test" to
-        "MinIO in Testcontainers for a service's own tests of surefold-files: a fresh bucket a call.",
-    "surefold-tenancy" to
-        "Tenancy Postgres enforces: a tenant forks inherit, row-level security per transaction, and an audited bypass.",
-    "surefold-tenancy-test" to "A check that a service's tables keep two tenants apart under row-level security.",
-    "surefold-jobs-tenancy" to
-        "surefold-jobs on surefold-tenancy: each job's handler runs as the tenant its row names.",
-    "surefold-idempotency" to
-        "Idempotent requests on Postgres: keys reserved atomically across instances, and answers replayed.",
-    "surefold-ratelimit" to "Rate limits as token buckets, in memory or on Postgres, shared by every instance.",
-    "surefold-tenancy-crypto" to
-        "A key per tenant, rooted in a KMS key no backup holds: delete the root and every copy is unreadable.",
-    "surefold-tenancy-crypto-aws" to
-        "surefold-tenancy-crypto on AWS KMS: one customer managed key per tenant, found by alias.",
-    "surefold-openfeature-postgres" to
-        "Feature flags per tenant from a Postgres table, read under its row-level security policy, for OpenFeature.",
-    "surefold-cache-redis" to
-        "surefold-cache on Redis: a layer every instance shares, and invalidation over Redis pub/sub.",
-    "surefold-cache-tenancy" to
-        "A surefold-cache whose every entry is one tenant's, looked up as that tenant, and refused with no tenant.",
-    "surefold-cache-postgres" to
-        "A surefold-cache told by Postgres NOTIFY that a row changed: a payload drops its key, a gap every key.",
-    "surefold-postgres-notify" to
-        "Postgres's LISTEN and NOTIFY as a surefold Stream: one connection, notifications in commit order.",
-    "surefold-auth" to
-        "Sessions and credentials on Postgres: Argon2id passwords, rotating sessions, magic links, TOTP, roles.",
-    "surefold-auth-oidc" to
-        "OpenID Connect sign-in on Nimbus: the code flow with PKCE, and each ID token check its own error.",
 )
 
 // A Gradle plugin publishes through `java-gradle-plugin`'s own marker publication, and what it does
@@ -223,15 +185,13 @@ val surefoldJunitRunsOn =
 val benchmarkModules =
     setOf(
         "surefold-core-benchmarks", "surefold-stream-benchmarks", "surefold-actor-benchmarks",
-        "surefold-kafka-benchmarks",
-        "surefold-jobs-load", "surefold-jdbc-otel-bench",
+        "surefold-kafka-benchmarks", "surefold-jdbc-otel-bench",
     )
 
 // Built and tested, never published: surefold-structured calls StructuredTaskScope, a preview API until
-// JDK 28 (JEP 543), and a release must not promise an API the JDK has not. surefold-bank is an application
-// to run, not a library to depend on (spec 0094). surefold-guides holds only tests, of the guides (spec 0302).
-val unpublished =
-    setOf("surefold-structured", "surefold-stream-parity", "surefold-bank", "surefold-guides") + benchmarkModules
+// JDK 28 (JEP 543), and a release must not promise an API the JDK has not. surefold-guides holds only tests, of the
+// guides (spec 0302).
+val unpublished = setOf("surefold-structured", "surefold-stream-parity", "surefold-guides") + benchmarkModules
 
 // What llms.txt and the surefold skill must name, no more and no fewer: AgentDocsSuite in surefold-app reads it.
 extra["publishedModules"] = subprojects.map { it.name }.filterNot { it in unpublished }.sorted()

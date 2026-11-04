@@ -241,8 +241,6 @@ style:
       - '**/example/**'
       # A benchmark measures Surefold's threads against hand-started ones.
       - '**/bench/**'
-      # The bank example moves to surefold-platform with its module (0301), and is changed there.
-      - '**/examples/surefold-bank/**'
       # The executor every scope forks on.
       - '**/core/surefold/src/main/kotlin/dev/surefold/VirtualThreads.kt'
       # A shielded block outlives the interrupt of the thread that waits for it, so no fork of that thread can run it.

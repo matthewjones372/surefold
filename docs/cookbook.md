@@ -35,7 +35,7 @@ and the same-cache layer reentry restriction.
 | retain answers by capacity without expiry | `Cache(ttl = { Duration.INFINITE }, capacity = …)` | `surefold-cache` |
 | retain by result-specific expiry, with last-good fallback | `Cache(ttl = …, stale = …)` | `surefold-cache` |
 | finish shared cache work before releasing its dependencies | `Cache.closeAndJoin` in `onRelease` | `surefold-cache` |
-| explicit regional KMS roots, exact contexts and owned clients | [`KeyOperations`, `AwsKeyOperations`, `awsKeyOperations`](kms-operations.md) | `surefold-tenancy-crypto-aws` |
+| explicit regional KMS roots, exact contexts and owned clients | [`KeyOperations`, `AwsKeyOperations`, `awsKeyOperations`](https://github.com/surefold/surefold-platform/blob/main/docs/kms-operations.md) | `surefold-tenancy-crypto-aws` (surefold-platform) |
 | trace JDBC executions without per-query wrapping | `DataSource.traced(openTelemetry)` | [`surefold-jdbc-otel`](jdbc-tracing.md) |
 
 The types the recipes are written against:
@@ -720,15 +720,8 @@ schema's owner, `migrations(changelog) { s: DbConfig -> ownerPool(s) }` runs it
 on a source opened from that node and closed before `Migrated` is answered.
 Outside a graph, `migrate(dataSource, changelog)` runs a changelog immediately.
 
-`surefold-app-flyway` does the same with Flyway's SQL scripts, the data modules' first and then the service's, and
-hands a database Liquibase has migrated over once ([Flyway](flyway.md)):
-
-```kotlin
-val database: Module =
-    closingOf { cfg: DbConfig -> HikariDataSource(cfg) }.boundTo<DataSource>() +
-    flyway(SurefoldSchema.TENANCY, SurefoldSchema.JOBS, service = "classpath:db/migration") +
-    single { db: DataSource, _: Migrated -> PgUserRepo(db) as UserRepo }
-```
+Flyway's SQL scripts, the platform modules' schemas first and then the service's, are `surefold-app-flyway`'s, in
+surefold-platform: see its [Flyway](https://github.com/surefold/surefold-platform/blob/main/docs/flyway.md) guide.
 
 ## Spawn a Pekko actor
 
