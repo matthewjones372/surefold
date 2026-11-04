@@ -113,7 +113,10 @@ already talk to entities, with jobs left as a later backend.
 1. **Run steps in `parZip` branches in a durable saga?** Answered (maintainer, 2026-11-04): not in this spec.
    Replaying branches needs per-branch journals, and the first users are sequential; a later spec adds them.
 2. **A recovered body that calls a different step than the journal says:** stop as `Diverged`, or carry on from the
-   first difference? Recommended: stop, with both names in the error. Carrying on silently skips work.
+   first difference? Answered (maintainer, 2026-11-04): stop as `Diverged`, naming the step journalled and the step
+   called, counted like `Stuck` and released by `resume`. A step's value and the saga's input and answer are read
+   through codecs that may be `versioned` (0091), so a changed *shape* replays; a changed *order of steps* is
+   what diverges, and running in-flight sagas on the body they started with is the later versioning spec.
 3. **Reading the clock or a random id in the body** gives a different answer on replay. Make them steps
    (`now()` and `uuid()` journalled), or document it? Recommended: journalled helpers, plus a test in the
    `testActors` unkind runtime (0128) that crashes at every step boundary.
