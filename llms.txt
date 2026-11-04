@@ -154,6 +154,8 @@ Facts worth having before anything else:
 - `surefold-actor-remote-kotlinx`: remote messages from `@Serializable` classes.
 - `surefold-cluster`: gossip membership, discovery and downing with no
   coordinator.
+- `surefold-cluster-saga`: durable sagas, journalled step by step and replayed
+  after a crash.
 - `surefold-cluster-kubernetes`: cluster seeds from the pods API, and a Lease.
 - `surefold-cluster-aws`: cluster seeds from Cloud Map or ECS, and a DynamoDB
   lease.

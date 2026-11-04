@@ -151,6 +151,7 @@ val moduleDescriptions = mapOf(
         "surefold-actor-remote's messages, events and snapshots from @Serializable data classes, " +
         "in ProtoBuf by default.",
     "surefold-cluster" to "surefold-actor as a cluster: discovery, gossip membership and downing, with no coordinator.",
+    "surefold-cluster-saga" to "Durable sagas: plain step code journalled and replayed, so a saga outlives its node.",
     "surefold-cluster-aws" to
         "surefold-cluster on AWS: seeds from Cloud Map or ECS, and a DynamoDB lease to break an even split.",
     "surefold-cluster-kubernetes" to
