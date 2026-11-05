@@ -9,7 +9,8 @@ import javax.sql.DataSource
 import kotlin.system.exitProcess
 import kotlin.time.Duration
 
-private const val USAGE = """surefold-journal-move: moves a range of a sharded journal's slices between databases (spec 0105).
+private const val USAGE =
+    """surefold-journal-move: moves a range of a sharded journal's slices between databases (spec 0105).
 
   move  --database NAME=JDBC_URL ... --slices FROM..TO --to NAME
   clean --database NAME=JDBC_URL ... --read-models A,B --after 1h
@@ -21,10 +22,11 @@ user and password come from SUREFOLD_JOURNAL_USER and SUREFOLD_JOURNAL_PASSWORD 
 fun main(args: Array<String>) {
     val command = args.firstOrNull()
     val options = args.drop(1).chunked(2).filter { it.size == 2 }.groupBy({ it[0] }, { it[1] })
-    val databases = options["--database"].orEmpty().map { named ->
-        val (name, url) = named.split("=", limit = 2).also { if (it.size != 2) usage() }
-        name to Driven(url, System.getenv("SUREFOLD_JOURNAL_USER"), System.getenv("SUREFOLD_JOURNAL_PASSWORD"))
-    }
+    val databases =
+        options["--database"].orEmpty().map { named ->
+            val (name, url) = named.split("=", limit = 2).also { if (it.size != 2) usage() }
+            name to Driven(url, System.getenv("SUREFOLD_JOURNAL_USER"), System.getenv("SUREFOLD_JOURNAL_PASSWORD"))
+        }
     if (databases.isEmpty()) usage()
     val mover = SliceMover(databases)
     when (command) {

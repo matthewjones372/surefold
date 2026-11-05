@@ -2,11 +2,11 @@ package dev.surefold
 
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 
 private const val SECTIONS = 1_000
 
@@ -34,14 +34,15 @@ class SoloTest {
         val writing = AtomicBoolean(true)
         val writes = AtomicInteger()
         // Platform threads, so the writers run beside the report rather than taking turns with it.
-        val writers = List(WRITERS) {
-            Thread.ofPlatform().start {
-                while (writing.get()) {
-                    transact { sections[0].update { it + 1 } }
-                    writes.incrementAndGet()
+        val writers =
+            List(WRITERS) {
+                Thread.ofPlatform().start {
+                    while (writing.get()) {
+                        transact { sections[0].update { it + 1 } }
+                        writes.incrementAndGet()
+                    }
                 }
             }
-        }
         spinUntil { writes.get() > WRITERS }
         val runs = AtomicInteger()
 
@@ -62,9 +63,10 @@ class SoloTest {
     @Test
     fun `a solo run that waits gives the word up, so the commit it waits for can land`() {
         val free = Shared(0)
-        val buyer = Thread.ofVirtual().start {
-            transact(soloAfter = 0) { if (free.get() == 0) waitForChange() else free.update { it - 1 } }
-        }
+        val buyer =
+            Thread.ofVirtual().start {
+                transact(soloAfter = 0) { if (free.get() == 0) waitForChange() else free.update { it - 1 } }
+            }
         spinUntil { free.waiters.isNotEmpty() }
 
         transact { free.set(1) }
@@ -95,6 +97,6 @@ class SoloTest {
 
     @Test
     fun `a budget below zero is refused`() {
-        shouldThrow<IllegalArgumentException> { transact(soloAfter = -1) { } }
+        shouldThrow<IllegalArgumentException> { transact(soloAfter = -1) {} }
     }
 }

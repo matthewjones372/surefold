@@ -3,9 +3,9 @@ package dev.surefold
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldContainExactly
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import org.junit.jupiter.api.Test
 
 class SurefoldLocalTest {
 
@@ -64,10 +64,13 @@ class SurefoldLocalTest {
     fun `a binding made inside a branch does not reach its siblings`() {
         val local = surefoldLocal { "initial" }
 
-        val seen = parZip(
-            { local.locally("mine") { local.get() } },
-            { local.get() },
-        ) { first, second -> first to second }
+        val seen =
+            parZip(
+                { local.locally("mine") { local.get() } },
+                { local.get() },
+            ) { first, second ->
+                first to second
+            }
 
         seen shouldBe ("mine" to "initial")
     }
@@ -104,10 +107,11 @@ class SurefoldLocalTest {
     fun `an attach inside a binding lasts for the rest of that block and no further`() {
         val local = surefoldLocal { "initial" }
 
-        val seen = local.locally("bound") {
-            local.attach("attached")
-            local.get()
-        }
+        val seen =
+            local.locally("bound") {
+                local.attach("attached")
+                local.get()
+            }
 
         seen shouldBe "attached"
         withClue("leaving the block drops what was attached inside it, detached or not") {
@@ -120,14 +124,15 @@ class SurefoldLocalTest {
         val local = surefoldLocal { "initial" }
         val other = surefoldLocal { 0 }
 
-        val seen = other.locally(1) {
-            val detach = local.attach("attached")
-            try {
-                parMap(listOf(1, 2)) { local.get() to other.get() }
-            } finally {
-                detach.detach()
+        val seen =
+            other.locally(1) {
+                val detach = local.attach("attached")
+                try {
+                    parMap(listOf(1, 2)) { local.get() to other.get() }
+                } finally {
+                    detach.detach()
+                }
             }
-        }
 
         seen shouldContainExactly listOf("attached" to 1, "attached" to 1)
     }
@@ -136,10 +141,11 @@ class SurefoldLocalTest {
     fun `an attach in a branch does not reach the thread that forked it`() {
         val local = surefoldLocal { "initial" }
 
-        val seen = local.locally("bound") {
-            parMap(listOf(1)) { local.attach("branch's own") }
-            local.get()
-        }
+        val seen =
+            local.locally("bound") {
+                parMap(listOf(1)) { local.attach("branch's own") }
+                local.get()
+            }
 
         seen shouldBe "bound"
     }
@@ -167,9 +173,10 @@ class SurefoldLocalTest {
     fun `a value bound inside another binding of the same local is read first, and the outer one after`() {
         val local = surefoldLocal { "initial" }
 
-        val seen = local.locally("outer") {
-            listOf(local.locally("inner") { local.get() }, local.get())
-        }
+        val seen =
+            local.locally("outer") {
+                listOf(local.locally("inner") { local.get() }, local.get())
+            }
 
         seen shouldContainExactly listOf("inner", "outer")
     }
@@ -180,10 +187,11 @@ class SurefoldLocalTest {
         val other = surefoldLocal { "initial" }
         val first = local.attach(1)
 
-        val seen = other.locally("bound") {
-            local.attach(2)
-            Triple(local.get(), other.get(), generateSequence(Bindings.snapshot()) { it.next }.count())
-        }
+        val seen =
+            other.locally("bound") {
+                local.attach(2)
+                Triple(local.get(), other.get(), generateSequence(Bindings.snapshot()) { it.next }.count())
+            }
 
         seen shouldBe Triple(2, "bound", 2)
         local.get() shouldBe 1
@@ -196,9 +204,10 @@ class SurefoldLocalTest {
         val other = surefoldLocal { 0 }
 
         val unboundRead = local.from(Bindings.snapshot()) to local.get()
-        val boundRead = local.locally("bound") {
-            other.locally(1) { local.from(Bindings.snapshot()) to local.get() }
-        }
+        val boundRead =
+            local.locally("bound") {
+                other.locally(1) { local.from(Bindings.snapshot()) to local.get() }
+            }
 
         unboundRead shouldBe ("initial" to "initial")
         boundRead shouldBe ("bound" to "bound")

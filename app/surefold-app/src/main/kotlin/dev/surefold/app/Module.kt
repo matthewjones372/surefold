@@ -18,7 +18,8 @@ internal class Choice(val pick: (List<Any>) -> Module)
 internal class Shadow(val key: KType, val shadowed: String?, val wins: String?)
 
 /** Recipes, keyed by the type each one builds. */
-class Module private constructor(
+class Module
+private constructor(
     internal val nodes: Map<KType, Node>,
     internal val probes: List<Probe>,
     internal val shadows: List<Shadow> = emptyList(),
@@ -38,22 +39,26 @@ class Module private constructor(
         )
 
     private fun collisionsWith(other: Module): List<Shadow> =
-        other.nodes.keys.filter { it in nodes }
+        other.nodes.keys
+            .filter { it in nodes }
             .map { Shadow(it, nodes.getValue(it).site, other.nodes.getValue(it).site) }
 
     /**
      * The same module, shadowing exactly what [kept] did.
      *
-     * Named by what survives rather than by the keys to drop: a base module that already shadowed a
-     * key by accident keeps saying so, and only the collisions this merge introduced are forgiven.
+     * Named by what survives rather than by the keys to drop: a base module that already shadowed a key by accident
+     * keeps saying so, and only the collisions this merge introduced are forgiven.
      */
     internal fun shadowing(kept: List<Shadow>): Module = Module(nodes, probes, kept, pending)
 
     /** The same module, with [replacements] waiting for a chosen branch that brings their keys. */
-    internal fun pendingFor(replacements: Map<KType, Node>): Module = Module(
-        nodes, probes, shadows,
-        pending + replacements,
-    )
+    internal fun pendingFor(replacements: Map<KType, Node>): Module =
+        Module(
+            nodes,
+            probes,
+            shadows,
+            pending + replacements,
+        )
 
     internal companion object {
         fun of(node: Node): Module = Module(mapOf(node.key to node), emptyList())
@@ -73,10 +78,10 @@ private val qualifiers = Regex("""\b[a-z][A-Za-z0-9_]*(\.[a-z][A-Za-z0-9_]*)*\."
 /**
  * What a `KType` renders as where kotlin-reflect is not on the classpath, once per type argument.
  *
- * This module depends on it nowhere else, and a report is no place to start: the name is still
- * right, and a build that prints "Pump (Kotlin reflection is not available) needs DataSource
- * (Kotlin reflection is not available)" has buried the sentence it came to say. Without it a nested
- * class also renders by its JVM name, `Outer$Inner`, so the `$` goes back to the `.` its source wrote.
+ * This module depends on it nowhere else, and a report is no place to start: the name is still right, and a build that
+ * prints "Pump (Kotlin reflection is not available) needs DataSource (Kotlin reflection is not available)" has buried
+ * the sentence it came to say. Without it a nested class also renders by its JVM name, `Outer$Inner`, so the `$` goes
+ * back to the `.` its source wrote.
  */
 private val unavailable = Regex(""" \(Kotlin reflection is not available\)""")
 

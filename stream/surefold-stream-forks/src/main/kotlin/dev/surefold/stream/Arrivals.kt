@@ -5,12 +5,12 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.locks.LockSupport
 
 /**
- * The answers of an unordered window (spec 0170), arriving from whichever thread completed them, for the one
- * pull that takes them; and the room the one feeder waits for, [window] answers in flight at most.
+ * The answers of an unordered window (spec 0170), arriving from whichever thread completed them, for the one pull that
+ * takes them; and the room the one feeder waits for, [window] answers in flight at most.
  *
- * Either side parks as [Ring]'s do: it names itself, then looks again, and the other side looks for a name
- * only after its own change, which the queue's and the counter's atomic updates order before the look. The
- * feeder is woken once a batch of room has been made, or once nothing is in flight, not on every answer.
+ * Either side parks as [Ring]'s do: it names itself, then looks again, and the other side looks for a name only after
+ * its own change, which the queue's and the counter's atomic updates order before the look. The feeder is woken once a
+ * batch of room has been made, or once nothing is in flight, not on every answer.
  */
 internal class Arrivals(private val window: Int) {
     private val arrived = ConcurrentLinkedQueue<Any>()
@@ -52,7 +52,9 @@ internal class Arrivals(private val window: Int) {
         if (Thread.interrupted()) throw InterruptedException()
         var yielded = 0
         while (true) {
-            arrived.poll()?.let { return it }
+            arrived.poll()?.let {
+                return it
+            }
             if (yielded++ < YIELDS_BEFORE_WAITING) Thread.yield() else parkTaker()
         }
     }
@@ -89,30 +91,31 @@ internal class Arrivals(private val window: Int) {
 }
 
 /**
- * Upstream's elements, each started by [start] once there is room for it, then, once every answer started has
- * been taken, how upstream ended: the end arrives after the last answer, whatever order the answers came in.
+ * Upstream's elements, each started by [start] once there is room for it, then, once every answer started has been
+ * taken, how upstream ended: the end arrives after the last answer, whatever order the answers came in.
  */
 // The catch is as wide as a pipeline: whatever upstream threw is the pull's to throw, after what came first.
 @Suppress("TooGenericExceptionCaught")
 internal fun feedUnordered(up: Pull, arrivals: Arrivals, start: (Any) -> Unit) {
     try {
-        val ended = try {
-            while (true) {
-                arrivals.reserve()
-                val a = up.next()
-                if (a == null) {
-                    arrivals.unreserve()
-                    break
+        val ended =
+            try {
+                while (true) {
+                    arrivals.reserve()
+                    val a = up.next()
+                    if (a == null) {
+                        arrivals.unreserve()
+                        break
+                    }
+                    start(a)
                 }
-                start(a)
+                Fed.Done
+            } catch (stopped: InterruptedException) {
+                throw stopped
+            } catch (thrown: Throwable) {
+                arrivals.unreserve()
+                Fed.Threw(thrown)
             }
-            Fed.Done
-        } catch (stopped: InterruptedException) {
-            throw stopped
-        } catch (thrown: Throwable) {
-            arrivals.unreserve()
-            Fed.Threw(thrown)
-        }
         arrivals.awaitDrained()
         arrivals.arrive(ended)
     } catch (_: InterruptedException) {

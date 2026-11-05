@@ -6,10 +6,10 @@ import kotlin.reflect.typeOf
 /**
  * The same recipe, keyed as [B] instead of what it builds.
  *
- * `singleOf(::PgUserRepo).boundTo<UserRepo>()` is what a graph wants to say: the constructor names
- * the dependencies, and the interface names what everything else asks for. Written as `single`, the
- * key has to be given as a type argument — and Kotlin has no partial type-argument inference, so the
- * dependencies then have to be written out as type arguments too, or cast in the body.
+ * `singleOf(::PgUserRepo).boundTo<UserRepo>()` is what a graph wants to say: the constructor names the dependencies,
+ * and the interface names what everything else asks for. Written as `single`, the key has to be given as a type
+ * argument — and Kotlin has no partial type-argument inference, so the dependencies then have to be written out as type
+ * arguments too, or cast in the body.
  */
 inline fun <reified B : Any> Module.boundTo(): Module = boundTo(typeOf<B>())
 

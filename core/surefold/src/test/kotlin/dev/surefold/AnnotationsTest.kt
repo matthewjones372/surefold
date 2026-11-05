@@ -4,8 +4,8 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeSameInstanceAs
 import dev.surefold.assert.shouldContainExactly
 import dev.surefold.assert.shouldHaveSize
-import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 class AnnotationsTest {
 
@@ -40,16 +40,17 @@ class AnnotationsTest {
     fun `a span says how long it had been running when a line was written`() {
         val moving = TestClock()
 
-        val lines = clock.locally(moving) {
-            capturingLogs { logs ->
-                logSpan("register") {
-                    logInfo("started")
-                    moving.adjust(5.seconds)
-                    logInfo("finished")
+        val lines =
+            clock.locally(moving) {
+                capturingLogs { logs ->
+                    logSpan("register") {
+                        logInfo("started")
+                        moving.adjust(5.seconds)
+                        logInfo("finished")
+                    }
+                    logs.all()
                 }
-                logs.all()
             }
-        }
 
         lines[0].annotations["register_ms"] shouldBe "0"
         lines[1].annotations["register_ms"] shouldBe "5000"

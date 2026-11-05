@@ -10,14 +10,14 @@ import dev.surefold.junit.testkit.failureOf
 import dev.surefold.junit.testkit.logs
 import dev.surefold.junit.testkit.shouldHaveSucceeded
 import dev.surefold.test.StoryFailed
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.testkit.engine.EngineExecutionResults
 import org.junit.platform.testkit.engine.EngineTestKit
 import org.opentest4j.AssertionFailedError
 import org.opentest4j.MultipleFailuresError
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
 
 class StoryEngineTest {
 
@@ -25,11 +25,12 @@ class StoryEngineTest {
         val printed = ByteArrayOutputStream()
         val stdout = System.out
         System.setOut(PrintStream(printed, true, Charsets.UTF_8))
-        val results = try {
-            EngineTestKit.engine("surefold").selectors(selectClass(StorySuite::class.java)).execute()
-        } finally {
-            System.setOut(stdout)
-        }
+        val results =
+            try {
+                EngineTestKit.engine("surefold").selectors(selectClass(StorySuite::class.java)).execute()
+            } finally {
+                System.setOut(stdout)
+            }
         return results to printed.toString(Charsets.UTF_8)
     }
 
@@ -77,8 +78,13 @@ class StoryEngineTest {
 
     @Test
     fun `a step that throws fails its test with the story`() {
-        run().first.testEvents().failureOf("throws in a step").shouldBeInstanceOf<StoryFailed>()
-            .cause!!.message shouldBe "no database"
+        run()
+            .first
+            .testEvents()
+            .failureOf("throws in a step")
+            .shouldBeInstanceOf<StoryFailed>()
+            .cause!!
+            .message shouldBe "no database"
     }
 
     @Test

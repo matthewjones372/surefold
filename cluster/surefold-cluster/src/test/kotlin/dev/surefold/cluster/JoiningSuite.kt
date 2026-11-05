@@ -38,22 +38,38 @@ object JoiningSuite : Suite() {
         }
 
         test("a value a backend needs and was not given is refused with the path it is read at") {
-            shouldThrow<IllegalArgumentException>({
-                Joins.named("static", JoinOptions(25520, 20.seconds, emptyMap(), "surefold.cluster.static"))
-            }) { e -> e.message shouldBe "surefold.cluster.static.seeds is missing" }
-            shouldThrow<IllegalArgumentException>({
-                val options = mapOf("name" to "x", "port" to "high")
-                Joins.named("dns", JoinOptions(25520, 20.seconds, options, "surefold.cluster.dns"))
-            }) { e -> e.message shouldBe "surefold.cluster.dns.port is not a number" }
+            shouldThrow<IllegalArgumentException>(
+                {
+                    Joins.named("static", JoinOptions(25520, 20.seconds, emptyMap(), "surefold.cluster.static"))
+                },
+            ) { e ->
+                e.message shouldBe "surefold.cluster.static.seeds is missing"
+            }
+            shouldThrow<IllegalArgumentException>(
+                {
+                    val options = mapOf("name" to "x", "port" to "high")
+                    Joins.named("dns", JoinOptions(25520, 20.seconds, options, "surefold.cluster.dns"))
+                },
+            ) { e ->
+                e.message shouldBe "surefold.cluster.dns.port is not a number"
+            }
         }
 
         test("a backend whose module is not on the classpath is refused, naming the module") {
-            shouldThrow<IllegalArgumentException>({
-                Joins.named("kubernetes", JoinOptions(25520, 20.seconds))
-            }) { e -> e.message shouldBe "join = kubernetes needs surefold-cluster-kubernetes on the classpath" }
-            shouldThrow<IllegalArgumentException>({
-                Joins.named("carrier-pigeon", JoinOptions(25520, 20.seconds))
-            }) { e -> e.message shouldBe "join = carrier-pigeon is none of [dns, srv, static]" }
+            shouldThrow<IllegalArgumentException>(
+                {
+                    Joins.named("kubernetes", JoinOptions(25520, 20.seconds))
+                },
+            ) { e ->
+                e.message shouldBe "join = kubernetes needs surefold-cluster-kubernetes on the classpath"
+            }
+            shouldThrow<IllegalArgumentException>(
+                {
+                    Joins.named("carrier-pigeon", JoinOptions(25520, 20.seconds))
+                },
+            ) { e ->
+                e.message shouldBe "join = carrier-pigeon is none of [dns, srv, static]"
+            }
         }
 
         test("closing a joining releases what it opened, once asked") {
@@ -68,9 +84,16 @@ object JoiningSuite : Suite() {
                 joining.discovery.seeds() shouldContainExactly
                     listOf(Node("", "a", 1), Node("", "b", 2), Node("", "c", 3))
             }
-            shouldThrow<IllegalArgumentException>({
-                Joins.named("static", JoinOptions(25520, 20.seconds, mapOf("seeds" to mapOf("first" to "a:1")), "at"))
-            }) { e -> e.message shouldBe "at.seeds is not a list" }
+            shouldThrow<IllegalArgumentException>(
+                {
+                    Joins.named(
+                        "static",
+                        JoinOptions(25520, 20.seconds, mapOf("seeds" to mapOf("first" to "a:1")), "at"),
+                    )
+                },
+            ) { e ->
+                e.message shouldBe "at.seeds is not a list"
+            }
         }
     }
 }

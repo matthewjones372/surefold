@@ -74,14 +74,20 @@ object DurableUndoSuite : Suite() {
         test("a declared fail undoes the steps that ended, newest first, each told why, then ends on the left") {
             val seats = Seats()
             val told = Shared(emptyList<Undo<String>>())
-            val saga = durableSaga("booking", Word, Word, Word) { _ ->
-                step("flight", Word, { key -> seats.hold(key) }, undo = { key, seat, why ->
-                    told.update { it + why }
-                    seats.release(key, seat)
-                })
-                step("hotel", Word, { key -> seats.hold(key) }, undo = { key, seat, _ -> seats.release(key, seat) })
-                fail("no rooms")
-            }
+            val saga =
+                durableSaga("booking", Word, Word, Word) { _ ->
+                    step(
+                        "flight",
+                        Word,
+                        { key -> seats.hold(key) },
+                        undo = { key, seat, why ->
+                            told.update { it + why }
+                            seats.release(key, seat)
+                        },
+                    )
+                    step("hotel", Word, { key -> seats.hold(key) }, undo = { key, seat, _ -> seats.release(key, seat) })
+                    fail("no rooms")
+                }
 
             saga.run(InMemoryJournal(), "b", "trip") shouldBe "no rooms".left()
 

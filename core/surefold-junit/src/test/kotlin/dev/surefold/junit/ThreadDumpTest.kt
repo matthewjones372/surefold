@@ -7,12 +7,12 @@ import dev.surefold.junit.samples.ParkedPastTimeoutSuite
 import dev.surefold.junit.samples.SpinningPastTimeoutSuite
 import dev.surefold.junit.testkit.failureOf
 import dev.surefold.junit.testkit.shouldHaveFailed
-import org.junit.jupiter.api.Test
-import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
-import org.junit.platform.testkit.engine.EngineTestKit
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import kotlin.time.Duration.Companion.minutes
+import org.junit.jupiter.api.Test
+import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
+import org.junit.platform.testkit.engine.EngineTestKit
 
 /** Spec 0308: a test that times out leaves every thread's stack on stderr, taken before the interrupt. */
 class ThreadDumpTest {
@@ -36,10 +36,11 @@ class ThreadDumpTest {
         lateinit var failure: Throwable
 
         val printed = stderrOf {
-            val events = EngineTestKit.engine("surefold")
-                .selectors(selectClass(ParkedPastTimeoutSuite::class.java))
-                .execute()
-                .testEvents()
+            val events =
+                EngineTestKit.engine("surefold")
+                    .selectors(selectClass(ParkedPastTimeoutSuite::class.java))
+                    .execute()
+                    .testEvents()
             events shouldHaveFailed listOf(test)
             failure = events.failureOf(test)
         }
@@ -61,10 +62,11 @@ class ThreadDumpTest {
         lateinit var failure: Throwable
 
         val printed = stderrOf {
-            val events = EngineTestKit.engine("surefold")
-                .selectors(selectClass(SpinningPastTimeoutSuite::class.java))
-                .execute()
-                .testEvents()
+            val events =
+                EngineTestKit.engine("surefold")
+                    .selectors(selectClass(SpinningPastTimeoutSuite::class.java))
+                    .execute()
+                    .testEvents()
             events shouldHaveFailed listOf(test)
             failure = events.failureOf(test)
         }
@@ -77,6 +79,6 @@ class ThreadDumpTest {
 
     @Test
     fun `a test that answers in time prints nothing`() {
-        stderrOf { timeout(1.minutes).run { } } shouldBe ""
+        stderrOf { timeout(1.minutes).run {} } shouldBe ""
     }
 }

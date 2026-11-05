@@ -9,14 +9,15 @@ import dev.surefold.junit.withTempDirectory
 import java.io.File
 
 /**
- * Run against this module's own test output, so discovery is the real thing: `Sampled` and `Faulty`
- * in `SurefoldAppSuite.kt` are the applications it finds.
+ * Run against this module's own test output, so discovery is the real thing: `Sampled` and `Faulty` in
+ * `SurefoldAppSuite.kt` are the applications it finds.
  */
 object CheckSuite : Suite() {
     // The clue is for a build that forgot the property, not for what the test then checks.
     private fun testClasses(then: (List<File>) -> Unit) =
-        System.getProperty("surefold.app.testClasses")
-            ?.let { dirs -> then(dirs.split(File.pathSeparator).filter { it.isNotBlank() }.map(::File)) }
+        System.getProperty("surefold.app.testClasses")?.let { dirs ->
+            then(dirs.split(File.pathSeparator).filter { it.isNotBlank() }.map(::File))
+        }
             ?: withClue("the build must pass -Dsurefold.app.testClasses; see surefold-app/build.gradle.kts") {
                 null.shouldNotBeNull()
             }
@@ -77,8 +78,8 @@ object CheckSuite : Suite() {
     }
 
     /**
-     * One class file copied into [into], so the check sees one application. Only the scan reads this
-     * directory; loading goes through the classloader that already holds the test classpath.
+     * One class file copied into [into], so the check sees one application. Only the scan reads this directory; loading
+     * goes through the classloader that already holds the test classpath.
      */
     private fun alone(testClasses: List<File>, name: String, into: File) {
         val path = "dev/surefold/app/$name.class"

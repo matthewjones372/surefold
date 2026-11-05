@@ -6,8 +6,8 @@ import dev.surefold.fail.Fail
 import java.util.concurrent.Executor
 
 /**
- * Up to [parallelism] element bodies run at once, each on a virtual thread of its own and in a
- * `Fail<E>`; the results keep the input's order, as [mapAsync]'s do.
+ * Up to [parallelism] element bodies run at once, each on a virtual thread of its own and in a `Fail<E>`; the results
+ * keep the input's order, as [mapAsync]'s do.
  */
 fun <E, A : Any, B : Any> Stream<E, A>.mapPar(parallelism: Int, f: Fail<E>.(A) -> B): Stream<E, B> =
     via(Pipe.mapPar(parallelism, VirtualThreads, f))
@@ -17,8 +17,8 @@ fun <E, A : Any, B : Any> Stream<E, A>.mapPar(parallelism: Int, on: Executor, f:
     via(Pipe.mapPar(parallelism, on, f))
 
 /**
- * Up to [parallelism] bodies at once, as [mapPar]'s; each result passes on once every earlier element with the
- * same [key] has. Elements with different keys pass each other.
+ * Up to [parallelism] bodies at once, as [mapPar]'s; each result passes on once every earlier element with the same
+ * [key] has. Elements with different keys pass each other.
  */
 fun <E, A : Any, B : Any> Stream<E, A>.mapParKeyed(
     parallelism: Int,
@@ -30,8 +30,8 @@ fun <E, A : Any, B : Any> Stream<E, A>.mapParKeyed(
 }
 
 /**
- * As [mapPar], but each result passes on as soon as its body is done (spec 0170): a slow body holds back only
- * itself. Up to [parallelism] bodies at once, as ever.
+ * As [mapPar], but each result passes on as soon as its body is done (spec 0170): a slow body holds back only itself.
+ * Up to [parallelism] bodies at once, as ever.
  */
 fun <E, A : Any, B : Any> Stream<E, A>.mapParUnordered(parallelism: Int, f: Fail<E>.(A) -> B): Stream<E, B> =
     via(Pipe.mapParUnordered(parallelism, VirtualThreads, f))
@@ -56,9 +56,9 @@ fun <E, In, Out : Any, Out2 : Any> Pipe<E, In, Out>.mapParUnordered(
 ): Pipe<E, In, Out2> = via(Pipe.mapParUnordered(parallelism, VirtualThreads, f))
 
 /**
- * Bodies under a [Limit] (spec 0171): as many run at once as the limit allows now, and never more than its
- * [Limit.max]. An adaptive limit finds that number itself, from how long the bodies take, and one shared limit
- * bounds every stream and call that draws on the same dependency together.
+ * Bodies under a [Limit] (spec 0171): as many run at once as the limit allows now, and never more than its [Limit.max].
+ * An adaptive limit finds that number itself, from how long the bodies take, and one shared limit bounds every stream
+ * and call that draws on the same dependency together.
  */
 fun <E, A : Any, B : Any> Stream<E, A>.mapPar(limit: Limit, f: Fail<E>.(A) -> B): Stream<E, B> =
     mapPar(limit.max) { a -> limit.withPermit { f(a) } }
@@ -93,9 +93,9 @@ fun <E, In, Out : Any, Out2 : Any> Pipe<E, In, Out>.mapPar(
 /**
  * As [mapPar], on a stream that has yet to name a failure: this one reads the failure out of the body.
  *
- * It has a name of its own, `mapOrFail`'s suffix, because Kotlin fixes the type variable before it
- * looks at the body. Under one name, the form that reads `F` from a `raise` wins on a
- * `Stream<Nothing, A>`, and a body that never raises leaves it nothing to read.
+ * It has a name of its own, `mapOrFail`'s suffix, because Kotlin fixes the type variable before it looks at the body.
+ * Under one name, the form that reads `F` from a `raise` wins on a `Stream<Nothing, A>`, and a body that never raises
+ * leaves it nothing to read.
  */
 // The two erase to one JVM signature, so one of them needs a name of its own down there. Kotlin
 // callers never see it.

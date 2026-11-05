@@ -20,13 +20,14 @@ private class Worker(val name: String, port: Int, seeds: Discovery, roles: Set<S
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val joined = AtomicReference<Cluster>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            joined.set(cluster(node(name, port), seeds, nimble, roles = roles))
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                joined.set(cluster(node(name, port), seeds, nimble, roles = roles))
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     val cluster: Cluster
         get() {

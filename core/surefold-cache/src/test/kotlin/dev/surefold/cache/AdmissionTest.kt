@@ -2,10 +2,10 @@ package dev.surefold.cache
 
 import dev.surefold.assert.shouldBe
 import dev.surefold.fail.Either
-import org.junit.jupiter.api.Test
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.hours
+import org.junit.jupiter.api.Test
 
 private const val HOT_READS = 100
 private const val SCAN = 10_000
@@ -16,10 +16,11 @@ class AdmissionTest {
     @Test
     fun `a key read a hundred times survives a scan of ten thousand keys read once`() {
         val lookups = AtomicInteger()
-        val prices = Cache<String, Nothing, String>({ 1.hours }, capacity = 100) { key ->
-            lookups.incrementAndGet()
-            Either.Right(key)
-        }
+        val prices =
+            Cache<String, Nothing, String>({ 1.hours }, capacity = 100) { key ->
+                lookups.incrementAndGet()
+                Either.Right(key)
+            }
         repeat(HOT_READS) { prices.get("hot") }
         (1..SCAN).forEach { prices.get("scan-$it") }
         val before = lookups.get()

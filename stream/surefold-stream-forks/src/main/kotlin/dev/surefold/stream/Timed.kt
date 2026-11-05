@@ -19,8 +19,8 @@ private fun Instant.plus(duration: Duration): Instant = plusNanos(duration.inWho
 private val TIMED: String = MethodHandles.lookup().lookupClass().name
 
 /**
- * The first element [Node.Tick.after] from the first pull, then one every [Node.Tick.every]. A tick that
- * falls due while nothing is asking is dropped, as Pekko's is: the next pull waits for the next one.
+ * The first element [Node.Tick.after] from the first pull, then one every [Node.Tick.every]. A tick that falls due
+ * while nothing is asking is dropped, as Pekko's is: the next pull waits for the next one.
  */
 context(ctx: PullContext)
 internal fun Node.Tick.tick(turns: Timeline): Pull {
@@ -39,9 +39,9 @@ internal fun Node.Tick.tick(turns: Timeline): Pull {
 }
 
 /**
- * What one fork hands another: an element, or how the stream it pulls from ended, taken once. Taking is
- * one atomic step, since on Forks the two are on threads of their own: a read and a separate clear
- * would erase an element put down between them.
+ * What one fork hands another: an element, or how the stream it pulls from ended, taken once. Taking is one atomic
+ * step, since on Forks the two are on threads of their own: a read and a separate clear would erase an element put down
+ * between them.
  */
 private class Handoff {
     sealed interface Ended {
@@ -79,9 +79,9 @@ private fun Timeline.feed(up: Pull, into: Handoff) = fork {
 }
 
 /**
- * Upstream is pulled by a worker of its own, so that a window can close while an element is still to come.
- * Windows follow each other every [Node.GroupedWithin.within] from the first pull, and a full group starts
- * the next window from the instant it was emitted, as Pekko's do. A window that closes empty emits nothing.
+ * Upstream is pulled by a worker of its own, so that a window can close while an element is still to come. Windows
+ * follow each other every [Node.GroupedWithin.within] from the first pull, and a full group starts the next window from
+ * the instant it was emitted, as Pekko's do. A window that closes empty emits nothing.
  */
 context(ctx: PullContext)
 internal fun Node.GroupedWithin.groupedWithin(turns: Timeline): Pull =
@@ -92,8 +92,8 @@ internal fun Node.GroupedWithin.groupedWithin(turns: Timeline): Pull =
     }
 
 /**
- * [up] pulled on a fork of its own into [into], which has room for a group and one end: the feed runs at most a
- * group ahead of the reader, and parks only when it is that far ahead.
+ * [up] pulled on a fork of its own into [into], which has room for a group and one end: the feed runs at most a group
+ * ahead of the reader, and parks only when it is that far ahead.
  */
 // The catch is as wide as a pipeline: whatever upstream threw is the reader's to throw, after what came before it.
 @Suppress("TooGenericExceptionCaught")
@@ -113,8 +113,8 @@ private fun RealTime.feed(up: Pull, into: ArrayBlockingQueue<Any>) = fork {
 }
 
 /**
- * [Windows] on real time: the reader drains whatever the feed has queued in one go, and reads the clock and parks
- * only when the queue is empty, until the window closes. The windows follow the same rules.
+ * [Windows] on real time: the reader drains whatever the feed has queued in one go, and reads the clock and parks only
+ * when the queue is empty, until the window closes. The windows follow the same rules.
  */
 private class Queued(val n: Int, val within: Duration, val time: RealTime, val queue: ArrayBlockingQueue<Any>) : Pull {
 
@@ -199,9 +199,9 @@ private class Windows(val n: Int, val within: Duration, val turns: Timeline, val
 }
 
 /**
- * Upstream again, from its first element, after each defect the schedule continues on, and after the delay
- * it asks for on the run's clock. A declared failure is not a defect, and passes through as it is; nor is
- * an interruption, which is a stop reaching the run.
+ * Upstream again, from its first element, after each defect the schedule continues on, and after the delay it asks for
+ * on the run's clock. A declared failure is not a defect, and passes through as it is; nor is an interruption, which is
+ * a stop reaching the run.
  */
 // The catch is as wide as a pipeline, because a defect is whatever upstream threw that it did not declare.
 @Suppress("TooGenericExceptionCaught")
@@ -211,8 +211,7 @@ internal fun Node.RestartOnDefect.restarting(turns: Timeline): Pull {
     // gives up held (a consumer's place in its group, say) before the next attempt opens its own.
     val run = ctx.resources
     var attempt = run?.attempt()
-    fun attempted(): Pull =
-        attempt?.let { scope -> with(ctx.within(scope)) { upstream.pull() } } ?: upstream.pull()
+    fun attempted(): Pull = attempt?.let { scope -> with(ctx.within(scope)) { upstream.pull() } } ?: upstream.pull()
     var current = attempted()
     var schedule = step
     return Pull {

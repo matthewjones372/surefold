@@ -4,9 +4,9 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * A bounded hand-off between forks of one scope (spec 0038): a producer [send]s, a consumer [receive]s or iterates,
- * and at most [capacity] values wait between them, so a producer ahead of its consumer parks rather than running away.
- * A capacity of zero hands each value straight from a sender to a receiver.
+ * A bounded hand-off between forks of one scope (spec 0038): a producer [send]s, a consumer [receive]s or iterates, and
+ * at most [capacity] values wait between them, so a producer ahead of its consumer parks rather than running away. A
+ * capacity of zero hands each value straight from a sender to a receiver.
  *
  * The producer [close]s it at the end of its data, and a consumer drains what was sent before that. The consumer
  * [cancel]s it to stop early: a send parked or still to come answers `false`, so a producer loop ends without an
@@ -26,8 +26,8 @@ class Channel<A : Any> internal constructor(val capacity: Int) : Iterable<A> {
     private var cancelled = false
 
     /**
-     * [value] handed on, parking while the channel is full: true once it is in the channel or a receiver's hands,
-     * false if the consumer cancelled. Sending on a closed channel throws [IllegalStateException].
+     * [value] handed on, parking while the channel is full: true once it is in the channel or a receiver's hands, false
+     * if the consumer cancelled. Sending on a closed channel throws [IllegalStateException].
      */
     fun send(value: A): Boolean {
         val parked = lock.withLock {
@@ -93,8 +93,8 @@ class Channel<A : Any> internal constructor(val capacity: Int) : Iterable<A> {
         return when {
             sender === Lost -> Lost
 
-            sender is Parked -> checkNotNull(sender.value) { "a parked sender brings a value" }
-                .also { sender.selection.deliver(Taken) }
+            sender is Parked ->
+                checkNotNull(sender.value) { "a parked sender brings a value" }.also { sender.selection.deliver(Taken) }
 
             !closed && !cancelled -> Empty
 
@@ -127,8 +127,9 @@ class Channel<A : Any> internal constructor(val capacity: Int) : Iterable<A> {
         while (each.hasNext()) {
             val parked = each.next()
             if (parked.selection === ours) continue
-            val claim = ours?.claimWith(clause, parked.selection, parked.clause)
-                ?: if (parked.selection.claim(parked.clause)) Claim.Both else Claim.TheirsGone
+            val claim =
+                ours?.claimWith(clause, parked.selection, parked.clause)
+                    ?: if (parked.selection.claim(parked.clause)) Claim.Both else Claim.TheirsGone
             when (claim) {
                 Claim.OursGone -> return Lost
                 Claim.TheirsGone -> each.remove()
@@ -161,15 +162,15 @@ class Channel<A : Any> internal constructor(val capacity: Int) : Iterable<A> {
     }
 
     /** What a receive was answered with, as the value or null. */
-    @Suppress("UNCHECKED_CAST")
-    internal fun received(answer: Any): A? = if (answer === Stopped) null else answer as A
+    @Suppress("UNCHECKED_CAST") internal fun received(answer: Any): A? = if (answer === Stopped) null else answer as A
 
     /** What a send was answered with, as whether its value was taken. */
-    internal fun sent(answer: Any): Boolean = when (answer) {
-        Taken -> true
-        Stopped -> false
-        else -> error("a sender is answered taken or stopped, not $answer")
-    }
+    internal fun sent(answer: Any): Boolean =
+        when (answer) {
+            Taken -> true
+            Stopped -> false
+            else -> error("a sender is answered taken or stopped, not $answer")
+        }
 
     /** How many threads are parked on the channel, for a test that says a select left none behind. */
     internal fun parked(): Int = lock.withLock { receivers.size + senders.size }
@@ -178,22 +179,23 @@ class Channel<A : Any> internal constructor(val capacity: Int) : Iterable<A> {
     internal fun buffered(): Int = lock.withLock { buffer.size }
 
     /** Every value received until the channel is closed and drained, or cancelled. */
-    override fun iterator(): Iterator<A> = object : Iterator<A> {
-        private var next: A? = null
-        private var ended = false
+    override fun iterator(): Iterator<A> =
+        object : Iterator<A> {
+            private var next: A? = null
+            private var ended = false
 
-        override fun hasNext(): Boolean {
-            if (next == null && !ended) next = receive().also { if (it == null) ended = true }
-            return next != null
-        }
+            override fun hasNext(): Boolean {
+                if (next == null && !ended) next = receive().also { if (it == null) ended = true }
+                return next != null
+            }
 
-        override fun next(): A {
-            hasNext()
-            val value = next ?: throw NoSuchElementException("the channel is closed and drained")
-            next = null
-            return value
+            override fun next(): A {
+                hasNext()
+                val value = next ?: throw NoSuchElementException("the channel is closed and drained")
+                next = null
+                return value
+            }
         }
-    }
 
     /**
      * Parks until [parked] is answered. Interrupted first, it leaves [queue] and throws, so a sender's value is never
@@ -213,9 +215,10 @@ class Channel<A : Any> internal constructor(val capacity: Int) : Iterable<A> {
 private class Parked(val value: Any?, val selection: Selection, val clause: Int)
 
 /** A channel of [capacity] between this scope's forks, cancelled when the scope closes (spec 0038). */
-fun <A : Any> Scope<*>.channel(capacity: Int): Channel<A> = Channel<A>(capacity).also { channel ->
-    onClose { channel.cancel() }
-}
+fun <A : Any> Scope<*>.channel(capacity: Int): Channel<A> =
+    Channel<A>(capacity).also { channel ->
+        onClose { channel.cancel() }
+    }
 
 private object Taken
 

@@ -14,22 +14,25 @@ import java.util.concurrent.ConcurrentLinkedQueue
 
 private val tally = PersistenceId("tally", "t-1")
 
-private val count = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = event.toString().toByteArray()
+private val count =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = event.toString().toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
 /** A tally's state: the sum of what was added, and how many additions made it. */
 private data class Tally(val sum: Long = 0, val adds: Int = 0)
 
-private val tallyCodec = object : StateCodec<Tally> {
-    override fun encode(state: Tally): ByteArray = "${state.sum},${state.adds}".toByteArray()
+private val tallyCodec =
+    object : StateCodec<Tally> {
+        override fun encode(state: Tally): ByteArray = "${state.sum},${state.adds}".toByteArray()
 
-    override fun decode(bytes: ByteArray): Tally = String(bytes).split(",").let { (sum, adds) ->
-        Tally(sum.toLong(), adds.toInt())
+        override fun decode(bytes: ByteArray): Tally =
+            String(bytes).split(",").let { (sum, adds) ->
+                Tally(sum.toLong(), adds.toInt())
+            }
     }
-}
 
 private sealed interface Counting
 
@@ -38,19 +41,20 @@ private class Tallied(vararg val amounts: Int) : Counting
 
 private data class Total(val reply: Reply<Tally>) : Counting
 
-private fun tallying(snapshots: Snapshotting<Tally>?) = persistent<Counting, Int, Tally>(
-    id = tally,
-    empty = Tally(),
-    codec = count,
-    snapshots = snapshots,
-    command = { _, now, command ->
-        when (command) {
-            is Tallied -> persist(*command.amounts.toTypedArray())
-            is Total -> none().then { command.reply(now) }
-        }
-    },
-    event = { now, added -> Tally(now.sum + added, now.adds + 1) },
-)
+private fun tallying(snapshots: Snapshotting<Tally>?) =
+    persistent<Counting, Int, Tally>(
+        id = tally,
+        empty = Tally(),
+        codec = count,
+        snapshots = snapshots,
+        command = { _, now, command ->
+            when (command) {
+                is Tallied -> persist(*command.amounts.toTypedArray())
+                is Total -> none().then { command.reply(now) }
+            }
+        },
+        event = { now, added -> Tally(now.sum + added, now.adds + 1) },
+    )
 
 /** A journal that remembers every read: where it began, and how many events it answered. */
 private class Reading(private val kept: Journal = InMemoryJournal()) : Journal by kept {
@@ -97,20 +101,22 @@ object SnapshotSuite : Suite() {
 
         test("a store whose saves throw leaves every command answered, and says so") {
             val lines = ConcurrentLinkedQueue<LogLine>()
-            val broken = object : SnapshotStore {
-                override fun save(id: PersistenceId, sequence: Long, bytes: ByteArray) =
-                    error("the snapshot store is down")
+            val broken =
+                object : SnapshotStore {
+                    override fun save(id: PersistenceId, sequence: Long, bytes: ByteArray) =
+                        error("the snapshot store is down")
 
-                override fun latest(id: PersistenceId): Snapshot? = null
-            }
+                    override fun latest(id: PersistenceId): Snapshot? = null
+                }
             logger.locally({ line -> lines += line }) {
                 testActors(snapshots = broken) {
                     val counter = spawn("tally", tallying(every(10, tallyCodec)))
 
-                    val answers = (1..25).map {
-                        counter.send(Tallied(1))
-                        counter.ask<Tally> { reply -> Total(reply) }
-                    }
+                    val answers =
+                        (1..25).map {
+                            counter.send(Tallied(1))
+                            counter.ask<Tally> { reply -> Total(reply) }
+                        }
 
                     answers.last() shouldBe Tally(sum = 25, adds = 25).right()
                     answers.all(Either<AskFailure, Tally>::isRight) shouldBe true

@@ -2,8 +2,8 @@ package dev.surefold
 
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldContainExactly
-import org.junit.jupiter.api.Test
 import java.util.concurrent.ConcurrentLinkedQueue
+import org.junit.jupiter.api.Test
 
 class RetryCauseTest {
 
@@ -75,11 +75,12 @@ class RetryCauseTest {
         val free = Shared(0, name = "free")
 
         val retries = retriesOf {
-            val buyer = Thread.ofVirtual().start {
-                retried.locally({ step, cause -> retriedHere += step to cause }) {
-                    transact("hold") { if (free.get() == 0) waitForChange() else free.update { it - 1 } }
+            val buyer =
+                Thread.ofVirtual().start {
+                    retried.locally({ step, cause -> retriedHere += step to cause }) {
+                        transact("hold") { if (free.get() == 0) waitForChange() else free.update { it - 1 } }
+                    }
                 }
-            }
             while (free.waiters.isEmpty()) Thread.onSpinWait()
             transact { free.set(1) }
             buyer.join()

@@ -27,7 +27,9 @@ object SpecsSuite : Suite() {
         test("no two specs in a folder share a number") {
             folders { folders ->
                 val shared = folders.flatMap { folder ->
-                    specsIn(folder).groupBy(::numberOf).filterValues { it.size > 1 }
+                    specsIn(folder)
+                        .groupBy(::numberOf)
+                        .filterValues { it.size > 1 }
                         .map { (number, specs) -> "${folder.name}/$number: ${specs.joinToString { it.name }}" }
                 }
                 shared shouldBe emptyList()
@@ -37,9 +39,11 @@ object SpecsSuite : Suite() {
         test("every spec's heading names its own number") {
             folders { folders ->
                 val misnamed = folders.flatMap { folder ->
-                    specsIn(folder).filterNot { spec ->
-                        Regex("""^# ${numberOf(spec)}\D""").containsMatchIn(spec.useLines { it.first() })
-                    }.map { "${folder.name}/${it.name}" }
+                    specsIn(folder)
+                        .filterNot { spec ->
+                            Regex("""^# ${numberOf(spec)}\D""").containsMatchIn(spec.useLines { it.first() })
+                        }
+                        .map { "${folder.name}/${it.name}" }
                 }
                 misnamed shouldBe emptyList()
             }

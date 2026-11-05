@@ -21,12 +21,13 @@ object SystemClock : Clock {
 }
 
 /** A clock that does not move and does not wait, which is what most tests of a backoff want. */
-fun fixedClock(at: Instant = Instant.EPOCH): Clock = object : Clock {
+fun fixedClock(at: Instant = Instant.EPOCH): Clock =
+    object : Clock {
 
-    override fun now(): Instant = at
+        override fun now(): Instant = at
 
-    override fun sleep(duration: Duration) = Unit
-}
+        override fun sleep(duration: Duration) = Unit
+    }
 
 /** The clock a schedule waits on, and the one a fork inherits from its opener. */
 val clock: SurefoldLocal<Clock> = surefoldLocal { SystemClock }

@@ -15,16 +15,13 @@ private val BACKEND: String = MethodHandles.lookup().lookupClass().name
 interface StreamBackend {
 
     /** The key this backend's native values are tagged with. */
-    @StreamSpi
-    val key: BackendKey
+    @StreamSpi val key: BackendKey
 
     /** Materialises [run]. Called only once [start] has checked the whole tree against [key] and [runs]. */
-    @StreamSpi
-    fun <E, R : Any> materialise(run: Run<E, R>): Running<E, R>
+    @StreamSpi fun <E, R : Any> materialise(run: Run<E, R>): Running<E, R>
 
     /** Whether this backend can run [node]'s operator. [start] refuses a run holding one it cannot, by name. */
-    @StreamSpi
-    fun runs(node: Node): Boolean = true
+    @StreamSpi fun runs(node: Node): Boolean = true
 }
 
 /**
@@ -38,8 +35,8 @@ interface Running<out E, out R> : AutoCloseable {
     val exit: CompletionStage<Exit<@UnsafeVariance E, @UnsafeVariance R>>
 
     /**
-     * Ends the run now: downstream completes and upstream is cancelled, so the exit is `Done` with
-     * whatever the sink had. What was between stages is dropped. On a run that already ended, nothing.
+     * Ends the run now: downstream completes and upstream is cancelled, so the exit is `Done` with whatever the sink
+     * had. What was between stages is dropped. On a run that already ended, nothing.
      */
     fun stop()
 
@@ -55,8 +52,8 @@ fun <E, R : Any> Run<E, R>.run(backend: StreamBackend): CompletionStage<Exit<E, 
 
 /**
  * One run on [backend] per iteration, read by pulling, and iterable once. At most [buffer] elements wait for the
- * reader, so a reader that stops pulling holds the run. The iterator is `AutoCloseable`: closing it, from any
- * thread, stops the run. A run that dies throws its cause from the reader's next `hasNext()`.
+ * reader, so a reader that stops pulling holds the run. The iterator is `AutoCloseable`: closing it, from any thread,
+ * stops the run. A run that dies throws its cause from the reader's next `hasNext()`.
  */
 fun <A : Any> Stream<Nothing, A>.toSequence(backend: StreamBackend, buffer: Int = 16): Sequence<A> {
     require(buffer > 0) { "a sequence's buffer holds at least one element, not $buffer" }
@@ -64,9 +61,9 @@ fun <A : Any> Stream<Nothing, A>.toSequence(backend: StreamBackend, buffer: Int 
 }
 
 /**
- * The defect a run is refused with when it holds another backend's native value or an operator [backend]
- * cannot run, found before anything materialises. It names the operator and where it was written, because
- * the run cannot start to say so.
+ * The defect a run is refused with when it holds another backend's native value or an operator [backend] cannot run,
+ * found before anything materialises. It names the operator and where it was written, because the run cannot start to
+ * say so.
  */
 private fun Run<*, *>.refusedBy(backend: StreamBackend): Throwable? {
     if (admitted.get() === backend.key) return null
@@ -91,18 +88,21 @@ private class Refused<E, R>(cause: Throwable) : Running<E, R> {
 }
 
 /**
- * Why [backend] cannot run the first node in the tree it cannot, where a walk can see it. A `catchAll`
- * recovery or a `flatMap`'s inner stream is built only when it is needed, so a node inside one is refused
- * by the backend then. It builds nothing on the way down.
+ * Why [backend] cannot run the first node in the tree it cannot, where a walk can see it. A `catchAll` recovery or a
+ * `flatMap`'s inner stream is built only when it is needed, so a node inside one is refused by the backend then. It
+ * builds nothing on the way down.
  */
 private fun Node.refusalOn(backend: StreamBackend): String? {
-    val here = when {
-        this is Owned -> foreignTo(backend)
-        !backend.runs(this) -> "${named()} is not something ${backend.key} runs"
-        else -> null
-    }
+    val here =
+        when {
+            this is Owned -> foreignTo(backend)
+            !backend.runs(this) -> "${named()} is not something ${backend.key} runs"
+            else -> null
+        }
     if (here != null) return here
-    for (child in children()) child.refusalOn(backend)?.let { return it }
+    for (child in children()) child.refusalOn(backend)?.let {
+        return it
+    }
     return null
 }
 

@@ -35,8 +35,7 @@ tasks.test {
     jvmArgumentProviders.add(
         CommandLineArgumentProvider {
             listOf(
-                "-Dsurefold.junit.runtimeClasspath=" +
-                    mainRuntime.get().joinToString(File.pathSeparator) { it.name },
+                "-Dsurefold.junit.runtimeClasspath=" + mainRuntime.get().joinToString(File.pathSeparator) { it.name },
             )
         },
     )
@@ -44,15 +43,17 @@ tasks.test {
 
 // The timeout watchdog on one carrier (spec 0310): there, a virtual watchdog would never run beside a test that
 // spins without yielding. Its own JVM, since the scheduler's size is read once, when the JVM starts.
-val testOnOneCarrier = tasks.register<Test>("testOnOneCarrier") {
-    description = "Runs ThreadDumpTest with the virtual-thread scheduler held to one carrier."
-    group = "verification"
-    testClassesDirs = sourceSets.test.get().output.classesDirs
-    classpath = sourceSets.test.get().runtimeClasspath
-    filter { includeTestsMatching("dev.surefold.junit.ThreadDumpTest") }
-    systemProperty("jdk.virtualThreadScheduler.parallelism", "1")
-    systemProperty("jdk.virtualThreadScheduler.maxPoolSize", "1")
-}
+val testOnOneCarrier =
+    tasks.register<Test>("testOnOneCarrier") {
+        description = "Runs ThreadDumpTest with the virtual-thread scheduler held to one carrier."
+        group = "verification"
+        testClassesDirs = sourceSets.test.get().output.classesDirs
+        classpath = sourceSets.test.get().runtimeClasspath
+        filter { includeTestsMatching("dev.surefold.junit.ThreadDumpTest") }
+        systemProperty("jdk.virtualThreadScheduler.parallelism", "1")
+        systemProperty("jdk.virtualThreadScheduler.maxPoolSize", "1")
+    }
+
 tasks.named("check") { dependsOn(testOnOneCarrier) }
 
 // This module's suites, as a user's would be: a failed `expect` draws its values. The plugin passes the diagram to

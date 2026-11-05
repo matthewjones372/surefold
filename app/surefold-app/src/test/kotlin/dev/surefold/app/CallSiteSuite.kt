@@ -8,11 +8,12 @@ import dev.surefold.junit.shouldNotContain
 import dev.surefold.junit.withClue
 
 private class Spanner
+
 private class Bolt
 
 /**
- * `single` and `singleOf` are inline, so the frame above `module` is already the caller's. The claim
- * worth testing is that a wrapper in another surefold module does not get named instead of the graph.
+ * `single` and `singleOf` are inline, so the frame above `module` is already the caller's. The claim worth testing is
+ * that a wrapper in another surefold module does not get named instead of the graph.
  */
 object CallSiteSuite : Suite() {
     init {
@@ -25,14 +26,17 @@ object CallSiteSuite : Suite() {
         }
 
         test("a report names the file rather than the path the site carries for a build tool") {
-            single { _: Spanner -> Bolt() }.validate().leftOrNull().shouldNotBeNull { errors ->
-                val report = errors.report()
+            single { _: Spanner -> Bolt() }
+                .validate()
+                .leftOrNull()
+                .shouldNotBeNull { errors ->
+                    val report = errors.report()
 
-                withClue("the package is there to resolve a link, not for a person to read past") {
-                    report shouldContain "CallSiteSuite.kt:"
-                    report shouldNotContain "dev/surefold"
+                    withClue("the package is there to resolve a link, not for a person to read past") {
+                        report shouldContain "CallSiteSuite.kt:"
+                        report shouldNotContain "dev/surefold"
+                    }
                 }
-            }
         }
 
         test("a node built through a library factory names the graph rather than the factory") {
@@ -50,12 +54,15 @@ object CallSiteSuite : Suite() {
         }
 
         test("a missing dependency reports the site of the recipe that asked") {
-            single { _: Spanner -> Bolt() }.validate().leftOrNull().shouldNotBeNull { errors ->
-                val report = errors.report()
+            single { _: Spanner -> Bolt() }
+                .validate()
+                .leftOrNull()
+                .shouldNotBeNull { errors ->
+                    val report = errors.report()
 
-                report shouldContain "missing Spanner"
-                report shouldMatch Regex("""(?s).*for Bolt\s+CallSiteSuite\.kt:\d+.*""")
-            }
+                    report shouldContain "missing Spanner"
+                    report shouldMatch Regex("""(?s).*for Bolt\s+CallSiteSuite\.kt:\d+.*""")
+                }
         }
     }
 }

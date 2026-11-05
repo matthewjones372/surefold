@@ -17,13 +17,14 @@ private class Counter {
 private fun addTwice(counter: Counter) {
     counter.count = 0
     scope {
-        val adds = List(2) {
-            async {
-                val seen = counter.count
-                async { }.await()
-                counter.count = seen + 1
+        val adds =
+            List(2) {
+                async {
+                    val seen = counter.count
+                    async {}.await()
+                    counter.count = seen + 1
+                }
             }
-        }
         adds.forEach { it.await() }
     }
     check(counter.count == 2) { "an update was lost: the count is ${counter.count}" }
@@ -41,14 +42,15 @@ object ReplaySuite : Suite() {
                 val order = checkNotNull(match).groupValues[1].removePrefix("0x").toLong(radix = 16)
                 broke.cause?.message shouldContain "an update was lost"
 
-                val failed = (1..100).count {
-                    try {
-                        replay(order) { addTwice(counter) }
-                        false
-                    } catch (_: IllegalStateException) {
-                        true
+                val failed =
+                    (1..100).count {
+                        try {
+                            replay(order) { addTwice(counter) }
+                            false
+                        } catch (_: IllegalStateException) {
+                            true
+                        }
                     }
-                }
                 withClue("runs of order ${match.groupValues[1]} that lost the update") { failed shouldBe 100 }
             }
         }
@@ -60,12 +62,13 @@ object ReplaySuite : Suite() {
                 runs++
                 count.set(0)
                 scope {
-                    val adds = List(2) {
-                        async {
-                            async { }.await()
-                            count.incrementAndGet()
+                    val adds =
+                        List(2) {
+                            async {
+                                async {}.await()
+                                count.incrementAndGet()
+                            }
                         }
-                    }
                     adds.forEach { it.await() }
                 }
                 check(count.get() == 2) { "the count is ${count.get()}" }
@@ -78,12 +81,13 @@ object ReplaySuite : Suite() {
                 val seen = mutableListOf<Int>()
                 replay(order) {
                     scope {
-                        val forks = List(4) { n ->
-                            async {
-                                async { }.await()
-                                synchronized(seen) { seen += n }
+                        val forks =
+                            List(4) { n ->
+                                async {
+                                    async {}.await()
+                                    synchronized(seen) { seen += n }
+                                }
                             }
-                        }
                         forks.forEach { it.await() }
                     }
                 }

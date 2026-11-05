@@ -18,10 +18,10 @@ fun roundRobin(): Route<Any> {
 fun <M : Any> hashing(key: (M) -> Any?): Route<M> = Route { message, of -> Math.floorMod(key(message).hashCode(), of) }
 
 /**
- * A router: [size] routees, each from [routee], spawned as its children on its first message, and each message told
- * to the one [route] picks. A routee whose mailbox is full is passed over for the next, and a turn whose every routee
- * is full fails. [restart] applies to each routee on its own, so one failing restarts without the others; one that
- * stops for good leaves the pool smaller, and a pool with none left stops.
+ * A router: [size] routees, each from [routee], spawned as its children on its first message, and each message told to
+ * the one [route] picks. A routee whose mailbox is full is passed over for the next, and a turn whose every routee is
+ * full fails. [restart] applies to each routee on its own, so one failing restarts without the others; one that stops
+ * for good leaves the pool smaller, and a pool with none left stops.
  */
 fun <M : Any, S, E> pool(
     size: Int,
@@ -31,22 +31,23 @@ fun <M : Any, S, E> pool(
 ): Behaviour<M, List<ActorRef<M>>?, Nothing> {
     require(size > 0) { "a pool needs at least one routee, was $size" }
     return behaviour<M, List<ActorRef<M>>?>(null) { ctx, routees, message ->
-        val live = routees ?: List(size) { ctx.spawn("routee-${it + 1}", routee(), restart).also(ctx::watch) }
-        val first = route.pick(message, live.size)
-        check(live.indices.any { live[(first + it) % live.size].offer(message) }) {
-            "every routee of ${ctx.self.address.path} is full"
+            val live = routees ?: List(size) { ctx.spawn("routee-${it + 1}", routee(), restart).also(ctx::watch) }
+            val first = route.pick(message, live.size)
+            check(live.indices.any { live[(first + it) % live.size].offer(message) }) {
+                "every routee of ${ctx.self.address.path} is full"
+            }
+            if (routees == null) become(live) else stay()
         }
-        if (routees == null) become(live) else stay()
-    }.onSignal { _, routees, signal ->
-        when (signal) {
-            Signal.Stopping -> stay()
+        .onSignal { _, routees, signal ->
+            when (signal) {
+                Signal.Stopping -> stay()
 
-            is Signal.Terminated -> {
-                val left = routees.orEmpty().filterNot { it == signal.ref }
-                if (left.isEmpty()) stop() else become(left)
+                is Signal.Terminated -> {
+                    val left = routees.orEmpty().filterNot { it == signal.ref }
+                    if (left.isEmpty()) stop() else become(left)
+                }
             }
         }
-    }
 }
 
 /** Refs already running, as one: a tell picks one by [route] on the caller's thread, with no actor between. */

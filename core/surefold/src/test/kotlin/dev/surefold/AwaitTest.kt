@@ -8,13 +8,13 @@ import dev.surefold.fail.attempt
 import dev.surefold.fail.bind
 import dev.surefold.fail.left
 import dev.surefold.fail.right
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.FutureTask
+import org.junit.jupiter.api.Test
 
 class AwaitTest {
 

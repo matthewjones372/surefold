@@ -8,10 +8,11 @@ private class Port(val number: Int)
 
 /** The process, and nothing about what a configuration library would do with it. */
 object SysSuite : Suite() {
-    private val sys = FakeSys(
-        env = mapOf("DB_URL" to "jdbc:postgresql://db/app", "PORT" to "8080"),
-        properties = mapOf("java.vm.name" to "VM"),
-    )
+    private val sys =
+        FakeSys(
+            env = mapOf("DB_URL" to "jdbc:postgresql://db/app", "PORT" to "8080"),
+            properties = mapOf("java.vm.name" to "VM"),
+        )
 
     init {
         test("a fake reads what it was given and nothing of the process") {

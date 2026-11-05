@@ -6,10 +6,10 @@ import dev.surefold.assert.shouldNotContain
 import dev.surefold.assert.shouldStartWith
 import dev.surefold.assert.shouldThrow
 import dev.surefold.scope
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.util.concurrent.CopyOnWriteArrayList
+import org.junit.jupiter.api.Test
 
 @OptIn(StorySeam::class)
 class StoryLocalsTest {
@@ -33,7 +33,7 @@ class StoryLocalsTest {
         val printed = printedBy {
             storyTitle.locally("a bound title") {
                 storyTranscript.locally({ told += it.plain }) {
-                    story { Given("a step") { } }
+                    story { Given("a step") {} }
                 }
             }
         }
@@ -46,9 +46,10 @@ class StoryLocalsTest {
     fun `a failing story tells its transcript where it is bound before it throws`() {
         val told = CopyOnWriteArrayList<String>()
 
-        val failed = storyTranscript.locally({ told += it.plain }) {
-            shouldThrow<StoryFailed> { story("failing") { Then("it fails") { error("no") } } }
-        }
+        val failed =
+            storyTranscript.locally({ told += it.plain }) {
+                shouldThrow<StoryFailed> { story("failing") { Then("it fails") { error("no") } } }
+            }
 
         told.single() shouldBe failed.message
     }
@@ -58,7 +59,7 @@ class StoryLocalsTest {
         val told = CopyOnWriteArrayList<String>()
 
         storyTitle.locally("the bound title") {
-            storyTranscript.locally({ told += it.plain }) { story("its own title") { } }
+            storyTranscript.locally({ told += it.plain }) { story("its own title") {} }
         }
 
         told.single() shouldBe "Story: its own title"
@@ -70,7 +71,7 @@ class StoryLocalsTest {
 
         storyTitle.locally("from the opener") {
             storyTranscript.locally({ told += it.plain }) {
-                scope { async { story { } } }
+                scope { async { story {} } }
             }
         }
 
@@ -82,12 +83,13 @@ class StoryLocalsTest {
         val told = CopyOnWriteArrayList<String>()
         val wrong = AssertionError("expected: 3")
 
-        val answered = storyTranscript.locally({ told += it.plain }) {
-            tellStory("judged", failed = { (it as? String)?.let { _ -> wrong } }) {
-                Then("it is three") { "two" }
-                And("it goes on") { 4 }
+        val answered =
+            storyTranscript.locally({ told += it.plain }) {
+                tellStory("judged", failed = { (it as? String)?.let { _ -> wrong } }) {
+                    Then("it is three") { "two" }
+                    And("it goes on") { 4 }
+                }
             }
-        }
 
         answered shouldBe 4
         val lines = told.single().lines()

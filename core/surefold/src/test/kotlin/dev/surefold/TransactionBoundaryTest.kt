@@ -17,13 +17,14 @@ class TransactionBoundaryTest {
         assertAll(
             {
                 shouldThrow<IllegalStateException> {
-                    transact {
-                        checkNotInTransaction()
-                        admission.tryComplete(Unit)
-                        body.tryComplete(Unit)
-                        fence.tryComplete(Unit)
+                        transact {
+                            checkNotInTransaction()
+                            admission.tryComplete(Unit)
+                            body.tryComplete(Unit)
+                            fence.tryComplete(Unit)
+                        }
                     }
-                }.message shouldBe "the operation cannot run inside a transaction"
+                    .message shouldBe "the operation cannot run inside a transaction"
             },
             { admission.peek() shouldBe null },
             { body.peek() shouldBe null },
@@ -40,15 +41,16 @@ class TransactionBoundaryTest {
         assertAll(
             {
                 shouldThrow<IllegalStateException> {
-                    transact {
                         transact {
-                            checkNotInTransaction()
-                            admission.tryComplete(Unit)
-                            body.tryComplete(Unit)
-                            fence.tryComplete(Unit)
+                            transact {
+                                checkNotInTransaction()
+                                admission.tryComplete(Unit)
+                                body.tryComplete(Unit)
+                                fence.tryComplete(Unit)
+                            }
                         }
                     }
-                }.message shouldBe "the operation cannot run inside a transaction"
+                    .message shouldBe "the operation cannot run inside a transaction"
             },
             { admission.peek() shouldBe null },
             { body.peek() shouldBe null },
@@ -65,13 +67,14 @@ class TransactionBoundaryTest {
         assertAll(
             {
                 shouldThrow<IllegalStateException> {
-                    transact(soloAfter = 0) {
-                        checkNotInTransaction()
-                        admission.tryComplete(Unit)
-                        body.tryComplete(Unit)
-                        fence.tryComplete(Unit)
+                        transact(soloAfter = 0) {
+                            checkNotInTransaction()
+                            admission.tryComplete(Unit)
+                            body.tryComplete(Unit)
+                            fence.tryComplete(Unit)
+                        }
                     }
-                }.message shouldBe "the operation cannot run inside a transaction"
+                    .message shouldBe "the operation cannot run inside a transaction"
             },
             { admission.peek() shouldBe null },
             { body.peek() shouldBe null },

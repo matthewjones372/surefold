@@ -33,21 +33,25 @@ object DiscoverySuite : Suite() {
         }
 
         test("SRV records are seeds at their own ports, the lowest priority and then the heaviest first") {
-            val zone = Zone(
-                services = mapOf(
-                    "_surefold._tcp.orders.local" to listOf(
-                        Service(priority = 20, weight = 5, port = 25522, target = "c.orders.local."),
-                        Service(priority = 10, weight = 1, port = 25521, target = "b.orders.local."),
-                        Service(priority = 10, weight = 9, port = 25520, target = "a.orders.local."),
-                    ),
-                ),
-            )
+            val zone =
+                Zone(
+                    services =
+                        mapOf(
+                            "_surefold._tcp.orders.local" to
+                                listOf(
+                                    Service(priority = 20, weight = 5, port = 25522, target = "c.orders.local."),
+                                    Service(priority = 10, weight = 1, port = 25521, target = "b.orders.local."),
+                                    Service(priority = 10, weight = 9, port = 25520, target = "a.orders.local."),
+                                ),
+                        ),
+                )
 
-            Discovery.srv("_surefold._tcp.orders.local", zone).seeds() shouldContainExactly listOf(
-                Node("", "a.orders.local", 25520),
-                Node("", "b.orders.local", 25521),
-                Node("", "c.orders.local", 25522),
-            )
+            Discovery.srv("_surefold._tcp.orders.local", zone).seeds() shouldContainExactly
+                listOf(
+                    Node("", "a.orders.local", 25520),
+                    Node("", "b.orders.local", 25521),
+                    Node("", "c.orders.local", 25522),
+                )
         }
 
         test("a name that resolves to nothing is no seeds") {

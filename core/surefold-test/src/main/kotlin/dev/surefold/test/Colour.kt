@@ -18,13 +18,14 @@ internal object Colour {
     }
 
     /** `always` and `never` win outright; then `NO_COLOR` turns it off, `FORCE_COLOR` or IntelliJ on. */
-    fun decide(property: String?, noColour: String?, forceColour: String?, underIntelliJ: Boolean): Boolean = when {
-        property == "always" -> true
-        property == "never" -> false
-        !noColour.isNullOrEmpty() -> false
-        !forceColour.isNullOrEmpty() -> true
-        else -> underIntelliJ
-    }
+    fun decide(property: String?, noColour: String?, forceColour: String?, underIntelliJ: Boolean): Boolean =
+        when {
+            property == "always" -> true
+            property == "never" -> false
+            !noColour.isNullOrEmpty() -> false
+            !forceColour.isNullOrEmpty() -> true
+            else -> underIntelliJ
+        }
 }
 
 /** Paints text when [on], and leaves it alone when not. */

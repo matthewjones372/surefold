@@ -6,8 +6,8 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Runs both branches on forks of their own and combines their values; the first branch to fail interrupts
- * the other, and its fail or throw surfaces here.
+ * Runs both branches on forks of their own and combines their values; the first branch to fail interrupts the other,
+ * and its fail or throw surfaces here.
  */
 fun <E, A, B, C> Fail<E>.parZip(fa: Fail<E>.() -> A, fb: Fail<E>.() -> B, f: (A, B) -> C): C =
     parZip(VirtualThreads, fa, fb, f)
@@ -258,8 +258,7 @@ fun <E, A, B, C, D, F, G, H, I, J, K> Fail<E>.parZip(
 }
 
 /** Runs [f] over every element on a fork of its own, and answers in the iterable's order. */
-fun <E, A, B> Fail<E>.parMap(iterable: Iterable<A>, f: Fail<E>.(A) -> B): List<B> =
-    parMap(VirtualThreads, iterable, f)
+fun <E, A, B> Fail<E>.parMap(iterable: Iterable<A>, f: Fail<E>.(A) -> B): List<B> = parMap(VirtualThreads, iterable, f)
 
 /** The same, with every fork run on [on]. */
 fun <E, A, B> Fail<E>.parMap(
@@ -275,8 +274,8 @@ fun <E, A, B> Fail<E>.parMap(
 
 /**
  * [parMap] with every call inside [limit] (spec 0171), so it shares one budget with every other caller of the
- * dependency the limit guards. A fork starts only once fewer than the limit's `max` are running, so a long list
- * never parks a thread per element, and none starts after one has failed.
+ * dependency the limit guards. A fork starts only once fewer than the limit's `max` are running, so a long list never
+ * parks a thread per element, and none starts after one has failed.
  */
 fun <E, A, B> Fail<E>.parMap(iterable: Iterable<A>, limit: Limit, f: Fail<E>.(A) -> B): List<B> =
     parMap(VirtualThreads, iterable, limit, f)
@@ -483,8 +482,7 @@ fun <A, B, C, D, F, G, H, I, J, K> parZip(
 fun <A, B> parMap(iterable: Iterable<A>, f: (A) -> B): List<B> = parMap(VirtualThreads, iterable, f)
 
 /** The same, with every fork run on [on]. */
-fun <A, B> parMap(on: Executor, iterable: Iterable<A>, f: (A) -> B): List<B> =
-    Unraisable.parMap(on, iterable) { f(it) }
+fun <A, B> parMap(on: Executor, iterable: Iterable<A>, f: (A) -> B): List<B> = Unraisable.parMap(on, iterable) { f(it) }
 
 /** [parMap] with every call inside [limit], as the one in a `Fail` is (spec 0171). */
 fun <A, B> parMap(iterable: Iterable<A>, limit: Limit, f: (A) -> B): List<B> =

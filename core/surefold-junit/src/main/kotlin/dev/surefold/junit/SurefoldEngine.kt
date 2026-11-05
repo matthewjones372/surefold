@@ -7,6 +7,13 @@ import dev.surefold.capturingLogs
 import dev.surefold.capturingMetrics
 import dev.surefold.resourceScope
 import dev.surefold.scope
+import java.lang.reflect.Modifier
+import java.util.Optional
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
+import kotlin.time.Duration
 import org.junit.platform.engine.EngineDiscoveryRequest
 import org.junit.platform.engine.EngineExecutionListener
 import org.junit.platform.engine.ExecutionRequest
@@ -25,13 +32,6 @@ import org.junit.platform.engine.support.discovery.EngineDiscoveryRequestResolve
 import org.junit.platform.engine.support.discovery.SelectorResolver
 import org.junit.platform.engine.support.discovery.SelectorResolver.Match
 import org.junit.platform.engine.support.discovery.SelectorResolver.Resolution
-import java.lang.reflect.Modifier
-import java.util.Optional
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
-import kotlin.time.Duration
 
 /**
  * The configuration parameter, or system property, that gives every test with no timeout of its own one, as
@@ -40,8 +40,8 @@ import kotlin.time.Duration
 internal const val DEFAULT_TIMEOUT = "surefold.junit.timeout.default"
 
 /**
- * The configuration parameter, or system property, that says how many suites run at once (spec 0253). One, the
- * default, runs them one after another.
+ * The configuration parameter, or system property, that says how many suites run at once (spec 0253). One, the default,
+ * runs them one after another.
  */
 internal const val SUITES_LIMIT = "surefold.junit.suites.limit"
 
@@ -60,14 +60,24 @@ class SurefoldEngine : TestEngine {
         val listener = request.engineExecutionListener
         val engine = request.rootTestDescriptor
         listener.executionStarted(engine)
-        val fallback = request.configurationParameters.get(DEFAULT_TIMEOUT).map { value ->
-            requireNotNull(Duration.parseOrNull(value.trim())) { "$DEFAULT_TIMEOUT is $value, which is not a duration" }
-        }.orElse(null)
-        val limit = request.configurationParameters.get(SUITES_LIMIT).map { value ->
-            requireNotNull(value.trim().toIntOrNull()?.takeIf { it >= 1 }) {
-                "$SUITES_LIMIT is $value, which is not a number of suites of 1 or more"
-            }
-        }.orElse(1)
+        val fallback =
+            request.configurationParameters
+                .get(DEFAULT_TIMEOUT)
+                .map { value ->
+                    requireNotNull(Duration.parseOrNull(value.trim())) {
+                        "$DEFAULT_TIMEOUT is $value, which is not a duration"
+                    }
+                }
+                .orElse(null)
+        val limit =
+            request.configurationParameters
+                .get(SUITES_LIMIT)
+                .map { value ->
+                    requireNotNull(value.trim().toIntOrNull()?.takeIf { it >= 1 }) {
+                        "$SUITES_LIMIT is $value, which is not a number of suites of 1 or more"
+                    }
+                }
+                .orElse(1)
         val suites = engine.children.filterIsInstance<SuiteDescriptor>()
         val report = Report(listener)
         // A release that throws leaves the engine unfinished, which the platform reports as the engine's failure.
@@ -120,8 +130,10 @@ class SurefoldEngine : TestEngine {
         // A group is started before its cases and finished after the last, so it is open while any of them runs.
         val groups = descriptor.children.filterIsInstance<GroupDescriptor>()
         groups.forEach(report::started)
-        val (ignored, cases) = descriptor.descendants.filterIsInstance<TestCaseDescriptor>()
-            .partition { tests.getValue(it.key).aspects.ignored != null }
+        val (ignored, cases) =
+            descriptor.descendants.filterIsInstance<TestCaseDescriptor>().partition {
+                tests.getValue(it.key).aspects.ignored != null
+            }
         ignored.forEach { test -> tests.getValue(test.key).aspects.ignored?.let { report.skipped(test, it) } }
         var acquired = false
         val outcome = outcomeOf {
@@ -141,18 +153,19 @@ class SurefoldEngine : TestEngine {
                                     report.started(test)
                                     started.countDown()
                                     val consoleCopies = ConcurrentHashMap<String, String>()
-                                    val (result, lines) = capturingLogs { logs ->
-                                        tellingStories(test.key.title, consoleCopies) {
-                                            capturingMetrics {
-                                                outcomeOf {
-                                                    aspects.run({ k, v -> report.entry(test, k, v) }) {
-                                                        val (_, checks) = recording { registered.body(shared) }
-                                                        checks.verify(test.key.title)
+                                    val (result, lines) =
+                                        capturingLogs { logs ->
+                                            tellingStories(test.key.title, consoleCopies) {
+                                                capturingMetrics {
+                                                    outcomeOf {
+                                                        aspects.run({ k, v -> report.entry(test, k, v) }) {
+                                                            val (_, checks) = recording { registered.body(shared) }
+                                                            checks.verify(test.key.title)
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        } to logs.all()
-                                    }
+                                            } to logs.all()
+                                        }
                                     report.finished(test, result, lines, consoleCopies)
                                 }
                             }
@@ -169,9 +182,9 @@ class SurefoldEngine : TestEngine {
     }
 
     /**
-     * Finishes [suite] and its [groups] after their tests. [unacquired] are the tests the resource was never handed
-     * to, failed here with the acquisition's [outcome]; otherwise the tests carry their own results, so a failure left
-     * in [outcome] is from around them, such as the release's, and is the suite's.
+     * Finishes [suite] and its [groups] after their tests. [unacquired] are the tests the resource was never handed to,
+     * failed here with the acquisition's [outcome]; otherwise the tests carry their own results, so a failure left in
+     * [outcome] is from around them, such as the release's, and is the suite's.
      */
     private fun close(
         suite: SuiteDescriptor,
@@ -199,14 +212,15 @@ class SurefoldEngine : TestEngine {
     }
 
     /** A test's throw is its result, of whatever type, as Jupiter's is; only the VM's own errors end the run. */
-    private fun outcomeOf(block: () -> Unit): TestExecutionResult = try {
-        block()
-        TestExecutionResult.successful()
-    } catch (fatal: VirtualMachineError) {
-        throw fatal
-    } catch (t: Throwable) {
-        TestExecutionResult.failed(t)
-    }
+    private fun outcomeOf(block: () -> Unit): TestExecutionResult =
+        try {
+            block()
+            TestExecutionResult.successful()
+        } catch (fatal: VirtualMachineError) {
+            throw fatal
+        } catch (t: Throwable) {
+            TestExecutionResult.failed(t)
+        }
 }
 
 /** Suites and their forks report from their own threads, and a listener need not be thread-safe. */
@@ -217,8 +231,9 @@ private class Report(private val listener: EngineExecutionListener) {
 
     fun skipped(test: TestDescriptor, why: String) = lock.withLock { listener.executionSkipped(test, why) }
 
-    fun entry(test: TestDescriptor, key: String, value: String) =
-        lock.withLock { listener.reportingEntryPublished(test, ReportEntry.from(key, value)) }
+    fun entry(test: TestDescriptor, key: String, value: String) = lock.withLock {
+        listener.reportingEntryPublished(test, ReportEntry.from(key, value))
+    }
 
     /**
      * A failed test's [lines] are published and printed before its result; a passing test's are dropped. A line in
@@ -247,44 +262,52 @@ private fun LogLine.rendered(message: String = this.message): String =
         .joinToString(" ")
 
 /** A Kotlin `object`: its one instance is the static `INSTANCE` field, read without initialising the class. */
-private fun isSuiteObject(type: Class<*>): Boolean = AnySuite::class.java.isAssignableFrom(type) &&
-    type.declaredFields.any { it.name == "INSTANCE" && it.type == type && Modifier.isStatic(it.modifiers) }
+private fun isSuiteObject(type: Class<*>): Boolean =
+    AnySuite::class.java.isAssignableFrom(type) &&
+        type.declaredFields.any { it.name == "INSTANCE" && it.type == type && Modifier.isStatic(it.modifiers) }
 
 /** The class [name] names, or null where this classpath has none, as for an ID left from a renamed suite. */
-private fun loaded(name: String): Class<*>? = try {
-    Class.forName(name, false, Thread.currentThread().contextClassLoader)
-} catch (_: ClassNotFoundException) {
-    null
-}
+private fun loaded(name: String): Class<*>? =
+    try {
+        Class.forName(name, false, Thread.currentThread().contextClassLoader)
+    } catch (_: ClassNotFoundException) {
+        null
+    }
 
 private object SuiteResolver : SelectorResolver {
     override fun resolve(selector: ClassSelector, context: SelectorResolver.Context): Resolution {
         val type = selector.getJavaClass()
         if (!isSuiteObject(type)) return Resolution.unresolved()
-        return context.addToParent { parent -> Optional.of(SuiteDescriptor.of(parent.uniqueId, type)) }
+        return context
+            .addToParent { parent -> Optional.of(SuiteDescriptor.of(parent.uniqueId, type)) }
             .map { Resolution.match(Match.exact(it)) }
             .orElse(Resolution.unresolved())
     }
 
     /**
-     * `[engine:surefold]/[suite:…]`, `…/[test:…]`, `…/[group:…]` or `…/[group:…]/[test:…]`, which is how an IDE
-     * reruns a suite, one of its tests, a group, or one of a group's cases.
+     * `[engine:surefold]/[suite:…]`, `…/[test:…]`, `…/[group:…]` or `…/[group:…]/[test:…]`, which is how an IDE reruns
+     * a suite, one of its tests, a group, or one of a group's cases.
      */
     override fun resolve(selector: UniqueIdSelector, context: SelectorResolver.Context): Resolution {
         val segments = selector.uniqueId.segments
-        val type = segments.firstOrNull { it.type == "suite" }?.let { loaded(it.value) }
-            ?.takeIf(::isSuiteObject) ?: return Resolution.unresolved()
+        val type =
+            segments.firstOrNull { it.type == "suite" }?.let { loaded(it.value) }?.takeIf(::isSuiteObject)
+                ?: return Resolution.unresolved()
         val selected = segments.dropWhile { it.type != "suite" }.drop(1)
-        return context.addToParent { parent ->
-            Optional.of(SuiteDescriptor.of(parent.uniqueId, type).also { it.keepOnly(selected) })
-        }.map { Resolution.match(Match.exact(it)) }.orElse(Resolution.unresolved())
+        return context
+            .addToParent { parent ->
+                Optional.of(SuiteDescriptor.of(parent.uniqueId, type).also { it.keepOnly(selected) })
+            }
+            .map { Resolution.match(Match.exact(it)) }
+            .orElse(Resolution.unresolved())
     }
 }
 
-private val resolver = EngineDiscoveryRequestResolver.builder<EngineDescriptor>()
-    .addClassContainerSelectorResolver { isSuiteObject(it) }
-    .addSelectorResolver(SuiteResolver)
-    .build()
+private val resolver =
+    EngineDiscoveryRequestResolver.builder<EngineDescriptor>()
+        .addClassContainerSelectorResolver { isSuiteObject(it) }
+        .addSelectorResolver(SuiteResolver)
+        .build()
 
 internal class SuiteDescriptor private constructor(id: UniqueId, type: Class<*>, val suite: AnySuite<*>) :
     AbstractTestDescriptor(id, type.simpleName, ClassSource.from(type)) {
@@ -305,9 +328,11 @@ internal class SuiteDescriptor private constructor(id: UniqueId, type: Class<*>,
             val suite = type.getField("INSTANCE").get(null) as AnySuite<*>
             val descriptor = SuiteDescriptor(parent.append("suite", type.name), type, suite)
             val groups = LinkedHashMap<String, GroupDescriptor>()
-            fun group(name: String, empty: Boolean = false) = groups.getOrPut(name) {
-                GroupDescriptor(descriptor.uniqueId.append("group", name), name, type, empty).also(descriptor::addChild)
-            }
+            fun group(name: String, empty: Boolean = false) =
+                groups.getOrPut(name) {
+                    GroupDescriptor(descriptor.uniqueId.append("group", name), name, type, empty)
+                        .also(descriptor::addChild)
+                }
             suite.tests.forEach { (key, test) ->
                 val under = key.group?.let { group(it) } ?: descriptor
                 val id = under.uniqueId.append("test", key.name)

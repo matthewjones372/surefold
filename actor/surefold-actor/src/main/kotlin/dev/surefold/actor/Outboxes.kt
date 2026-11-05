@@ -29,6 +29,7 @@ internal data class Outboxes<C>(val queues: Map<String, List<KeptCommand<C>>> = 
     }
 
     /** Every entity's head: what a resend sends again. */
-    fun heads(): List<Send<C>> =
-        queues.mapNotNull { (to, queue) -> queue.firstOrNull()?.let { Send(to, it.sequence, it.command) } }
+    fun heads(): List<Send<C>> = queues.mapNotNull { (to, queue) ->
+        queue.firstOrNull()?.let { Send(to, it.sequence, it.command) }
+    }
 }

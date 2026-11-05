@@ -23,27 +23,28 @@ sealed interface Either<out E, out A> {
     fun <T : Any> recover(
         type: KClass<T>,
         handler: Fail<@UnsafeVariance E>.(T) -> @UnsafeVariance A,
-    ): Either<E, A> = when (this) {
-        is Left -> {
-            val selected = type.javaObjectType
-            if (selected.isInstance(value)) {
-                val narrowed = selected.cast(value)
-                attempt { handler(narrowed) }
-            } else {
-                this
+    ): Either<E, A> =
+        when (this) {
+            is Left -> {
+                val selected = type.javaObjectType
+                if (selected.isInstance(value)) {
+                    val narrowed = selected.cast(value)
+                    attempt { handler(narrowed) }
+                } else {
+                    this
+                }
             }
-        }
 
-        is Right -> this
-    }
+            is Right -> this
+        }
 
     companion object {
         inline fun <E, A> cond(condition: Boolean, right: () -> A, left: () -> E): Either<E, A> =
             if (condition) Right(right()) else Left(left())
 
         /**
-         * What [block] returned, or on the left what it threw that a caller may handle. Anything fatal, and a
-         * [fail] on its way out of its block, goes on up: see [nonFatalOrThrow].
+         * What [block] returned, or on the left what it threw that a caller may handle. Anything fatal, and a [fail] on
+         * its way out of its block, goes on up: see [nonFatalOrThrow].
          */
         @Suppress("TooGenericExceptionCaught") // catching everything is the point; nonFatalOrThrow sorts it
         inline fun <A> catch(block: () -> A): Either<Throwable, A> =
@@ -68,25 +69,29 @@ sealed interface Either<out E, out A> {
     }
 }
 
-inline fun <E, A, B> Either<E, A>.fold(ifLeft: (E) -> B, ifRight: (A) -> B): B = when (this) {
-    is Either.Left -> ifLeft(value)
-    is Either.Right -> ifRight(value)
-}
+inline fun <E, A, B> Either<E, A>.fold(ifLeft: (E) -> B, ifRight: (A) -> B): B =
+    when (this) {
+        is Either.Left -> ifLeft(value)
+        is Either.Right -> ifRight(value)
+    }
 
-inline fun <E, A, B> Either<E, A>.map(f: (A) -> B): Either<E, B> = when (this) {
-    is Either.Left -> this
-    is Either.Right -> Either.Right(f(value))
-}
+inline fun <E, A, B> Either<E, A>.map(f: (A) -> B): Either<E, B> =
+    when (this) {
+        is Either.Left -> this
+        is Either.Right -> Either.Right(f(value))
+    }
 
-inline fun <E, F, A> Either<E, A>.mapLeft(f: (E) -> F): Either<F, A> = when (this) {
-    is Either.Left -> Either.Left(f(value))
-    is Either.Right -> this
-}
+inline fun <E, F, A> Either<E, A>.mapLeft(f: (E) -> F): Either<F, A> =
+    when (this) {
+        is Either.Left -> Either.Left(f(value))
+        is Either.Right -> this
+    }
 
-inline fun <E, A, B> Either<E, A>.flatMap(f: (A) -> Either<E, B>): Either<E, B> = when (this) {
-    is Either.Left -> this
-    is Either.Right -> f(value)
-}
+inline fun <E, A, B> Either<E, A>.flatMap(f: (A) -> Either<E, B>): Either<E, B> =
+    when (this) {
+        is Either.Left -> this
+        is Either.Right -> f(value)
+    }
 
 inline fun <E, A> Either<E, A>.getOrElse(ifLeft: (E) -> A): A = fold(ifLeft) { it }
 
@@ -106,7 +111,8 @@ fun <E> E.left(): Either<E, Nothing> = Either.Left(this)
 fun <A> A.right(): Either<Nothing, A> = Either.Right(this)
 
 /** Recovery can bind an alternative or fail with a new declared error type. */
-fun <E, F, A> Either<E, A>.recover(handler: Fail<F>.(E) -> A): Either<F, A> = when (this) {
-    is Either.Left -> attempt { handler(value) }
-    is Either.Right -> this
-}
+fun <E, F, A> Either<E, A>.recover(handler: Fail<F>.(E) -> A): Either<F, A> =
+    when (this) {
+        is Either.Left -> attempt { handler(value) }
+        is Either.Right -> this
+    }

@@ -5,8 +5,8 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * What upstream has piled up since the reader last took, and how upstream ended. Upstream never waits
- * on the reader: while the reader is slow, each element is folded into what is pending.
+ * What upstream has piled up since the reader last took, and how upstream ended. Upstream never waits on the reader:
+ * while the reader is slow, each element is folded into what is pending.
  */
 private class Pile(private val seed: (Any) -> Any, private val aggregate: (Any, Any) -> Any) {
 
@@ -37,9 +37,9 @@ private class Pile(private val seed: (Any) -> Any, private val aggregate: (Any, 
 }
 
 /**
- * Upstream on a fork of its own, folding into one pending value while the reader is slow, as Pekko's
- * `conflateWithSeed` does. The fork checks for an interruption between elements, so a run can let go of
- * it even while upstream never blocks.
+ * Upstream on a fork of its own, folding into one pending value while the reader is slow, as Pekko's `conflateWithSeed`
+ * does. The fork checks for an interruption between elements, so a run can let go of it even while upstream never
+ * blocks.
  */
 // The catch is as wide as a pipeline: whatever upstream, the seed or the aggregate threw is the reader's.
 @Suppress("TooGenericExceptionCaught")
@@ -47,28 +47,30 @@ context(ctx: PullContext)
 internal fun Node.Conflate.conflated(): Pull {
     val pile = Pile(guarded("conflateWithSeed", at, seed), guarded("conflateWithSeed", at, aggregate))
     val up = upstream.pull()
-    val fork = InFlight(ctx.releases?.on ?: VirtualThreads) {
-        try {
-            while (!Thread.currentThread().isInterrupted) pile.add(up.next() ?: break)
-            pile.end()
-        } catch (_: InterruptedException) {
-            // Let go of by the run.
-        } catch (thrown: Throwable) {
-            pile.end(thrown)
+    val fork =
+        InFlight(ctx.releases?.on ?: VirtualThreads) {
+            try {
+                while (!Thread.currentThread().isInterrupted) pile.add(up.next() ?: break)
+                pile.end()
+            } catch (_: InterruptedException) {
+                // Let go of by the run.
+            } catch (thrown: Throwable) {
+                pile.end(thrown)
+            }
         }
-    }
     ctx.releases?.add(fork::cancel)
     return Pull { pile.take() }
 }
 
 /**
- * [Node.Conflate] on a test's clock: upstream is a worker that folds everything it has in the same
- * instant before the reader's turn, so a source with no time in it arrives as one aggregate.
+ * [Node.Conflate] on a test's clock: upstream is a worker that folds everything it has in the same instant before the
+ * reader's turn, so a source with no time in it arrives as one aggregate.
  */
 context(ctx: PullContext)
 internal fun Node.Conflate.conflatedOnClock(turns: Turns): Pull =
-    TurnPile(guarded("conflateWithSeed", at, seed), guarded("conflateWithSeed", at, aggregate), turns)
-        .also { pile -> turns.fork { pile.fill(upstream.pull()) } }
+    TurnPile(guarded("conflateWithSeed", at, seed), guarded("conflateWithSeed", at, aggregate), turns).also { pile ->
+        turns.fork { pile.fill(upstream.pull()) }
+    }
 
 /** The pile on a test's clock, where only the worker whose turn it is touches it, so it needs no lock. */
 private class TurnPile(

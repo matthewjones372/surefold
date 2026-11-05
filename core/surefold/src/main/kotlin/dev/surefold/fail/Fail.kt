@@ -10,15 +10,14 @@ interface Fail<in E> {
 }
 
 /**
- * The scope [attempt] opens: it fails only while open and only on the thread that opened it, and only its own
- * attempt catches what it throws.
+ * The scope [attempt] opens: it fails only while open and only on the thread that opened it, and only its own attempt
+ * catches what it throws.
  */
 internal class Attempt<in E>(private val openedIn: String) : Fail<E> {
 
     private val owner = Thread.currentThread()
 
-    @Volatile
-    private var closed = false
+    @Volatile private var closed = false
 
     override fun fail(error: E): Nothing {
         // A Fail that escaped its attempt, in a lambda or a fork still running, has nobody left to answer.
@@ -37,8 +36,8 @@ internal class Attempt<in E>(private val openedIn: String) : Fail<E> {
 }
 
 /**
- * How [fail] leaves the block. It extends Throwable rather than Exception so that `catch (e: Exception)` in
- * the block cannot swallow it, and records no stack trace because nothing ever prints it.
+ * How [fail] leaves the block. It extends Throwable rather than Exception so that `catch (e: Exception)` in the block
+ * cannot swallow it, and records no stack trace because nothing ever prints it.
  */
 internal class Failed(val error: Any?, val scope: Fail<*>) : Throwable(null, null, true, false)
 
@@ -50,8 +49,7 @@ fun <E, A> attempt(block: Fail<E>.() -> A): Either<E, A> {
     } catch (failed: Failed) {
         if (failed.scope !== scope) throw failed
         // Only fail on this same Attempt<E> threw it, so the error is an E.
-        @Suppress("UNCHECKED_CAST")
-        Either.Left(failed.error as E)
+        @Suppress("UNCHECKED_CAST") Either.Left(failed.error as E)
     } finally {
         scope.close()
     }

@@ -3,10 +3,10 @@ package dev.surefold.fail
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeSameInstanceAs
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.util.concurrent.CancellationException
+import org.junit.jupiter.api.Test
 
 class EitherCatchOrThrowTest {
     @Test

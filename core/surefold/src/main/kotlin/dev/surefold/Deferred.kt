@@ -6,8 +6,8 @@ interface Deferred<T> {
     fun await(): T
 
     /**
-     * Interrupts the fork and returns once it has ended, so nothing it owns outlives this call. Its outcome
-     * counts as noticed either way: a caller that gave up on a fork is not answered by it at scope close.
+     * Interrupts the fork and returns once it has ended, so nothing it owns outlives this call. Its outcome counts as
+     * noticed either way: a caller that gave up on a fork is not answered by it at scope close.
      */
     fun cancel()
 }

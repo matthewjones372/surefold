@@ -25,8 +25,8 @@ private val module = Name.identifier("module")
 /**
  * Every `SurefoldApp` in what is being compiled, and what its `module` was written as.
  *
- * A graph this cannot read is left alone rather than guessed at, so an application assembled in a
- * way the reader does not know is silent here and still checked by `surefoldWiring`, which runs it.
+ * A graph this cannot read is left alone rather than guessed at, so an application assembled in a way the reader does
+ * not know is silent here and still checked by `surefoldWiring`, which runs it.
  */
 internal class ApplicationChecker(private val verbose: Boolean) : FirClassChecker(MppCheckerKind.Common) {
 
@@ -82,10 +82,13 @@ internal class ApplicationChecker(private val verbose: Boolean) : FirClassChecke
 
         // Only where nothing is missing, as `validate` does it: a graph short of a key stalls for
         // that reason, and a ring reported out of one is a ring the reader invented.
-        graph?.takeIf { it.missing().isEmpty() }?.cycle()?.let { ring ->
-            val at = graph.provides[ring.first()] ?: source
-            reporter.reportOn(at, SurefoldDiagnostics.SUREFOLD_APP_CYCLE, ringSaid(ring), context)
-        }
+        graph
+            ?.takeIf { it.missing().isEmpty() }
+            ?.cycle()
+            ?.let { ring ->
+                val at = graph.provides[ring.first()] ?: source
+                reporter.reportOn(at, SurefoldDiagnostics.SUREFOLD_APP_CYCLE, ringSaid(ring), context)
+            }
 
         unreached.forEach { key ->
             // On the recipe that built it, which is the line to delete, and the line surefoldWiring
@@ -98,8 +101,8 @@ internal class ApplicationChecker(private val verbose: Boolean) : FirClassChecke
     /**
      * What the root reaches nothing of, or nothing at all where the root is not a key this builds.
      *
-     * A root the graph does not provide would leave every node unreached, which is the one wrong
-     * answer this must never give: `surefoldWiring` fails that build on the root itself.
+     * A root the graph does not provide would leave every node unreached, which is the one wrong answer this must never
+     * give: `surefoldWiring` fails that build on the root itself.
      */
     private fun Graph.unreachedFrom(declaration: FirClass): List<String> =
         declaration.root()?.takeIf { it in provides }?.let { unreached(it) }.orEmpty()
@@ -107,11 +110,12 @@ internal class ApplicationChecker(private val verbose: Boolean) : FirClassChecke
     /**
      * The root, read off the type argument the subclass wrote.
      *
-     * The same place `SurefoldApp.root` reads it from — a type argument on a subclass declaration is
-     * kept, where one at a use site is erased.
+     * The same place `SurefoldApp.root` reads it from — a type argument on a subclass declaration is kept, where one at
+     * a use site is erased.
      */
     private fun FirClass.root(): String? =
-        superTypeRefs.firstOrNull { it.coneType.classId == surefoldApp }
+        superTypeRefs
+            .firstOrNull { it.coneType.classId == surefoldApp }
             ?.coneType
             ?.typeArguments
             ?.firstOrNull()
@@ -121,13 +125,15 @@ internal class ApplicationChecker(private val verbose: Boolean) : FirClassChecke
     /** The sentence `surefold-app` prints for the same fault, so a reader meets one wording not two. */
     private fun Need.said(): String = "${labelOf(by)} needs ${labelOf(key)}, and nothing builds it"
 
-    private fun FirClass.read(graph: Graph?, gave: Gave, unreached: List<String>): String = when (graph) {
-        null -> "${name()} was not read: gave up at ${gave.at}"
+    private fun FirClass.read(graph: Graph?, gave: Gave, unreached: List<String>): String =
+        when (graph) {
+            null -> "${name()} was not read: gave up at ${gave.at}"
 
-        else -> "${name()} provides ${graph.provides.keys.map(::labelOf).sorted()}" +
-            ", and is short of ${graph.missing().map { labelOf(it.key) }.distinct().sorted()}" +
-            read(unreached)
-    }
+            else ->
+                "${name()} provides ${graph.provides.keys.map(::labelOf).sorted()}" +
+                    ", and is short of ${graph.missing().map { labelOf(it.key) }.distinct().sorted()}" +
+                    read(unreached)
+        }
 
     /** Silent where everything is reached, so a working graph's line stays the one it was. */
     private fun read(unreached: List<String>): String =
@@ -141,9 +147,9 @@ internal class ApplicationChecker(private val verbose: Boolean) : FirClassChecke
     /**
      * A site as `Wiring.kt:92`, which is what `surefold-app`'s own `shortly` renders.
      *
-     * Every site a graph holds has been anchored into the file being checked, so the name is this
-     * file's and only the line has to be worked out. A compiler that will not say which line — the
-     * mapping is nullable — falls back to the word the runtime report uses for a site it lacks.
+     * Every site a graph holds has been anchored into the file being checked, so the name is this file's and only the
+     * line has to be worked out. A compiler that will not say which line — the mapping is nullable — falls back to the
+     * word the runtime report uses for a site it lacks.
      */
     @OptIn(SymbolInternals::class)
     context(context: CheckerContext)
@@ -158,15 +164,15 @@ internal class ApplicationChecker(private val verbose: Boolean) : FirClassChecke
     private fun ringSaid(ring: List<String>): String = "cycle ${ring.joinToString(" -> ", transform = ::labelOf)}"
 
     /** The sentence `surefold-app` prints for the same node, so a reader meets one wording not two. */
-    private fun unreachedSaid(key: String): String =
-        "nothing reaches ${labelOf(key)}, and it is built on every start"
+    private fun unreachedSaid(key: String): String = "nothing reaches ${labelOf(key)}, and it is built on every start"
 
     private fun FirClass.isApplication(): Boolean = superTypeRefs.any { it.coneType.classId == surefoldApp }
 
     @OptIn(DirectDeclarationsAccess::class, SymbolInternals::class)
     context(context: CheckerContext)
     private fun FirClass.graph(gave: Gave): Graph? =
-        declarations.filterIsInstance<FirProperty>()
+        declarations
+            .filterIsInstance<FirProperty>()
             .firstOrNull { it.name == module }
             ?.initializer
             ?.let { read(it, gave, Here.of(context.session, context.containingFileSymbol?.fir)) }

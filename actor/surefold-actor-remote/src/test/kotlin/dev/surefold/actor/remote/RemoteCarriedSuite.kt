@@ -20,19 +20,21 @@ import kotlin.time.Duration.Companion.minutes
 /** Asks for the request id on a line the handler writes. */
 private data class WhoAsked(val reply: Reply<String>)
 
-private val whoAskedCodec = object : MessageCodec<WhoAsked> {
-    override fun write(message: WhoAsked, out: WireOut) = out.reply(message.reply, Codecs.string)
+private val whoAskedCodec =
+    object : MessageCodec<WhoAsked> {
+        override fun write(message: WhoAsked, out: WireOut) = out.reply(message.reply, Codecs.string)
 
-    override fun read(input: WireIn) = WhoAsked(input.reply(Codecs.string))
-}
-
-private fun answering() = behaviour<WhoAsked, Unit>(Unit) { _, _, message ->
-    val heard = capturingLogs { logs ->
-        logInfo("asked")
-        logs.all().single().annotations["request_id"].orEmpty()
+        override fun read(input: WireIn) = WhoAsked(input.reply(Codecs.string))
     }
-    stay().also { message.reply(heard) }
-}
+
+private fun answering() =
+    behaviour<WhoAsked, Unit>(Unit) { _, _, message ->
+        val heard = capturingLogs { logs ->
+            logInfo("asked")
+            logs.all().single().annotations["request_id"].orEmpty()
+        }
+        stay().also { message.reply(heard) }
+    }
 
 /** Spec 0122 across nodes: what an asker had bound is what the handler on the other node runs with. */
 object RemoteCarriedSuite : Suite() {
@@ -41,14 +43,15 @@ object RemoteCarriedSuite : Suite() {
             val port = freePort()
             val ready = CountDownLatch(1)
             val done = CountDownLatch(1)
-            val other = Thread.ofPlatform().start {
-                scope {
-                    val node = node("answering", port)
-                    node.expose(spawn("answer", answering()), whoAskedCodec)
-                    ready.countDown()
-                    done.await()
+            val other =
+                Thread.ofPlatform().start {
+                    scope {
+                        val node = node("answering", port)
+                        node.expose(spawn("answer", answering()), whoAskedCodec)
+                        ready.countDown()
+                        done.await()
+                    }
                 }
-            }
             ready.await()
             try {
                 val heard = scope {
@@ -69,11 +72,12 @@ object RemoteCarriedSuite : Suite() {
 /** Asks the other node to answer [to], a reply that tells an actor here rather than an ask's caller. */
 private data class AnswerTo(val to: Reply<String>)
 
-private val answerToCodec = object : MessageCodec<AnswerTo> {
-    override fun write(message: AnswerTo, out: WireOut) = out.reply(message.to, Codecs.string)
+private val answerToCodec =
+    object : MessageCodec<AnswerTo> {
+        override fun write(message: AnswerTo, out: WireOut) = out.reply(message.to, Codecs.string)
 
-    override fun read(input: WireIn) = AnswerTo(input.reply(Codecs.string))
-}
+        override fun read(input: WireIn) = AnswerTo(input.reply(Codecs.string))
+    }
 
 private fun answeringTo() = behaviour<AnswerTo, Unit>(Unit) { _, _, message -> stay().also { message.to("answered") } }
 
@@ -97,13 +101,14 @@ object RemoteReplyCarriedSuite : Suite() {
             val port = freePort()
             val ready = CountDownLatch(1)
             val done = CountDownLatch(1)
-            val other = Thread.ofPlatform().start {
-                scope {
-                    node("answering", port).expose(spawn("answer", answeringTo()), answerToCodec)
-                    ready.countDown()
-                    done.await()
+            val other =
+                Thread.ofPlatform().start {
+                    scope {
+                        node("answering", port).expose(spawn("answer", answeringTo()), answerToCodec)
+                        ready.countDown()
+                        done.await()
+                    }
                 }
-            }
             ready.await()
             try {
                 val heard = CompletableFuture<String>()

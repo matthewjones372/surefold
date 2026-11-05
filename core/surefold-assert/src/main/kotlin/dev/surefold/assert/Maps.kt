@@ -18,9 +18,9 @@ infix fun <K, V, M : Map<K, V>> M.shouldNotContainKey(key: K): M = also { holdin
 infix fun <K, V, M : Map<K, V>> M.shouldContain(entry: Pair<K, V>): M = also { missing(entry)?.let(::thrown) }
 
 /** Asserts this has every entry of [entries], among others, and returns it. */
-infix fun <K, V, M : Map<K, V>> M.shouldContainAll(entries: Map<K, V>): M =
-    also { missingAny(entries)?.let(::thrown) }
+infix fun <K, V, M : Map<K, V>> M.shouldContainAll(entries: Map<K, V>): M = also { missingAny(entries)?.let(::thrown) }
 
 /** Asserts this has exactly the entries of [entries], and returns it. An IDE shows the two maps side by side. */
-infix fun <K, V, M : Map<K, V>> M.shouldContainExactly(entries: Map<K, V>): M =
-    also { notExactly(entries)?.let(::thrown) }
+infix fun <K, V, M : Map<K, V>> M.shouldContainExactly(entries: Map<K, V>): M = also {
+    notExactly(entries)?.let(::thrown)
+}

@@ -35,43 +35,44 @@ private data class Forward(val to: ActorRef<Log>, val message: Log) : Log
 
 private data object Break : Log
 
-private fun log(): Behaviour<Log, List<Int>, Nothing> = behaviour(emptyList()) { _, seen, message ->
-    when (message) {
-        is Add -> become(seen + message.n)
+private fun log(): Behaviour<Log, List<Int>, Nothing> =
+    behaviour(emptyList()) { _, seen, message ->
+        when (message) {
+            is Add -> become(seen + message.n)
 
-        is Read -> {
-            message.reply(seen)
-            stay()
+            is Read -> {
+                message.reply(seen)
+                stay()
+            }
+
+            is Where -> {
+                message.reply(Thread.currentThread())
+                stay()
+            }
+
+            is Ignore -> stay()
+
+            is Quit -> stop()
+
+            is Wait -> {
+                message.until.await()
+                stay()
+            }
+
+            is Enter -> {
+                message.entered.countDown()
+                message.until.await()
+                stay()
+            }
+
+            is Forward -> {
+                message.to.tell(message.message)
+                stay()
+            }
+
+            Break -> error("broken")
         }
-
-        is Where -> {
-            message.reply(Thread.currentThread())
-            stay()
-        }
-
-        is Ignore -> stay()
-
-        is Quit -> stop()
-
-        is Wait -> {
-            message.until.await()
-            stay()
-        }
-
-        is Enter -> {
-            message.entered.countDown()
-            message.until.await()
-            stay()
-        }
-
-        is Forward -> {
-            message.to.tell(message.message)
-            stay()
-        }
-
-        Break -> error("broken")
     }
-}
 
 object RuntimeSuite : Suite() {
     init {

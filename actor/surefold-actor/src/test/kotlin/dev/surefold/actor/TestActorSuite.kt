@@ -28,34 +28,36 @@ private data class Forget(val id: String, val reply: Reply<Unit>) : Shop
 
 private data object Close : Shop
 
-private fun shop(): Behaviour<Shop, Map<String, Pet>, Nothing> = behaviour(emptyMap()) { ctx, shelf, message ->
-    when (message) {
-        is Arrived -> become(shelf + (message.pet.id to message.pet))
+private fun shop(): Behaviour<Shop, Map<String, Pet>, Nothing> =
+    behaviour(emptyMap()) { ctx, shelf, message ->
+        when (message) {
+            is Arrived -> become(shelf + (message.pet.id to message.pet))
 
-        is Find -> {
-            message.reply(Optional.ofNullable(shelf[message.id]))
-            stay()
-        }
-
-        is Adopt -> when (val pet = shelf[message.id]) {
-            null -> unhandled()
-
-            else -> {
-                message.reply(!pet.adopted)
-                become(shelf + (pet.id to pet.copy(adopted = true)))
+            is Find -> {
+                message.reply(Optional.ofNullable(shelf[message.id]))
+                stay()
             }
+
+            is Adopt ->
+                when (val pet = shelf[message.id]) {
+                    null -> unhandled()
+
+                    else -> {
+                        message.reply(!pet.adopted)
+                        become(shelf + (pet.id to pet.copy(adopted = true)))
+                    }
+                }
+
+            is Restock -> {
+                message.pets.forEach { ctx.self.tell(Arrived(it)) }
+                stay()
+            }
+
+            is Forget -> stay()
+
+            Close -> stop()
         }
-
-        is Restock -> {
-            message.pets.forEach { ctx.self.tell(Arrived(it)) }
-            stay()
-        }
-
-        is Forget -> stay()
-
-        Close -> stop()
     }
-}
 
 object TestActorSuite : Suite() {
     private val rex = Pet("rex")
@@ -63,10 +65,12 @@ object TestActorSuite : Suite() {
     init {
         test("a step runs on the calling thread") {
             val seen = AtomicReference<Thread>()
-            val actor = behaviour<Shop, Unit>(Unit) { _, _, _ ->
-                seen.set(Thread.currentThread())
-                stay()
-            }.test()
+            val actor =
+                behaviour<Shop, Unit>(Unit) { _, _, _ ->
+                        seen.set(Thread.currentThread())
+                        stay()
+                    }
+                    .test()
 
             actor.send(Close)
 
@@ -106,13 +110,15 @@ object TestActorSuite : Suite() {
         }
 
         test("a second reply fails where it is made, and stops the actor") {
-            val twice = behaviour<Shop, Unit>(Unit) { _, _, message ->
-                if (message is Find) {
-                    message.reply(Optional.empty())
-                    message.reply(Optional.empty())
-                }
-                stay()
-            }.test()
+            val twice =
+                behaviour<Shop, Unit>(Unit) { _, _, message ->
+                        if (message is Find) {
+                            message.reply(Optional.empty())
+                            message.reply(Optional.empty())
+                        }
+                        stay()
+                    }
+                    .test()
 
             shouldThrow<IllegalStateException> { twice.ask { Find("rex", it) } }
 
@@ -152,13 +158,15 @@ object TestActorSuite : Suite() {
 
         test("a reply is addressed like a ref, and each ask has its own") {
             val addresses = AtomicReference<List<Address>>(emptyList())
-            val actor = behaviour<Shop, Unit>(Unit) { _, _, message ->
-                if (message is Forget) {
-                    addresses.updateAndGet { it + message.reply.address }
-                    message.reply(Unit)
-                }
-                stay()
-            }.test("keeper")
+            val actor =
+                behaviour<Shop, Unit>(Unit) { _, _, message ->
+                        if (message is Forget) {
+                            addresses.updateAndGet { it + message.reply.address }
+                            message.reply(Unit)
+                        }
+                        stay()
+                    }
+                    .test("keeper")
 
             actor.ask { Forget("a", it) }
             actor.ask { Forget("b", it) }
@@ -178,9 +186,10 @@ object TestActorSuite : Suite() {
         }
     }
 
-    private fun <A : Any> ignored(): Reply<A> = object : Reply<A> {
-        override val address = Address("test", "/temp/ignored", 1)
+    private fun <A : Any> ignored(): Reply<A> =
+        object : Reply<A> {
+            override val address = Address("test", "/temp/ignored", 1)
 
-        override fun invoke(answer: A) = Unit
-    }
+            override fun invoke(answer: A) = Unit
+        }
 }

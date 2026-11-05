@@ -4,15 +4,16 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeEmpty
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.withClue
+import java.io.File
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 /** Checks compile as statements, one after another, under the compiler options this module builds with. */
 class ExpectationsCompileTest {
 
-    private fun suiteOf(body: String, vararg imports: String) = """
+    private fun suiteOf(body: String, vararg imports: String) =
+        """
         import dev.surefold.Resource
         import dev.surefold.junit.SharedSuite
         import dev.surefold.junit.expect
@@ -26,7 +27,8 @@ class ExpectationsCompileTest {
                 test("the fixture") { one -> $body }
             }
         }
-    """.trimIndent()
+    """
+            .trimIndent()
 
     @Test
     fun `checks written one after another compile, with nothing said`(@TempDir workspace: File) {
@@ -40,8 +42,9 @@ class ExpectationsCompileTest {
     // A block of checks returns Unit, so a helper calls the one it is handed as a statement (spec 0203).
     @Test
     fun `a helper calls the block of checks it is handed as a statement, with nothing said`(@TempDir workspace: File) {
-        val source = suiteOf("twice { expect(one == 1) }\n val check = { expect(one > 0) }\n check()")
-            .replace("object Fixture", "fun twice(check: () -> Unit) {\n check()\n check()\n}\n\nobject Fixture")
+        val source =
+            suiteOf("twice { expect(one == 1) }\n val check = { expect(one > 0) }\n check()")
+                .replace("object Fixture", "fun twice(check: () -> Unit) {\n check()\n check()\n}\n\nobject Fixture")
         val (exit, reported) = EmbeddedKotlin(workspace).compile(source)
 
         withClue(reported.joinToString("\n")) { exit shouldBe ExitCode.OK }

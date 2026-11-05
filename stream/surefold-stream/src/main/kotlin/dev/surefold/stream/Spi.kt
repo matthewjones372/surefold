@@ -3,8 +3,8 @@ package dev.surefold.stream
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * The tree a backend compiles. A pipeline never needs it; a backend in another module does, and it
- * changes whenever an operator does, which is what opting in acknowledges.
+ * The tree a backend compiles. A pipeline never needs it; a backend in another module does, and it changes whenever an
+ * operator does, which is what opting in acknowledges.
  */
 @RequiresOptIn(message = "The node tree a stream backend compiles. It changes as the operators do.")
 @Retention(AnnotationRetention.BINARY)
@@ -18,8 +18,8 @@ class BackendKey(val name: String) {
 }
 
 /**
- * One backend's compiled form of a description, kept. One slot, because a service runs on one backend:
- * a second backend compiles every time rather than paying for a map on every stream.
+ * One backend's compiled form of a description, kept. One slot, because a service runs on one backend: a second backend
+ * compiles every time rather than paying for a map on every stream.
  */
 @StreamSpi
 class CompileCache internal constructor() {

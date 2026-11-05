@@ -2,8 +2,8 @@ package dev.surefold
 
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.util.ServiceLoader
+import org.junit.jupiter.api.Test
 
 /** What a number does when nobody has bound anywhere for it to go, and when somebody has. */
 class MetricsTest {

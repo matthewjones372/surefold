@@ -11,8 +11,8 @@ import org.opentest4j.AssertionFailedError
 fun Events.names(): List<String> = map { it.testDescriptor.displayName }.toList()
 
 /**
- * The display names of everything that finished, tests and containers, in the order they finished. A skipped test
- * never finishes, so it is absent.
+ * The display names of everything that finished, tests and containers, in the order they finished. A skipped test never
+ * finishes, so it is absent.
  */
 fun Events.finishOrder(): List<String> =
     list().filter { it.type == EventType.FINISHED }.map { it.testDescriptor.displayName }
@@ -43,12 +43,16 @@ infix fun Events.shouldHaveSkipped(reasons: Map<String, String>) {
     val outcomes = outcomes()
     val actual = skipReasons()
     if (actual == reasons) return
-    val misses = (reasons.keys - actual.keys).sorted().map { "  \"$it\" ${outcomes[it]?.said ?: "did not run"}" } +
-        reasons.keys.intersect(actual.keys).sorted().filter { reasons[it] != actual[it] }
-            .map { "  \"$it\" was skipped for \"${actual[it]}\", not \"${reasons[it]}\"" } +
-        (actual.keys - reasons.keys).sorted().map {
-            "  \"$it\" was skipped too, for \"${actual[it]}\", and was not named"
-        }
+    val misses =
+        (reasons.keys - actual.keys).sorted().map { "  \"$it\" ${outcomes[it]?.said ?: "did not run"}" } +
+            reasons.keys
+                .intersect(actual.keys)
+                .sorted()
+                .filter { reasons[it] != actual[it] }
+                .map { "  \"$it\" was skipped for \"${actual[it]}\", not \"${reasons[it]}\"" } +
+            (actual.keys - reasons.keys).sorted().map {
+                "  \"$it\" was skipped too, for \"${actual[it]}\", and was not named"
+            }
     throw AssertionFailedError(
         "expected exactly these tests to have been skipped, for these reasons: ${reasons.toSortedMap()}\nbut:\n" +
             misses.joinToString("\n"),
@@ -73,9 +77,11 @@ fun Events.failures(): Map<String, Throwable> =
 
 /** What [test] threw; throws, saying how it ended instead, if it passed, was skipped or did not run. */
 fun Events.failureOf(test: String): Throwable {
-    val outcome = outcomes()[test] ?: throw AssertionFailedError(
-        "no test named \"$test\" ran; these did: ${outcomes().keys.sorted()}",
-    )
+    val outcome =
+        outcomes()[test]
+            ?: throw AssertionFailedError(
+                "no test named \"$test\" ran; these did: ${outcomes().keys.sorted()}",
+            )
     return outcome.thrown ?: throw AssertionFailedError("\"$test\" did not fail: it ${outcome.said}")
 }
 
@@ -88,9 +94,11 @@ private enum class Ended(val toHave: String, val did: String) {
 private class Outcome(val ended: Ended?, val said: String, val thrown: Throwable? = null, val reason: String? = null)
 
 /** How each test ended, by name; the last event wins for a test that ran more than once. */
-private fun Events.outcomes(): Map<String, Outcome> =
-    filter { it.type == EventType.FINISHED || it.type == EventType.SKIPPED }.toList()
-        .associate { it.testDescriptor.displayName to outcomeOf(it) }
+private fun Events.outcomes(): Map<String, Outcome> = filter {
+    it.type == EventType.FINISHED || it.type == EventType.SKIPPED
+}
+    .toList()
+    .associate { it.testDescriptor.displayName to outcomeOf(it) }
 
 private fun outcomeOf(event: Event): Outcome {
     if (event.type == EventType.SKIPPED) {
@@ -112,11 +120,11 @@ private fun Events.shouldHaveEnded(ended: Ended, tests: Iterable<String>) {
     val expected = tests.sorted()
     val actual = outcomes.filterValues { it.ended == ended }.keys.sorted()
     if (actual == expected) return
-    val misses = (expected - actual.toSet()).map { "  \"$it\" ${outcomes[it]?.said ?: "did not run"}" } +
-        (actual - expected.toSet()).map { "  \"$it\" ${ended.did} too, and was not named" }
+    val misses =
+        (expected - actual.toSet()).map { "  \"$it\" ${outcomes[it]?.said ?: "did not run"}" } +
+            (actual - expected.toSet()).map { "  \"$it\" ${ended.did} too, and was not named" }
     throw AssertionFailedError(
-        "expected exactly these tests to have ${ended.toHave}: $expected\nbut:\n" +
-            misses.joinToString("\n"),
+        "expected exactly these tests to have ${ended.toHave}: $expected\nbut:\n" + misses.joinToString("\n"),
         expected,
         actual,
     )

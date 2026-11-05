@@ -22,28 +22,31 @@ class ThrowsTest {
 
     @Test
     fun `a matching throw passes, and every other outcome fails`() {
-        events shouldHaveSucceeded listOf(
-            "passes a matching throw",
-            "passes a matching throw, then checks it",
-        )
-        failures.mapValues { (_, thrown) -> thrown::class } shouldContainExactly mapOf(
-            "fails a missing throw" to AssertionFailedError::class,
-            "fails a wrong type" to AssertionFailedError::class,
-            "fails the second lambda's check" to AssertionFailedError::class,
-            "rethrows an interrupt" to InterruptedException::class,
-        )
+        events shouldHaveSucceeded
+            listOf(
+                "passes a matching throw",
+                "passes a matching throw, then checks it",
+            )
+        failures.mapValues { (_, thrown) -> thrown::class } shouldContainExactly
+            mapOf(
+                "fails a missing throw" to AssertionFailedError::class,
+                "fails a wrong type" to AssertionFailedError::class,
+                "fails the second lambda's check" to AssertionFailedError::class,
+                "rethrows an interrupt" to InterruptedException::class,
+            )
     }
 
     @Test
     fun `a missing throw names the type it wanted and this line`() {
         val failed = failures.getValue("fails a missing throw")
 
-        failed.message.orEmpty().lines().take(4) shouldBe listOf(
-            "fails a missing throw: 1 of 1 expectations failed",
-            "expected: a java.lang.IllegalStateException thrown",
-            "but was:  nothing thrown",
-            "at Samples.kt:${failed.stackTrace.first().lineNumber}",
-        )
+        failed.message.orEmpty().lines().take(4) shouldBe
+            listOf(
+                "fails a missing throw: 1 of 1 expectations failed",
+                "expected: a java.lang.IllegalStateException thrown",
+                "but was:  nothing thrown",
+                "at Samples.kt:${failed.stackTrace.first().lineNumber}",
+            )
     }
 
     @Test
@@ -57,10 +60,11 @@ class ThrowsTest {
 
     @Test
     fun `the second lambda's failure counts with the throw check`() {
-        failures.getValue("fails the second lambda's check").message.orEmpty().lines().take(3) shouldBe listOf(
-            "fails the second lambda's check: 1 of 2 expectations failed",
-            "expected: two",
-            "but was:  three",
-        )
+        failures.getValue("fails the second lambda's check").message.orEmpty().lines().take(3) shouldBe
+            listOf(
+                "fails the second lambda's check: 1 of 2 expectations failed",
+                "expected: two",
+                "but was:  three",
+            )
     }
 }

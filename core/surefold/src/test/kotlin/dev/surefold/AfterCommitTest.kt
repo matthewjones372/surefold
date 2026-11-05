@@ -5,9 +5,9 @@ import dev.surefold.assert.shouldContainExactly
 import dev.surefold.assert.shouldThrow
 import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
-import org.junit.jupiter.api.Test
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Test
 
 private const val RETRIES = 50
 
@@ -36,9 +36,8 @@ class AfterCommitTest {
         transact(soloAfter = Int.MAX_VALUE) {
             val left = free.get()
             // Another step changes what this run read, so this run cannot commit.
-            if (runs.incrementAndGet() <=
-                RETRIES
-            ) Thread.ofVirtual().start { transact { free.update { it + 1 } } }.join()
+            if (runs.incrementAndGet() <= RETRIES)
+                Thread.ofVirtual().start { transact { free.update { it + 1 } } }.join()
             free.set(left - 1)
             afterCommit { effects.incrementAndGet() }
         }
@@ -57,12 +56,13 @@ class AfterCommitTest {
                 error("payment refused")
             }
         }
-        val failed = attempt<String, Unit> {
-            transact {
-                afterCommit { effects.incrementAndGet() }
-                fail("sold out")
+        val failed =
+            attempt<String, Unit> {
+                transact {
+                    afterCommit { effects.incrementAndGet() }
+                    fail("sold out")
+                }
             }
-        }
 
         failed shouldBe Either.Left("sold out")
         effects.get() shouldBe 0
@@ -106,14 +106,15 @@ class AfterCommitTest {
         val free = Shared(10)
         val ran = ConcurrentLinkedQueue<String>()
 
-        val thrown = shouldThrow<IllegalStateException> {
-            transact {
-                free.set(9)
-                afterCommit { error("first") }
-                afterCommit { ran.add("second") }
-                afterCommit { throw IllegalArgumentException("third") }
+        val thrown =
+            shouldThrow<IllegalStateException> {
+                transact {
+                    free.set(9)
+                    afterCommit { error("first") }
+                    afterCommit { ran.add("second") }
+                    afterCommit { throw IllegalArgumentException("third") }
+                }
             }
-        }
 
         thrown.message shouldBe "first"
         thrown.suppressed.map { it.message } shouldContainExactly listOf("third")

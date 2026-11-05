@@ -27,19 +27,21 @@ import kotlin.time.Duration.Companion.minutes
 /** Answers with the request id on a line the handler writes. */
 private data class WhoAsked(val reply: Reply<String>)
 
-private val whoAskedCodec = object : MessageCodec<WhoAsked> {
-    override fun write(message: WhoAsked, out: WireOut) = out.reply(message.reply, Codecs.string)
+private val whoAskedCodec =
+    object : MessageCodec<WhoAsked> {
+        override fun write(message: WhoAsked, out: WireOut) = out.reply(message.reply, Codecs.string)
 
-    override fun read(input: WireIn) = WhoAsked(input.reply(Codecs.string))
-}
-
-private fun answering() = behaviour<WhoAsked, Unit>(Unit) { _, _, message ->
-    val heard = capturingLogs { logs ->
-        logInfo("asked")
-        logs.all().single().annotations["request_id"].orEmpty()
+        override fun read(input: WireIn) = WhoAsked(input.reply(Codecs.string))
     }
-    stay().also { message.reply(heard) }
-}
+
+private fun answering() =
+    behaviour<WhoAsked, Unit>(Unit) { _, _, message ->
+        val heard = capturingLogs { logs ->
+            logInfo("asked")
+            logs.all().single().annotations["request_id"].orEmpty()
+        }
+        stay().also { message.reply(heard) }
+    }
 
 private val brisk =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
@@ -49,23 +51,28 @@ private class LedgerNode(name: String, port: Int, seeds: Discovery, roles: Set<S
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Pair<Cluster, Sharded<WhoAsked>>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val cluster = cluster(node(name, port), seeds, brisk, roles = roles)
-            opened.set(cluster to cluster.sharding("ledger", whoAskedCodec, 1.minutes, role = "ledger") { answering() })
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val cluster = cluster(node(name, port), seeds, brisk, roles = roles)
+                opened.set(
+                    cluster to cluster.sharding("ledger", whoAskedCodec, 1.minutes, role = "ledger") { answering() },
+                )
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     private fun opened(): Pair<Cluster, Sharded<WhoAsked>> {
         ready.await()
         return opened.get()
     }
 
-    val cluster: Cluster get() = opened().first
+    val cluster: Cluster
+        get() = opened().first
 
-    val ledgers: Sharded<WhoAsked> get() = opened().second
+    val ledgers: Sharded<WhoAsked>
+        get() = opened().second
 
     override fun close() {
         done.countDown()
@@ -82,16 +89,16 @@ object KeptCarriedSuite : Suite() {
             val nodes = mutableListOf(LedgerNode("front", ports[0], seeds, emptySet()))
             try {
                 val front = nodes.single()
-                front.cluster.await(1.minutes) { v -> v.members.count { it.status == Status.Up } == 1 } shouldBe
-                    true
+                front.cluster.await(1.minutes) { v -> v.members.count { it.status == Status.Up } == 1 } shouldBe true
                 val answered = CompletableFuture<String>()
-                val reply = object : Reply<String> {
-                    override val address = Address("test", "/reply", 0)
+                val reply =
+                    object : Reply<String> {
+                        override val address = Address("test", "/reply", 0)
 
-                    override fun invoke(answer: String) {
-                        answered.complete(answer)
+                        override fun invoke(answer: String) {
+                            answered.complete(answer)
+                        }
                     }
-                }
                 // No member has the role, so the front's region keeps this until one joins.
                 logAnnotated("request_id" to "r-3") { front.ledgers.entity("l-1").tell(WhoAsked(reply)) }
                 nodes += LedgerNode("host", ports[1], seeds, setOf("ledger"))

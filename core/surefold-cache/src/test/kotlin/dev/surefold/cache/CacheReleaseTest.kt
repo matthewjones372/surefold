@@ -14,14 +14,14 @@ import dev.surefold.resourceScope
 import dev.surefold.surefoldFuture
 import dev.surefold.surefoldLocal
 import dev.surefold.test.eventually
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 
 @Timeout(20)
 class CacheReleaseTest {
@@ -44,25 +44,34 @@ class CacheReleaseTest {
         val finish = Promise<Nothing, Unit>()
         val layer = ReleaseLayer()
         val gone = Shared(emptyList<Int>())
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer), onEvict = { _, value ->
-            gone.update { it + value }
-        }) {
-            if (it == "held") Either.Right(1) else {
-                entered.succeed(Thread.currentThread())
-                try {
-                    Promise<Nothing, Unit>().awaitValue()
-                } catch (_: InterruptedException) {
-                    cleaning.succeed(Unit)
-                    finish.awaitResistingInterrupts()
+        val cache =
+            Cache<String, Nothing, Int>(
+                { 1.minutes },
+                layers = listOf(layer),
+                onEvict = { _, value ->
+                    gone.update { it + value }
+                },
+            ) {
+                if (it == "held") Either.Right(1)
+                else {
+                    entered.succeed(Thread.currentThread())
+                    try {
+                        Promise<Nothing, Unit>().awaitValue()
+                    } catch (_: InterruptedException) {
+                        cleaning.succeed(Unit)
+                        finish.awaitResistingInterrupts()
+                    }
+                    Either.Right(2)
                 }
-                Either.Right(2)
             }
-        }
         cache.get("held") shouldBe Either.Right(1)
         val caller = surefoldFuture { cache.get("late") }
         val worker = entered.awaitValue()
         val closer = Promise<Nothing, Thread>()
-        val close = surefoldFuture { closer.succeed(Thread.currentThread()); cache.closeAndJoin() }
+        val close = surefoldFuture {
+            closer.succeed(Thread.currentThread())
+            cache.closeAndJoin()
+        }
         try {
             cleaning.awaitValue()
             closer.awaitValue().awaitParked()
@@ -91,29 +100,37 @@ class CacheReleaseTest {
         val cleaning = Promise<Nothing, Unit>()
         val finish = Promise<Nothing, Unit>()
         val nearer = ReleaseLayer()
-        val far = object : Layer<String, Int> {
-            override fun read(key: String): Stored<Int> {
-                entered.succeed(Thread.currentThread())
-                try {
-                    Promise<Nothing, Unit>().awaitValue()
-                } catch (_: InterruptedException) {
-                    cleaning.succeed(Unit)
-                    finish.awaitResistingInterrupts()
+        val far =
+            object : Layer<String, Int> {
+                override fun read(key: String): Stored<Int> {
+                    entered.succeed(Thread.currentThread())
+                    try {
+                        Promise<Nothing, Unit>().awaitValue()
+                    } catch (_: InterruptedException) {
+                        cleaning.succeed(Unit)
+                        finish.awaitResistingInterrupts()
+                    }
+                    return Stored(7, Instant.EPOCH, Instant.EPOCH.plusSeconds(60))
                 }
-                return Stored(7, Instant.EPOCH, Instant.EPOCH.plusSeconds(60))
+
+                override fun write(key: String, stored: Stored<Int>) = Unit
+
+                override fun remove(key: String) = Unit
+
+                override fun clear() = Unit
             }
-            override fun write(key: String, stored: Stored<Int>) = Unit
-            override fun remove(key: String) = Unit
-            override fun clear() = Unit
-        }
         val moving = TestClock()
-        val cache = clock.locally(moving) {
-            Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(nearer, far)) { error("layer hit") }
-        }
+        val cache =
+            clock.locally(moving) {
+                Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(nearer, far)) { error("layer hit") }
+            }
         val caller = surefoldFuture { cache.get("a") }
         val worker = entered.awaitValue()
         val closer = Promise<Nothing, Thread>()
-        val close = surefoldFuture { closer.succeed(Thread.currentThread()); cache.closeAndJoin() }
+        val close = surefoldFuture {
+            closer.succeed(Thread.currentThread())
+            cache.closeAndJoin()
+        }
         try {
             cleaning.awaitValue()
             closer.awaitValue().awaitParked()
@@ -132,15 +149,16 @@ class CacheReleaseTest {
     fun `release does not repeat a worker defect already delivered to its waiter`() {
         val entered = Promise<Nothing, Unit>()
         val failure = IllegalArgumentException("lookup")
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }) {
-            entered.succeed(Unit)
-            try {
-                Promise<Nothing, Unit>().awaitValue()
-                Either.Right(1)
-            } catch (_: InterruptedException) {
-                throw failure
+        val cache =
+            Cache<String, Nothing, Int>({ 1.minutes }) {
+                entered.succeed(Unit)
+                try {
+                    Promise<Nothing, Unit>().awaitValue()
+                    Either.Right(1)
+                } catch (_: InterruptedException) {
+                    throw failure
+                }
             }
-        }
         val caller = surefoldFuture { shouldThrow<IllegalArgumentException> { cache.get("a") } }
         entered.awaitValue()
         cache.closeAndJoin()
@@ -153,22 +171,26 @@ class CacheReleaseTest {
         val entered = Promise<Nothing, Unit>()
         val cleaning = Promise<Nothing, Unit>()
         val finish = Promise<Nothing, Unit>()
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }) {
-            entered.succeed(Unit)
-            try {
-                Promise<Nothing, Unit>().awaitValue()
-                Either.Right(1)
-            } finally {
-                cleaning.succeed(Unit)
-                finish.awaitResistingInterrupts()
+        val cache =
+            Cache<String, Nothing, Int>({ 1.minutes }) {
+                entered.succeed(Unit)
+                try {
+                    Promise<Nothing, Unit>().awaitValue()
+                    Either.Right(1)
+                } finally {
+                    cleaning.succeed(Unit)
+                    finish.awaitResistingInterrupts()
+                }
             }
-        }
         val caller = surefoldFuture { shouldThrow<InterruptedException> { cache.get("k") } }
         entered.awaitValue()
         cache.close()
         cleaning.awaitValue()
         val closer = Promise<Nothing, Thread>()
-        val close = surefoldFuture { closer.succeed(Thread.currentThread()); cache.closeAndJoin() }
+        val close = surefoldFuture {
+            closer.succeed(Thread.currentThread())
+            cache.closeAndJoin()
+        }
         try {
             closer.awaitValue().awaitParked()
             close.isDone shouldBe false
@@ -184,11 +206,17 @@ class CacheReleaseTest {
         val cleaning = Promise<Nothing, Thread>()
         val finish = Promise<Nothing, Unit>()
         val calls = Shared(0)
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }, onEvict = { _, _ ->
-            calls.update { it + 1 }
-            cleaning.succeed(Thread.currentThread())
-            finish.awaitResistingInterrupts()
-        }) { Either.Right(1) }
+        val cache =
+            Cache<String, Nothing, Int>(
+                { 1.minutes },
+                onEvict = { _, _ ->
+                    calls.update { it + 1 }
+                    cleaning.succeed(Thread.currentThread())
+                    finish.awaitResistingInterrupts()
+                },
+            ) {
+                Either.Right(1)
+            }
         cache.get("k")
         val first = surefoldFuture {
             Thread.currentThread().interrupt()
@@ -221,11 +249,17 @@ class CacheReleaseTest {
         val sharedValue = Any()
         val keys = Shared(emptyList<String>())
         val defects = mapOf("a" to IllegalArgumentException("a"), "b" to IllegalArgumentException("b"))
-        val cache = Cache<String, Nothing, Any>({ Duration.INFINITE }, onEvict = { key, value ->
-            (value === sharedValue) shouldBe true
-            keys.update { it + key }
-            throw defects.getValue(key)
-        }) { Either.Right(sharedValue) }
+        val cache =
+            Cache<String, Nothing, Any>(
+                { Duration.INFINITE },
+                onEvict = { key, value ->
+                    (value === sharedValue) shouldBe true
+                    keys.update { it + key }
+                    throw defects.getValue(key)
+                },
+            ) {
+                Either.Right(sharedValue)
+            }
         cache.get("a")
         cache.get("b")
         val failure = shouldThrow<IllegalArgumentException> { cache.closeAndJoin() }
@@ -240,10 +274,16 @@ class CacheReleaseTest {
     fun `one reused callback defect still allows cleanup for every removed entry`() {
         val keys = Shared(emptyList<String>())
         val defect = IllegalArgumentException("cleanup")
-        val cache = Cache<String, Nothing, Int>({ Duration.INFINITE }, onEvict = { key, _ ->
-            keys.update { it + key }
-            throw defect
-        }) { Either.Right(1) }
+        val cache =
+            Cache<String, Nothing, Int>(
+                { Duration.INFINITE },
+                onEvict = { key, _ ->
+                    keys.update { it + key }
+                    throw defect
+                },
+            ) {
+                Either.Right(1)
+            }
         listOf("a", "b", "c").forEach { cache.get(it) }
         (shouldThrow<IllegalArgumentException> { cache.closeAndJoin() } === defect) shouldBe true
         keys.peek().toSet() shouldBe setOf("a", "b", "c")
@@ -260,10 +300,11 @@ class CacheReleaseTest {
             rejected.update { it + 1 }
         }
         val layer = ReleaseLayer(onWrite = { reject() }, onRemove = { reject() })
-        cache = Cache({ 1.minutes }, layers = listOf(layer), onEvict = { _, _ -> reject() }) {
-            reject()
-            Either.Right(1)
-        }
+        cache =
+            Cache({ 1.minutes }, layers = listOf(layer), onEvict = { _, _ -> reject() }) {
+                reject()
+                Either.Right(1)
+            }
         cache.get("a") shouldBe Either.Right(1)
         cache.invalidate(Invalidation.Key("a"))
         cache.get("b") shouldBe Either.Right(1)
@@ -277,16 +318,25 @@ class CacheReleaseTest {
         val entered = Promise<Nothing, Unit>()
         val finish = Promise<Nothing, Unit>()
         val ended = Shared(false)
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }, onEvict = { _, _ ->
-            entered.succeed(Unit)
-            finish.awaitResistingInterrupts()
-            ended.update { true }
-        }) { Either.Right(1) }
+        val cache =
+            Cache<String, Nothing, Int>(
+                { 1.minutes },
+                onEvict = { _, _ ->
+                    entered.succeed(Unit)
+                    finish.awaitResistingInterrupts()
+                    ended.update { true }
+                },
+            ) {
+                Either.Right(1)
+            }
         cache.get("a")
         val invalidation = surefoldFuture { cache.invalidate(Invalidation.All) }
         entered.awaitValue()
         val closer = Promise<Nothing, Thread>()
-        val close = surefoldFuture { closer.succeed(Thread.currentThread()); cache.closeAndJoin() }
+        val close = surefoldFuture {
+            closer.succeed(Thread.currentThread())
+            cache.closeAndJoin()
+        }
         try {
             closer.awaitValue().awaitParked()
             close.isDone shouldBe false
@@ -304,14 +354,17 @@ class CacheReleaseTest {
         val cancelled = Promise<Nothing, Unit>()
         val outside = Promise<Nothing, Unit>()
         val finish = Promise<Nothing, Unit>()
-        val layer = ReleaseLayer(onRemove = {
-            entered.succeed(Unit)
-            try {
-                Promise<Nothing, Unit>().awaitValue()
-            } finally {
-                cancelled.succeed(Unit)
-            }
-        })
+        val layer =
+            ReleaseLayer(
+                onRemove = {
+                    entered.succeed(Unit)
+                    try {
+                        Promise<Nothing, Unit>().awaitValue()
+                    } finally {
+                        cancelled.succeed(Unit)
+                    }
+                },
+            )
         val cache = Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) { Either.Right(1) }
         val callerThread = Promise<Nothing, Thread>()
         val caller = surefoldFuture {
@@ -338,14 +391,17 @@ class CacheReleaseTest {
     fun `release can cancel a cooperative layer callback while it is blocked`() {
         val entered = Promise<Nothing, Unit>()
         val cancelled = Promise<Nothing, Unit>()
-        val layer = ReleaseLayer(onWrite = {
-            entered.succeed(Unit)
-            try {
-                Promise<Nothing, Unit>().awaitValue()
-            } finally {
-                cancelled.succeed(Unit)
-            }
-        })
+        val layer =
+            ReleaseLayer(
+                onWrite = {
+                    entered.succeed(Unit)
+                    try {
+                        Promise<Nothing, Unit>().awaitValue()
+                    } finally {
+                        cancelled.succeed(Unit)
+                    }
+                },
+            )
         val cache = Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) { Either.Right(1) }
         val caller = surefoldFuture { cache.get("a") }
         entered.awaitValue()
@@ -365,17 +421,30 @@ class CacheReleaseTest {
         val entered = Promise<Nothing, Thread>()
         val finish = Promise<Nothing, Unit>()
         val gone = Shared(false)
-        val layer = ReleaseLayer(onWrite = {
-            entered.succeed(Thread.currentThread())
-            finish.awaitResistingInterrupts()
-        })
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer), onEvict = { _, _ ->
-            gone.update { true }
-        }) { Either.Right(1) }
+        val layer =
+            ReleaseLayer(
+                onWrite = {
+                    entered.succeed(Thread.currentThread())
+                    finish.awaitResistingInterrupts()
+                },
+            )
+        val cache =
+            Cache<String, Nothing, Int>(
+                { 1.minutes },
+                layers = listOf(layer),
+                onEvict = { _, _ ->
+                    gone.update { true }
+                },
+            ) {
+                Either.Right(1)
+            }
         val caller = surefoldFuture { cache.get("a") }
         entered.awaitValue()
         val closer = Promise<Nothing, Thread>()
-        val close = surefoldFuture { closer.succeed(Thread.currentThread()); cache.closeAndJoin() }
+        val close = surefoldFuture {
+            closer.succeed(Thread.currentThread())
+            cache.closeAndJoin()
+        }
         try {
             closer.awaitValue().awaitParked()
             close.isDone shouldBe false
@@ -393,15 +462,19 @@ class CacheReleaseTest {
     fun `release owns displaced finite and zero delay sleepers until their finally blocks end`() {
         listOf(Duration.ZERO, 1.seconds).forEach { delay ->
             val moving = ResistantClock()
-            val cache = clock.locally(moving) {
-                Cache<String, Nothing, Int>({ 1.minutes }, refreshing = Schedule.spaced(delay)) { Either.Right(1) }
-            }
+            val cache =
+                clock.locally(moving) {
+                    Cache<String, Nothing, Int>({ 1.minutes }, refreshing = Schedule.spaced(delay)) { Either.Right(1) }
+                }
             cache.get("a")
             awaitCondition { moving.entered.peek().size == 1 }
             cache.refresh("a")
             awaitCondition { moving.entered.peek().size == 2 }
             val closer = Promise<Nothing, Thread>()
-            val close = surefoldFuture { closer.succeed(Thread.currentThread()); cache.closeAndJoin() }
+            val close = surefoldFuture {
+                closer.succeed(Thread.currentThread())
+                cache.closeAndJoin()
+            }
             try {
                 awaitCondition { moving.cleaning.peek() == 2 }
                 closer.awaitValue().awaitParked()
@@ -420,22 +493,26 @@ class CacheReleaseTest {
     fun `a background sleeper cannot close its own cache`() {
         lateinit var cache: Cache<String, Nothing, Int>
         val rejected = Promise<Nothing, Boolean>()
-        val moving = object : Clock {
-            override fun now(): Instant = Instant.EPOCH
-            override fun sleep(duration: Duration) {
-                val refused = try {
-                    cache.closeAndJoin()
-                    false
-                } catch (_: IllegalStateException) {
-                    true
+        val moving =
+            object : Clock {
+                override fun now(): Instant = Instant.EPOCH
+
+                override fun sleep(duration: Duration) {
+                    val refused =
+                        try {
+                            cache.closeAndJoin()
+                            false
+                        } catch (_: IllegalStateException) {
+                            true
+                        }
+                    rejected.succeed(refused)
+                    if (refused) Promise<Nothing, Unit>().awaitValue()
                 }
-                rejected.succeed(refused)
-                if (refused) Promise<Nothing, Unit>().awaitValue()
             }
-        }
-        cache = clock.locally(moving) {
-            Cache({ 1.minutes }, refreshing = Schedule.spaced(1.seconds)) { Either.Right(1) }
-        }
+        cache =
+            clock.locally(moving) {
+                Cache({ 1.minutes }, refreshing = Schedule.spaced(1.seconds)) { Either.Right(1) }
+            }
         cache.get("a")
         try {
             rejected.awaitValue() shouldBe true
@@ -455,21 +532,30 @@ class CacheReleaseTest {
         val opened = Promise<Nothing, Cache<String, Nothing, Int>>()
         val use = surefoldFuture {
             resourceScope {
-                onRelease { alive.update { false }; order.update { steps -> steps + "dependency" } }
-                val cache = install({
-                    Cache<String, Nothing, Int>({ 1.minutes }) {
-                        entered.succeed(Unit)
-                        try {
-                            Promise<Nothing, Unit>().awaitValue()
-                            Either.Right(1)
-                        } finally {
-                            cleaning.succeed(Unit)
-                            finish.awaitResistingInterrupts()
-                            alive.peek() shouldBe true
-                            order.update { steps -> steps + "lookup" }
-                        }
+                onRelease {
+                    alive.update { false }
+                    order.update { steps -> steps + "dependency" }
+                }
+                val cache =
+                    install(
+                        {
+                            Cache<String, Nothing, Int>({ 1.minutes }) {
+                                entered.succeed(Unit)
+                                try {
+                                    Promise<Nothing, Unit>().awaitValue()
+                                    Either.Right(1)
+                                } finally {
+                                    cleaning.succeed(Unit)
+                                    finish.awaitResistingInterrupts()
+                                    alive.peek() shouldBe true
+                                    order.update { steps -> steps + "lookup" }
+                                }
+                            }
+                        },
+                    ) { cache, _ ->
+                        cache.closeAndJoin()
+                        order.update { steps -> steps + "cache" }
                     }
-                }) { cache, _ -> cache.closeAndJoin(); order.update { steps -> steps + "cache" } }
                 opened.succeed(cache)
                 cache.refresh("a")
                 entered.awaitValue()
@@ -492,9 +578,13 @@ class CacheReleaseTest {
         val bound = surefoldLocal { "unbound" }
         val moving = TestClock()
         val seen = Promise<Nothing, String>()
-        val cache = clock.locally(moving) {
-            Cache<String, Nothing, String>({ 1.seconds }) { seen.succeed(bound.get()); Either.Right(bound.get()) }
-        }
+        val cache =
+            clock.locally(moving) {
+                Cache<String, Nothing, String>({ 1.seconds }) {
+                    seen.succeed(bound.get())
+                    Either.Right(bound.get())
+                }
+            }
         bound.locally("owner") { cache.refresh("a") }
         seen.awaitValue() shouldBe "owner"
         awaitCondition { cache.stats().size == 1 }
@@ -511,20 +601,28 @@ private class ReleaseLayer(
 ) : Layer<String, Int> {
     val written = Shared(emptyList<String>())
     val clears = Shared(0)
+
     override fun read(key: String): Stored<Int>? = null
+
     override fun write(key: String, stored: Stored<Int>) {
         onWrite()
         written.update { it + key }
     }
+
     override fun remove(key: String) = onRemove()
-    override fun clear() { clears.update { it + 1 } }
+
+    override fun clear() {
+        clears.update { it + 1 }
+    }
 }
 
 private class ResistantClock : Clock {
     val entered = Shared(emptyList<Thread>())
     val cleaning = Shared(0)
     val finish = Promise<Nothing, Unit>()
+
     override fun now(): Instant = Instant.EPOCH
+
     override fun sleep(duration: Duration) {
         entered.update { it + Thread.currentThread() }
         try {

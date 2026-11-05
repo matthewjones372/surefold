@@ -24,8 +24,8 @@ private val appScope = ClassId(app, Name.identifier("AppScope"))
 private val parks = setOf("block", "join", "await")
 
 /**
- * A `SurefoldApp.run` that parks on its root and never on `awaitShutdown` (spec 0132). The release that stops the
- * root runs after `run` returns, so such a `run` returns only when the JVM's grace period ends it.
+ * A `SurefoldApp.run` that parks on its root and never on `awaitShutdown` (spec 0132). The release that stops the root
+ * runs after `run` returns, so such a `run` returns only when the JVM's grace period ends it.
  */
 internal class ShutdownChecker : FirClassChecker(MppCheckerKind.Common) {
 
@@ -33,9 +33,10 @@ internal class ShutdownChecker : FirClassChecker(MppCheckerKind.Common) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: FirClass) {
         if (declaration.superTypeRefs.none { it.coneType.classId == surefoldApp }) return
-        val run = declaration.declarations.filterIsInstance<FirNamedFunction>()
-            .firstOrNull { it.name.asString() == "run" && it.receiverParameter?.typeRef?.coneType?.classId == appScope }
-            ?: return
+        val run =
+            declaration.declarations.filterIsInstance<FirNamedFunction>().firstOrNull {
+                it.name.asString() == "run" && it.receiverParameter?.typeRef?.coneType?.classId == appScope
+            } ?: return
         val calls = Calls().also { run.body?.accept(it) }
         if (calls.awaitsShutdown) return
         calls.parked.forEach { parked ->

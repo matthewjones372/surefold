@@ -6,10 +6,10 @@ import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
 import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CancellationException
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.junit.jupiter.api.Test
 
 class DrainingTest {
     @Test
@@ -64,7 +64,10 @@ class DrainingTest {
             var attempts = 0
             Thread.currentThread().interrupt()
             shouldThrow<IllegalStateException> {
-                uninterruptible { attempts++; throw failure }
+                uninterruptible {
+                    attempts++
+                    throw failure
+                }
             } shouldBeSameInstanceAs failure
             attempts shouldBe 1
             Thread.interrupted() shouldBe true
@@ -84,7 +87,14 @@ class DrainingTest {
             val stopped = InterruptedException("waiting")
             val failed = IllegalStateException("observer")
             shouldThrow<IllegalStateException> {
-                uninterruptible(onInterrupted = { observed += it; throw failed }) { throw stopped }
+                uninterruptible(
+                    onInterrupted = {
+                        observed += it
+                        throw failed
+                    },
+                ) {
+                    throw stopped
+                }
             } shouldBeSameInstanceAs failed
             observed shouldBe listOf(stopped)
             Thread.interrupted() shouldBe true
@@ -97,7 +107,14 @@ class DrainingTest {
         val observer = IllegalArgumentException("observer")
         var seen: Throwable? = null
         shouldThrow<IllegalStateException> {
-            onThrow({ seen = it; throw observer }) { throw original }
+            onThrow(
+                {
+                    seen = it
+                    throw observer
+                },
+            ) {
+                throw original
+            }
         } shouldBeSameInstanceAs original
         seen shouldBeSameInstanceAs original
         original.suppressed.toList() shouldBe listOf(observer)
@@ -105,10 +122,13 @@ class DrainingTest {
 
     @Test
     fun `onThrow sees interruption cancellation fatal and foreign failure unwinding without changing them`() {
-        val failures = listOf(
-            InterruptedException("stop"), CancellationException("cancel"),
-            LinkageError("link"), IllegalStateException("unexpected"),
-        )
+        val failures =
+            listOf(
+                InterruptedException("stop"),
+                CancellationException("cancel"),
+                LinkageError("link"),
+                IllegalStateException("unexpected"),
+            )
         for (failure in failures) {
             var seen: Throwable? = null
             shouldThrow<Throwable> { onThrow({ seen = it }) { throw failure } } shouldBeSameInstanceAs failure
@@ -143,7 +163,10 @@ class DrainingTest {
         resourceScope {
             onRelease { Thread.interrupted() }
             Thread.currentThread().interrupt()
-            draining { Thread.sleep(1); "slept" } shouldBe "slept"
+            draining {
+                Thread.sleep(1)
+                "slept"
+            } shouldBe "slept"
             Thread.interrupted() shouldBe true
         }
     }
@@ -185,11 +208,16 @@ class DrainingTest {
         var answer: String? = null
         var virtual = false
         var restored = false
-        val waiter = Thread.ofVirtual().start {
-            virtual = Thread.currentThread().isVirtual
-            answer = uninterruptible(onInterrupted = { observed.countDown() }) { gate.await(); "joined" }
-            restored = Thread.interrupted()
-        }
+        val waiter =
+            Thread.ofVirtual().start {
+                virtual = Thread.currentThread().isVirtual
+                answer =
+                    uninterruptible(onInterrupted = { observed.countDown() }) {
+                        gate.await()
+                        "joined"
+                    }
+                restored = Thread.interrupted()
+            }
         try {
             var tries = 0
             while (!observed.await(10, TimeUnit.MILLISECONDS) && tries++ < 500) waiter.interrupt()
@@ -248,11 +276,12 @@ class DrainingTest {
     @Test
     fun `an observer failure during fail unwinding is retained on the same signal`() {
         val observer = IllegalStateException("observer")
-        val answer = attempt<String, Unit> {
-            val signal = shouldThrow<Throwable> { onThrow({ throw observer }) { fail("refused") } }
-            signal.suppressed.toList() shouldBe listOf<Throwable>(observer)
-            throw signal
-        }
+        val answer =
+            attempt<String, Unit> {
+                val signal = shouldThrow<Throwable> { onThrow({ throw observer }) { fail("refused") } }
+                signal.suppressed.toList() shouldBe listOf<Throwable>(observer)
+                throw signal
+            }
         answer shouldBe Either.Left("refused")
     }
 }
@@ -262,6 +291,11 @@ private fun leave(): String = draining {
     return "left"
 }
 
-private fun leaveWait(): String = uninterruptible { return "done" }
+private fun leaveWait(): String = uninterruptible {
+    return "done"
+}
 
-private fun leaveObserved(): String = onThrow({ error("unexpected observer") }) { return "returned" }
+private fun leaveObserved(): String =
+    onThrow({ error("unexpected observer") }) {
+        return "returned"
+    }

@@ -18,13 +18,13 @@ import dev.surefold.metrics
 import dev.surefold.surefoldFuture
 import dev.surefold.surefoldLocal
 import dev.surefold.test.eventually
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 
 @Timeout(15)
 class BackgroundWorkersTest {
@@ -32,17 +32,19 @@ class BackgroundWorkersTest {
     fun `ordinary close interrupts displaced finite sleepers before their resistant cleanup finishes`() {
         val sleeps = List(2) { Sleeper() }
         val calls = Shared(0)
-        val moving = object : Clock {
-            override fun now(): Instant = Instant.EPOCH
+        val moving =
+            object : Clock {
+                override fun now(): Instant = Instant.EPOCH
 
-            override fun sleep(duration: Duration) {
-                val index = calls.modify { it + 1 to it }
-                sleeps[index].sleep()
+                override fun sleep(duration: Duration) {
+                    val index = calls.modify { it + 1 to it }
+                    sleeps[index].sleep()
+                }
             }
-        }
-        val prices = clock.locally(moving) {
-            Cache<String, Nothing, Int>({ 1.minutes }, refreshing = Schedule.spaced(20.seconds)) { Either.Right(7) }
-        }
+        val prices =
+            clock.locally(moving) {
+                Cache<String, Nothing, Int>({ 1.minutes }, refreshing = Schedule.spaced(20.seconds)) { Either.Right(7) }
+            }
         try {
             prices.get("sku") shouldBe Either.Right(7)
             sleeps[0].started.awaitValue(3.seconds) shouldBe Unit
@@ -64,10 +66,11 @@ class BackgroundWorkersTest {
         listOf(true, false).forEach { beforeSubmission ->
             val pause = StartupPause(beforeSubmission)
             val lookups = Shared(0)
-            val prices = Cache<String, Nothing, Int>({ 1.minutes }) {
-                lookups.update { count -> count + 1 }
-                Either.Right(7)
-            }
+            val prices =
+                Cache<String, Nothing, Int>({ 1.minutes }) {
+                    lookups.update { count -> count + 1 }
+                    Either.Right(7)
+                }
             val submitting = metrics.locally(pause) { surefoldFuture { prices.refresh("sku") } }
             try {
                 val boundary = if (beforeSubmission) pause.accepted else pause.registered
@@ -91,20 +94,22 @@ class BackgroundWorkersTest {
         val started = Promise<Nothing, Unit>()
         val release = Promise<Nothing, Unit>()
         val lookups = Shared(0)
-        val moving = object : Clock {
-            override fun now(): Instant = Instant.EPOCH
+        val moving =
+            object : Clock {
+                override fun now(): Instant = Instant.EPOCH
 
-            override fun sleep(duration: Duration) {
-                duration shouldBe Duration.ZERO
-                started.succeed(Unit)
-                release.awaitValue()
+                override fun sleep(duration: Duration) {
+                    duration shouldBe Duration.ZERO
+                    started.succeed(Unit)
+                    release.awaitValue()
+                }
             }
-        }
-        val prices = clock.locally(moving) {
-            Cache<String, Nothing, Int>({ 1.minutes }, refreshing = Schedule.recurs(1)) {
-                Either.Right(lookups.modify { count -> count + 1 to count + 1 })
+        val prices =
+            clock.locally(moving) {
+                Cache<String, Nothing, Int>({ 1.minutes }, refreshing = Schedule.recurs(1)) {
+                    Either.Right(lookups.modify { count -> count + 1 to count + 1 })
+                }
             }
-        }
         try {
             prices.get("sku") shouldBe Either.Right(1)
             started.awaitValue(3.seconds) shouldBe Unit
@@ -129,19 +134,20 @@ class BackgroundWorkersTest {
         val started = Promise<Nothing, Unit>()
         val release = Promise<Nothing, Unit>()
         val interrupted = Shared(false)
-        val prices = clock.locally(cacheClock) {
-            Cache<String, Nothing, String>({ 1.minutes }) {
-                clock.get() shouldBe callerClock
-                started.succeed(Unit)
-                try {
-                    release.awaitValue()
-                } catch (stop: InterruptedException) {
-                    interrupted.update { true }
-                    throw stop
+        val prices =
+            clock.locally(cacheClock) {
+                Cache<String, Nothing, String>({ 1.minutes }) {
+                    clock.get() shouldBe callerClock
+                    started.succeed(Unit)
+                    try {
+                        release.awaitValue()
+                    } catch (stop: InterruptedException) {
+                        interrupted.update { true }
+                        throw stop
+                    }
+                    Either.Right(bound.get())
                 }
-                Either.Right(bound.get())
             }
-        }
         try {
             clock.locally(callerClock) { bound.locally("first") { prices.refresh("sku") } }
             started.awaitValue(3.seconds) shouldBe Unit
@@ -169,12 +175,13 @@ class BackgroundWorkersTest {
             val started = Promise<Nothing, Unit>()
             val release = Promise<Nothing, Unit>()
             val lookups = Shared(0)
-            val prices = Cache<String, Nothing, Int>({ 1.minutes }) {
-                lookups.update { count -> count + 1 }
-                started.succeed(Unit)
-                release.awaitValue()
-                Either.Right(7)
-            }
+            val prices =
+                Cache<String, Nothing, Int>({ 1.minutes }) {
+                    lookups.update { count -> count + 1 }
+                    started.succeed(Unit)
+                    release.awaitValue()
+                    Either.Right(7)
+                }
             try {
                 repeat(3) {
                     metrics.locally(broken) {
@@ -208,18 +215,19 @@ class BackgroundWorkersTest {
         val interrupted = Promise<Nothing, Unit>()
         val release = Promise<Nothing, Unit>()
         val finished = Promise<Nothing, Unit>()
-        val prices = Cache<String, Nothing, Int>({ 1.minutes }) {
-            started.succeed(Unit)
-            try {
-                release.awaitValue()
-            } catch (_: InterruptedException) {
-                interrupted.succeed(Unit)
-                awaitResisting(release)
-            } finally {
-                finished.succeed(Unit)
+        val prices =
+            Cache<String, Nothing, Int>({ 1.minutes }) {
+                started.succeed(Unit)
+                try {
+                    release.awaitValue()
+                } catch (_: InterruptedException) {
+                    interrupted.succeed(Unit)
+                    awaitResisting(release)
+                } finally {
+                    finished.succeed(Unit)
+                }
+                Either.Right(7)
             }
-            Either.Right(7)
-        }
         try {
             prices.refresh("sku")
             started.awaitValue(3.seconds) shouldBe Unit
@@ -312,19 +320,21 @@ private fun closeWithBrokenMetrics(transaction: String) {
     val sleepers = List(2) { Sleeper() }
     val lookup = Sleeper()
     val calls = Shared(0)
-    val moving = object : Clock {
-        override fun now(): Instant = Instant.EPOCH
+    val moving =
+        object : Clock {
+            override fun now(): Instant = Instant.EPOCH
 
-        override fun sleep(duration: Duration) {
-            sleepers[calls.modify { count -> count + 1 to count }].sleep()
+            override fun sleep(duration: Duration) {
+                sleepers[calls.modify { count -> count + 1 to count }].sleep()
+            }
         }
-    }
-    val prices = clock.locally(moving) {
-        Cache<String, Nothing, Int>({ 1.minutes }, refreshing = Schedule.spaced(20.seconds)) { key ->
-            if (key == "flight") lookup.sleep()
-            Either.Right(7)
+    val prices =
+        clock.locally(moving) {
+            Cache<String, Nothing, Int>({ 1.minutes }, refreshing = Schedule.spaced(20.seconds)) { key ->
+                if (key == "flight") lookup.sleep()
+                Either.Right(7)
+            }
         }
-    }
     val marker = IllegalStateException("close metric failed")
     try {
         prices.get("a")

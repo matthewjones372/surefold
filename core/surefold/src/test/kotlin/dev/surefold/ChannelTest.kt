@@ -3,8 +3,8 @@ package dev.surefold
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Test
 
 private const val ROWS = 1_000
 private const val CAPACITY = 8

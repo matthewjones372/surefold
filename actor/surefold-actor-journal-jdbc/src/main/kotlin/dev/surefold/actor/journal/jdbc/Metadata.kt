@@ -20,18 +20,19 @@ internal object Metadata {
         return reader.objectOfStrings()
     }
 
-    private fun quoted(text: String): String = buildString(text.length + 2) {
-        append('"')
-        text.forEach { c ->
-            when {
-                c == '"' -> append("\\\"")
-                c == '\\' -> append("\\\\")
-                c < ' ' -> append("\\u").append(c.code.toString(HEX).padStart(HEX_DIGITS, '0'))
-                else -> append(c)
+    private fun quoted(text: String): String =
+        buildString(text.length + 2) {
+            append('"')
+            text.forEach { c ->
+                when {
+                    c == '"' -> append("\\\"")
+                    c == '\\' -> append("\\\\")
+                    c < ' ' -> append("\\u").append(c.code.toString(HEX).padStart(HEX_DIGITS, '0'))
+                    else -> append(c)
+                }
             }
+            append('"')
         }
-        append('"')
-    }
 
     /** Just enough of JSON for `{"key": "value", ...}`: what Postgres renders a flat `jsonb` object of strings as. */
     private class Reader(private val text: String) {
@@ -65,16 +66,19 @@ internal object Metadata {
             }
         }
 
-        private fun escaped(): Char = when (val c = text.getOrNull(at++) ?: fail("an escape")) {
-            '"', '\\', '/' -> c
-            'b' -> '\b'
-            'f' -> '\u000C'
-            'n' -> '\n'
-            'r' -> '\r'
-            't' -> '\t'
-            'u' -> text.substring(at, at + HEX_DIGITS).toInt(HEX).toChar().also { at += HEX_DIGITS }
-            else -> fail("an escape, not \\$c")
-        }
+        private fun escaped(): Char =
+            when (val c = text.getOrNull(at++) ?: fail("an escape")) {
+                '"',
+                '\\',
+                '/' -> c
+                'b' -> '\b'
+                'f' -> '\u000C'
+                'n' -> '\n'
+                'r' -> '\r'
+                't' -> '\t'
+                'u' -> text.substring(at, at + HEX_DIGITS).toInt(HEX).toChar().also { at += HEX_DIGITS }
+                else -> fail("an escape, not \\$c")
+            }
 
         private fun expect(c: Char) {
             if (next() != c) fail("'$c'")

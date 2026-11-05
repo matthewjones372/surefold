@@ -3,12 +3,10 @@ package dev.surefold.assert
 // The checks behind the collection matchers: each answers what went wrong, or null when nothing did.
 
 /** This has an element where none was wanted. */
-@FailureSeam
-fun Iterable<*>.notEmpty(): Miss? = if (none()) null else Miss(null, toList(), "no elements")
+@FailureSeam fun Iterable<*>.notEmpty(): Miss? = if (none()) null else Miss(null, toList(), "no elements")
 
 /** This has no element. */
-@FailureSeam
-fun Iterable<*>.empty(): Miss? = if (any()) null else Miss(null, toList(), "at least one element")
+@FailureSeam fun Iterable<*>.empty(): Miss? = if (any()) null else Miss(null, toList(), "at least one element")
 
 /** This does not have [size] elements: the count found is shown with the elements. */
 @FailureSeam

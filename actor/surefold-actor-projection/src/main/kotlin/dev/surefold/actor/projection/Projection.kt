@@ -28,10 +28,11 @@ import kotlin.time.Duration.Companion.seconds
 
 /**
  * One event a projection follows: whose it is, its sequence number there, its [value], and its [offset] in the feed.
- * The offset is saved by `runProjecting` once the element reaches the end of the stream. [metadata] is what the
- * append that wrote it carried (spec 0123), for a publisher to send on: a trace's ids, and log annotations.
+ * The offset is saved by `runProjecting` once the element reaches the end of the stream. [metadata] is what the append
+ * that wrote it carried (spec 0123), for a publisher to send on: a trace's ids, and log annotations.
  */
-class Followed<out A : Any> internal constructor(
+class Followed<out A : Any>
+internal constructor(
     val id: PersistenceId,
     val sequence: Long,
     val value: A,
@@ -51,9 +52,9 @@ object Projection {
     /**
      * Every event of [kind] from [feed], decoded by [codec], from the one after the offset [offsets] holds for [name]
      * or from the first, each as [EventCodec.decodeAll] reads it, so one upgraded to several is followed as several.
-     * Once it has caught up it asks the feed again every [every], on surefold's clock, and it never
-     * ends by itself: a run's `stop()` wakes it. Each event is handled at least once; end it with `runProjecting`. The
-     * marks persistent entities write of reliable deliveries (spec 0079) are skipped.
+     * Once it has caught up it asks the feed again every [every], on surefold's clock, and it never ends by itself: a
+     * run's `stop()` wakes it. Each event is handled at least once; end it with `runProjecting`. The marks persistent
+     * entities write of reliable deliveries (spec 0079) are skipped.
      */
     fun <E : Any> follow(
         feed: JournalFeed,
@@ -63,9 +64,10 @@ object Projection {
         name: String,
         every: Duration = 1.seconds,
         batch: Int = 256,
-    ): Stream<Nothing, Followed<E>> = following(codec, offsets, name, every, batch) { offset, limit ->
-        feed.after(kind, offset, limit)
-    }
+    ): Stream<Nothing, Followed<E>> =
+        following(codec, offsets, name, every, batch) { offset, limit ->
+            feed.after(kind, offset, limit)
+        }
 
     /**
      * Partition [partition] of [partitions] of a read model (spec 0106): as [follow], but only the events of ids whose
@@ -96,8 +98,8 @@ object Projection {
     fun partitionName(name: String, partition: Int): String = "$name#$partition"
 
     /**
-     * An actor that runs what [start] starts for as long as it lives, and closes it when it stops: how a partition
-     * runs where the cluster places it (spec 0106). It takes no messages.
+     * An actor that runs what [start] starts for as long as it lives, and closes it when it stops: how a partition runs
+     * where the cluster places it (spec 0106). It takes no messages.
      */
     fun worker(start: () -> AutoCloseable): Behaviour<Unit, Unit, Nothing> {
         // Each call is one actor's: what it started, closed when it stops, and started afresh if it restarts.
@@ -137,7 +139,7 @@ object Projection {
                 upgraded.removeFirst()
             },
             wake = { (cursor, _) -> cursor.wake() },
-            close = { },
+            close = {},
         )
     }
 }
@@ -152,8 +154,7 @@ private class Cursor(
 ) {
     private val read = ArrayDeque<FeedEvent>()
 
-    @Volatile
-    private var reader: Thread? = null
+    @Volatile private var reader: Thread? = null
 
     /** The next event, waiting [every] at a time until there is one; a [wake] ends the wait by interrupting it. */
     fun next(): FeedEvent {
@@ -177,7 +178,9 @@ private class Cursor(
 
 /** [f] on each event, keeping its offset. */
 fun <E, A : Any, B : Any> Stream<E, Followed<A>>.mapFollowed(f: (Followed<A>) -> B): Stream<E, Followed<B>> =
-    map { event -> event.carrying(f(event)) }
+    map { event ->
+        event.carrying(f(event))
+    }
 
 /** [f] on each event, which may `fail` the run, keeping its offset. */
 @JvmName("mapFollowedOrFailDeclaring")
@@ -191,11 +194,11 @@ fun <E, A : Any, B : Any> Stream<E, Followed<A>>.mapFollowedOrFail(
 ): Stream<E, Followed<B>> = mapOrFail<E, Followed<A>, Followed<B>> { event -> event.carrying(f(this, event)) }
 
 /**
- * A run that saves each event's offset once its element reaches the end of the stream, so a projection started
- * again goes on after the last one saved. It answers how many elements reached the end.
+ * A run that saves each event's offset once its element reaches the end of the stream, so a projection started again
+ * goes on after the last one saved. It answers how many elements reached the end.
  */
-fun <E> Stream<E, Followed<*>>.runProjecting(): Run<E, Long> =
-    map { event ->
-        event.progress.offsets.save(event.progress.name, event.offset)
-        1L
-    }.runFold(0L, Long::plus)
+fun <E> Stream<E, Followed<*>>.runProjecting(): Run<E, Long> = map { event ->
+    event.progress.offsets.save(event.progress.name, event.offset)
+    1L
+}
+    .runFold(0L, Long::plus)

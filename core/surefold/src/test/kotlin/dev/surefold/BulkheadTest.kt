@@ -7,7 +7,6 @@ import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
 import dev.surefold.fail.attempt
 import dev.surefold.fail.left
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -15,20 +14,22 @@ import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 import kotlin.time.toJavaDuration
+import org.junit.jupiter.api.Test
 
 class BulkheadTest {
 
     // Two callers parked inside the bulkhead until [release] is counted down, each on a virtual thread of its own.
     private fun holdingBoth(partner: Policy, release: CountDownLatch): List<Thread> {
         val inside = CountDownLatch(2)
-        val holders = (1..2).map {
-            Thread.ofVirtual().start {
-                partner {
-                    inside.countDown()
-                    release.await()
+        val holders =
+            (1..2).map {
+                Thread.ofVirtual().start {
+                    partner {
+                        inside.countDown()
+                        release.await()
+                    }
                 }
             }
-        }
         inside.await(PROMPT_MILLIS, TimeUnit.MILLISECONDS) shouldBe true
         return holders
     }
@@ -41,13 +42,14 @@ class BulkheadTest {
         val holders = holdingBoth(partner, release)
 
         val refused = AtomicReference<Throwable>()
-        val third = Thread.ofVirtual().start {
-            try {
-                partner { "ran" }
-            } catch (full: Rejected.BulkheadFull) {
-                refused.set(full)
+        val third =
+            Thread.ofVirtual().start {
+                try {
+                    partner { "ran" }
+                } catch (full: Rejected.BulkheadFull) {
+                    refused.set(full)
+                }
             }
-        }
         withClue("a bulkhead with no wait answers without waiting") {
             third.join(PROMPT_MILLIS.milliseconds.toJavaDuration()) shouldBe true
         }
@@ -99,10 +101,11 @@ class BulkheadTest {
     @Test
     fun `a policy's deadline cuts the bulkhead's wait`() {
         val bulkhead = Bulkhead("partner", maxConcurrent = 2, maxWait = NEVER_FINISHES_MILLIS.milliseconds)
-        val partner = policy("partner") {
-            deadline(200.milliseconds)
-            guard(bulkhead)
-        }
+        val partner =
+            policy("partner") {
+                deadline(200.milliseconds)
+                guard(bulkhead)
+            }
         val release = CountDownLatch(1)
         val holders = holdingBoth(policy("holders") { guard(bulkhead) }, release)
 
@@ -120,11 +123,12 @@ class BulkheadTest {
         val bulkhead = Bulkhead("partner", maxConcurrent = 1)
 
         shouldThrow<IllegalArgumentException> {
-            policy("partner") {
-                attemptTimeout(1.seconds)
-                guard(bulkhead)
+                policy("partner") {
+                    attemptTimeout(1.seconds)
+                    guard(bulkhead)
+                }
             }
-        }.message shouldContain "deadline → retry → breaker → limiter → bulkhead → attemptTimeout"
+            .message shouldContain "deadline → retry → breaker → limiter → bulkhead → attemptTimeout"
     }
 
     @Test

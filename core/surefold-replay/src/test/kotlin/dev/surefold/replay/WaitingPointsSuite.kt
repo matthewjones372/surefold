@@ -43,14 +43,15 @@ object WaitingPointsSuite : Suite() {
                 val order = named.find(broke.message.orEmpty())?.groupValues?.get(1)
                 withClue(broke.message.orEmpty()) { (order != null) shouldBe true }
                 val seed = checkNotNull(order).removePrefix("0x").toLong(radix = 16)
-                val failed = (1..20).count {
-                    try {
-                        replay(seed) { sentBeforeGot() }
-                        false
-                    } catch (_: IllegalStateException) {
-                        true
+                val failed =
+                    (1..20).count {
+                        try {
+                            replay(seed) { sentBeforeGot() }
+                            false
+                        } catch (_: IllegalStateException) {
+                            true
+                        }
                     }
-                }
                 failed shouldBe 20
             }
         }
@@ -96,11 +97,13 @@ object WaitingPointsSuite : Suite() {
         }
 
         test("a Thread.sleep inside a fork fails the run, naming where that fork waited") {
-            shouldThrow<AssertionError>({
-                explore(runs = 1) {
-                    scope { async { Thread.sleep(2_000) }.await() }
-                }
-            }) { broke ->
+            shouldThrow<AssertionError>(
+                {
+                    explore(runs = 1) {
+                        scope { async { Thread.sleep(2_000) }.await() }
+                    }
+                },
+            ) { broke ->
                 val left = broke.cause?.message.orEmpty()
                 left shouldContain "the run left determinism"
                 left shouldContain "held the turn waiting outside surefold"

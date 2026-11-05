@@ -36,7 +36,16 @@ object CountedGuard : Guarded<Holders>(permits = 3) {
     @Volatile var last: Holders? = null
 
     override val resource: Resource<Holders> = resource {
-        install({ Holders().also { acquired.incrementAndGet(); last = it } }) { _, _ -> released.incrementAndGet() }
+        install(
+            {
+                Holders().also {
+                    acquired.incrementAndGet()
+                    last = it
+                }
+            },
+        ) { _, _ ->
+            released.incrementAndGet()
+        }
     }
 }
 
@@ -49,7 +58,7 @@ object UnusedGuard : Guarded<Unit>(permits = 1) {
 
 /** One permit, so a test that kept it after failing would leave the next one waiting forever. */
 object SinglePermitGuard : Guarded<Unit>(permits = 1) {
-    override val resource: Resource<Unit> = resource { }
+    override val resource: Resource<Unit> = resource {}
 }
 
 object BrokenGuard : Guarded<Unit>(permits = 1) {
@@ -84,6 +93,6 @@ object BrokenLeaseSuite : SharedSuite<Unit>() {
     override val shared: Resource<Unit> = BrokenGuard.lease()
 
     init {
-        test("never gets the database") { }
+        test("never gets the database") {}
     }
 }

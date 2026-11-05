@@ -55,13 +55,14 @@ dependencies {
 // The checker is resolved from a repository at compile time, so the plugin has to name a version.
 // Generated rather than written down, so cutting a release does not leave a plugin pointing at the
 // release before it.
-val checkerCoordinates = tasks.register<WriteProperties>("checkerCoordinates") {
-    destinationFile.set(layout.buildDirectory.file("generated/surefold/checker.properties"))
-    property("group", project.group.toString())
-    property("artifact", "surefold-app-compiler")
-    property("forksArtifact", "surefold-compiler")
-    property("version", project.version.toString())
-}
+val checkerCoordinates =
+    tasks.register<WriteProperties>("checkerCoordinates") {
+        destinationFile.set(layout.buildDirectory.file("generated/surefold/checker.properties"))
+        property("group", project.group.toString())
+        property("artifact", "surefold-app-compiler")
+        property("forksArtifact", "surefold-compiler")
+        property("version", project.version.toString())
+    }
 
 sourceSets.main {
     resources.srcDir(checkerCoordinates.map { it.destinationFile.get().asFile.parentFile })
@@ -73,9 +74,10 @@ val checkerRepo: Provider<Directory> = rootProject.layout.buildDirectory.dir("re
 
 tasks.test {
     inputs.files(surefoldAppUnderTest).withPropertyName("surefoldAppUnderTest")
-    val reader = rootProject.file(
-        "app/surefold-app-compiler/src/main/kotlin/dev/surefold/app/compiler/Reader.kt",
-    )
+    val reader =
+        rootProject.file(
+            "app/surefold-app-compiler/src/main/kotlin/dev/surefold/app/compiler/Reader.kt",
+        )
     inputs.file(reader).withPropertyName("reader")
     // Both halves, resolved by a TestKit build the way a consumer's build resolves them. Injecting
     // this jar with `withPluginClasspath` instead would put it in a classloader of its own, where
@@ -88,8 +90,7 @@ tasks.test {
     jvmArgumentProviders.add(
         CommandLineArgumentProvider {
             listOf(
-                "-Dsurefold.app.underTest=" +
-                    surefoldAppUnderTest.joinToString(File.pathSeparator) { it.absolutePath },
+                "-Dsurefold.app.underTest=" + surefoldAppUnderTest.joinToString(File.pathSeparator) { it.absolutePath },
                 "-Dsurefold.checker.repo=" + checkerRepo.get().asFile.absolutePath,
                 "-Dsurefold.checker.version=" + version,
                 "-Dsurefold.checker.reader=" + reader.absolutePath,
@@ -112,18 +113,22 @@ tasks.test {
 // What runs inside the build tools stays at 21, but only the main code does: the tests check it with
 // surefold-assert, which is built for 25 as every library here is, so they compile and run on 25.
 val testJdk = JavaLanguageVersion.of(25)
+
 listOf("testCompileClasspath", "testRuntimeClasspath").forEach { name ->
     configurations.named(name) {
         attributes.attribute(TargetJvmVersion.TARGET_JVM_VERSION_ATTRIBUTE, testJdk.asInt())
     }
 }
+
 tasks.named<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>("compileTestKotlin") {
     kotlinJavaToolchain.toolchain.use(javaToolchains.launcherFor { languageVersion.set(testJdk) })
     compilerOptions.jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_25)
 }
+
 tasks.named<JavaCompile>("compileTestJava") {
     javaCompiler.set(javaToolchains.compilerFor { languageVersion.set(testJdk) })
 }
+
 tasks.withType<Test>().configureEach {
     javaLauncher.set(javaToolchains.launcherFor { languageVersion.set(testJdk) })
 }

@@ -11,7 +11,7 @@ inline fun <reified A : AutoCloseable> closingOf(noinline create: () -> A): Modu
 inline fun <
     reified A : AutoCloseable,
     reified D1 : Any,
-    > closingOf(
+> closingOf(
     noinline create: (D1) -> A,
 ): Module = singleOf(create) { held -> held.close() }
 
@@ -20,7 +20,7 @@ inline fun <
     reified A : AutoCloseable,
     reified D1 : Any,
     reified D2 : Any,
-    > closingOf(
+> closingOf(
     noinline create: (D1, D2) -> A,
 ): Module = singleOf(create) { held -> held.close() }
 
@@ -30,7 +30,7 @@ inline fun <
     reified D1 : Any,
     reified D2 : Any,
     reified D3 : Any,
-    > closingOf(
+> closingOf(
     noinline create: (D1, D2, D3) -> A,
 ): Module = singleOf(create) { held -> held.close() }
 
@@ -41,7 +41,7 @@ inline fun <
     reified D2 : Any,
     reified D3 : Any,
     reified D4 : Any,
-    > closingOf(
+> closingOf(
     noinline create: (D1, D2, D3, D4) -> A,
 ): Module = singleOf(create) { held -> held.close() }
 
@@ -53,7 +53,7 @@ inline fun <
     reified D3 : Any,
     reified D4 : Any,
     reified D5 : Any,
-    > closingOf(
+> closingOf(
     noinline create: (D1, D2, D3, D4, D5) -> A,
 ): Module = singleOf(create) { held -> held.close() }
 
@@ -66,7 +66,7 @@ inline fun <
     reified D4 : Any,
     reified D5 : Any,
     reified D6 : Any,
-    > closingOf(
+> closingOf(
     noinline create: (D1, D2, D3, D4, D5, D6) -> A,
 ): Module = singleOf(create) { held -> held.close() }
 
@@ -80,7 +80,7 @@ inline fun <
     reified D5 : Any,
     reified D6 : Any,
     reified D7 : Any,
-    > closingOf(
+> closingOf(
     noinline create: (D1, D2, D3, D4, D5, D6, D7) -> A,
 ): Module = singleOf(create) { held -> held.close() }
 
@@ -95,7 +95,7 @@ inline fun <
     reified D6 : Any,
     reified D7 : Any,
     reified D8 : Any,
-    > closingOf(
+> closingOf(
     noinline create: (D1, D2, D3, D4, D5, D6, D7, D8) -> A,
 ): Module = singleOf(create) { held -> held.close() }
 
@@ -111,6 +111,6 @@ inline fun <
     reified D7 : Any,
     reified D8 : Any,
     reified D9 : Any,
-    > closingOf(
+> closingOf(
     noinline create: (D1, D2, D3, D4, D5, D6, D7, D8, D9) -> A,
 ): Module = singleOf(create) { held -> held.close() }

@@ -52,10 +52,10 @@ data class Node(val name: String, val host: String, val port: Int) {
 }
 
 /**
- * One message on the wire: the actor it is for, by path and incarnation, and its codec's bytes. On the sending side
- * it keeps the [message] it was written from, so that a frame that is dropped can be a dead letter with it in; that
- * is not written. What [carried] holds rides to a peer that speaks wire version 2 (spec 0122), and is left off for
- * one that speaks only 1.
+ * One message on the wire: the actor it is for, by path and incarnation, and its codec's bytes. On the sending side it
+ * keeps the [message] it was written from, so that a frame that is dropped can be a dead letter with it in; that is not
+ * written. What [carried] holds rides to a peer that speaks wire version 2 (spec 0122), and is left off for one that
+ * speaks only 1.
  */
 class Frame(
     val path: String,
@@ -74,7 +74,10 @@ class Frame(
  * their ends, goes on [Control], a short queue and a connection of its own, so it never waits behind, or is dropped
  * with, the [Data] everything else sends.
  */
-enum class Lane { Control, Data }
+enum class Lane {
+    Control,
+    Data,
+}
 
 interface Listener {
     fun received(from: Node, frame: Frame)
@@ -103,18 +106,18 @@ private const val MAX_FRAME = 16 shl 20
 /**
  * Frames between this node and others: a connection to each peer per [Lane] it sends on, opened on first use, on JDK
  * sockets and virtual threads. Each direction has its own connections, so order holds per sender, receiver and lane.
- * What is sent to a peer waits, up to [room] frames on the data lane and [controlRoom] on the control lane (spec
- * 0104), while its connection opens; past that, and whenever an attempt to connect fails or a connection drops,
- * frames are dropped and reported. A dropped connection is retried with a backoff from [retryFrom] doubling to
- * [retryUpTo], on the clock the transport was made on. With [tls], every connection both ways is TLS, and a peer
- * that cannot complete its handshake is one that failed to connect.
+ * What is sent to a peer waits, up to [room] frames on the data lane and [controlRoom] on the control lane (spec 0104),
+ * while its connection opens; past that, and whenever an attempt to connect fails or a connection drops, frames are
+ * dropped and reported. A dropped connection is retried with a backoff from [retryFrom] doubling to [retryUpTo], on the
+ * clock the transport was made on. With [tls], every connection both ways is TLS, and a peer that cannot complete its
+ * handshake is one that failed to connect.
  *
  * Closing stops taking frames, then gives each lane whose connection is up [drainWithin], in all, to write what it
- * already holds, so a frame told just before close is not lost to it (spec 0166). What is left after that, and all
- * that waits on a lane not connected, is dropped and reported.
+ * already holds, so a frame told just before close is not lost to it (spec 0166). What is left after that, and all that
+ * waits on a lane not connected, is dropped and reported.
  *
- * A peer is reached by name, and the JDK remembers a name that did not resolve for 10 seconds. A peer named before
- * its host exists, as a seed or a pod is, stays out of reach that long after it appears, unless the service sets
+ * A peer is reached by name, and the JDK remembers a name that did not resolve for 10 seconds. A peer named before its
+ * host exists, as a seed or a pod is, stays out of reach that long after it appears, unless the service sets
  * `networkaddress.cache.negative.ttl` to 0 before its first lookup (spec 0104).
  */
 class Transport(
@@ -162,11 +165,12 @@ class Transport(
 
     private fun accept() {
         while (!closed.get()) {
-            val socket = try {
-                server.accept()
-            } catch (_: SocketException) {
-                return
-            }
+            val socket =
+                try {
+                    server.accept()
+                } catch (_: SocketException) {
+                    return
+                }
             inbound += socket
             Thread.ofVirtual().name("surefold-remote-in").start { serve(socket) }
         }
@@ -203,15 +207,12 @@ class Transport(
         private val queue = ArrayBlockingQueue<Frame>(if (lane == Lane.Control) controlRoom else room)
         private val writer = Thread.ofVirtual().name("surefold-remote-out-$peer-${lane.name.lowercase()}").start(::run)
 
-        @Volatile
-        private var socket: Socket? = null
+        @Volatile private var socket: Socket? = null
 
         // Whether the handshake is done and the writer is writing, and whether it is to stop once its queue is empty.
-        @Volatile
-        private var writing = false
+        @Volatile private var writing = false
 
-        @Volatile
-        private var finishing = false
+        @Volatile private var finishing = false
 
         fun offer(frame: Frame) {
             if (!queue.offer(frame)) listener.dropped(peer, frame)
@@ -241,17 +242,18 @@ class Transport(
         private fun run() {
             var wait = retryFrom
             while (!closed.get()) {
-                val connected = try {
-                    connectAndWrite()
-                } catch (_: Refused) {
-                    // An older peer: offered 1 at once, and nothing queued is dropped for it.
-                    offering = FIRST_VERSION
-                    continue
-                } catch (_: IOException) {
-                    false
-                } catch (_: InterruptedException) {
-                    false
-                }
+                val connected =
+                    try {
+                        connectAndWrite()
+                    } catch (_: Refused) {
+                        // An older peer: offered 1 at once, and nothing queued is dropped for it.
+                        offering = FIRST_VERSION
+                        continue
+                    } catch (_: IOException) {
+                        false
+                    } catch (_: InterruptedException) {
+                        false
+                    }
                 if (closed.get()) return
                 if (connected) offering = VERSION
                 drop()
@@ -279,14 +281,15 @@ class Transport(
                 writing = true
                 // The peer never writes after its hello: a read that returns is the connection ending.
                 val writer = Thread.currentThread()
-                val watch = Thread.ofVirtual().name("surefold-remote-watch-$peer-${lane.name.lowercase()}").start {
-                    try {
-                        input.read()
-                    } catch (_: IOException) {
-                        // Closed on either side: the writer finds out the same way.
+                val watch =
+                    Thread.ofVirtual().name("surefold-remote-watch-$peer-${lane.name.lowercase()}").start {
+                        try {
+                            input.read()
+                        } catch (_: IOException) {
+                            // Closed on either side: the writer finds out the same way.
+                        }
+                        if (!closed.get()) writer.interrupt()
                     }
-                    if (!closed.get()) writer.interrupt()
-                }
                 try {
                     write(output, spoken)
                 } catch (_: IOException) {
@@ -307,11 +310,12 @@ class Transport(
         /** This side's hello, offering [offering], and the peer's answer: who it is, and the version both now speak. */
         private fun shake(output: DataOutputStream, input: DataInputStream): Pair<Node, Int> {
             output.hello(self, uid, offering)
-            val (answered, spoken) = try {
-                input.hello()
-            } catch (ended: EOFException) {
-                throw if (offering > FIRST_VERSION) Refused(ended) else ended
-            }
+            val (answered, spoken) =
+                try {
+                    input.hello()
+                } catch (ended: EOFException) {
+                    throw if (offering > FIRST_VERSION) Refused(ended) else ended
+                }
             if (spoken > offering) throw IOException("$peer answered wire version $spoken to an offer of $offering")
             if (peer.name.isNotEmpty() && answered.name != peer.name) throw IOException("$peer answered as $answered")
             return answered to spoken
@@ -319,12 +323,14 @@ class Transport(
 
         private fun write(output: DataOutputStream, version: Int) {
             while (true) {
-                val next = queue.poll() ?: run {
-                    output.flush()
-                    // Frames can arrive during the flush, and finishing is set only after all of them have been
-                    // queued, so the queue is checked once more before stopping.
-                    if (finishing) queue.poll() ?: return else queue.take()
-                }
+                val next =
+                    queue.poll()
+                        ?: run {
+                            output.flush()
+                            // Frames can arrive during the flush, and finishing is set only after all of them have been
+                            // queued, so the queue is checked once more before stopping.
+                            if (finishing) queue.poll() ?: return else queue.take()
+                        }
                 if (next === end) return output.flush()
                 output.frame(next, version)
             }
@@ -383,20 +389,21 @@ private fun DataInputStream.frame(version: Int): Frame {
     val path = ByteArray(readInt()).also(::readFully)
     val incarnation = readLong()
     var read = Int.SIZE_BYTES + path.size + Long.SIZE_BYTES
-    val carried = if (version >= CARRYING) {
-        val pairs = readUnsignedShort()
-        read += Short.SIZE_BYTES
-        buildMap {
-            repeat(pairs) {
-                val key = ByteArray(readUnsignedShort()).also(::readFully)
-                val value = ByteArray(readUnsignedShort()).also(::readFully)
-                read += 2 * Short.SIZE_BYTES + key.size + value.size
-                put(String(key, Charsets.UTF_8), String(value, Charsets.UTF_8))
+    val carried =
+        if (version >= CARRYING) {
+            val pairs = readUnsignedShort()
+            read += Short.SIZE_BYTES
+            buildMap {
+                repeat(pairs) {
+                    val key = ByteArray(readUnsignedShort()).also(::readFully)
+                    val value = ByteArray(readUnsignedShort()).also(::readFully)
+                    read += 2 * Short.SIZE_BYTES + key.size + value.size
+                    put(String(key, Charsets.UTF_8), String(value, Charsets.UTF_8))
+                }
             }
+        } else {
+            emptyMap()
         }
-    } else {
-        emptyMap()
-    }
     val payload = ByteArray(size - read).also(::readFully)
     return Frame(String(path, Charsets.UTF_8), incarnation, payload, carried = carried)
 }
@@ -406,9 +413,11 @@ private fun DataInputStream.frame(version: Int): Frame {
  * for its length is left off rather than written wrong: what is carried is a trace's ids, not a payload.
  */
 private fun carried(carried: Map<String, String>): ByteArray {
-    val pairs = carried.map { (key, value) -> key.toByteArray(Charsets.UTF_8) to value.toByteArray(Charsets.UTF_8) }
-        .filter { (k, v) -> k.size <= MAX_CARRIED && v.size <= MAX_CARRIED }
-        .take(MAX_CARRIED)
+    val pairs =
+        carried
+            .map { (key, value) -> key.toByteArray(Charsets.UTF_8) to value.toByteArray(Charsets.UTF_8) }
+            .filter { (k, v) -> k.size <= MAX_CARRIED && v.size <= MAX_CARRIED }
+            .take(MAX_CARRIED)
     val out = ByteArrayOutputStream()
     DataOutputStream(out).use { data ->
         data.writeShort(pairs.size)

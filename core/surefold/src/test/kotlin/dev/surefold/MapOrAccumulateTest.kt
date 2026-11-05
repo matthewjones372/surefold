@@ -53,14 +53,15 @@ class MapOrAccumulateTest {
         val boom = Boom()
         val ran = mutableListOf<Int>()
 
-        val thrown = shouldThrow<Boom> {
-            attempt<NonEmptyList<Bad>, List<Int>> {
-                mapOrAccumulate(listOf(1, 2, 3)) { n ->
-                    ran += n
-                    if (n == 2) throw boom else n
+        val thrown =
+            shouldThrow<Boom> {
+                attempt<NonEmptyList<Bad>, List<Int>> {
+                    mapOrAccumulate(listOf(1, 2, 3)) { n ->
+                        ran += n
+                        if (n == 2) throw boom else n
+                    }
                 }
             }
-        }
 
         (thrown === boom) shouldBe true
         ran shouldBe listOf(1, 2)

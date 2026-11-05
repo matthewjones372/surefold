@@ -2,12 +2,12 @@ package dev.surefold
 
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import org.junit.jupiter.api.Test
 
 private const val ANSWER_SECONDS = 10L
 private const val FOR_EVER_MILLIS = 60_000L
@@ -58,12 +58,13 @@ class HelpTest {
                             running.await()
                             inner.cancel()
                         }
-                        val stopped = try {
-                            inner.await()
-                            false
-                        } catch (_: InterruptedException) {
-                            true
-                        }
+                        val stopped =
+                            try {
+                                inner.await()
+                                false
+                            } catch (_: InterruptedException) {
+                                true
+                            }
                         // The awaiting thread ran the body, and the cancel's interrupt went no further than it.
                         stopped && !Thread.currentThread().isInterrupted
                     }

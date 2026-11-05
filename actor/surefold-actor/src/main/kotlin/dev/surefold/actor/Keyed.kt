@@ -70,11 +70,11 @@ fun <Ev, R : Any> keyedEvents(codec: EventCodec<Ev>, refusals: EventCodec<R>): E
 
 /**
  * A persistent behaviour whose commands each carry a key (spec 0300). [decide] answers a command once: its events and
- * its key's answer go in one append, so they can't come apart, and a repeat of the key gets the same answer and
- * writes nothing. [Keyed.Applied] answers a key from the state, for a caller that lost the answer to ask again.
+ * its key's answer go in one append, so they can't come apart, and a repeat of the key gets the same answer and writes
+ * nothing. [Keyed.Applied] answers a key from the state, for a caller that lost the answer to ask again.
  *
- * A key is remembered for [remember] after its answer: each answer written drops the keys older than that, the same
- * way on every replay, so the state does not grow forever. A repeat that arrives later is decided again, which is why
+ * A key is remembered for [remember] after its answer: each answer written drops the keys older than that, the same way
+ * on every replay, so the state does not grow forever. A repeat that arrives later is decided again, which is why
  * whatever resends a key (0299's sagas) must give up on it sooner. [snapshots] saves the state with its keys.
  */
 fun <C : Any, Ev, S, R : Any> keyed(
@@ -104,8 +104,9 @@ fun <C : Any, Ev, S, R : Any> keyed(
 
                 is Keyed.Apply -> {
                     val decision = decisions.decide(state.value, message.command)
-                    val written = decision.events.map { KeyedEvent.Decided(it) } +
-                        KeyedEvent.Answered(message.key, decision.refused, clock.get().now().toEpochMilli())
+                    val written =
+                        decision.events.map { KeyedEvent.Decided(it) } +
+                            KeyedEvent.Answered(message.key, decision.refused, clock.get().now().toEpochMilli())
                     Effect<KeyedEvent<Ev, R>, KeyedState<S, R>>(written, null, null).then { after ->
                         message.reply(after.answers.getValue(message.key).answer)
                     }
@@ -187,7 +188,8 @@ private class KeyedStates<S, R : Any>(private val codec: StateCodec<S>, private 
                 out.writeLong(kept.at)
                 when (val answer = kept.answer) {
                     is KeyAnswer.Refused -> out.sized(refusals.encode(answer.reason))
-                    KeyAnswer.Accepted, KeyAnswer.Unknown -> out.writeInt(-1)
+                    KeyAnswer.Accepted,
+                    KeyAnswer.Unknown -> out.writeInt(-1)
                 }
             }
         }
@@ -197,15 +199,15 @@ private class KeyedStates<S, R : Any>(private val codec: StateCodec<S>, private 
     override fun decode(bytes: ByteArray): KeyedState<S, R> {
         val input = DataInputStream(ByteArrayInputStream(bytes))
         val value = codec.decode(input.sized())
-        val answers = List(input.readInt()) {
-            val key = input.readUTF()
-            val at = input.readLong()
-            val size = input.readInt()
-            val answer = if (size <
-                0
-            ) KeyAnswer.Accepted else KeyAnswer.Refused(refusals.decode(input.readNBytes(size)))
-            key to KeyRecord(answer, at)
-        }
+        val answers =
+            List(input.readInt()) {
+                val key = input.readUTF()
+                val at = input.readLong()
+                val size = input.readInt()
+                val answer =
+                    if (size < 0) KeyAnswer.Accepted else KeyAnswer.Refused(refusals.decode(input.readNBytes(size)))
+                key to KeyRecord(answer, at)
+            }
         return KeyedState(value, answers.toMap())
     }
 

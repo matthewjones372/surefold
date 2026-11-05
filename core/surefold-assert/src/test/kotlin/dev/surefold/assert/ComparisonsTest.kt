@@ -1,9 +1,9 @@
 package dev.surefold.assert
 
-import org.junit.jupiter.api.Test
-import org.opentest4j.AssertionFailedError
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
+import org.opentest4j.AssertionFailedError
 
 class ComparisonsTest {
 

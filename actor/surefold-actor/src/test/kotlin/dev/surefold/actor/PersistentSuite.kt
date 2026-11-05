@@ -18,17 +18,19 @@ private data class Fed(val grams: Int) : PetEvent
 
 private data class Homed(val by: String) : PetEvent
 
-private val petCodec = object : EventCodec<PetEvent> {
-    override fun encode(event: PetEvent): ByteArray = when (event) {
-        is Fed -> "fed:${event.grams}"
-        is Homed -> "homed:${event.by}"
-    }.toByteArray()
+private val petCodec =
+    object : EventCodec<PetEvent> {
+        override fun encode(event: PetEvent): ByteArray =
+            when (event) {
+                is Fed -> "fed:${event.grams}"
+                is Homed -> "homed:${event.by}"
+            }.toByteArray()
 
-    override fun decode(bytes: ByteArray): PetEvent {
-        val (kind, value) = String(bytes).split(":", limit = 2)
-        return if (kind == "fed") Fed(value.toInt()) else Homed(value)
+        override fun decode(bytes: ByteArray): PetEvent {
+            val (kind, value) = String(bytes).split(":", limit = 2)
+            return if (kind == "fed") Fed(value.toInt()) else Homed(value)
+        }
     }
-}
 
 private data class Hound(val grams: Int = 0, val home: String? = null)
 
@@ -147,19 +149,20 @@ object PersistentSuite : Suite() {
             val log = ConcurrentLinkedQueue<String>()
             val moving = TestClock()
             val journal = InMemoryJournal()
-            val weight = clock.locally(moving) {
-                scope {
-                    journal(journal)
-                    val kennel = spawn("kennel", entities(passivateAfter = 10.minutes) { id -> hound(id, log) })
-                    kennel.entity("rex").tell(Eat(50))
-                    kennel.entity("rex").tell(Eat(25))
-                    awaitIdle()
+            val weight =
+                clock.locally(moving) {
+                    scope {
+                        journal(journal)
+                        val kennel = spawn("kennel", entities(passivateAfter = 10.minutes) { id -> hound(id, log) })
+                        kennel.entity("rex").tell(Eat(50))
+                        kennel.entity("rex").tell(Eat(25))
+                        awaitIdle()
 
-                    moving.adjust(10.minutes)
-                    awaitIdle()
-                    kennel.entity("rex").ask(1.minutes) { Weigh(it) }
+                        moving.adjust(10.minutes)
+                        awaitIdle()
+                        kennel.entity("rex").ask(1.minutes) { Weigh(it) }
+                    }
                 }
-            }
 
             weight shouldBeRight 75
             journal.events(houndOf("rex"), petCodec) shouldContainExactly listOf(Fed(50), Fed(25))

@@ -11,6 +11,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.reflect.typeOf
 
 private class Held
+
 private class Absent
 
 object RunSuite : Suite() {
@@ -64,9 +65,9 @@ object RunSuite : Suite() {
         }
 
         test("a faulty graph describes itself with the wiring report") {
-            val described = StartupError
-                .Unwireable(nonEmptyListOf(WiringError.Missing(typeOf<Held>(), typeOf<Absent>())))
-                .describe()
+            val described =
+                StartupError.Unwireable(nonEmptyListOf(WiringError.Missing(typeOf<Held>(), typeOf<Absent>())))
+                    .describe()
 
             described shouldContain "❯ missing Held"
             described shouldContain "❯     for Absent"

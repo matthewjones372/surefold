@@ -3,9 +3,9 @@ package dev.surefold.junit
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldNotBe
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import java.nio.file.Path
+import org.junit.jupiter.api.Test
 
 /** A directory of its own for a block, gone once the block has returned or thrown. */
 class DirectoriesTest {

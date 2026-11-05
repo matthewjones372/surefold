@@ -19,8 +19,7 @@ class ForAllTest {
 
     @Test
     fun `it holds when every element does, and on no elements`() {
-        events shouldHaveSucceeded
-            listOf("holds on no elements", "holds when every element does")
+        events shouldHaveSucceeded listOf("holds on no elements", "holds when every element does")
     }
 
     @Test
@@ -30,9 +29,10 @@ class ForAllTest {
 
         failed.message.orEmpty().lines().first() shouldBe
             "fails once for each element that does not: 2 of 4 expectations failed (2 failures)"
-        failed.failures.map { it.message.orEmpty().lines().take(2) } shouldBe listOf(
-            listOf("expected: less than 3", "but was:  3"),
-            listOf("expected: less than 3", "but was:  4"),
-        )
+        failed.failures.map { it.message.orEmpty().lines().take(2) } shouldBe
+            listOf(
+                listOf("expected: less than 3", "but was:  3"),
+                listOf("expected: less than 3", "but was:  4"),
+            )
     }
 }

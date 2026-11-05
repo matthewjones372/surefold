@@ -5,15 +5,15 @@ import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldNotBeNull
 import dev.surefold.assert.shouldNotContain
 import dev.surefold.assert.withClue
+import java.io.File
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 /**
- * Spec 0041: a build that applies `dev.surefold.compiler` alone, with no wiring plugin, and
- * compiles against this repository's own surefold, resolving the checker from the local repository as a consumer does.
+ * Spec 0041: a build that applies `dev.surefold.compiler` alone, with no wiring plugin, and compiles against this
+ * repository's own surefold, resolving the checker from the local repository as a consumer does.
  */
 class SurefoldForksPluginTest {
 
@@ -26,8 +26,9 @@ class SurefoldForksPluginTest {
             repo.shouldNotBeNull()
         }
         val jars = underTest!!.split(File.pathSeparator).joinToString(", ") { "\"$it\"" }
-        File(dir, "settings.gradle.kts").writeText(
-            """
+        File(dir, "settings.gradle.kts")
+            .writeText(
+                """
             pluginManagement {
                 repositories {
                     maven { url = uri("$repo") }
@@ -36,10 +37,12 @@ class SurefoldForksPluginTest {
             }
 
             rootProject.name = "under-test"
-            """.trimIndent(),
-        )
-        File(dir, "build.gradle.kts").writeText(
             """
+                    .trimIndent(),
+            )
+        File(dir, "build.gradle.kts")
+            .writeText(
+                """
             plugins {
                 kotlin("jvm") version "2.4.10"
                 id("dev.surefold.compiler") version "$version"
@@ -51,8 +54,9 @@ class SurefoldForksPluginTest {
             }
 
             dependencies { implementation(files($jars)) }
-            """.trimIndent(),
-        )
+            """
+                    .trimIndent(),
+            )
         File(dir, "src/main/kotlin/Under.kt").apply { parentFile.mkdirs() }.writeText(source)
     }
 
@@ -81,13 +85,15 @@ class SurefoldForksPluginTest {
     }
 }
 
-private const val ESCAPING = """
+private const val ESCAPING =
+    """
 import dev.surefold.scope
 
 fun load() = scope { async { 1 } }
 """
 
-private const val AWAITED = """
+private const val AWAITED =
+    """
 import dev.surefold.scope
 
 fun load(): Int = scope { async { 1 }.await() }

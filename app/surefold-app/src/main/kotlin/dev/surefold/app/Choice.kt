@@ -4,8 +4,8 @@ import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
 /**
- * A setting that picks a module, made inside the graph (spec 0136): a node that depends on [S], and whose value is
- * the module surefold builds into the graph once [S] is built. Every branch provides [P], which is what the rest of the
+ * A setting that picks a module, made inside the graph (spec 0136): a node that depends on [S], and whose value is the
+ * module surefold builds into the graph once [S] is built. Every branch provides [P], which is what the rest of the
  * graph is checked against before anything runs; a branch that does not refuses the start.
  *
  * ```kotlin

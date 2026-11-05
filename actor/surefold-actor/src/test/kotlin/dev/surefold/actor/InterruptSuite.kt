@@ -28,34 +28,36 @@ private data class Forever(val started: CountDownLatch) : Chore
 /** Raises, after saying it is about to. */
 private data class Fumble(val raising: CountDownLatch) : Chore
 
-private fun chores(log: AtomicReference<List<String>>) = behaviour<Chore, Unit, String>(Unit) { _, _, message ->
-    when (message) {
-        is Quick -> {
-            message.done.countDown()
+private fun chores(log: AtomicReference<List<String>>) =
+    behaviour<Chore, Unit, String>(Unit) { _, _, message ->
+            when (message) {
+                is Quick -> {
+                    message.done.countDown()
+                    stay()
+                }
+
+                is Held -> {
+                    message.started.countDown()
+                    message.released.await()
+                    stay()
+                }
+
+                is Forever -> {
+                    message.started.countDown()
+                    CountDownLatch(1).await()
+                    stay()
+                }
+
+                is Fumble -> {
+                    message.raising.countDown()
+                    fail("fumbled")
+                }
+            }
+        }
+        .onSignal { _, _, signal ->
+            if (signal == Signal.Stopping) log.updateAndGet { it + "stopping" }
             stay()
         }
-
-        is Held -> {
-            message.started.countDown()
-            message.released.await()
-            stay()
-        }
-
-        is Forever -> {
-            message.started.countDown()
-            CountDownLatch(1).await()
-            stay()
-        }
-
-        is Fumble -> {
-            message.raising.countDown()
-            fail("fumbled")
-        }
-    }
-}.onSignal { _, _, signal ->
-    if (signal == Signal.Stopping) log.updateAndGet { it + "stopping" }
-    stay()
-}
 
 object InterruptSuite : Suite() {
     init {
@@ -88,14 +90,15 @@ object InterruptSuite : Suite() {
 
             scope {
                 val started = CountDownLatch(1)
-                val parent = spawn(
-                    "parent",
-                    behaviour<Unit, Unit>(Unit) { ctx, _, _ ->
-                        ctx.spawn("child", chores(log)).tell(Forever(started))
-                        started.await()
-                        stop()
-                    },
-                )
+                val parent =
+                    spawn(
+                        "parent",
+                        behaviour<Unit, Unit>(Unit) { ctx, _, _ ->
+                            ctx.spawn("child", chores(log)).tell(Forever(started))
+                            started.await()
+                            stop()
+                        },
+                    )
                 parent.tell(Unit)
                 watch(parent).await()
             }

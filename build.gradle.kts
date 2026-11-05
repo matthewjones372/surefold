@@ -1,3 +1,10 @@
+// ktrs's jar bundles the native formatter. One classpath for every module's Spotless step.
+buildscript {
+    val ktrsVersion = "0.5.3"
+    repositories { mavenCentral() }
+    dependencies { classpath("io.github.hexay:ktrs:$ktrsVersion") }
+}
+
 plugins {
     kotlin("jvm") version "2.4.10" apply false
     // A failed `expect` in surefold-junit's suites draws its values (spec 0175).
@@ -33,28 +40,22 @@ scmVersion {
 val scmVer: String = scmVersion.version
 
 /**
- * ktlint rather than ktfmt: ktfmt reflows, and this codebase is hand-laid-out
- * on purpose — banner comments, aligned trailing comments, KDoc written as
- * prose. The rules that make ktlint disagree with any of that are turned off
- * in `.editorconfig`, which is also where the line length lives.
- */
-val ktlintVersion = "1.8.0"
-
-/**
  * The Kotlin this build compiles with, for the two modules that compile against the compiler itself.
  *
- * Written once: a plugin built against one compiler and loaded into another fails at a consumer's
- * compile, or quietly in their editor, and a version number repeated in three build scripts is three
- * chances for that to happen on a bump.
+ * Written once: a plugin built against one compiler and loaded into another fails at a consumer's compile, or quietly
+ * in their editor, and a version number repeated in three build scripts is three chances for that to happen on a bump.
  */
 val kotlinVersion: String = "2.4.10"
 
-// Spotless does not pick these up from .editorconfig for every source set, so
-// they are handed to the ktlint step directly. The reasoning for each lives in
-// .editorconfig beside the rest, which is also what the IDE reads.
-val ktlintOverrides = mapOf("ktlint_standard_kdoc" to "disabled")
+// kotlinlang matches `kotlin.code.style=official`. `.editorconfig` sets the line length and indent.
+fun com.diffplug.gradle.spotless.FormatExtension.ktrsFormat() {
+    addStep(
+        io.github.hexay.ktrs.spotless.KtrsStep.create(
+            io.github.hexay.ktrs.KtrsOptions.kotlinlang().withEditorConfig(true),
+        ),
+    )
+}
 
-// The root project builds nothing, but Spotless resolves ktlint here.
 repositories { mavenCentral() }
 
 spotless {
@@ -62,50 +63,58 @@ spotless {
         // settings.gradle.kts and this file. The module formats its own build
         // script in the `subprojects` block below.
         target("*.gradle.kts")
-        ktlint(ktlintVersion).editorConfigOverride(ktlintOverrides)
+        ktrsFormat()
     }
 }
 
 /** One line per module, so a Maven search result says what the artifact is. */
-val moduleDescriptions = mapOf(
-    "surefold" to
-        "Structured concurrency on virtual threads, without coroutines. " +
-        "Plus checked application graphs, streams, actors and clusters.",
-    "surefold-stream" to "A stream that names its failure: Stream<E, A> described once, run on the backend you pick.",
-    "surefold-stream-forks" to "surefold-stream on surefold's own forks: a run is a pull loop on a virtual thread.",
-    "surefold-stream-actors" to
-        "surefold-stream on surefold-actor: a run is an actor, pulling its loop a batch at a time.",
-    "surefold-stream-test" to "surefold-stream for tests: every stage on the calling thread, on a clock the test owns.",
-    "surefold-assert" to
-        "Checks for tests of surefold code that fail at the test's own line, Either matchers among them.",
-    "surefold-test" to
-        "For tests of a surefold service: eventually on surefold's clock, and a test that reads as a story.",
-    "surefold-junit" to "Surefold's tests on the JUnit Platform: a suite is an object, its tests share one resource.",
-    "surefold-junit-testkit" to
-        "Checks on a suite's run, read from EngineTestKit: which tests passed, failed or were skipped.",
-    "surefold-app" to "An application as a value: a dependency graph that validates, subsets and starts itself.",
-    "surefold-app-gradle" to "surefold-app as a build gate: every graph in a project checked and drawn as it compiles.",
-    "surefold-app-compiler" to
-        "surefold-app in the compiler: a K2 checker, so the IDE reports a graph's faults as you type.",
-    "surefold-cache" to
-        "A cache with its lookup fixed when it is made: one lookup per key, a ttl by result, stale on failure.",
-    "surefold-replay" to
-        "surefold forks in a seeded order: explore finds the order that breaks a test, replay runs it again.",
-    "surefold-compiler" to
-        "surefold's structure rules in the compiler: a Deferred that outlives its scope fails to compile.",
-    "surefold-structured" to "surefold over the JDK's StructuredTaskScope: a scope the thread dump can see.",
-    "surefold-actor" to
-        "An actor as a value and a step, on virtual threads: no actor system, and tests that never wait.",
-    "surefold-actor-journal-jdbc" to
-        "surefold-actor's journal and snapshots on JDBC: events every node reaches, two writers settled by the key.",
-    "surefold-actor-projection" to
-        "surefold-actor's journal as a surefold Stream: a read model follows one kind, and resumes where it left off.",
-    "surefold-actor-remote" to "surefold-actor across nodes: codecs you own, and one TCP connection per pair of nodes.",
-    "surefold-cluster" to "surefold-actor as a cluster: discovery, gossip membership and downing, with no coordinator.",
-    "surefold-cluster-saga" to "Durable sagas: plain step code journalled and replayed, so a saga outlives its node.",
-    "surefold-app-actor" to
-        "surefold-app on surefold-actor: a scope is a node, and an actor is a node keyed by its protocol.",
-)
+val moduleDescriptions =
+    mapOf(
+        "surefold" to
+            "Structured concurrency on virtual threads, without coroutines. " +
+                "Plus checked application graphs, streams, actors and clusters.",
+        "surefold-stream" to
+            "A stream that names its failure: Stream<E, A> described once, run on the backend you pick.",
+        "surefold-stream-forks" to "surefold-stream on surefold's own forks: a run is a pull loop on a virtual thread.",
+        "surefold-stream-actors" to
+            "surefold-stream on surefold-actor: a run is an actor, pulling its loop a batch at a time.",
+        "surefold-stream-test" to
+            "surefold-stream for tests: every stage on the calling thread, on a clock the test owns.",
+        "surefold-assert" to
+            "Checks for tests of surefold code that fail at the test's own line, Either matchers among them.",
+        "surefold-test" to
+            "For tests of a surefold service: eventually on surefold's clock, and a test that reads as a story.",
+        "surefold-junit" to
+            "Surefold's tests on the JUnit Platform: a suite is an object, its tests share one resource.",
+        "surefold-junit-testkit" to
+            "Checks on a suite's run, read from EngineTestKit: which tests passed, failed or were skipped.",
+        "surefold-app" to "An application as a value: a dependency graph that validates, subsets and starts itself.",
+        "surefold-app-gradle" to
+            "surefold-app as a build gate: every graph in a project checked and drawn as it compiles.",
+        "surefold-app-compiler" to
+            "surefold-app in the compiler: a K2 checker, so the IDE reports a graph's faults as you type.",
+        "surefold-cache" to
+            "A cache with its lookup fixed when it is made: one lookup per key, a ttl by result, stale on failure.",
+        "surefold-replay" to
+            "surefold forks in a seeded order: explore finds the order that breaks a test, replay runs it again.",
+        "surefold-compiler" to
+            "surefold's structure rules in the compiler: a Deferred that outlives its scope fails to compile.",
+        "surefold-structured" to "surefold over the JDK's StructuredTaskScope: a scope the thread dump can see.",
+        "surefold-actor" to
+            "An actor as a value and a step, on virtual threads: no actor system, and tests that never wait.",
+        "surefold-actor-journal-jdbc" to
+            "surefold-actor's journal and snapshots on JDBC: events every node reaches, two writers settled by the key.",
+        "surefold-actor-projection" to
+            "surefold-actor's journal as a surefold Stream: a read model follows one kind, and resumes where it left off.",
+        "surefold-actor-remote" to
+            "surefold-actor across nodes: codecs you own, and one TCP connection per pair of nodes.",
+        "surefold-cluster" to
+            "surefold-actor as a cluster: discovery, gossip membership and downing, with no coordinator.",
+        "surefold-cluster-saga" to
+            "Durable sagas: plain step code journalled and replayed, so a saga outlives its node.",
+        "surefold-app-actor" to
+            "surefold-app on surefold-actor: a scope is a node, and an actor is a node keyed by its protocol.",
+    )
 
 // A Gradle plugin publishes through `java-gradle-plugin`'s own marker publication, and what it does
 // is a build that runs rather than a line count: petshop applying it is the test, not a percentage.
@@ -226,7 +235,8 @@ subprojects {
         systemProperty("junit.jupiter.extensions.autodetection.include", "dev.surefold.*")
     }
 
-    // Every module's Jupiter tests get ThreadsOnTimeout: every thread's stack, virtual ones included, before a timed-out
+    // Every module's Jupiter tests get ThreadsOnTimeout: every thread's stack, virtual ones included, before a
+    // timed-out
     // test is interrupted (spec 0308). A source shared by path rather than a module, so nothing is published for it.
     // Only where there are tests: a module with none, a benchmark's, would otherwise fail for discovering none.
     if (file("src/test").isDirectory) {
@@ -281,11 +291,11 @@ subprojects {
     extensions.configure<com.diffplug.gradle.spotless.SpotlessExtension> {
         kotlin {
             target("src/**/*.kt")
-            ktlint(ktlintVersion).editorConfigOverride(ktlintOverrides)
+            ktrsFormat()
         }
         kotlinGradle {
             target("*.gradle.kts")
-            ktlint(ktlintVersion).editorConfigOverride(ktlintOverrides)
+            ktrsFormat()
         }
     }
 
@@ -389,9 +399,8 @@ subprojects {
 }
 
 /**
- * A POM-only publication at the coordinates surefold had up to 0.17, relocating to the same module under
- * `dev.surefold` (spec 0277). Maven and Gradle follow it, so a build still on `io.github.matthewjones372` resolves
- * the new module.
+ * A POM-only publication at the coordinates surefold had up to 0.17, relocating to the same module under `dev.surefold`
+ * (spec 0277). Maven and Gradle follow it, so a build still on `io.github.matthewjones372` resolves the new module.
  */
 fun PublishingExtension.relocatedFromOldGroup(module: String, version: String) {
     publications.register<MavenPublication>("relocation") {

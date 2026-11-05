@@ -28,6 +28,9 @@ internal fun changes(before: View, after: View): List<MemberEvent> {
     val reachable = after.members.filter { it.node !in after.unreachable && it.node in before.unreachable }
     val downed = after.members.filter { it.status == Status.Down && was[it.life()]?.status != Status.Down }
     val removed = before.members.filter { it.life() !in now }
-    return up.map(MemberEvent::Up) + unreachable.map(MemberEvent::Unreachable) +
-        reachable.map(MemberEvent::Reachable) + downed.map(MemberEvent::Downed) + removed.map(MemberEvent::Removed)
+    return up.map(MemberEvent::Up) +
+        unreachable.map(MemberEvent::Unreachable) +
+        reachable.map(MemberEvent::Reachable) +
+        downed.map(MemberEvent::Downed) +
+        removed.map(MemberEvent::Removed)
 }

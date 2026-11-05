@@ -46,15 +46,15 @@ data class CacheStats(
 /**
  * A function with a memory (spec 0246): [lookup] is given once, here, and [get] answers from memory while an answer is
  * young, and looks up again once it is not. However many ask for one key at once, one lookup runs, through
- * `SingleFlight`. A zero [ttl] shares the answer without keeping it or writing layers; an infinite [ttl] keeps a
- * fresh result only in memory without a deadline. Other answers are kept as long as [ttl] says, a `Left` included,
- * so a source that is down is asked once per its `Left`'s ttl, not once per caller. When a lookup fails and the last
- * `Right` for the key is younger than [stale], that `Right` answers instead, until [stale] runs out. Ages are read
- * from the clock bound where the cache is made, so a `TestClock` moves every one.
+ * `SingleFlight`. A zero [ttl] shares the answer without keeping it or writing layers; an infinite [ttl] keeps a fresh
+ * result only in memory without a deadline. Other answers are kept as long as [ttl] says, a `Left` included, so a
+ * source that is down is asked once per its `Left`'s ttl, not once per caller. When a lookup fails and the last `Right`
+ * for the key is younger than [stale], that `Right` answers instead, until [stale] runs out. Ages are read from the
+ * clock bound where the cache is made, so a `TestClock` moves every one.
  *
- * At most [capacity] keys are kept. Past it, a new key is kept only if it has been asked for more often lately than
- * the least recently read key it would push out (TinyLFU), so a scan of keys read once cannot flush the keys read all
- * day. [onEvict] is handed each value no entry holds any more: pushed out, invalidated, or replaced by a newer one.
+ * At most [capacity] keys are kept. Past it, a new key is kept only if it has been asked for more often lately than the
+ * least recently read key it would push out (TinyLFU), so a scan of keys read once cannot flush the keys read all day.
+ * [onEvict] is handed each value no entry holds any more: pushed out, invalidated, or replaced by a newer one.
  *
  * Under its own memory, a cache asks [layers] in turn before it looks up: a hit in one is written into its own memory
  * and every nearer layer, keeping its expiry, so a value is never younger near than it was far. A good value looked up
@@ -117,11 +117,9 @@ class Cache<K : Any, E, V>(
 
     // Each key refreshed ahead: the schedule's next step, whether it was read since its last lookup, and its sleeper.
     private class Ahead<E, V>(val next: ScheduleStep<Either<E, V>, *>) {
-        @Volatile
-        var read = false
+        @Volatile var read = false
 
-        @Volatile
-        var sleeper: Background? = null
+        @Volatile var sleeper: Background? = null
     }
 
     private val ahead = ConcurrentHashMap<K, Ahead<E, V>>()
@@ -143,9 +141,13 @@ class Cache<K : Any, E, V>(
             }
         }
 
-        fun abandoned() { runner.succeed(null) }
+        fun abandoned() {
+            runner.succeed(null)
+        }
 
-        fun join() { runner.awaitValue()?.join() }
+        fun join() {
+            runner.awaitValue()?.join()
+        }
 
         // Keep the actual thread after its body answers: future completion is not termination.
         fun ended(): Boolean {
@@ -157,7 +159,8 @@ class Cache<K : Any, E, V>(
     private data class Work(val closed: Boolean = false, val workers: List<Background> = emptyList())
 
     private val work = Shared(Work(), "surefold.cache.backgrounds")
-    private val closed: Boolean get() = work.peek().closed
+    private val closed: Boolean
+        get() = work.peek().closed
 
     /** [key]'s answer: from memory while it is young, else from one [lookup] however many ask. */
     fun get(key: K): Either<E, V> = borrowed { mine ->
@@ -202,13 +205,15 @@ class Cache<K : Any, E, V>(
     fun closeAndJoin() {
         check(owners.get().none { it() }) { "Owned cache work cannot close its owner" }
         val mine = Promise<Throwable, Unit>()
-        val (completion, accepted) = admission.withLock {
-            closing?.let { it to null } ?: run {
-                closing = mine
-                stopped = true
-                mine to operations
+        val (completion, accepted) =
+            admission.withLock {
+                closing?.let { it to null }
+                    ?: run {
+                        closing = mine
+                        stopped = true
+                        mine to operations
+                    }
             }
-        }
         if (accepted != null) {
             owners.locally(owners.get() + { mine.peek() == null }) { release(mine, accepted) }
         }
@@ -221,7 +226,9 @@ class Cache<K : Any, E, V>(
     @Suppress("TooGenericExceptionCaught") // Release defects are published once to every owner waiting for completion.
     private fun release(completion: Promise<Throwable, Unit>, accepted: List<Operation<K>>) {
         var interrupted = Thread.interrupted()
-        fun remember() { if (Thread.interrupted()) interrupted = true }
+        fun remember() {
+            if (Thread.interrupted()) interrupted = true
+        }
         fun cleanup(action: () -> Unit) {
             remember()
             try {
@@ -308,31 +315,42 @@ class Cache<K : Any, E, V>(
         invalidateLayers(what)
     }
 
-    private fun invalidateLayers(what: Invalidation<K>) = phase(what, after = ::notify) {
-        layers.asReversed().forEach { layer ->
+    private fun invalidateLayers(what: Invalidation<K>) =
+        phase(what, after = ::notify) {
+            layers.asReversed().forEach { layer ->
+                when (what) {
+                    is Invalidation.Key -> layered("remove ${what.key}") { layer.remove(what.key) }
+                    Invalidation.All -> layered("clear") { layer.clear() }
+                }
+            }
             when (what) {
-                is Invalidation.Key -> layered("remove ${what.key}") { layer.remove(what.key) }
-                Invalidation.All -> layered("clear") { layer.clear() }
+                is Invalidation.Key -> listOfNotNull(entries.remove(what.key)?.let { eviction(what.key, it) })
+                Invalidation.All -> entries.clear().map { (key, gone) -> eviction(key, gone) }
             }
         }
-        when (what) {
-            is Invalidation.Key -> listOfNotNull(entries.remove(what.key)?.let { eviction(what.key, it) })
-            Invalidation.All -> entries.clear().map { (key, gone) -> eviction(key, gone) }
-        }
-    }
 
     // How many callers wait on [key]'s lookup now, for a test that must let it end only once all have joined it.
     internal fun waiting(key: K): Int = flights.waiting(key)
 
     fun stats(): CacheStats =
         CacheStats(
-            hits.get(), misses.get(), loads.get(), failures.get(), staleAnswers.get(), evictions.get(),
-            layerHits.get(), layerFailures.get(), entries.size,
+            hits.get(),
+            misses.get(),
+            loads.get(),
+            failures.get(),
+            staleAnswers.get(),
+            evictions.get(),
+            layerHits.get(),
+            layerFailures.get(),
+            entries.size,
         )
 
     private fun load(key: K, refreshing: Boolean = false): Either<E, V> {
         val began = admission.withLock { generation }
-        if (!refreshing) fromLayers(key, began)?.let { return it }
+        if (!refreshing)
+            fromLayers(key, began)?.let {
+                return it
+            }
         val result = retried(key)
         val now = time.now()
         val young = entries.peek(key)?.takeIf { refreshing && it.young(now) }
@@ -347,10 +365,11 @@ class Cache<K : Any, E, V>(
             }
             return young.answer
         }
-        val entry = when (result) {
-            is Either.Right -> Entry<E, V>(result, deadline(now, retention), Good(result.value, now), false)
-            is Either.Left -> failed(result, entries.peek(key)?.good, now, retention)
-        }
+        val entry =
+            when (result) {
+                is Either.Right -> Entry<E, V>(result, deadline(now, retention), Good(result.value, now), false)
+                is Either.Left -> failed(result, entries.peek(key)?.good, now, retention)
+            }
         if (entry.isStale) staleAnswers.incrementAndGet()
         publish(key, result, entry, now, retention, began)
         return entry.answer
@@ -427,10 +446,11 @@ class Cache<K : Any, E, V>(
     private fun startAhead(key: K, mine: Ahead<E, V>, delay: Duration) {
         mine.sleeper = background {
             time.sleep(delay)
-            if (ahead[key] === mine && mine.read && !closed) flights.run(key) {
-                ownWorker()
-                load(key, refreshing = true)
-            }
+            if (ahead[key] === mine && mine.read && !closed)
+                flights.run(key) {
+                    ownWorker()
+                    load(key, refreshing = true)
+                }
             ahead.remove(key, mine)
         }
         if (mine.sleeper == null) ahead.remove(key, mine)
@@ -478,8 +498,9 @@ class Cache<K : Any, E, V>(
     private fun fromLayers(key: K, began: Long): Either<E, V>? {
         val now = time.now()
         layers.forEachIndexed { at, layer ->
-            val stored = phase(Invalidation.Key(key), began) { layered("read $key") { layer.read(key) } }
-                ?.takeIf { now < it.expiresAt } ?: return@forEachIndexed
+            val stored =
+                phase(Invalidation.Key(key), began) { layered("read $key") { layer.read(key) } }
+                    ?.takeIf { now < it.expiresAt } ?: return@forEachIndexed
             layerHits.incrementAndGet()
             val answer = Either.Right(stored.value)
             val retention = ttl(answer)
@@ -585,13 +606,14 @@ class Cache<K : Any, E, V>(
     }
 
     @Suppress("TooGenericExceptionCaught") // a layer that fails is a miss, logged and counted, never the caller's error
-    private inline fun <A> safely(what: String, block: () -> A): A? = try {
-        block()
-    } catch (failed: Exception) {
-        layerFailures.incrementAndGet()
-        logWarn("surefold-cache: a layer could not $what: $failed")
-        null
-    }
+    private inline fun <A> safely(what: String, block: () -> A): A? =
+        try {
+            block()
+        } catch (failed: Exception) {
+            layerFailures.incrementAndGet()
+            logWarn("surefold-cache: a layer could not $what: $failed")
+            null
+        }
 
     // A failed lookup: the last good value while it is younger than [stale], kept no longer than either allows.
     private fun failed(result: Either<E, V>, good: Good<V>?, now: Instant, retention: Duration): Entry<E, V> {

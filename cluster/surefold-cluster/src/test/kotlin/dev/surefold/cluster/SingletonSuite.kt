@@ -34,24 +34,27 @@ import kotlin.time.Duration.Companion.seconds
 /** Asks the clock which node it runs on. */
 private data class Where(val reply: Reply<String>)
 
-private val whereCodec = object : MessageCodec<Where> {
-    override fun write(message: Where, out: WireOut) = out.reply(message.reply, Codecs.string)
+private val whereCodec =
+    object : MessageCodec<Where> {
+        override fun write(message: Where, out: WireOut) = out.reply(message.reply, Codecs.string)
 
-    override fun read(input: WireIn) = Where(input.reply(Codecs.string))
-}
+        override fun read(input: WireIn) = Where(input.reply(Codecs.string))
+    }
 
 private val clocksRunning = AtomicInteger()
 private val clocksTwice = AtomicBoolean(false)
 private val clockStarted = CountDownLatch(1)
 
-private fun clock(on: String) = behaviour<Where, Unit>(Unit) { _, _, where -> stay().also { where.reply.invoke(on) } }
-    .onStart {
-        if (clocksRunning.incrementAndGet() > 1) clocksTwice.set(true)
-        clockStarted.countDown()
-    }.onSignal { _, _, signal ->
-        if (signal == Signal.Stopping) clocksRunning.decrementAndGet()
-        stay()
-    }
+private fun clock(on: String) =
+    behaviour<Where, Unit>(Unit) { _, _, where -> stay().also { where.reply.invoke(on) } }
+        .onStart {
+            if (clocksRunning.incrementAndGet() > 1) clocksTwice.set(true)
+            clockStarted.countDown()
+        }
+        .onSignal { _, _, signal ->
+            if (signal == Signal.Stopping) clocksRunning.decrementAndGet()
+            stay()
+        }
 
 private val lively =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
@@ -61,14 +64,15 @@ private class Station(val name: String, port: Int, seeds: Discovery) : AutoClose
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Pair<Cluster, ActorRef<Where>>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val cluster = cluster(node(name, port), seeds, lively)
-            opened.set(cluster to cluster.singleton("clock", whereCodec) { clock(name) })
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val cluster = cluster(node(name, port), seeds, lively)
+                opened.set(cluster to cluster.singleton("clock", whereCodec) { clock(name) })
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     val cluster: Cluster
         get() {
@@ -115,11 +119,12 @@ object SingletonSuite : Suite() {
                 val staying = stations - leaving
                 // An ask already in the clock's mailbox when it stops is a dead letter, as it is when an actor
                 // passivates.
-                val traffic = Thread.ofVirtual().start {
-                    while (!stop.get()) {
-                        val _ = staying.first().where(within = 3.seconds)
+                val traffic =
+                    Thread.ofVirtual().start {
+                        while (!stop.get()) {
+                            val _ = staying.first().where(within = 3.seconds)
+                        }
                     }
-                }
                 leaving.cluster.leave()
                 staying.forAll { station ->
                     station.cluster.await(1.minutes) { view -> view.members.none { it.node.name == oldest } } shouldBe

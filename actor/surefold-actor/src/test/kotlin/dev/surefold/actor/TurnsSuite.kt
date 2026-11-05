@@ -18,29 +18,30 @@ object TurnsSuite : Suite() {
     ) {
         val seen = CopyOnWriteArrayList<List<Int>>()
 
-        fun behaviour(): Behaviour<Int, Unit, Nothing> = Behaviour(
-            initial = Unit,
-            turn = { _, _, n ->
-                seen += listOf(n)
-                // The timer's message holds the actor until the test has told what comes after it.
-                if (n == 0) told.await()
-                stay()
-            },
-            signal = null,
-            start = { ctx, _ ->
-                opened.await()
-                if (armed != null) {
-                    ctx.timers.after("between", Duration.ZERO, 0)
-                    armed.countDown()
-                }
-                stay()
-            },
-            turns = { _, _, run ->
-                seen += run
-                Batched(stay(), emptyList(), emptyList())
-            },
-            batch = batch,
-        )
+        fun behaviour(): Behaviour<Int, Unit, Nothing> =
+            Behaviour(
+                initial = Unit,
+                turn = { _, _, n ->
+                    seen += listOf(n)
+                    // The timer's message holds the actor until the test has told what comes after it.
+                    if (n == 0) told.await()
+                    stay()
+                },
+                signal = null,
+                start = { ctx, _ ->
+                    opened.await()
+                    if (armed != null) {
+                        ctx.timers.after("between", Duration.ZERO, 0)
+                        armed.countDown()
+                    }
+                    stay()
+                },
+                turns = { _, _, run ->
+                    seen += run
+                    Batched(stay(), emptyList(), emptyList())
+                },
+                batch = batch,
+            )
     }
 
     init {
@@ -85,17 +86,18 @@ object TurnsSuite : Suite() {
         test("a behaviour that does not batch still takes one message at a time") {
             val seen = CopyOnWriteArrayList<Int>()
             val opened = CountDownLatch(1)
-            val one = Behaviour<Int, Unit, Nothing>(
-                initial = Unit,
-                turn = { _, _, n ->
-                    seen += n
-                    stay()
-                },
-                start = { _, _ ->
-                    opened.await()
-                    stay()
-                },
-            )
+            val one =
+                Behaviour<Int, Unit, Nothing>(
+                    initial = Unit,
+                    turn = { _, _, n ->
+                        seen += n
+                        stay()
+                    },
+                    start = { _, _ ->
+                        opened.await()
+                        stay()
+                    },
+                )
             scope {
                 val actor = spawn("one", one)
                 (1..3).forEach(actor::tell)
@@ -108,25 +110,25 @@ object TurnsSuite : Suite() {
         test("a behaviour's step, kept under its old name, is its turn") {
             val one = behaviour<Int, Int>(0) { _, total, n -> become(total + n) }
 
-            @Suppress("DEPRECATION")
-            val step = one.step
+            @Suppress("DEPRECATION") val step = one.step
             step shouldBe one.turn
         }
 
         test("what a run leaves unhandled or unrun becomes a dead letter") {
             val letters = CopyOnWriteArrayList<DeadLetter>()
             val opened = CountDownLatch(1)
-            val stopping = Behaviour<Int, Unit, Nothing>(
-                initial = Unit,
-                turn = { _, _, _ -> stay() },
-                signal = null,
-                start = { _, _ ->
-                    opened.await()
-                    stay()
-                },
-                turns = { _, _, run -> Batched(stop(), unhandled = listOf(run[0]), unrun = run.drop(2)) },
-                batch = 64,
-            )
+            val stopping =
+                Behaviour<Int, Unit, Nothing>(
+                    initial = Unit,
+                    turn = { _, _, _ -> stay() },
+                    signal = null,
+                    start = { _, _ ->
+                        opened.await()
+                        stay()
+                    },
+                    turns = { _, _, run -> Batched(stop(), unhandled = listOf(run[0]), unrun = run.drop(2)) },
+                    batch = 64,
+                )
             scope {
                 onDeadLetter(letters::add)
                 val actor = spawn("stopping", stopping)
@@ -134,11 +136,12 @@ object TurnsSuite : Suite() {
                 opened.countDown()
                 watch(actor).await()
             }
-            letters.map { it.message to it.why } shouldBe listOf(
-                1 to DeadLetter.Why.Unhandled,
-                3 to DeadLetter.Why.Stopped,
-                4 to DeadLetter.Why.Stopped,
-            )
+            letters.map { it.message to it.why } shouldBe
+                listOf(
+                    1 to DeadLetter.Why.Unhandled,
+                    3 to DeadLetter.Why.Stopped,
+                    4 to DeadLetter.Why.Stopped,
+                )
         }
     }
 }

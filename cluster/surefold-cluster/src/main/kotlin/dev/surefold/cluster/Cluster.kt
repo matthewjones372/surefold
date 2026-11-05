@@ -52,14 +52,20 @@ internal sealed interface Step {
     data object Admit : Step
 }
 
-private val StepCodec = object : MessageCodec<Step> {
-    override fun write(message: Step, out: WireOut) = when (message) {
-        is Step.Heard -> SwimCodec.write(message.message, out)
-        Step.Tick, Step.Leave, is Step.Subscribe, is Step.Move, Step.Admit -> error("$message never leaves its node")
-    }
+private val StepCodec =
+    object : MessageCodec<Step> {
+        override fun write(message: Step, out: WireOut) =
+            when (message) {
+                is Step.Heard -> SwimCodec.write(message.message, out)
+                Step.Tick,
+                Step.Leave,
+                is Step.Subscribe,
+                is Step.Move,
+                Step.Admit -> error("$message never leaves its node")
+            }
 
-    override fun read(input: WireIn): Step = Step.Heard(SwimCodec.read(input))
-}
+        override fun read(input: WireIn): Step = Step.Heard(SwimCodec.read(input))
+    }
 
 private typealias Subscribers = Set<ActorRef<MemberEvent>>
 
@@ -73,14 +79,14 @@ enum class Ready {
 }
 
 /**
- * [node] as a member of a cluster whose seeds [discovery] finds, until the scope closes, when it leaves first:
- * waiting up to [leaveWithin] to be out, before the scope stops its actors (spec 0080). A [leaveWithin] of zero
- * leaves nothing: the node goes as a crashed one does, and the others down it. [roles] say what this node was
- * started to do, and every member sees them in its view (spec 0083). With [ready] `WhenTold` it stays `Joining` until
- * [Cluster.admit], so nothing is placed on it before what it hosts is open (spec 0129). The membership runs in an
- * actor of its own, which the nodes of the cluster reach at the same path on each, and from now on it decides when
- * a watch on another node's actor ends. A partition is resolved by [downing]; a node downed stops that actor, and its
- * subscribers hear it downed and every other member removed: whether the process ends is theirs to decide.
+ * [node] as a member of a cluster whose seeds [discovery] finds, until the scope closes, when it leaves first: waiting
+ * up to [leaveWithin] to be out, before the scope stops its actors (spec 0080). A [leaveWithin] of zero leaves nothing:
+ * the node goes as a crashed one does, and the others down it. [roles] say what this node was started to do, and every
+ * member sees them in its view (spec 0083). With [ready] `WhenTold` it stays `Joining` until [Cluster.admit], so
+ * nothing is placed on it before what it hosts is open (spec 0129). The membership runs in an actor of its own, which
+ * the nodes of the cluster reach at the same path on each, and from now on it decides when a watch on another node's
+ * actor ends. A partition is resolved by [downing]; a node downed stops that actor, and its subscribers hear it downed
+ * and every other member removed: whether the process ends is theirs to decide.
  */
 fun <F> Scope<F>.cluster(
     node: RemoteNode,
@@ -95,34 +101,37 @@ fun <F> Scope<F>.cluster(
     val time = clock.get()
     val now = { time.now().let { it.epochSecond.seconds + it.nano.nanoseconds } }
     val uid = Random.nextLong()
-    val membership = Membership(
-        Incarnation(node.self, uid, roles),
-        discovery::seeds,
-        gossiping,
-        downing,
-        Random.Default,
-        now(),
-        ready = ready == Ready.AtOnce,
-    )
+    val membership =
+        Membership(
+            Incarnation(node.self, uid, roles),
+            discovery::seeds,
+            gossiping,
+            downing,
+            Random.Default,
+            now(),
+            ready = ready == Ready.AtOnce,
+        )
     val cluster = Cluster(node.self, node, this, leaveWithin, uid)
     val steps = Steps(node, membership, cluster, node.takeOverWatches(), now)
-    val ref = spawn(
-        CLUSTER,
-        behaviour<Step, Subscribers>(emptySet()) { ctx, subscribers, step -> steps.step(ctx, subscribers, step) }
-            .onStart { ctx -> ctx.timers.every(Step.Tick, gossiping.ackWithin / 2, Step.Tick) }
-            .onSignal { ctx, subscribers, signal ->
-                when (signal) {
-                    is Signal.Terminated -> {
-                        steps.gone(ctx, signal.ref)
-                        become(subscribers.filterTo(mutableSetOf()) { it != signal.ref })
-                    }
+    val ref =
+        spawn(
+            CLUSTER,
+            behaviour<Step, Subscribers>(emptySet()) { ctx, subscribers, step -> steps.step(ctx, subscribers, step) }
+                .onStart { ctx -> ctx.timers.every(Step.Tick, gossiping.ackWithin / 2, Step.Tick) }
+                .onSignal { ctx, subscribers, signal ->
+                    when (signal) {
+                        is Signal.Terminated -> {
+                            steps.gone(ctx, signal.ref)
+                            become(subscribers.filterTo(mutableSetOf()) { it != signal.ref })
+                        }
 
-                    Signal.Stopping -> stay()
-                }
-            },
-        // Run ahead of the node's entities (spec 0104), so a probe is not acked late because thousands of them wait.
-        urgent = true,
-    )
+                        Signal.Stopping -> stay()
+                    }
+                },
+            // Run ahead of the node's entities (spec 0104), so a probe is not acked late because thousands of them
+            // wait.
+            urgent = true,
+        )
     // Membership on the control lane (spec 0104): a probe or its ack never waits behind, or is dropped with, the data.
     node.expose(ref, StepCodec, Lane.Control)
     cluster.actor = ref
@@ -145,8 +154,7 @@ private class Steps(
 ) {
     // What a subscriber too busy to take it is owed, in order: the cluster actor never waits on a subscriber, and a
     // tell from its step to a full mailbox would throw and stop it (spec 0101).
-    @OptIn(PlumbingSeam::class)
-    private val owed = HandOn<ActorRef<MemberEvent>, MemberEvent>()
+    @OptIn(PlumbingSeam::class) private val owed = HandOn<ActorRef<MemberEvent>, MemberEvent>()
 
     fun step(ctx: Ctx<Step>, subscribers: Subscribers, step: Step): Next<Subscribers> {
         // Downed, the actor only hands on what its subscribers are owed, the downing among it, and then stops.
@@ -182,26 +190,27 @@ private class Steps(
         owed.tell(ctx, subscriber, subscriber, event)
     }
 
-    @OptIn(PlumbingSeam::class)
-    private fun hand(ctx: Ctx<Step>) = owed.drain(ctx)
+    @OptIn(PlumbingSeam::class) private fun hand(ctx: Ctx<Step>) = owed.drain(ctx)
 
     private fun handedOn(ctx: Ctx<Step>): Next<Subscribers> = if (hand(ctx)) stay() else stop()
 
     /** A subscriber that stopped is owed nothing more. */
     @OptIn(PlumbingSeam::class)
     fun gone(ctx: Ctx<Step>, subscriber: ActorRef<*>) {
-        @Suppress("UNCHECKED_CAST")
-        owed.forget(ctx, subscriber as ActorRef<MemberEvent>)
+        @Suppress("UNCHECKED_CAST") owed.forget(ctx, subscriber as ActorRef<MemberEvent>)
     }
 
-    private fun report() = cluster.meters.forEach { meter ->
-        meter.due(now())?.let { membership.report(meter.kind, it) }
-    }
+    private fun report() =
+        cluster.meters.forEach { meter ->
+            meter.due(now())?.let { membership.report(meter.kind, it) }
+        }
 
     private val balancer = Balancer()
 
-    private fun rebalance() = balancer.moves(now(), cluster.meters, cluster.view, node.self, cluster.balance)
-        .forEach { (kind, moves) -> if (moves.isNotEmpty()) membership.move(kind, moves) }
+    private fun rebalance() =
+        balancer.moves(now(), cluster.meters, cluster.view, node.self, cluster.balance).forEach { (kind, moves) ->
+            if (moves.isNotEmpty()) membership.move(kind, moves)
+        }
 
     private fun send(sends: List<Send>) = sends.forEach { (to, message) ->
         node.remote(Address(to.toString(), "/user/$CLUSTER", 0), StepCodec).tell(Step.Heard(message))
@@ -226,15 +235,16 @@ private class Steps(
 
     /**
      * Watches end with the life they were made on (spec 0097). A later life seen at an address ends the watches held
-     * there, since nothing could have watched its actors before it was known; removing an earlier life then ends
-     * none, since by that time they may be on the later life's actors.
+     * there, since nothing could have watched its actors before it was known; removing an earlier life then ends none,
+     * since by that time they may be on the later life's actors.
      */
     private fun endWatches(before: View, next: View, events: List<MemberEvent>) {
         fun Member.lifeIn(view: View) = view.members.any { it.node == node && it.uid == uid }
         fun Member.laterIn(view: View) = view.members.any { it.node == node && it.uid != uid && it.status.isLive }
-        val replaced = next.members.filter { member ->
-            member.node != node.self && !member.lifeIn(before) && before.members.any { it.node == member.node }
-        }
+        val replaced =
+            next.members.filter { member ->
+                member.node != node.self && !member.lifeIn(before) && before.members.any { it.node == member.node }
+            }
         val removed = events.filterIsInstance<MemberEvent.Removed>().map { it.member }.filterNot { it.laterIn(next) }
         (replaced + removed).map { it.node }.distinct().forEach(endWatches)
     }
@@ -254,10 +264,11 @@ private class Steps(
 }
 
 /**
- * One node's membership of a cluster: the view it has now, and a way to leave. A node that restarts at the same
- * address is a new life of it, with a new [uid]: [isSelf] tells this life from an earlier one (spec 0097).
+ * One node's membership of a cluster: the view it has now, and a way to leave. A node that restarts at the same address
+ * is a new life of it, with a new [uid]: [isSelf] tells this life from an earlier one (spec 0097).
  */
-class Cluster internal constructor(
+class Cluster
+internal constructor(
     val self: Node,
     internal val remote: RemoteNode,
     internal val scope: Scope<*>,
@@ -294,12 +305,13 @@ class Cluster internal constructor(
     internal val producers: Producers? by lazy { if (keepsJournal()) Producers(this) else null }
 
     // The scope's journal is set before its cluster's first sharding, or its durable producers could not start.
-    private fun keepsJournal(): Boolean = try {
-        scope.journal()
-        true
-    } catch (_: IllegalStateException) {
-        false
-    }
+    private fun keepsJournal(): Boolean =
+        try {
+            scope.journal()
+            true
+        } catch (_: IllegalStateException) {
+            false
+        }
 
     /**
      * Whether [member] is this life of this node, not an earlier one at the same address: an earlier life's `Downed`
@@ -308,7 +320,8 @@ class Cluster internal constructor(
     fun isSelf(member: Member): Boolean = member.node == self && member.uid == uid
 
     /** This life: what a durable producer's id carries, so each life of a node keeps its own (spec 0099). */
-    internal val life: Life get() = Life(self, uid)
+    internal val life: Life
+        get() = Life(self, uid)
 
     /** The load of the kinds that rebalance, as of [view]: published with it, and waited on as it is. */
     @Volatile
@@ -392,8 +405,8 @@ internal fun View.outFor(self: Node, uid: Long? = null): Boolean =
         members.none { it.node != self && it.status == Status.Up }
 
 /**
- * This view as [self] measures it: all of it, or, once [self] has downed itself, [self] alone, since every other
- * member is gone as far as it is concerned, and it has no leader and nothing it could reach.
+ * This view as [self] measures it: all of it, or, once [self] has downed itself, [self] alone, since every other member
+ * is gone as far as it is concerned, and it has no leader and nothing it could reach.
  */
 internal fun View.measuredBy(self: Node, downed: Boolean): View =
     if (downed) View(members.filter { it.node == self }, emptySet(), null) else this

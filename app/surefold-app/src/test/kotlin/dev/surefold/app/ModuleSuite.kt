@@ -6,10 +6,15 @@ import dev.surefold.junit.shouldContain
 import dev.surefold.junit.withClue
 
 private class Knob
+
 private class Pool
+
 private class Repo
+
 private class Cache
+
 private class Metrics
+
 private class Server
 
 object ModuleSuite : Suite() {
@@ -33,12 +38,13 @@ object ModuleSuite : Suite() {
         }
 
         test("a recipe declares up to five dependencies as parameters") {
-            val module = single<Knob> { Knob() } +
-                single { _: Knob -> Pool() } +
-                single { _: Knob, _: Pool -> Repo() } +
-                single { _: Knob, _: Pool, _: Repo -> Cache() } +
-                single { _: Knob, _: Pool, _: Repo, _: Cache -> Metrics() } +
-                single { _: Knob, _: Pool, _: Repo, _: Cache, _: Metrics -> Server() }
+            val module =
+                single<Knob> { Knob() } +
+                    single { _: Knob -> Pool() } +
+                    single { _: Knob, _: Pool -> Repo() } +
+                    single { _: Knob, _: Pool, _: Repo -> Cache() } +
+                    single { _: Knob, _: Pool, _: Repo, _: Cache -> Metrics() } +
+                    single { _: Knob, _: Pool, _: Repo, _: Cache, _: Metrics -> Server() }
 
             val rendered = module.render()
 

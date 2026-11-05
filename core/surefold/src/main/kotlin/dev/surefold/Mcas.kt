@@ -25,7 +25,11 @@ internal fun swapAll(changes: List<Change<*>>): Boolean {
 
 private val ids = AtomicLong()
 
-private enum class Status { UNDECIDED, SUCCEEDED, FAILED }
+private enum class Status {
+    UNDECIDED,
+    SUCCEEDED,
+    FAILED,
+}
 
 // A word under an undecided or failed swap reads as before, and under one that succeeded as after.
 internal class Installed<T>(private val before: T, private val after: T, val swap: Swap) {

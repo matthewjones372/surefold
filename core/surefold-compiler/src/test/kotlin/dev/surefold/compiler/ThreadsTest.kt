@@ -5,7 +5,8 @@ import dev.surefold.assert.withClue
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.junit.jupiter.api.Test
 
-private const val IMPORTS = """
+private const val IMPORTS =
+    """
 import dev.surefold.fail.attempt
 import dev.surefold.scope
 """
@@ -15,8 +16,9 @@ class ThreadsTest {
 
     @Test
     fun `awaiting another fork's Deferred inside an async block is an error`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             $IMPORTS
             fun load(): Int = scope {
                 val a = async { 1 }
@@ -24,7 +26,7 @@ class ThreadsTest {
                 b.await()
             }
             """,
-        )
+            )
 
         compiled.exit shouldBe ExitCode.COMPILATION_ERROR
         withClue(compiled.messages.joinToString("\n")) {
@@ -34,8 +36,9 @@ class ThreadsTest {
 
     @Test
     fun `cancelling one from a nested async block is an error too, reported once`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             $IMPORTS
             fun load(): Int = scope {
                 val a = async { 1 }
@@ -43,7 +46,7 @@ class ThreadsTest {
                 0
             }
             """,
-        )
+            )
 
         withClue(compiled.messages.joinToString("\n")) {
             compiled.surefold.single().contains("cancel on a") shouldBe true
@@ -52,8 +55,9 @@ class ThreadsTest {
 
     @Test
     fun `awaiting in the scope's own block, or a Deferred the async block opened, compiles`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             $IMPORTS
             fun load(): Int = scope {
                 val a = async { 1 }
@@ -64,21 +68,22 @@ class ThreadsTest {
                 a.await() + b.await()
             }
             """,
-        )
+            )
 
         withClue(compiled.messages.joinToString("\n")) { compiled.exit shouldBe ExitCode.OK }
     }
 
     @Test
     fun `failing an outer attempt by label from inside an async block is an error`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             $IMPORTS
             fun load() = attempt<String, Int> outer@{
                 scope { async { this@outer.fail("gone") }.await() }
             }
             """,
-        )
+            )
 
         compiled.exit shouldBe ExitCode.COMPILATION_ERROR
         withClue(compiled.messages.joinToString("\n")) {
@@ -88,8 +93,9 @@ class ThreadsTest {
 
     @Test
     fun `failing through the async block's own scope compiles`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             $IMPORTS
             fun load() = attempt<String, Int> {
                 scope { async { fail("gone") }.await() }
@@ -98,7 +104,7 @@ class ThreadsTest {
                 scope { async inner@{ this@inner.fail("gone") }.await() }
             }
             """,
-        )
+            )
 
         withClue(compiled.messages.joinToString("\n")) { compiled.exit shouldBe ExitCode.OK }
     }

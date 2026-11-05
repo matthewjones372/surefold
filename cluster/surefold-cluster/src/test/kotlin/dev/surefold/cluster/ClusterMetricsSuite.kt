@@ -24,16 +24,17 @@ private class MeasuredNode(val name: String, port: Int, seeds: Discovery) : Auto
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val joined = AtomicReference<Cluster>()
-    private val thread = Thread.ofPlatform().start {
-        metrics.locally(measured) {
-            scope {
-                val downing = Downing.keepMajority(2.seconds)
-                joined.set(cluster(node(name, port), seeds, brisk, downing, leaveWithin = Duration.ZERO))
-                ready.countDown()
-                done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            metrics.locally(measured) {
+                scope {
+                    val downing = Downing.keepMajority(2.seconds)
+                    joined.set(cluster(node(name, port), seeds, brisk, downing, leaveWithin = Duration.ZERO))
+                    ready.countDown()
+                    done.await()
+                }
             }
         }
-    }
 
     val cluster: Cluster
         get() {
@@ -48,8 +49,9 @@ private class MeasuredNode(val name: String, port: Int, seeds: Discovery) : Auto
 }
 
 /** How many of [nodes] gauge themselves the leader. */
-private fun leaders(nodes: List<MeasuredNode>) =
-    nodes.sumOf { n -> n.measured.gauge("surefold.cluster.leader", "node" to n.name)!! }
+private fun leaders(nodes: List<MeasuredNode>) = nodes.sumOf { n ->
+    n.measured.gauge("surefold.cluster.leader", "node" to n.name)!!
+}
 
 object ClusterMetricsSuite : Suite() {
     init {

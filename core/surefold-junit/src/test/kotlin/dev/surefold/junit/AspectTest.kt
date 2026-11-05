@@ -1,9 +1,9 @@
 package dev.surefold.junit
 
 import dev.surefold.assert.shouldBe
+import java.util.concurrent.CopyOnWriteArrayList
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.TestTag
-import java.util.concurrent.CopyOnWriteArrayList
 
 class AspectTest {
 

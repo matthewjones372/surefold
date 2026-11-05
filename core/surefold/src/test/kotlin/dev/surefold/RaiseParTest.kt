@@ -57,8 +57,18 @@ class RaiseParTest {
             a + b + c + d + e + f + g + h
         } shouldBe "abcdefgh"
         parZip(
-            { "a" }, { "b" }, { "c" }, { "d" }, { "e" }, { "f" }, { "g" }, { "h" }, { "i" },
-        ) { a, b, c, d, e, f, g, h, i -> a + b + c + d + e + f + g + h + i } shouldBe "abcdefghi"
+            { "a" },
+            { "b" },
+            { "c" },
+            { "d" },
+            { "e" },
+            { "f" },
+            { "g" },
+            { "h" },
+            { "i" },
+        ) { a, b, c, d, e, f, g, h, i ->
+            a + b + c + d + e + f + g + h + i
+        } shouldBe "abcdefghi"
     }
 
     @Test
@@ -66,15 +76,18 @@ class RaiseParTest {
         val boom = Boom()
         val sleeper = Sleeper()
 
-        val thrown = shouldThrow<Boom> {
-            parZip(
-                { sleeper.body() },
-                {
-                    sleeper.awaitStart()
-                    throw boom
-                },
-            ) { _, _ -> 0 }
-        }
+        val thrown =
+            shouldThrow<Boom> {
+                parZip(
+                    { sleeper.body() },
+                    {
+                        sleeper.awaitStart()
+                        throw boom
+                    },
+                ) { _, _ ->
+                    0
+                }
+            }
 
         thrown shouldBeSameInstanceAs boom
         sleeper.wasInterrupted() shouldBe true
@@ -90,13 +103,14 @@ class RaiseParTest {
     fun `the loser of a top-level race observes an interrupt`() {
         val loser = Sleeper()
 
-        val raced = raceN(
-            { loser.losingWith("lost") },
-            {
-                loser.awaitStart()
-                42
-            },
-        )
+        val raced =
+            raceN(
+                { loser.losingWith("lost") },
+                {
+                    loser.awaitStart()
+                    42
+                },
+            )
 
         raced shouldBe 42.right()
         loser.wasInterrupted() shouldBe true
@@ -108,15 +122,16 @@ class RaiseParTest {
         val second = Sleeper()
         val third = Sleeper()
 
-        val raced = raceN(
-            {
-                second.awaitStart()
-                third.awaitStart()
-                "won"
-            },
-            { second.losingWith(0) },
-            { third.losingWith(false) },
-        )
+        val raced =
+            raceN(
+                {
+                    second.awaitStart()
+                    third.awaitStart()
+                    "won"
+                },
+                { second.losingWith(0) },
+                { third.losingWith(false) },
+            )
 
         raced shouldBe "won".left()
         second.wasInterrupted() shouldBe true
@@ -125,19 +140,21 @@ class RaiseParTest {
 
     @Test
     fun `scope inside attempt forks with async, and a fail surfaces at await as the Left`() {
-        val summed = attempt<Bad, Int> {
-            scope {
-                val first = async { 20 }
-                val second = async { 22 }
-                first.await() + second.await()
+        val summed =
+            attempt<Bad, Int> {
+                scope {
+                    val first = async { 20 }
+                    val second = async { 22 }
+                    first.await() + second.await()
+                }
             }
-        }
 
         summed shouldBeRight 42
 
-        val failed = attempt<Bad, Int> {
-            scope { async<Int> { fail(Bad("forked")) }.await() }
-        }
+        val failed =
+            attempt<Bad, Int> {
+                scope { async<Int> { fail(Bad("forked")) }.await() }
+            }
 
         failed shouldBeLeft Bad("forked")
     }

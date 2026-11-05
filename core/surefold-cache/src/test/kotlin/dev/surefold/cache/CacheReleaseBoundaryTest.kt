@@ -16,14 +16,14 @@ import dev.surefold.fail.Either
 import dev.surefold.metrics
 import dev.surefold.surefoldFuture
 import dev.surefold.test.eventually
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
 import java.time.Instant
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 
 @Timeout(30)
 class CacheReleaseBoundaryTest {
@@ -44,20 +44,21 @@ class CacheReleaseBoundaryTest {
         val selfAttempt = Promise<Nothing, CompletableFuture<IllegalStateException>>()
         val first = Shared(true)
         val cache = Cache<String, Nothing, Int>({ 1.minutes }) { Either.Right(1) }
-        val instrumented = ReleaseMetrics("promise") {
-            if (first.modify { false to it }) {
-                worker.succeed(Thread.currentThread())
-                attempt.releaseAwait()
-                selfAttempt.succeed(surefoldFuture { shouldThrow<IllegalStateException> { cache.closeAndJoin() } })
-                entered.succeed(Unit)
-                try {
-                    finish.awaitValue()
-                } catch (_: InterruptedException) {
-                    interrupted.succeed(Unit)
-                    finish.releaseAwait()
+        val instrumented =
+            ReleaseMetrics("promise") {
+                if (first.modify { false to it }) {
+                    worker.succeed(Thread.currentThread())
+                    attempt.releaseAwait()
+                    selfAttempt.succeed(surefoldFuture { shouldThrow<IllegalStateException> { cache.closeAndJoin() } })
+                    entered.succeed(Unit)
+                    try {
+                        finish.awaitValue()
+                    } catch (_: InterruptedException) {
+                        interrupted.succeed(Unit)
+                        finish.releaseAwait()
+                    }
                 }
             }
-        }
         metrics.locally(instrumented) { cache.refresh("a") }
         attempt.succeed(Unit)
         try {
@@ -86,15 +87,23 @@ class CacheReleaseBoundaryTest {
         val accepted = Promise<Nothing, Unit>()
         val finish = Promise<Nothing, Unit>()
         val calls = Shared(0)
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }) { calls.update { count -> count + 1 }; Either.Right(1) }
-        val instrumented = ReleaseMetrics("surefold.cache.backgrounds") {
-            accepted.succeed(Unit)
-            finish.releaseAwait()
-        }
+        val cache =
+            Cache<String, Nothing, Int>({ 1.minutes }) {
+                calls.update { count -> count + 1 }
+                Either.Right(1)
+            }
+        val instrumented =
+            ReleaseMetrics("surefold.cache.backgrounds") {
+                accepted.succeed(Unit)
+                finish.releaseAwait()
+            }
         val submitting = metrics.locally(instrumented) { surefoldFuture { cache.refresh("a") } }
         accepted.awaitValue(3.seconds) shouldBe Unit
         val closer = Promise<Nothing, Thread>()
-        val close = surefoldFuture { closer.succeed(Thread.currentThread()); cache.closeAndJoin() }
+        val close = surefoldFuture {
+            closer.succeed(Thread.currentThread())
+            cache.closeAndJoin()
+        }
         try {
             eventually(3.seconds) { closer.awaitValue().state shouldBe Thread.State.WAITING }
             close.isDone shouldBe false
@@ -114,23 +123,25 @@ class CacheReleaseBoundaryTest {
         val refused = Promise<Nothing, Unit>()
         val finishWorker = Promise<Nothing, Unit>()
         val afterWorker = Promise<Nothing, Unit>()
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }) {
-            worker.succeed(Thread.currentThread())
-            Either.Right(1)
-        }
-        val instrumented = ReleaseMetrics("surefold.cache") {
-            if (Thread.currentThread() === worker.awaitValue()) {
-                child.succeed(
-                    surefoldFuture {
-                        shouldThrow<IllegalStateException> { cache.closeAndJoin() }
-                        refused.succeed(Unit)
-                        afterWorker.awaitValue()
-                        cache.closeAndJoin()
-                    },
-                )
-                finishWorker.releaseAwait()
+        val cache =
+            Cache<String, Nothing, Int>({ 1.minutes }) {
+                worker.succeed(Thread.currentThread())
+                Either.Right(1)
             }
-        }
+        val instrumented =
+            ReleaseMetrics("surefold.cache") {
+                if (Thread.currentThread() === worker.awaitValue()) {
+                    child.succeed(
+                        surefoldFuture {
+                            shouldThrow<IllegalStateException> { cache.closeAndJoin() }
+                            refused.succeed(Unit)
+                            afterWorker.awaitValue()
+                            cache.closeAndJoin()
+                        },
+                    )
+                    finishWorker.releaseAwait()
+                }
+            }
         val get = metrics.locally(instrumented) { surefoldFuture { cache.get("a") } }
         try {
             refused.awaitValue(3.seconds) shouldBe Unit
@@ -156,23 +167,24 @@ class CacheReleaseBoundaryTest {
         val tryChild = Promise<Nothing, Unit>()
         val child = Promise<Nothing, CompletableFuture<Unit>>()
         lateinit var cache: Cache<String, Nothing, Int>
-        cache = Cache({ 1.minutes }) { key ->
-            if (key == "outer") {
-                cache.get("inner")
-                outerReady.succeed(Unit)
-                finishOuter.releaseAwait()
-            } else {
-                inner.succeed(Thread.currentThread())
-                child.succeed(
-                    surefoldFuture {
-                        tryChild.awaitValue()
-                        shouldThrow<IllegalStateException> { cache.closeAndJoin() }
-                        Unit
-                    },
-                )
+        cache =
+            Cache({ 1.minutes }) { key ->
+                if (key == "outer") {
+                    cache.get("inner")
+                    outerReady.succeed(Unit)
+                    finishOuter.releaseAwait()
+                } else {
+                    inner.succeed(Thread.currentThread())
+                    child.succeed(
+                        surefoldFuture {
+                            tryChild.awaitValue()
+                            shouldThrow<IllegalStateException> { cache.closeAndJoin() }
+                            Unit
+                        },
+                    )
+                }
+                Either.Right(1)
             }
-            Either.Right(1)
-        }
         val get = surefoldFuture { cache.get("outer") }
         try {
             outerReady.awaitValue(3.seconds) shouldBe Unit
@@ -194,9 +206,20 @@ class CacheReleaseBoundaryTest {
         val outside = Promise<Nothing, Unit>()
         val finishCaller = Promise<Nothing, Unit>()
         lateinit var cache: Cache<String, Nothing, Int>
-        cache = Cache({ 1.minutes }, onEvict = { _, _ ->
-            child.succeed(surefoldFuture { tryChild.awaitValue(); cache.closeAndJoin() })
-        }) { Either.Right(1) }
+        cache =
+            Cache(
+                { 1.minutes },
+                onEvict = { _, _ ->
+                    child.succeed(
+                        surefoldFuture {
+                            tryChild.awaitValue()
+                            cache.closeAndJoin()
+                        },
+                    )
+                },
+            ) {
+                Either.Right(1)
+            }
         cache.get("a")
         val caller = surefoldFuture {
             cache.invalidate(Invalidation.All)
@@ -225,25 +248,29 @@ class CacheReleaseBoundaryTest {
         val finishCaller = Promise<Nothing, Unit>()
         val lateInterrupt = Shared(false)
         lateinit var cache: Cache<String, Nothing, Int>
-        cache = Cache({ 1.minutes }, onEvict = { key, _ ->
-            if (key == "a") {
-                try {
-                    cache.get("b")
-                } finally {
-                    callbackEnded.succeed(Unit)
+        cache =
+            Cache(
+                { 1.minutes },
+                onEvict = { key, _ ->
+                    if (key == "a") {
+                        try {
+                            cache.get("b")
+                        } finally {
+                            callbackEnded.succeed(Unit)
+                        }
+                    }
+                },
+            ) { key ->
+                if (key == "b") {
+                    sourceEntered.succeed(Unit)
+                    try {
+                        sourceRescue.awaitValue()
+                    } finally {
+                        callbackEnded.releaseAwait()
+                    }
                 }
+                Either.Right(1)
             }
-        }) { key ->
-            if (key == "b") {
-                sourceEntered.succeed(Unit)
-                try {
-                    sourceRescue.awaitValue()
-                } finally {
-                    callbackEnded.releaseAwait()
-                }
-            }
-            Either.Right(1)
-        }
         cache.get("a")
         val caller = surefoldFuture {
             shouldThrow<InterruptedException> { cache.invalidate(Invalidation.All) }
@@ -279,23 +306,25 @@ class CacheReleaseBoundaryTest {
         val readRescue = Promise<Nothing, Unit>()
         val fallbackRescue = Promise<Nothing, Unit>()
         val calls = Shared(0)
-        val layer = object : AwaitedLayer() {
-            override fun read(key: String): Stored<Int>? {
-                entered.succeed(Thread.currentThread())
-                try {
-                    readRescue.awaitValue()
-                } catch (stop: InterruptedException) {
-                    cancelled.succeed(Unit)
-                    throw stop
+        val layer =
+            object : AwaitedLayer() {
+                override fun read(key: String): Stored<Int>? {
+                    entered.succeed(Thread.currentThread())
+                    try {
+                        readRescue.awaitValue()
+                    } catch (stop: InterruptedException) {
+                        cancelled.succeed(Unit)
+                        throw stop
+                    }
+                    return null
                 }
-                return null
             }
-        }
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) {
-            calls.update { count -> count + 1 }
-            fallbackRescue.awaitValue()
-            Either.Right(1)
-        }
+        val cache =
+            Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) {
+                calls.update { count -> count + 1 }
+                fallbackRescue.awaitValue()
+                Either.Right(1)
+            }
         val get = surefoldFuture { shouldThrow<InterruptedException> { cache.get("a") } }
         entered.awaitValue(3.seconds)?.isAlive shouldBe true
         val close = surefoldFuture { cache.closeAndJoin() }
@@ -315,9 +344,10 @@ class CacheReleaseBoundaryTest {
 
     @Test
     fun `an interrupted layer while open remains a miss with ordinary fallback behavior`() {
-        val layer = object : AwaitedLayer() {
-            override fun read(key: String): Stored<Int>? = throw InterruptedException("layer failed")
-        }
+        val layer =
+            object : AwaitedLayer() {
+                override fun read(key: String): Stored<Int>? = throw InterruptedException("layer failed")
+            }
         val cache = Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) { Either.Right(1) }
         try {
             cache.get("a") shouldBe Either.Right(1)
@@ -335,28 +365,39 @@ class CacheReleaseBoundaryTest {
             val finish = Promise<Nothing, Unit>()
             val sourceRescue = Promise<Nothing, Unit>()
             val calls = Shared(0)
-            val moving = object : Clock {
-                override fun now(): Instant = Instant.EPOCH
-                override fun sleep(duration: Duration) {
-                    if (inClock) { entered.succeed(Unit); finish.releaseAwait() }
+            val moving =
+                object : Clock {
+                    override fun now(): Instant = Instant.EPOCH
+
+                    override fun sleep(duration: Duration) {
+                        if (inClock) {
+                            entered.succeed(Unit)
+                            finish.releaseAwait()
+                        }
+                    }
                 }
-            }
-            val retry = Schedule<String, Unit> {
-                if (!inClock) { entered.succeed(Unit); finish.releaseAwait() }
-                Schedule.Decision.Continue(Unit, Duration.ZERO) { Schedule.Decision.Done(Unit) }
-            }
-            val cache = clock.locally(moving) {
-                Cache<String, String, Int>({ 1.minutes }, retry = retry) {
-                    if (calls.modify { count -> count + 1 to count } > 0) sourceRescue.awaitValue()
-                    Either.Left("busy")
+            val retry =
+                Schedule<String, Unit> {
+                    if (!inClock) {
+                        entered.succeed(Unit)
+                        finish.releaseAwait()
+                    }
+                    Schedule.Decision.Continue(Unit, Duration.ZERO) { Schedule.Decision.Done(Unit) }
                 }
-            }
+            val cache =
+                clock.locally(moving) {
+                    Cache<String, String, Int>({ 1.minutes }, retry = retry) {
+                        if (calls.modify { count -> count + 1 to count } > 0) sourceRescue.awaitValue()
+                        Either.Left("busy")
+                    }
+                }
             val get = surefoldFuture { shouldThrow<InterruptedException> { cache.get("a") } }
             entered.awaitValue(3.seconds) shouldBe Unit
             val closing = Promise<Nothing, Unit>()
-            val close = metrics.locally(ReleaseMetrics("surefold.cache.backgrounds") { closing.succeed(Unit) }) {
-                surefoldFuture { cache.closeAndJoin() }
-            }
+            val close =
+                metrics.locally(ReleaseMetrics("surefold.cache.backgrounds") { closing.succeed(Unit) }) {
+                    surefoldFuture { cache.closeAndJoin() }
+                }
             try {
                 closing.awaitValue(3.seconds) shouldBe Unit
                 finish.succeed(Unit)
@@ -378,14 +419,20 @@ class CacheReleaseBoundaryTest {
         val entered = Promise<Nothing, Thread>()
         val rescue = Promise<Nothing, Unit>()
         val callbacks = Shared(emptyList<String>())
-        val cache = Cache<String, Nothing, Int>({ Duration.INFINITE }, onEvict = { key, _ ->
-            callbacks.update { it + key }
-            if (key == "a") throw defect
-            if (key == "b") {
-                entered.succeed(Thread.currentThread())
-                rescue.awaitValue()
+        val cache =
+            Cache<String, Nothing, Int>(
+                { Duration.INFINITE },
+                onEvict = { key, _ ->
+                    callbacks.update { it + key }
+                    if (key == "a") throw defect
+                    if (key == "b") {
+                        entered.succeed(Thread.currentThread())
+                        rescue.awaitValue()
+                    }
+                },
+            ) {
+                Either.Right(1)
             }
-        }) { Either.Right(1) }
         listOf("a", "b", "c").forEach { cache.get(it) }
         val close = surefoldFuture {
             val thrown = shouldThrow<IllegalArgumentException> { cache.closeAndJoin() }
@@ -426,9 +473,10 @@ class CacheReleaseBoundaryTest {
         listOf(false, true).forEach { histogram ->
             val defect = IllegalStateException("metric failed")
             val cleaned = Shared(0)
-            val cache = Cache<String, Nothing, Int>({ 1.minutes }, onEvict = { _, _ -> cleaned.update { it + 1 } }) {
-                Either.Right(1)
-            }
+            val cache =
+                Cache<String, Nothing, Int>({ 1.minutes }, onEvict = { _, _ -> cleaned.update { it + 1 } }) {
+                    Either.Right(1)
+                }
             cache.get("a")
             val instrumented = ReleaseMetrics("surefold.cache.backgrounds", histogram) { throw defect }
             metrics.locally(instrumented) {
@@ -451,9 +499,11 @@ private class ReleaseMetrics(
     private fun run(tags: Map<String, String>) {
         if (tags["transact"] == transaction) metrics.locally(NoMetrics, action)
     }
+
     override fun counter(name: String, tags: Map<String, String>): Counter = Counter {
         if (!histogram && name == "surefold.transact.runs") run(tags)
     }
+
     override fun histogram(name: String, tags: Map<String, String>): Histogram = Histogram {
         if (histogram && name == "surefold.transact.attempts") run(tags)
     }
@@ -464,23 +514,26 @@ private fun terminalSelfClose(histogram: Boolean, fails: Boolean) {
     val entered = Promise<Nothing, Unit>()
     val finish = Promise<Nothing, Unit>()
     val defect = IllegalArgumentException("lookup failed")
-    val cache = Cache<String, Nothing, Int>({ 1.minutes }) { key ->
-        if (key == "a") {
-            worker.succeed(Thread.currentThread())
-            if (fails) throw defect
+    val cache =
+        Cache<String, Nothing, Int>({ 1.minutes }) { key ->
+            if (key == "a") {
+                worker.succeed(Thread.currentThread())
+                if (fails) throw defect
+            }
+            Either.Right(1)
         }
-        Either.Right(1)
-    }
-    val instrumented = ReleaseMetrics("surefold.cache", histogram) {
-        if (Thread.currentThread() === worker.awaitValue()) {
-            shouldThrow<IllegalStateException> { cache.closeAndJoin() }
-            entered.succeed(Unit)
-            finish.releaseAwait()
+    val instrumented =
+        ReleaseMetrics("surefold.cache", histogram) {
+            if (Thread.currentThread() === worker.awaitValue()) {
+                shouldThrow<IllegalStateException> { cache.closeAndJoin() }
+                entered.succeed(Unit)
+                finish.releaseAwait()
+            }
         }
-    }
-    val get = metrics.locally(instrumented) {
-        surefoldFuture { if (fails) shouldThrow<IllegalArgumentException> { cache.get("a") } else cache.get("a") }
-    }
+    val get =
+        metrics.locally(instrumented) {
+            surefoldFuture { if (fails) shouldThrow<IllegalArgumentException> { cache.get("a") } else cache.get("a") }
+        }
     try {
         entered.awaitValue(3.seconds) shouldBe Unit
         cache.get("b") shouldBe Either.Right(1)
@@ -501,8 +554,11 @@ private fun terminalSelfClose(histogram: Boolean, fails: Boolean) {
 
 private open class AwaitedLayer : Layer<String, Int> {
     override fun read(key: String): Stored<Int>? = null
+
     override fun write(key: String, stored: Stored<Int>) = Unit
+
     override fun remove(key: String) = Unit
+
     override fun clear() = Unit
 }
 

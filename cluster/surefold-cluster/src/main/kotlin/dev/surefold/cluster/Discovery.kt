@@ -8,9 +8,9 @@ import javax.naming.NamingException
 import javax.naming.directory.InitialDirContext
 
 /**
- * Where a node finds the others to join through: seed nodes, and nothing more. Which nodes are members is the
- * cluster's to agree; a seed is only somewhere to ask. A seed found by host and port alone has an empty name, and is
- * whichever node answers there.
+ * Where a node finds the others to join through: seed nodes, and nothing more. Which nodes are members is the cluster's
+ * to agree; a seed is only somewhere to ask. A seed found by host and port alone has an empty name, and is whichever
+ * node answers there.
  */
 fun interface Discovery {
     fun seeds(): List<Node>
@@ -38,8 +38,9 @@ fun interface Discovery {
          * instance, as Cloud Map's SRV records and a Kubernetes named port give it.
          */
         fun srv(name: String, resolver: Resolver = Resolver.Jdk): Discovery = Discovery {
-            resolver.services(name).sortedWith(compareBy({ it.priority }, { -it.weight }))
-                .map { Node("", it.target.removeSuffix("."), it.port) }
+            resolver.services(name).sortedWith(compareBy({ it.priority }, { -it.weight })).map {
+                Node("", it.target.removeSuffix("."), it.port)
+            }
         }
     }
 }
@@ -64,9 +65,10 @@ interface Resolver {
 
         override fun services(name: String): List<Service> =
             try {
-                val environment = Hashtable<String, String>().apply {
-                    put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory")
-                }
+                val environment =
+                    Hashtable<String, String>().apply {
+                        put("java.naming.factory.initial", "com.sun.jndi.dns.DnsContextFactory")
+                    }
                 val records = InitialDirContext(environment).getAttributes(name, arrayOf("SRV")).get("SRV")
                 (0 until (records?.size() ?: 0)).map { parse(records.get(it).toString()) }
             } catch (_: NamingException) {

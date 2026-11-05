@@ -7,8 +7,8 @@ import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldNotBeNull
 import dev.surefold.assert.shouldThrow
 import dev.surefold.resourceScope
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CancellationException
+import org.junit.jupiter.api.Test
 
 class FailTest {
 
@@ -28,26 +28,28 @@ class FailTest {
         val cleanup = IllegalStateException("cleanup")
         val original = Shared<Throwable?>(null)
         val foreignTail = Shared(false)
-        val answer = attempt<Any, Unit> {
-            val owner = this
-            val crossed = shouldThrow<Throwable> {
-                attempt<String, Unit> {
-                    resourceScope<Unit> {
-                        onRelease { throw cleanup }
-                        val signal = shouldThrow<Throwable> { owner.fail(error) }
-                        original.update { signal }
-                        signal.stackTrace.toList() shouldBe emptyList()
-                        throw signal
+        val answer =
+            attempt<Any, Unit> {
+                val owner = this
+                val crossed =
+                    shouldThrow<Throwable> {
+                        attempt<String, Unit> {
+                            resourceScope<Unit> {
+                                onRelease { throw cleanup }
+                                val signal = shouldThrow<Throwable> { owner.fail(error) }
+                                original.update { signal }
+                                signal.stackTrace.toList() shouldBe emptyList()
+                                throw signal
+                            }
+                            foreignTail.update { true }
+                        }
                     }
-                    foreignTail.update { true }
-                }
+                crossed shouldBeSameInstanceAs original.peek()
+                crossed.stackTrace.toList() shouldBe emptyList()
+                crossed.suppressed.size shouldBe 1
+                crossed.suppressed[0] shouldBeSameInstanceAs cleanup
+                throw crossed
             }
-            crossed shouldBeSameInstanceAs original.peek()
-            crossed.stackTrace.toList() shouldBe emptyList()
-            crossed.suppressed.size shouldBe 1
-            crossed.suppressed[0] shouldBeSameInstanceAs cleanup
-            throw crossed
-        }
         (answer as Either.Left).value shouldBeSameInstanceAs error
         foreignTail.peek() shouldBe false
     }
@@ -60,19 +62,21 @@ class FailTest {
         error.addSuppressed(prior)
         error.suppressed.size shouldBe 1
         error.suppressed[0] shouldBeSameInstanceAs prior
-        val answer = attempt<Throwable, Unit> {
-            val signal = shouldThrow<Throwable> {
-                resourceScope {
-                    onRelease { throw cleanup }
-                    fail(error)
-                }
+        val answer =
+            attempt<Throwable, Unit> {
+                val signal =
+                    shouldThrow<Throwable> {
+                        resourceScope {
+                            onRelease { throw cleanup }
+                            fail(error)
+                        }
+                    }
+                signal.suppressed.size shouldBe 1
+                signal.suppressed[0] shouldBeSameInstanceAs cleanup
+                error.suppressed.size shouldBe 1
+                error.suppressed[0] shouldBeSameInstanceAs prior
+                throw signal
             }
-            signal.suppressed.size shouldBe 1
-            signal.suppressed[0] shouldBeSameInstanceAs cleanup
-            error.suppressed.size shouldBe 1
-            error.suppressed[0] shouldBeSameInstanceAs prior
-            throw signal
-        }
         (answer as Either.Left).value shouldBeSameInstanceAs error
         error.suppressed.size shouldBe 1
         error.suppressed[0] shouldBeSameInstanceAs prior
@@ -122,14 +126,16 @@ class FailTest {
 
     @Test
     fun `two error types sit side by side and each failure reaches its own attempt`() {
-        val outer = attempt<NotFound, Either<Invalid, String>> {
-            attempt<Invalid, String> { find(4) }
-        }
+        val outer =
+            attempt<NotFound, Either<Invalid, String>> {
+                attempt<Invalid, String> { find(4) }
+            }
         outer shouldBe NotFound(4).left()
 
-        val inner = attempt<NotFound, Either<Invalid, String>> {
-            attempt<Invalid, String> { fail(Invalid("bad")) }
-        }
+        val inner =
+            attempt<NotFound, Either<Invalid, String>> {
+                attempt<Invalid, String> { fail(Invalid("bad")) }
+            }
         inner shouldBe Invalid("bad").left().right()
     }
 
@@ -137,13 +143,14 @@ class FailTest {
     @Suppress("TooGenericExceptionCaught")
     @Test
     fun `catching Exception in the block does not swallow a failure`() {
-        val answered = attempt<NotFound, String> {
-            try {
-                find(5)
-            } catch (e: Exception) {
-                "swallowed"
+        val answered =
+            attempt<NotFound, String> {
+                try {
+                    find(5)
+                } catch (e: Exception) {
+                    "swallowed"
+                }
             }
-        }
         answered shouldBe NotFound(5).left()
     }
 
@@ -161,18 +168,20 @@ class FailTest {
     fun `a fail from a thread the scope did not fork names where it was opened, and leaves the attempt open`() {
         var thrown: IllegalStateException? = null
 
-        val answered = attempt<String, String> {
-            val scope = scope()
-            val stray = Thread.ofVirtual().start {
-                try {
-                    with(scope) { fail("stray") }
-                } catch (refused: IllegalStateException) {
-                    thrown = refused
-                }
+        val answered =
+            attempt<String, String> {
+                val scope = scope()
+                val stray =
+                    Thread.ofVirtual().start {
+                        try {
+                            with(scope) { fail("stray") }
+                        } catch (refused: IllegalStateException) {
+                            thrown = refused
+                        }
+                    }
+                stray.join()
+                "carried on"
             }
-            stray.join()
-            "carried on"
-        }
 
         answered shouldBe "carried on".right()
         val error = thrown.shouldNotBeNull()
@@ -198,14 +207,15 @@ class FailTest {
     @Suppress("TooGenericExceptionCaught")
     @Test
     fun `nonFatalOrThrow puts a failure back on its way out`() {
-        val answered = attempt<String, String> {
-            try {
-                fail("declared")
-            } catch (t: Throwable) {
-                t.nonFatalOrThrow()
-                "handled"
+        val answered =
+            attempt<String, String> {
+                try {
+                    fail("declared")
+                } catch (t: Throwable) {
+                    t.nonFatalOrThrow()
+                    "handled"
+                }
             }
-        }
         answered shouldBe "declared".left()
     }
 }

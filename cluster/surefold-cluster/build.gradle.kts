@@ -23,10 +23,11 @@ dependencies {
 
 // Read at configuration time, so the configuration cache survives it.
 val repoRoot = rootProject.projectDir.absolutePath
-val guide = files(
-    rootProject.layout.projectDirectory.file("docs/cluster.md"),
-    rootProject.layout.projectDirectory.file("README.md"),
-)
+val guide =
+    files(
+        rootProject.layout.projectDirectory.file("docs/cluster.md"),
+        rootProject.layout.projectDirectory.file("README.md"),
+    )
 
 tasks.test {
     val mainRuntime = configurations.runtimeClasspath
@@ -38,8 +39,7 @@ tasks.test {
     jvmArgumentProviders.add(
         CommandLineArgumentProvider {
             listOf(
-                "-Dsurefold.cluster.runtimeClasspath=" +
-                    mainRuntime.get().joinToString(File.pathSeparator) { it.name },
+                "-Dsurefold.cluster.runtimeClasspath=" + mainRuntime.get().joinToString(File.pathSeparator) { it.name },
                 "-Dsurefold.cluster.repoRoot=$repoRoot",
             )
         },

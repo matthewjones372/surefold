@@ -3,8 +3,8 @@ package dev.surefold.fail
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeSameInstanceAs
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CancellationException
+import org.junit.jupiter.api.Test
 
 class EitherCondTest {
     @Test
@@ -12,11 +12,18 @@ class EitherCondTest {
         val payload = Any()
         var rights = 0
         var lefts = 0
-        val answer: Either<String, Any> = Either.cond(
-            condition = true,
-            right = { rights++; payload },
-            left = { lefts++; error("unselected left") },
-        )
+        val answer: Either<String, Any> =
+            Either.cond(
+                condition = true,
+                right = {
+                    rights++
+                    payload
+                },
+                left = {
+                    lefts++
+                    error("unselected left")
+                },
+            )
         answer.getOrNull() shouldBeSameInstanceAs payload
         rights shouldBe 1
         lefts shouldBe 0
@@ -27,11 +34,18 @@ class EitherCondTest {
         val failure = Any()
         var rights = 0
         var lefts = 0
-        val answer: Either<Any, Int> = Either.cond(
-            condition = false,
-            right = { rights++; error("unselected right") },
-            left = { lefts++; failure },
-        )
+        val answer: Either<Any, Int> =
+            Either.cond(
+                condition = false,
+                right = {
+                    rights++
+                    error("unselected right")
+                },
+                left = {
+                    lefts++
+                    failure
+                },
+            )
         answer.leftOrNull() shouldBeSameInstanceAs failure
         rights shouldBe 0
         lefts shouldBe 1
@@ -58,10 +72,13 @@ class EitherCondTest {
 
     @Test
     fun `callback failures propagate unchanged from either selected side`() {
-        val failures = listOf(
-            IllegalStateException("failed"), InterruptedException("stopped"),
-            CancellationException("cancelled"), LinkageError("fatal"),
-        )
+        val failures =
+            listOf(
+                IllegalStateException("failed"),
+                InterruptedException("stopped"),
+                CancellationException("cancelled"),
+                LinkageError("fatal"),
+            )
         failures.forEach { failure ->
             shouldThrow<Throwable> {
                 Either.cond<String, Int>(true, right = { throw failure }, left = { "unused" })
@@ -89,6 +106,14 @@ class EitherCondTest {
 }
 
 private fun returnedFromCond(condition: Boolean): String {
-    Either.cond<String, Int>(condition, right = { return "right" }, left = { return "left" })
+    Either.cond<String, Int>(
+        condition,
+        right = {
+            return "right"
+        },
+        left = {
+            return "left"
+        },
+    )
     return "not returned"
 }

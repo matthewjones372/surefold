@@ -10,12 +10,12 @@ import dev.surefold.assert.shouldStartWith
 import dev.surefold.assert.shouldThrow
 import dev.surefold.clock
 import dev.surefold.scope
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 class StoryTest {
 
@@ -28,14 +28,15 @@ class StoryTest {
 
     @Test
     fun `a story failing at its third step says the first two passed and what the third said`() {
-        val failed = shouldThrow<StoryFailed> {
-            story("adopting") {
-                Given("a shop") { }
-                When("Ada adopts Nibbles") { }
-                Then("Nibbles is hers") { "Bea" shouldBe "Ada" }
-                And("never reached") { }
+        val failed =
+            shouldThrow<StoryFailed> {
+                story("adopting") {
+                    Given("a shop") {}
+                    When("Ada adopts Nibbles") {}
+                    Then("Nibbles is hers") { "Bea" shouldBe "Ada" }
+                    And("never reached") {}
+                }
             }
-        }
 
         val lines = failed.message!!.lines()
         lines[0] shouldBe "Story: adopting"
@@ -50,11 +51,12 @@ class StoryTest {
 
     @Test
     fun `a failure is told once, under the innermost step that saw it`() {
-        val failed = shouldThrow<StoryFailed> {
-            story("nested") {
-                Given("the service") { And("its database") { error("refused") } }
+        val failed =
+            shouldThrow<StoryFailed> {
+                story("nested") {
+                    Given("the service") { And("its database") { error("refused") } }
+                }
             }
-        }
 
         val lines = failed.message!!.lines()
         lines[1] shouldContain "✗ Given the service"
@@ -70,14 +72,15 @@ class StoryTest {
     @Test
     fun `a waiting step answers once its block stops throwing, and says how many tries it took`() {
         val asked = AtomicInteger()
-        val failed = shouldThrow<StoryFailed> {
-            story("waiting") {
-                Then("it gets there").eventually(within = 1.seconds, every = 1.milliseconds) {
-                    check(asked.incrementAndGet() >= 3) { "not yet" }
+        val failed =
+            shouldThrow<StoryFailed> {
+                story("waiting") {
+                    Then("it gets there").eventually(within = 1.seconds, every = 1.milliseconds) {
+                        check(asked.incrementAndGet() >= 3) { "not yet" }
+                    }
+                    And("this fails, to see the transcript") { error("stop") }
                 }
-                And("this fails, to see the transcript") { error("stop") }
             }
-        }
 
         failed.message!!.lines()[1] shouldContain "3 tries"
     }
@@ -87,19 +90,20 @@ class StoryTest {
         val moving = TestClock()
         val last = AssertionError("expected:<0L> but was:<3L>")
 
-        val failed = clock.locally(moving) {
-            scope {
-                val telling = async {
-                    shouldThrow<StoryFailed> {
-                        story("draining") {
-                            And("the outbox drains").eventually(5.seconds, every = 1.seconds) { throw last }
+        val failed =
+            clock.locally(moving) {
+                scope {
+                    val telling = async {
+                        shouldThrow<StoryFailed> {
+                            story("draining") {
+                                And("the outbox drains").eventually(5.seconds, every = 1.seconds) { throw last }
+                            }
                         }
                     }
+                    repeat(5) { moving.adjustWhenBlocked(1.seconds) }
+                    telling.await()
                 }
-                repeat(5) { moving.adjustWhenBlocked(1.seconds) }
-                telling.await()
             }
-        }
 
         val lines = failed.message!!.lines()
         lines[1] shouldContain "✗ And the outbox drains"
@@ -114,7 +118,7 @@ class StoryTest {
         val console = System.out
         System.setOut(PrintStream(printed, true, Charsets.UTF_8))
         try {
-            story("printed") { Given("a step") { } }
+            story("printed") { Given("a step") {} }
         } finally {
             System.setOut(console)
         }
@@ -133,11 +137,12 @@ class StoryTest {
 
     @Test
     fun `a failure points at the line of the assertion that failed`() {
-        val failed = shouldThrow<StoryFailed> {
-            story("pointing") {
-                Then("it fails") { "Bea" shouldBe "Ada" }
+        val failed =
+            shouldThrow<StoryFailed> {
+                story("pointing") {
+                    Then("it fails") { "Bea" shouldBe "Ada" }
+                }
             }
-        }
 
         val line = failed.stackTrace.first()
         line.fileName shouldBe "StoryTest.kt"
@@ -146,13 +151,14 @@ class StoryTest {
 
     @Test
     fun `a waiting step that gives up points at its last failure's line`() {
-        val failed = shouldThrow<StoryFailed> {
-            story("waiting") {
-                Then("it never gets there").eventually(within = 50.milliseconds, every = 5.milliseconds) {
-                    "Bea" shouldBe "Ada"
+        val failed =
+            shouldThrow<StoryFailed> {
+                story("waiting") {
+                    Then("it never gets there").eventually(within = 50.milliseconds, every = 5.milliseconds) {
+                        "Bea" shouldBe "Ada"
+                    }
                 }
             }
-        }
 
         failed.stackTrace.first().fileName shouldBe "StoryTest.kt"
         failed.message!!.lines().last().trim() shouldBe "at ${failed.stackTrace.first()}"

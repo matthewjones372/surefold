@@ -26,37 +26,40 @@ private data class Refer(val to: ActorRef<Clinic>, val since: Long) : Clinic
 private data object Close : Clinic
 
 /** The clinic's messages, field by field, with a tag in front of each. */
-private val clinicCodec = object : MessageCodec<Clinic> {
-    override fun write(message: Clinic, out: WireOut) = when (message) {
-        is Book -> {
-            out.int(1)
-            out.string(message.pet)
-            out.int(message.grams)
-            out.nullable(message.note, out::string)
-        }
+private val clinicCodec =
+    object : MessageCodec<Clinic> {
+        override fun write(message: Clinic, out: WireOut) =
+            when (message) {
+                is Book -> {
+                    out.int(1)
+                    out.string(message.pet)
+                    out.int(message.grams)
+                    out.nullable(message.note, out::string)
+                }
 
-        is Weigh -> {
-            out.int(2)
-            out.reply(message.reply, Codecs.int)
-        }
+                is Weigh -> {
+                    out.int(2)
+                    out.reply(message.reply, Codecs.int)
+                }
 
-        is Refer -> {
-            out.int(3)
-            out.ref(message.to, this)
-            out.long(message.since)
-        }
+                is Refer -> {
+                    out.int(3)
+                    out.ref(message.to, this)
+                    out.long(message.since)
+                }
 
-        Close -> out.int(4)
+                Close -> out.int(4)
+            }
+
+        override fun read(input: WireIn): Clinic =
+            when (val tag = input.int()) {
+                1 -> Book(input.string(), input.int(), input.nullable(input::string))
+                2 -> Weigh(input.reply(Codecs.int))
+                3 -> Refer(input.ref(this), input.long())
+                4 -> Close
+                else -> error("no clinic message has the tag $tag")
+            }
     }
-
-    override fun read(input: WireIn): Clinic = when (val tag = input.int()) {
-        1 -> Book(input.string(), input.int(), input.nullable(input::string))
-        2 -> Weigh(input.reply(Codecs.int))
-        3 -> Refer(input.ref(this), input.long())
-        4 -> Close
-        else -> error("no clinic message has the tag $tag")
-    }
-}
 
 /** Refs as a transport would make them: an address on the way out, and a ref for that address on the way in. */
 private class AddressedRefs : Refs {
@@ -66,21 +69,23 @@ private class AddressedRefs : Refs {
 
     override fun <A : Any> address(reply: Reply<A>, answers: MessageCodec<A>): Address = reply.address
 
-    override fun <M : Any> ref(address: Address, codec: MessageCodec<M>): ActorRef<M> = object : ActorRef<M> {
-        override val address = address
+    override fun <M : Any> ref(address: Address, codec: MessageCodec<M>): ActorRef<M> =
+        object : ActorRef<M> {
+            override val address = address
 
-        override fun tell(message: M) {
-            told += address to message
+            override fun tell(message: M) {
+                told += address to message
+            }
         }
-    }
 
-    override fun <A : Any> reply(address: Address, answers: MessageCodec<A>): Reply<A> = object : Reply<A> {
-        override val address = address
+    override fun <A : Any> reply(address: Address, answers: MessageCodec<A>): Reply<A> =
+        object : Reply<A> {
+            override val address = address
 
-        override fun invoke(answer: A) {
-            told += address to answer
+            override fun invoke(answer: A) {
+                told += address to answer
+            }
         }
-    }
 }
 
 private val there = Address("shop-2@10.0.0.7:25520", "/user/clinic", 7)
@@ -94,13 +99,14 @@ object CodecSuite : Suite() {
             val keyed = Keyed.codec(Codecs.long, Codecs.string)
             val asked = refs.reply(Address("bank-1@10.0.0.6:25520", "/temp/ask-9", 1), Codecs.int)
             val answered = refs.reply(Address("bank-1@10.0.0.6:25520", "/temp/ask-10", 1), Codecs.int)
-            val replies = listOf(asked, answered).map { reply ->
-                object : Reply<KeyAnswer<String>> {
-                    override val address = reply.address
+            val replies =
+                listOf(asked, answered).map { reply ->
+                    object : Reply<KeyAnswer<String>> {
+                        override val address = reply.address
 
-                    override fun invoke(answer: KeyAnswer<String>) = Unit
+                        override fun invoke(answer: KeyAnswer<String>) = Unit
+                    }
                 }
-            }
 
             val apply = keyed.decode(keyed.encode(Keyed.Apply("t-1/debit", 400L, replies[0]), refs), refs)
             val applied = keyed.decode(keyed.encode(Keyed.Applied("t-1/debit", replies[1]), refs), refs)
@@ -115,10 +121,11 @@ object CodecSuite : Suite() {
                 asking.key shouldBe "t-1/debit"
                 asking.reply(KeyAnswer.Accepted)
             }
-            refs.told shouldContainExactly listOf(
-                asked.address to KeyAnswer.Refused("funds"),
-                answered.address to KeyAnswer.Accepted,
-            )
+            refs.told shouldContainExactly
+                listOf(
+                    asked.address to KeyAnswer.Refused("funds"),
+                    answered.address to KeyAnswer.Accepted,
+                )
         }
 
         test("a message of plain fields comes back equal, a missing note included") {
@@ -184,11 +191,12 @@ object CodecSuite : Suite() {
             val refs = AddressedRefs()
             val producer = Address("shop-1@10.0.0.6:25520", "/user/producer-till", 3)
             val delivery = Delivery("till/1", "o-42", 9, refs.ref(producer, Codecs.confirmed))
-            val carried = object : MessageCodec<Delivery> {
-                override fun write(message: Delivery, out: WireOut) = out.delivery(message)
+            val carried =
+                object : MessageCodec<Delivery> {
+                    override fun write(message: Delivery, out: WireOut) = out.delivery(message)
 
-                override fun read(input: WireIn): Delivery = input.delivery()
-            }
+                    override fun read(input: WireIn): Delivery = input.delivery()
+                }
 
             val crossed = carried.decode(carried.encode(delivery, refs), refs)
             crossed.confirm()

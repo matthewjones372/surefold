@@ -4,14 +4,14 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeSameInstanceAs
 import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.future.await as awaitSuspending
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.Test
-import java.util.concurrent.CountDownLatch
-import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.future.await as awaitSuspending
 
 class SurefoldFutureTest {
 
@@ -52,9 +52,10 @@ class SurefoldFutureTest {
         val stuck = Stuck()
 
         runBlocking {
-            val caller = launch(Dispatchers.Default) {
-                surefoldFuture { parZip({ stuck.forever() }, { stuck.forever() }) { _, _ -> } }.awaitSuspending()
-            }
+            val caller =
+                launch(Dispatchers.Default) {
+                    surefoldFuture { parZip({ stuck.forever() }, { stuck.forever() }) { _, _ -> } }.awaitSuspending()
+                }
             stuck.started.await()
             caller.cancelAndJoin()
         }

@@ -6,28 +6,28 @@ import dev.surefold.assert.shouldNotBeEmpty
 import dev.surefold.assert.shouldNotBeNull
 import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
-import org.jetbrains.kotlin.cli.common.ExitCode
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.lang.reflect.InvocationTargetException
 import java.net.URLClassLoader
+import org.jetbrains.kotlin.cli.common.ExitCode
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 /**
  * The examples in `docs/actors.md`, compiled out of the page (spec 0089): each fence marked `<!-- actors-… -->`, a
- * marker that renders as nothing and survives the heading above it being reworded. The testing section's tests are
- * run as well, since a test the page shows must pass.
+ * marker that renders as nothing and survives the heading above it being reworded. The testing section's tests are run
+ * as well, since a test the page shows must pass.
  */
 class ActorsGuideTest {
 
     private val markers =
-        listOf("actor", "failure", "time", "routing", "persistent", "versioned", "batching", "testing")
-            .map { "<!-- actors-$it -->" }
+        listOf("actor", "failure", "time", "routing", "persistent", "versioned", "batching", "testing").map {
+            "<!-- actors-$it -->"
+        }
 
     private val testing = "<!-- actors-testing -->"
 
-    @TempDir
-    lateinit var workspace: File
+    @TempDir lateinit var workspace: File
 
     private fun repo(path: String): String {
         val root = System.getProperty("surefold.actor.repoRoot")
@@ -41,7 +41,9 @@ class ActorsGuideTest {
 
     private fun fences(marker: String): List<String> =
         Regex("""$marker\s*```kotlin\n(.*?)\n```""", RegexOption.DOT_MATCHES_ALL)
-            .findAll(guide()).map { it.groupValues[1] }.toList()
+            .findAll(guide())
+            .map { it.groupValues[1] }
+            .toList()
 
     private fun only(marker: String): String {
         withClue("docs/actors.md must hold one kotlin fence marked $marker") { fences(marker).size shouldBe 1 }
@@ -60,19 +62,28 @@ class ActorsGuideTest {
     private fun run(source: String): List<String> {
         errors(source).shouldBeEmpty()
         val loader = URLClassLoader(arrayOf(File(workspace, "out").toURI().toURL()), javaClass.classLoader)
-        val classes = File(workspace, "out").walk().filter { it.extension == "class" }
-            .map { it.relativeTo(File(workspace, "out")).path.removeSuffix(".class").replace(File.separatorChar, '.') }
-            .map(loader::loadClass)
-        return classes.flatMap { type ->
-            type.methods.filter { it.isAnnotationPresent(Test::class.java) }.map { test ->
-                try {
-                    test.invoke(type.getDeclaredConstructor().newInstance())
-                } catch (failed: InvocationTargetException) {
-                    throw failed.cause ?: failed
+        val classes =
+            File(workspace, "out")
+                .walk()
+                .filter { it.extension == "class" }
+                .map {
+                    it.relativeTo(File(workspace, "out")).path.removeSuffix(".class").replace(File.separatorChar, '.')
                 }
-                test.name
+                .map(loader::loadClass)
+        return classes
+            .flatMap { type ->
+                type.methods
+                    .filter { it.isAnnotationPresent(Test::class.java) }
+                    .map { test ->
+                        try {
+                            test.invoke(type.getDeclaredConstructor().newInstance())
+                        } catch (failed: InvocationTargetException) {
+                            throw failed.cause ?: failed
+                        }
+                        test.name
+                    }
             }
-        }.toList()
+            .toList()
     }
 
     @Test

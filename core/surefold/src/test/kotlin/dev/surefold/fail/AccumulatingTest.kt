@@ -74,9 +74,10 @@ class AccumulatingTest {
         var leaked: Accumulating<Invalid>? = null
         attempt<NonEmptyList<Invalid>, Unit> { accumulate { leaked = this } }
 
-        val refused = shouldThrow<IllegalStateException> {
-            with(checkNotNull(leaked)) { ensureOrAccumulate(false) { Invalid("late") } }
-        }
+        val refused =
+            shouldThrow<IllegalStateException> {
+                with(checkNotNull(leaked)) { ensureOrAccumulate(false) { Invalid("late") } }
+            }
         ("after its block had returned" in refused.message.orEmpty()) shouldBe true
     }
 }

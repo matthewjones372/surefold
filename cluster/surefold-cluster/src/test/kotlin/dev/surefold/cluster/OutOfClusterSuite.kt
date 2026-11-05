@@ -8,11 +8,12 @@ object OutOfClusterSuite : Suite() {
     private val self = Node("a", "127.0.0.1", 1)
     private val other = Node("b", "127.0.0.1", 2)
 
-    private fun view(mine: Status, theirs: Status?) = View(
-        listOfNotNull(Member(self, 1, mine, 1), theirs?.let { Member(other, 2, it, 2) }),
-        emptySet(),
-        null,
-    )
+    private fun view(mine: Status, theirs: Status?) =
+        View(
+            listOfNotNull(Member(self, 1, mine, 1), theirs?.let { Member(other, 2, it, 2) }),
+            emptySet(),
+            null,
+        )
 
     init {
         test(

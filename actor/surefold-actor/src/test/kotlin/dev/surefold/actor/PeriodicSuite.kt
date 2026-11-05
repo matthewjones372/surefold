@@ -37,42 +37,43 @@ private data object Stumble : Pulse
 private data class Heart(val heard: List<String> = emptyList(), val times: Int = Int.MAX_VALUE)
 
 /** Beats on a timer, falls quiet on a receive timeout, and writes down what it heard. */
-private fun heart() = behaviour<Pulse, Heart>(Heart()) { ctx, heart, message ->
-    when (message) {
-        is Beat -> {
-            ctx.timers.every("beat", message.every, Tick)
-            become(heart.copy(times = message.times))
+private fun heart() =
+    behaviour<Pulse, Heart>(Heart()) { ctx, heart, message ->
+        when (message) {
+            is Beat -> {
+                ctx.timers.every("beat", message.every, Tick)
+                become(heart.copy(times = message.times))
+            }
+
+            Once -> {
+                ctx.timers.after("beat", 1.seconds, Tick)
+                stay()
+            }
+
+            is Quiet -> {
+                val after = message.after
+                if (after == null) ctx.receiveTimeout(null) else ctx.receiveTimeout(after, Hush)
+                stay()
+            }
+
+            Poke -> become(heart.copy(heard = heart.heard + "poke"))
+
+            Tick -> {
+                val heard = heart.heard + "tick"
+                if (heard.count { it == "tick" } >= heart.times) ctx.timers.cancel("beat")
+                become(heart.copy(heard = heard))
+            }
+
+            Hush -> become(heart.copy(heard = heart.heard + "hush"))
+
+            is Listen -> {
+                message.reply(heart.heard)
+                stay()
+            }
+
+            Stumble -> error("the heart stumbled")
         }
-
-        Once -> {
-            ctx.timers.after("beat", 1.seconds, Tick)
-            stay()
-        }
-
-        is Quiet -> {
-            val after = message.after
-            if (after == null) ctx.receiveTimeout(null) else ctx.receiveTimeout(after, Hush)
-            stay()
-        }
-
-        Poke -> become(heart.copy(heard = heart.heard + "poke"))
-
-        Tick -> {
-            val heard = heart.heard + "tick"
-            if (heard.count { it == "tick" } >= heart.times) ctx.timers.cancel("beat")
-            become(heart.copy(heard = heard))
-        }
-
-        Hush -> become(heart.copy(heard = heart.heard + "hush"))
-
-        is Listen -> {
-            message.reply(heart.heard)
-            stay()
-        }
-
-        Stumble -> error("the heart stumbled")
     }
-}
 
 object PeriodicSuite : Suite() {
     init {
@@ -170,17 +171,18 @@ object PeriodicSuite : Suite() {
 
         test("on threads, the scope's clock drives a periodic timer and a receive timeout") {
             val moving = TestClock()
-            val heard = clock.locally(moving) {
-                scope {
-                    val heart = spawn("heart", heart())
-                    heart.tell(Beat(every = 2.seconds, times = 2))
-                    heart.tell(Quiet(10.seconds))
-                    awaitIdle()
+            val heard =
+                clock.locally(moving) {
+                    scope {
+                        val heart = spawn("heart", heart())
+                        heart.tell(Beat(every = 2.seconds, times = 2))
+                        heart.tell(Quiet(10.seconds))
+                        awaitIdle()
 
-                    moving.adjust(1.hours)
-                    heart.ask(1.minutes) { Listen(it) }
+                        moving.adjust(1.hours)
+                        heart.ask(1.minutes) { Listen(it) }
+                    }
                 }
-            }
 
             heard shouldBeRight listOf("tick", "tick", "hush")
         }

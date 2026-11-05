@@ -27,10 +27,10 @@ private object TopicDrainKey
 
 /**
  * A topic on this node: every message published to it reaches every subscriber, at most once, in the order one
- * publisher published them. A subscriber that stops is dropped; one that cannot be watched, such as a sharded entity
- * or a singleton, hears until it unsubscribes. A cluster's topic reaches the subscribers of every `Up` member
- * (spec 0082). A subscriber too busy to take a message has it kept for it, in order, and past what may be kept it is
- * a dead letter for being full; the others hear on (spec 0095).
+ * publisher published them. A subscriber that stops is dropped; one that cannot be watched, such as a sharded entity or
+ * a singleton, hears until it unsubscribes. A cluster's topic reaches the subscribers of every `Up` member (spec 0082).
+ * A subscriber too busy to take a message has it kept for it, in order, and past what may be kept it is a dead letter
+ * for being full; the others hear on (spec 0095).
  */
 class Topic<M : Any> internal constructor(val name: String, val ref: ActorRef<TopicMessage<M>>) {
     /** [subscriber] hears every message published from now on, until it stops or [unsubscribe]. */
@@ -44,41 +44,45 @@ class Topic<M : Any> internal constructor(val name: String, val ref: ActorRef<To
 
 /**
  * The topic [name] on this scope, its actor at `/user/topic-<name>`. Each publish here is also handed to [forward],
- * which is how a cluster's topic reaches the other members; a message from them arrives as [TopicMessage.Arrive].
- * It records `surefold.topic.published`, `surefold.topic.delivered` and `surefold.topic.subscribers` (spec 0081).
+ * which is how a cluster's topic reaches the other members; a message from them arrives as [TopicMessage.Arrive]. It
+ * records `surefold.topic.published`, `surefold.topic.delivered` and `surefold.topic.subscribers` (spec 0081).
  */
 fun <M : Any> Scope<*>.topic(name: String, forward: (M) -> Unit = {}): Topic<M> {
-    val steps = TopicSteps<M>(
-        published = counter("surefold.topic.published", "topic" to name),
-        delivered = counter("surefold.topic.delivered", "topic" to name),
-        subscribers = gauge("surefold.topic.subscribers", "topic" to name),
-    )
-    val actor = behaviour<TopicMessage<M>, Set<ActorRef<M>>>(emptySet()) { ctx, heard, message ->
-        when (message) {
-            is TopicMessage.Publish -> stay().also {
-                steps.published.increment()
-                steps.hear(ctx, heard, message.message)
-                forward(message.message)
+    val steps =
+        TopicSteps<M>(
+            published = counter("surefold.topic.published", "topic" to name),
+            delivered = counter("surefold.topic.delivered", "topic" to name),
+            subscribers = gauge("surefold.topic.subscribers", "topic" to name),
+        )
+    val actor =
+        behaviour<TopicMessage<M>, Set<ActorRef<M>>>(emptySet()) { ctx, heard, message ->
+                when (message) {
+                    is TopicMessage.Publish ->
+                        stay().also {
+                            steps.published.increment()
+                            steps.hear(ctx, heard, message.message)
+                            forward(message.message)
+                        }
+
+                    is TopicMessage.Arrive -> stay().also { steps.hear(ctx, heard, message.message) }
+
+                    is TopicMessage.Subscribe -> {
+                        // One that cannot be watched stays until it unsubscribes.
+                        if (message.subscriber.canBeWatched()) ctx.watch(message.subscriber)
+                        become(steps.counted(heard + message.subscriber))
+                    }
+
+                    is TopicMessage.Unsubscribe -> become(steps.unsubscribed(ctx, heard, message.subscriber))
+
+                    is DrainTopic -> stay().also { steps.drain(ctx) }
+                }
             }
-
-            is TopicMessage.Arrive -> stay().also { steps.hear(ctx, heard, message.message) }
-
-            is TopicMessage.Subscribe -> {
-                // One that cannot be watched stays until it unsubscribes.
-                if (message.subscriber.canBeWatched()) ctx.watch(message.subscriber)
-                become(steps.counted(heard + message.subscriber))
+            .onSignal { ctx, heard, signal ->
+                when (signal) {
+                    is Signal.Terminated -> become(steps.counted(heard.filterTo(mutableSetOf()) { it != signal.ref }))
+                    Signal.Stopping -> stay().also { steps.stopping(ctx) }
+                }
             }
-
-            is TopicMessage.Unsubscribe -> become(steps.unsubscribed(ctx, heard, message.subscriber))
-
-            is DrainTopic -> stay().also { steps.drain(ctx) }
-        }
-    }.onSignal { ctx, heard, signal ->
-        when (signal) {
-            is Signal.Terminated -> become(steps.counted(heard.filterTo(mutableSetOf()) { it != signal.ref }))
-            Signal.Stopping -> stay().also { steps.stopping(ctx) }
-        }
-    }
     return Topic(name, spawn("topic-$name", actor))
 }
 

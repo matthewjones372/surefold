@@ -1,5 +1,6 @@
 package dev.surefold.compiler
 
+import kotlin.reflect.KClass
 import org.jetbrains.kotlin.diagnostics.KtDiagnosticFactory1
 import org.jetbrains.kotlin.diagnostics.KtDiagnosticFactoryToRendererMap
 import org.jetbrains.kotlin.diagnostics.KtDiagnosticsContainer
@@ -7,7 +8,6 @@ import org.jetbrains.kotlin.diagnostics.Severity
 import org.jetbrains.kotlin.diagnostics.SourceElementPositioningStrategies
 import org.jetbrains.kotlin.diagnostics.rendering.BaseDiagnosticRendererFactory
 import org.jetbrains.kotlin.diagnostics.rendering.CommonRenderers
-import kotlin.reflect.KClass
 
 /**
  * What the plugin can say (spec 0041). A container rather than loose factories because the compiler finds a plugin's
@@ -25,35 +25,39 @@ object ForkDiagnostics : KtDiagnosticsContainer() {
     val RAISE_ACROSS_FORK: KtDiagnosticFactory1<String> = fault("RAISE_ACROSS_FORK")
 
     /** A catch-all around `fail`, `bind` or `await` that keeps what it caught; a warning, for a process edge. */
-    val CATCH_EATS_RAISE: KtDiagnosticFactory1<String> = KtDiagnosticFactory1(
-        "CATCH_EATS_RAISE",
-        Severity.WARNING,
-        SourceElementPositioningStrategies.DEFAULT,
-        psiElement,
-        Renderers,
-    )
+    val CATCH_EATS_RAISE: KtDiagnosticFactory1<String> =
+        KtDiagnosticFactory1(
+            "CATCH_EATS_RAISE",
+            Severity.WARNING,
+            SourceElementPositioningStrategies.DEFAULT,
+            psiElement,
+            Renderers,
+        )
 
     override fun getRendererFactory(): BaseDiagnosticRendererFactory = Renderers
 }
 
 /** An error with one sentence, reported where the offending expression is. */
-private fun fault(name: String) = KtDiagnosticFactory1<String>(
-    name,
-    Severity.ERROR,
-    SourceElementPositioningStrategies.DEFAULT,
-    psiElement,
-    Renderers,
-)
+private fun fault(name: String) =
+    KtDiagnosticFactory1<String>(
+        name,
+        Severity.ERROR,
+        SourceElementPositioningStrategies.DEFAULT,
+        psiElement,
+        Renderers,
+    )
 
 /**
  * `PsiElement`, under whichever name it has where this is running: `kotlin-compiler-embeddable` relocates IntelliJ's
  * classes and the IDE does not, so the name is resolved at runtime, as `surefold-app-compiler` does.
  */
-private val psiElement: KClass<*> = sequenceOf(
-    "org.jetbrains.kotlin.com.intellij.psi.PsiElement",
-    "com.intellij.psi.PsiElement",
-).firstNotNullOfOrNull(::classNamed)
-    ?: error("neither the relocated nor the plain PsiElement is on the classpath")
+private val psiElement: KClass<*> =
+    sequenceOf(
+            "org.jetbrains.kotlin.com.intellij.psi.PsiElement",
+            "com.intellij.psi.PsiElement",
+        )
+        .firstNotNullOfOrNull(::classNamed)
+        ?: error("neither the relocated nor the plain PsiElement is on the classpath")
 
 private fun classNamed(name: String): KClass<*>? =
     try {
@@ -68,10 +72,11 @@ private object Renderers : BaseDiagnosticRendererFactory() {
 
     // The name is the compiler's, on an abstract property this has to override.
     @Suppress("ktlint:standard:property-naming")
-    override val MAP: KtDiagnosticFactoryToRendererMap by KtDiagnosticFactoryToRendererMap("SurefoldForks") { map ->
-        map.put(ForkDiagnostics.DEFERRED_ESCAPES_SCOPE, "surefold: {0}", CommonRenderers.STRING)
-        map.put(ForkDiagnostics.AWAIT_ACROSS_FORK, "surefold: {0}", CommonRenderers.STRING)
-        map.put(ForkDiagnostics.RAISE_ACROSS_FORK, "surefold: {0}", CommonRenderers.STRING)
-        map.put(ForkDiagnostics.CATCH_EATS_RAISE, "surefold: {0}", CommonRenderers.STRING)
-    }
+    override val MAP: KtDiagnosticFactoryToRendererMap by
+        KtDiagnosticFactoryToRendererMap("SurefoldForks") { map ->
+            map.put(ForkDiagnostics.DEFERRED_ESCAPES_SCOPE, "surefold: {0}", CommonRenderers.STRING)
+            map.put(ForkDiagnostics.AWAIT_ACROSS_FORK, "surefold: {0}", CommonRenderers.STRING)
+            map.put(ForkDiagnostics.RAISE_ACROSS_FORK, "surefold: {0}", CommonRenderers.STRING)
+            map.put(ForkDiagnostics.CATCH_EATS_RAISE, "surefold: {0}", CommonRenderers.STRING)
+        }
 }

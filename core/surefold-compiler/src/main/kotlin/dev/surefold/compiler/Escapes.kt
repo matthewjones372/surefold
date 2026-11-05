@@ -19,8 +19,8 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
 /**
- * A `scope` whose block answers with a `Deferred`, `Channel` or `Scope`, or something holding one: the scope
- * ends every fork and channel it opened as it returns, so what the caller is handed is already over (spec 0041).
+ * A `scope` whose block answers with a `Deferred`, `Channel` or `Scope`, or something holding one: the scope ends every
+ * fork and channel it opened as it returns, so what the caller is handed is already over (spec 0041).
  */
 internal class ReturnedScopeChecker : FirFunctionCallChecker(MppCheckerKind.Common) {
 

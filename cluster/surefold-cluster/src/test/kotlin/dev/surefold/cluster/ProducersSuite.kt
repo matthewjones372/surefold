@@ -21,9 +21,7 @@ import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
 /** [journal], keeping each append that another writer beat: two producers running under one id. */
-private class Conflicts(private val journal: JdbcJournal) :
-    Journal by journal,
-    JournalPruning by journal {
+private class Conflicts(private val journal: JdbcJournal) : Journal by journal, JournalPruning by journal {
     val seen = CopyOnWriteArrayList<JournalConflict>()
 
     override fun append(id: PersistenceId, expected: Long, events: List<ByteArray>) =
@@ -42,9 +40,10 @@ object ProducersSuite : Suite() {
             val bank = { i: Int -> Bank("b${i + 1}", ports[i], seeds, journal, Duration.ZERO) }
             val banks = (0 until 3).map(bank).toMutableList()
             val ids = List(20) { "a-$it" }
-            fun Bank.up() = cluster.await(1.minutes) { view ->
-                view.members.count { it.status == Status.Up } == 3 && view.members.any { cluster.isSelf(it) }
-            }
+            fun Bank.up() =
+                cluster.await(1.minutes) { view ->
+                    view.members.count { it.status == Status.Up } == 3 && view.members.any { cluster.isSelf(it) }
+                }
             fun Bank.pay(pence: Int) {
                 val payments = accounts.reliable("checkout", durable = true)
                 ids.forAll { id -> payments.send(id) { PayInto(pence, it) } shouldBe Unit.right() }
@@ -84,7 +83,9 @@ object ProducersSuite : Suite() {
                         view.members.count { it.status == Status.Up } == 3
                     } shouldBe true
                 }
-                banks.forEach { val _ = it.accounts.reliable("checkout", durable = true) }
+                banks.forEach {
+                    val _ = it.accounts.reliable("checkout", durable = true)
+                }
 
                 val lives = banks.map { it.cluster.life }
                 val expected = lives.associate { life -> "account-checkout-$life" to Listed("account", life, life) }

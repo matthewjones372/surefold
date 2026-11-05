@@ -5,8 +5,8 @@ import dev.surefold.clock
 import dev.surefold.logger
 
 /**
- * On a defect, this same description materialised again after the delay [schedule] decides. A declared
- * failure passes through as it is, and a schedule that is done lets the defect through as `Died`.
+ * On a defect, this same description materialised again after the delay [schedule] decides. A declared failure passes
+ * through as it is, and a schedule that is done lets the defect through as `Died`.
  *
  * What was emitted before the defect stays emitted: a restarted `Stream.from` emits its elements again.
  */

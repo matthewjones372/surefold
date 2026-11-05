@@ -26,18 +26,30 @@ object ThreadDumpSuite : Suite() {
     private fun `a thread dump shows each branch under the scope of the call that forked it`() {
         val waiting = CountDownLatch(1)
         val dumped = CountDownLatch(1)
-        val dump = attempt<Nothing, String> {
-            parZip({
-                waiting.countDown()
-                dumped.await()
-            }, {
-                // A scope of its own inside this branch, so the dump has a nesting to show.
-                parZip({
-                    waiting.await()
-                    dumpThreads().also { dumped.countDown() }
-                }, { 0 }) { d, _ -> d }
-            }) { _, d -> d }
-        }.getOrNull()!!
+        val dump =
+            attempt<Nothing, String> {
+                    parZip(
+                        {
+                            waiting.countDown()
+                            dumped.await()
+                        },
+                        {
+                            // A scope of its own inside this branch, so the dump has a nesting to show.
+                            parZip(
+                                {
+                                    waiting.await()
+                                    dumpThreads().also { dumped.countDown() }
+                                },
+                                { 0 },
+                            ) { d, _ ->
+                                d
+                            }
+                        },
+                    ) { _, d ->
+                        d
+                    }
+                }
+                .getOrNull()!!
 
         val caller = "ThreadDumpSuite.a thread dump shows each branch under the scope of the call that forked it"
         val parents = container.findAll(dump).associate { it.groupValues[1] to it.groupValues[2].trim('"') }

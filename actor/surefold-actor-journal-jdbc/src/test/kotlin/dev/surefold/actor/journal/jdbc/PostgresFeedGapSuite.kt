@@ -138,8 +138,7 @@ object PostgresFeedGapSuite : Suite(concurrent = false) {
                     journal.after("order", 0, 10).ids() shouldContainExactly listOf("o-1#1")
 
                     open.commit()
-                    journal.after("order", 0, 10).ids() shouldContainExactly
-                        listOf("o-1#1", "o-2#1", "o-3#1")
+                    journal.after("order", 0, 10).ids() shouldContainExactly listOf("o-1#1", "o-2#1", "o-3#1")
                 }
             }
         }

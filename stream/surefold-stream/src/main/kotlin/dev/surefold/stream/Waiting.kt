@@ -3,9 +3,9 @@ package dev.surefold.stream
 /**
  * How a source waits for something another thread does, on a backend that must know it is waiting.
  *
- * Most backends need nothing: a source blocks its thread, and a stop wakes it. A backend whose workers
- * take turns cannot let one block, since the others wait for its turn to end; it installs a [Waiting] on
- * each worker, and a source that finds one waits through it instead.
+ * Most backends need nothing: a source blocks its thread, and a stop wakes it. A backend whose workers take turns
+ * cannot let one block, since the others wait for its turn to end; it installs a [Waiting] on each worker, and a source
+ * that finds one waits through it instead.
  */
 @StreamSpi
 interface Waiting {

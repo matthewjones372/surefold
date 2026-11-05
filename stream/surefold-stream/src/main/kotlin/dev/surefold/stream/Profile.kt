@@ -28,16 +28,16 @@ class Profile(val stages: Map<Int, StageProfile>) {
     private val busyInAll = stages.values.sumOf { it.busySampledMillis }
 
     /**
-     * The stage's part of the time every stage spent in its own body. Every stage samples one element in
-     * the same number, so sampled time is in proportion to the time itself. Null for a stage with no body.
+     * The stage's part of the time every stage spent in its own body. Every stage samples one element in the same
+     * number, so sampled time is in proportion to the time itself. Null for a stage with no body.
      */
     fun share(step: Int): Double? =
         stages[step]?.takeIf { it.busyMillis != null && busyInAll > 0 }?.let { it.busySampledMillis / busyInAll }
 }
 
 /**
- * [Metrics] that keeps what a measured run reports, and hands it on to [also]: `Measured(name, profiler)`,
- * run it, then [profile] and `render(profile = …)` to see where the time went.
+ * [Metrics] that keeps what a measured run reports, and hands it on to [also]: `Measured(name, profiler)`, run it, then
+ * [profile] and `render(profile = …)` to see where the time went.
  */
 class Profiler(private val also: Metrics = NoMetrics) : Metrics {
 
@@ -95,22 +95,28 @@ class Profiler(private val also: Metrics = NoMetrics) : Metrics {
      * several, it refuses rather than sum them, and names them.
      */
     fun profile(pipeline: String? = null): Profile {
-        val chosen = pipeline ?: stages.keys.map { it.pipeline }.toSortedSet().let { seen ->
-            check(seen.size <= 1) { "this profiler saw ${seen.joinToString(" and ")}; say which" }
-            seen.firstOrNull()
-        }
+        val chosen =
+            pipeline
+                ?: stages.keys
+                    .map { it.pipeline }
+                    .toSortedSet()
+                    .let { seen ->
+                        check(seen.size <= 1) { "this profiler saw ${seen.joinToString(" and ")}; say which" }
+                        seen.firstOrNull()
+                    }
         val steps = stages.filterKeys { it.pipeline == chosen }
         val of = { name: String, step: Step -> tallies[name to step] }
         return Profile(
             steps.entries.associate { (step, stage) ->
-                step.step to StageProfile(
-                    elements = of(ELEMENTS, step)?.sum?.sum()?.toLong() ?: 0,
-                    busyMillis = of(BUSY, step)?.mean()?.times(MILLIS_PER_SECOND),
-                    waitingMillis = of(WAITING, step)?.mean()?.times(MILLIS_PER_SECOND),
-                    busySampledMillis = (of(BUSY, step)?.sum?.sum() ?: 0.0) * MILLIS_PER_SECOND,
-                    stage = stage.operator,
-                    at = stage.at,
-                )
+                step.step to
+                    StageProfile(
+                        elements = of(ELEMENTS, step)?.sum?.sum()?.toLong() ?: 0,
+                        busyMillis = of(BUSY, step)?.mean()?.times(MILLIS_PER_SECOND),
+                        waitingMillis = of(WAITING, step)?.mean()?.times(MILLIS_PER_SECOND),
+                        busySampledMillis = (of(BUSY, step)?.sum?.sum() ?: 0.0) * MILLIS_PER_SECOND,
+                        stage = stage.operator,
+                        at = stage.at,
+                    )
             },
         )
     }

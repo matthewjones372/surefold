@@ -26,8 +26,8 @@ import org.jetbrains.kotlin.name.Name
 /**
  * What an `async` block does with its scope's things from outside it (spec 0041): it awaits or cancels a `Deferred`
  * another block opened (`AWAIT_ACROSS_FORK`), or fails through a `Fail` receiver it reached by label from outside
- * (`RAISE_ACROSS_FORK`). Either surfaces into a scope from a thread that scope does not own. Each `async` reads its
- * own block and stops at the `async` calls nested in it, which are read on their own.
+ * (`RAISE_ACROSS_FORK`). Either surfaces into a scope from a thread that scope does not own. Each `async` reads its own
+ * block and stops at the `async` calls nested in it, which are read on their own.
  */
 internal class ForkBoundaryChecker : FirFunctionCallChecker(MppCheckerKind.Common) {
 
@@ -40,22 +40,24 @@ internal class ForkBoundaryChecker : FirFunctionCallChecker(MppCheckerKind.Commo
         block.anonymousFunction.body?.accept(crossings)
         crossings.found.forEach { (source, crossing) ->
             when (crossing) {
-                is Crossing.Await -> reporter.reportOn(
-                    source,
-                    ForkDiagnostics.AWAIT_ACROSS_FORK,
-                    "${crossing.method} on ${crossing.name}, a Deferred from outside this async block, joins a fork " +
-                        "this thread does not own; await ${crossing.name} in the scope's own block and pass the " +
-                        "value in, or open this fork after ${crossing.name}.await()",
-                    context,
-                )
+                is Crossing.Await ->
+                    reporter.reportOn(
+                        source,
+                        ForkDiagnostics.AWAIT_ACROSS_FORK,
+                        "${crossing.method} on ${crossing.name}, a Deferred from outside this async block, joins a fork " +
+                            "this thread does not own; await ${crossing.name} in the scope's own block and pass the " +
+                            "value in, or open this fork after ${crossing.name}.await()",
+                        context,
+                    )
 
-                is Crossing.Raise -> reporter.reportOn(
-                    source,
-                    ForkDiagnostics.RAISE_ACROSS_FORK,
-                    "this@${crossing.label} fails a scope from a thread it does not own; fail through this async " +
-                        "block's own scope, and let await carry the error out",
-                    context,
-                )
+                is Crossing.Raise ->
+                    reporter.reportOn(
+                        source,
+                        ForkDiagnostics.RAISE_ACROSS_FORK,
+                        "this@${crossing.label} fails a scope from a thread it does not own; fail through this async " +
+                            "block's own scope, and let await carry the error out",
+                        context,
+                    )
             }
         }
     }
@@ -101,8 +103,7 @@ private class Crossings(private val within: KtSourceElement) : FirVisitorVoid() 
     private fun KtSourceElement.isInside(): Boolean = startOffset >= within.startOffset && endOffset <= within.endOffset
 }
 
-private fun FirFunctionCall.isAsync(): Boolean =
-    calleeReference.toResolvedCallableSymbol()?.callableId == async
+private fun FirFunctionCall.isAsync(): Boolean = calleeReference.toResolvedCallableSymbol()?.callableId == async
 
 private val surefold = FqName("dev.surefold")
 
@@ -112,7 +113,8 @@ private val deferred = ClassId(surefold, Name.identifier("Deferred"))
 
 private val joining = setOf("await", "cancel").map { CallableId(deferred, Name.identifier(it)) }.toSet()
 
-private val failing = setOf(
-    ClassId(FqName("dev.surefold.fail"), Name.identifier("Fail")),
-    ClassId(surefold, Name.identifier("Scope")),
-)
+private val failing =
+    setOf(
+        ClassId(FqName("dev.surefold.fail"), Name.identifier("Fail")),
+        ClassId(surefold, Name.identifier("Scope")),
+    )

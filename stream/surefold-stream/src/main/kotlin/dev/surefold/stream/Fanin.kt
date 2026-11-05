@@ -1,11 +1,10 @@
 package dev.surefold.stream
 
 /**
- * Both feeds as one, in whatever order they arrive. `Stream` is covariant in its failure, so two feeds
- * that fail differently merge under the failure they share, named once at the call site.
+ * Both feeds as one, in whatever order they arrive. `Stream` is covariant in its failure, so two feeds that fail
+ * differently merge under the failure they share, named once at the call site.
  */
-fun <E, E2 : E, A : Any> Stream<E, A>.merge(other: Stream<E2, A>): Stream<E, A> =
-    Stream(Node.Merge(node, other.node))
+fun <E, E2 : E, A : Any> Stream<E, A>.merge(other: Stream<E2, A>): Stream<E, A> = Stream(Node.Merge(node, other.node))
 
 /** [merge] over as many as there are, which is the shape a fan-in of feeds actually has. */
 fun <E, E2 : E, A : Any> Stream<E, A>.mergeAll(vararg others: Stream<E2, A>): Stream<E, A> =
@@ -22,5 +21,4 @@ fun <E, E2 : E, A : Any, B : Any, C : Any> Stream<E, A>.zipWith(
 ): Stream<E, C> = Stream(Node.ZipWith(node, other.node, f.erased(), buildSite()))
 
 /** [zipWith] into Kotlin's [Pair], which destructures, rather than the `japi.Pair` Pekko answers with. */
-fun <E, E2 : E, A : Any, B : Any> Stream<E, A>.zip(other: Stream<E2, B>): Stream<E, Pair<A, B>> =
-    zipWith(other, ::Pair)
+fun <E, E2 : E, A : Any, B : Any> Stream<E, A>.zip(other: Stream<E2, B>): Stream<E, Pair<A, B>> = zipWith(other, ::Pair)

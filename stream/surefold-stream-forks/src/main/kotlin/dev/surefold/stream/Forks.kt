@@ -15,19 +15,17 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * surefold-stream on surefold's own threads: a run is one pull loop on one fork from [on]. Every stage runs on that
- * fork, when the stage after it asks, so a stage body can block and `bind`. The operators that run
- * something beside the loop (`mapPar`, `buffer`, `merge`, `flatMapMerge`, `conflate`, `groupedWithin`)
- * start it from [on] as well (a `mapPar` given an executor of its own keeps it), and the run lets go of
- * every one of them before its exit completes. Time is surefold's `clock`, read when the run starts.
+ * fork, when the stage after it asks, so a stage body can block and `bind`. The operators that run something beside the
+ * loop (`mapPar`, `buffer`, `merge`, `flatMapMerge`, `conflate`, `groupedWithin`) start it from [on] as well (a
+ * `mapPar` given an executor of its own keeps it), and the run lets go of every one of them before its exit completes.
+ * Time is surefold's `clock`, read when the run starts.
  */
 class Forks(private val on: Executor = VirtualThreads, name: String = "Forks") : StreamBackend {
 
     /** The name a refusal says a run was started on: a backend built on this one gives its own. */
-    @StreamSpi
-    override val key: BackendKey = if (name == ForksKey.name) ForksKey else BackendKey(name)
+    @StreamSpi override val key: BackendKey = if (name == ForksKey.name) ForksKey else BackendKey(name)
 
-    @StreamSpi
-    override fun runs(node: Node): Boolean = node.pulls()
+    @StreamSpi override fun runs(node: Node): Boolean = node.pulls()
 
     @StreamSpi
     override fun <E, R : Any> materialise(run: Run<E, R>): Running<E, R> {
@@ -41,37 +39,35 @@ class Forks(private val on: Executor = VirtualThreads, name: String = "Forks") :
 internal val ForksKey = BackendKey("Forks")
 
 /**
- * The [Forks] pull loop on a clock a test moves: what surefold-stream-test's `TestStreams` is, by its own
- * [name]. It runs what Forks does, and `tick`, `groupedWithin` and `restartOnDefect` besides, which wait
- * on [time] and on nothing else, and `mapPar`, one element at a time in the order they came.
+ * The [Forks] pull loop on a clock a test moves: what surefold-stream-test's `TestStreams` is, by its own [name]. It
+ * runs what Forks does, and `tick`, `groupedWithin` and `restartOnDefect` besides, which wait on [time] and on nothing
+ * else, and `mapPar`, one element at a time in the order they came.
  *
- * A run is workers that take turns, so one stage runs at a time and in the same order every time. `start`
- * returns once the run is over or waiting on a later time, and each move of [time] returns once
- * everything due by then has run, in time order. A stage body that blocks on anything but [time] blocks
- * the test with it.
+ * A run is workers that take turns, so one stage runs at a time and in the same order every time. `start` returns once
+ * the run is over or waiting on a later time, and each move of [time] returns once everything due by then has run, in
+ * time order. A stage body that blocks on anything but [time] blocks the test with it.
  */
 @StreamSpi
 class ForksOnClock(private val time: TestClock, name: String) : StreamBackend {
 
-    @StreamSpi
-    override val key: BackendKey = BackendKey(name)
+    @StreamSpi override val key: BackendKey = BackendKey(name)
 
-    @StreamSpi
-    override fun runs(node: Node): Boolean = node.pulls()
+    @StreamSpi override fun runs(node: Node): Boolean = node.pulls()
 
     @StreamSpi
     override fun <E, R : Any> materialise(run: Run<E, R>): Running<E, R> {
         val turns = Turns(time)
         val waiting = time.register(turns)
-        val running = PullRun<E, R>(
-            logger.get(),
-            time,
-            VirtualThreads,
-            onStop = turns::stop,
-            kept = CopyOnWriteArrayList(),
-            interrupting = false,
-            turns = turns,
-        )
+        val running =
+            PullRun<E, R>(
+                logger.get(),
+                time,
+                VirtualThreads,
+                onStop = turns::stop,
+                kept = CopyOnWriteArrayList(),
+                interrupting = false,
+                turns = turns,
+            )
         turns.fork {
             try {
                 running.drain(run)
@@ -110,17 +106,15 @@ private class PullRun<E, R : Any>(
     private var loop: Thread? = null
 
     /** The run's loop, once the fork has opened it: a stop before then is seen as it opens. */
-    @Volatile
-    private var pulling: Pulling<E, R>? = null
+    @Volatile private var pulling: Pulling<E, R>? = null
 
     override val exit = CompletableFuture<Exit<E, R>>()
 
     override fun emitted(): List<Any> = kept?.toList() ?: error("only a run on a test's clock keeps what it emitted")
 
     /**
-     * Ends the run now: the loop stops before its next element, and whatever it is waiting on (a body in
-     * flight, an empty buffer, a stage that blocks) is interrupted. The exit is `Done` with what the end
-     * had by then.
+     * Ends the run now: the loop stops before its next element, and whatever it is waiting on (a body in flight, an
+     * empty buffer, a stage that blocks) is interrupted. The exit is `Done` with what the end had by then.
      */
     override fun stop() {
         stopped.set(true)
@@ -140,35 +134,43 @@ private class PullRun<E, R : Any>(
     fun drain(run: Run<E, R>) {
         synchronized(this) { loop = Thread.currentThread() }
         var opened: Pulling<E, R>? = null
-        val ended = try {
-            val loop = Pulling(run, log, clock, on, kept, boundaries = null, turns).also { opened = it }
-            pulling = loop
-            if (stopped.get()) loop.stop()
-            checkNotNull(loop.pull(Int.MAX_VALUE)) { "a pull of every element ended without an exit" }
-        } catch (unopened: Throwable) {
-            log.log(
-                LogLine(LogLevel.Error, unopened.oneLine(), clock.now(), unopened, origin = PullRun::class.java.name),
-            )
-            Exit.Died(unopened)
-        } finally {
-            synchronized(this) {
-                loop = null
-                // A stop that came after the loop's last wait leaves the flag set; the thread may be pooled.
-                Thread.interrupted()
+        val ended =
+            try {
+                val loop = Pulling(run, log, clock, on, kept, boundaries = null, turns).also { opened = it }
+                pulling = loop
+                if (stopped.get()) loop.stop()
+                checkNotNull(loop.pull(Int.MAX_VALUE)) { "a pull of every element ended without an exit" }
+            } catch (unopened: Throwable) {
+                log.log(
+                    LogLine(
+                        LogLevel.Error,
+                        unopened.oneLine(),
+                        clock.now(),
+                        unopened,
+                        origin = PullRun::class.java.name,
+                    ),
+                )
+                Exit.Died(unopened)
+            } finally {
+                synchronized(this) {
+                    loop = null
+                    // A stop that came after the loop's last wait leaves the flag set; the thread may be pooled.
+                    Thread.interrupted()
+                }
             }
-        }
         // After the interrupt is spent, so a close that talks to a server is not cut short by it.
         exit.complete(opened?.finish(ended) ?: ended)
     }
 }
 
 /**
- * One run's pull loop, as far as it has got: what [Forks] pulls to the end in one go, and what a backend that
- * shares its threads between runs pulls a batch at a time. Its pulls carry the run's resources and forks with
- * them, so the batches may each be on a different thread, as long as it is one at a time.
+ * One run's pull loop, as far as it has got: what [Forks] pulls to the end in one go, and what a backend that shares
+ * its threads between runs pulls a batch at a time. Its pulls carry the run's resources and forks with them, so the
+ * batches may each be on a different thread, as long as it is one at a time.
  */
 @StreamSpi
-class Pulling<E, R : Any> internal constructor(
+class Pulling<E, R : Any>
+internal constructor(
     run: Run<E, R>,
     private val log: Logger,
     private val clock: Clock,
@@ -205,31 +207,31 @@ class Pulling<E, R : Any> internal constructor(
     }
 
     /**
-     * Pulls up to [max] elements into the end: the exit once the run has ended, and null while it goes on. The
-     * nodes built as it pulls are offered to the run's [Boundaries] first.
+     * Pulls up to [max] elements into the end: the exit once the run has ended, and null while it goes on. The nodes
+     * built as it pulls are offered to the run's [Boundaries] first.
      */
     fun pull(max: Int): Exit<E, R>? = pulled(max)
 
     /** The exit of a run that stops where it is: `Done` with what the end has so far. */
-    @Suppress("UNCHECKED_CAST")
-    fun done(): Exit<E, R> = Exit.Done(sink.value() as R)
+    @Suppress("UNCHECKED_CAST") fun done(): Exit<E, R> = Exit.Done(sink.value() as R)
 
     /**
-     * Lets go of everything the run holds, and answers the exit it ends with: [ended], unless letting go threw.
-     * What is still in flight is let go of first, and then the sources are closed; a close that throws is a
-     * defect, and ends a run that would otherwise have been `Done`.
+     * Lets go of everything the run holds, and answers the exit it ends with: [ended], unless letting go threw. What is
+     * still in flight is let go of first, and then the sources are closed; a close that throws is a defect, and ends a
+     * run that would otherwise have been `Done`.
      */
     // The catch is as wide as a release: whatever one threw, the run still ends.
     @Suppress("TooGenericExceptionCaught")
     fun finish(ended: Exit<E, R>): Exit<E, R> {
-        val released = try {
-            releases?.releaseAll()
-            ended
-        } catch (unreleased: Throwable) {
-            val origin = Pulling::class.java.name
-            log.log(LogLine(LogLevel.Error, unreleased.oneLine(), clock.now(), unreleased, origin = origin))
-            Exit.Died(unreleased)
-        }
+        val released =
+            try {
+                releases?.releaseAll()
+                ended
+            } catch (unreleased: Throwable) {
+                val origin = Pulling::class.java.name
+                log.log(LogLine(LogLevel.Error, unreleased.oneLine(), clock.now(), unreleased, origin = origin))
+                Exit.Died(unreleased)
+            }
         val unclosed = resources.close() ?: return released
         if (released !is Exit.Done) return released
         log.log(
@@ -240,7 +242,9 @@ class Pulling<E, R : Any> internal constructor(
 
     /** The run's pull, built under the run's context on the first batch and kept for the ones after. */
     private fun opened(): Pull {
-        pull?.let { return it }
+        pull?.let {
+            return it
+        }
         val context = PullContext(turns, releases, resources, boundaries)
         return with(context) { compiled.tree.pull() }.also { pull = it }
     }
@@ -332,14 +336,21 @@ internal class Compiled(val tree: Node) {
 }
 
 /**
- * Whether pulling this starts a thread of its own, builds a stream later that might (a `flatMap`'s inner
- * streams and a `catchAll`'s recovery are built only when they are needed), or reads the run's clock.
+ * Whether pulling this starts a thread of its own, builds a stream later that might (a `flatMap`'s inner streams and a
+ * `catchAll`'s recovery are built only when they are needed), or reads the run's clock.
  */
 private fun Node.mayFork(): Boolean =
     when (this) {
-        is Node.MapPar, is Node.MapAsync, is Node.Buffer, is Node.Merge, is Node.Conflate, is Node.FlatMap,
-        is Node.CatchAll, is Node.Tick, is Node.GroupedWithin, is Node.RestartOnDefect,
-        -> true
+        is Node.MapPar,
+        is Node.MapAsync,
+        is Node.Buffer,
+        is Node.Merge,
+        is Node.Conflate,
+        is Node.FlatMap,
+        is Node.CatchAll,
+        is Node.Tick,
+        is Node.GroupedWithin,
+        is Node.RestartOnDefect -> true
 
         else -> children().any { it.mayFork() }
     }

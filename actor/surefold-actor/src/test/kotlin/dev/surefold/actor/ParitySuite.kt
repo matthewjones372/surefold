@@ -18,40 +18,47 @@ private interface Runtime {
     fun <A> run(scenario: Actors.() -> A): A
 }
 
-private val threads = object : Runtime {
-    override fun <A> run(scenario: Actors.() -> A): A = scope {
-        val scope = this
-        object : Actors {
-            override fun <M : Any, S> spawn(name: String, behaviour: Behaviour<M, S, *>) = scope.spawn(name, behaviour)
+private val threads =
+    object : Runtime {
+        override fun <A> run(scenario: Actors.() -> A): A = scope {
+            val scope = this
+            object : Actors {
+                    override fun <M : Any, S> spawn(name: String, behaviour: Behaviour<M, S, *>) =
+                        scope.spawn(name, behaviour)
 
-            override fun awaitIdle() = scope.awaitIdle()
-        }.scenario()
+                    override fun awaitIdle() = scope.awaitIdle()
+                }
+                .scenario()
+        }
+
+        override fun toString() = "threads"
     }
 
-    override fun toString() = "threads"
-}
+private val testScope =
+    object : Runtime {
+        override fun <A> run(scenario: Actors.() -> A): A = testActors {
+            val scope = this
+            object : Actors {
+                    override fun <M : Any, S> spawn(name: String, behaviour: Behaviour<M, S, *>) =
+                        scope.spawn(name, behaviour)
 
-private val testScope = object : Runtime {
-    override fun <A> run(scenario: Actors.() -> A): A = testActors {
-        val scope = this
-        object : Actors {
-            override fun <M : Any, S> spawn(name: String, behaviour: Behaviour<M, S, *>) = scope.spawn(name, behaviour)
+                    override fun awaitIdle() = scope.awaitIdle()
+                }
+                .scenario()
+        }
 
-            override fun awaitIdle() = scope.awaitIdle()
-        }.scenario()
+        override fun toString() = "test scope"
     }
-
-    override fun toString() = "test scope"
-}
 
 private data class Ball(val left: Int, val back: ActorRef<Ball>)
 
 /** Counts every ball it sees, then returns it with one fewer bounce, until none are left. */
-private fun paddle(seen: AtomicInteger): Behaviour<Ball, Unit, Nothing> = behaviour(Unit) { ctx, _, ball ->
-    seen.incrementAndGet()
-    if (ball.left > 0) ball.back.tell(Ball(ball.left - 1, ctx.self))
-    stay()
-}
+private fun paddle(seen: AtomicInteger): Behaviour<Ball, Unit, Nothing> =
+    behaviour(Unit) { ctx, _, ball ->
+        seen.incrementAndGet()
+        if (ball.left > 0) ball.back.tell(Ball(ball.left - 1, ctx.self))
+        stay()
+    }
 
 private data class Hop(val path: List<String>)
 
@@ -64,21 +71,24 @@ private fun relay(name: String, next: ActorRef<Hop>?, arrived: AtomicReference<L
 
 private data object Go
 
-private fun sender(to: ActorRef<Int>, count: Int) = behaviour<Go, Unit>(Unit) { _, _, _ ->
-    (1..count).forEach { to.tell(it) }
-    stay()
-}
+private fun sender(to: ActorRef<Int>, count: Int) =
+    behaviour<Go, Unit>(Unit) { _, _, _ ->
+        (1..count).forEach { to.tell(it) }
+        stay()
+    }
 
-private fun sink(total: AtomicInteger) = behaviour<Int, Unit>(Unit) { _, _, n ->
-    total.addAndGet(n)
-    stay()
-}
+private fun sink(total: AtomicInteger) =
+    behaviour<Int, Unit>(Unit) { _, _, n ->
+        total.addAndGet(n)
+        stay()
+    }
 
 object ParitySuite : Suite() {
     private val runtimes = listOf(threads, testScope)
 
-    private fun <A> onEvery(expected: A, scenario: Actors.() -> A) =
-        runtimes.forEach { runtime -> withClue("on $runtime") { runtime.run(scenario) shouldBe expected } }
+    private fun <A> onEvery(expected: A, scenario: Actors.() -> A) = runtimes.forEach { runtime ->
+        withClue("on $runtime") { runtime.run(scenario) shouldBe expected }
+    }
 
     init {
         test("a ball bounced between two actors is counted every time before awaitIdle returns") {

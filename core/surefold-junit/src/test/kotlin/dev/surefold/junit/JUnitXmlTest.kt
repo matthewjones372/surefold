@@ -5,6 +5,10 @@ import dev.surefold.assert.shouldContain
 import dev.surefold.junit.samples.IgnoringSuite
 import dev.surefold.junit.samples.MixedSuite
 import dev.surefold.junit.samples.UnacquirableSuite
+import java.io.PrintWriter
+import java.io.StringWriter
+import java.nio.file.Path
+import kotlin.io.path.readText
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
@@ -12,10 +16,6 @@ import org.junit.platform.launcher.EngineFilter.includeEngines
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder.request
 import org.junit.platform.launcher.core.LauncherFactory
 import org.junit.platform.reporting.legacy.xml.LegacyXmlReportGeneratingListener
-import java.io.PrintWriter
-import java.io.StringWriter
-import java.nio.file.Path
-import kotlin.io.path.readText
 
 /** The JUnit XML a build tool writes from the platform's events, written here by the platform's own listener. */
 class JUnitXmlTest {

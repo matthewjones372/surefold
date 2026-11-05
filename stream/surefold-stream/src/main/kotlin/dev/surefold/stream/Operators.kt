@@ -6,9 +6,8 @@ import java.util.concurrent.CompletionStage
 /**
  * Up to [parallelism] stages run at once and their results keep the input's order.
  *
- * A stage that completes with `null` dies here. Pekko's own `mapAsync` documents
- * that such an element "is not passed downstream", and a lookup lifted into a
- * future is the easiest thing in Kotlin to write and the hardest to notice.
+ * A stage that completes with `null` dies here. Pekko's own `mapAsync` documents that such an element "is not passed
+ * downstream", and a lookup lifted into a future is the easiest thing in Kotlin to write and the hardest to notice.
  */
 fun <E, A : Any, B : Any> Stream<E, A>.mapAsync(parallelism: Int, f: (A) -> CompletionStage<B>): Stream<E, B> =
     via(Pipe.mapAsync(parallelism, f))
@@ -49,9 +48,8 @@ fun <E, A : Any> Stream<E, A>.orElse(other: Stream<E, A>): Stream<E, A> = replac
 /**
  * A stream that ends having emitted nothing fails with [error] instead; one that emitted is untouched.
  *
- * Pekko's `orElse` switches to the alternative only where the primary completed without an element, so
- * a failure of its own reaches `run` as itself. On `Stream` alone: a pipe is spliced into a source it
- * cannot see, so it has no way to know whether that source emitted.
+ * Pekko's `orElse` switches to the alternative only where the primary completed without an element, so a failure of its
+ * own reaches `run` as itself. On `Stream` alone: a pipe is spliced into a source it cannot see, so it has no way to
+ * know whether that source emitted.
  */
-fun <E : E2, E2, A : Any> Stream<E, A>.orFailIfEmpty(error: E2): Stream<E2, A> =
-    Stream(Node.OrFailIfEmpty(node, error))
+fun <E : E2, E2, A : Any> Stream<E, A>.orFailIfEmpty(error: E2): Stream<E2, A> = Stream(Node.OrFailIfEmpty(node, error))

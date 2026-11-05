@@ -40,12 +40,14 @@ object TellAfterCommitSuite : Suite() {
         test("a step that throws tells nothing") {
             val sold = behaviour<Int, Int>(0) { _, total, n -> become(total + n) }.test()
 
-            shouldThrow<IllegalStateException>({
-                transact {
-                    tellAfterCommit(sold, 2)
-                    error("payment refused")
-                }
-            }) { }
+            shouldThrow<IllegalStateException>(
+                {
+                    transact {
+                        tellAfterCommit(sold, 2)
+                        error("payment refused")
+                    }
+                },
+            ) {}
 
             sold.state shouldBe 0
         }
@@ -55,15 +57,16 @@ object TellAfterCommitSuite : Suite() {
             val runs = AtomicInteger()
             val orders = Recorded<Int>()
 
-            val buyers = List(THREADS) { i ->
-                Thread.ofVirtual().start {
-                    transact {
-                        runs.incrementAndGet()
-                        free.update { it + 1 }
-                        tellAfterCommit(orders, i)
+            val buyers =
+                List(THREADS) { i ->
+                    Thread.ofVirtual().start {
+                        transact {
+                            runs.incrementAndGet()
+                            free.update { it + 1 }
+                            tellAfterCommit(orders, i)
+                        }
                     }
                 }
-            }
             buyers.forEach { it.join() }
 
             orders.told.sorted() shouldBe (0 until THREADS).toList()

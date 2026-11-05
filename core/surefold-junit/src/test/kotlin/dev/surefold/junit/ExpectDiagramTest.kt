@@ -12,17 +12,27 @@ class ExpectDiagramTest {
 
     @Test
     fun `a failed expect draws each value under the expression, after the heading and before the line`() {
-        val failed = EngineTestKit.engine("surefold").selectors(selectClass(OrderSuite::class.java)).execute()
-            .testEvents().failed().list().single()
-            .getRequiredPayload(TestExecutionResult::class.java).throwable.get()
+        val failed =
+            EngineTestKit.engine("surefold")
+                .selectors(selectClass(OrderSuite::class.java))
+                .execute()
+                .testEvents()
+                .failed()
+                .list()
+                .single()
+                .getRequiredPayload(TestExecutionResult::class.java)
+                .throwable
+                .get()
 
-        failed.message shouldBe """
+        failed.message shouldBe
+            """
             an order is saved once: 1 of 2 expectations failed
             expect(db.count() == 1)
                    |  |       |
                    |  2       false
                    Database(orders=2)
             at OrderSuite.kt:15
-        """.trimIndent()
+            """
+                .trimIndent()
     }
 }

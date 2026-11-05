@@ -2,15 +2,15 @@ package dev.surefold
 
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.withClue
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.locks.LockSupport
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
 import org.junit.jupiter.api.condition.EnabledIfSystemProperty
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.testkit.engine.EngineTestKit
-import java.io.ByteArrayOutputStream
-import java.io.PrintStream
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.locks.LockSupport
 
 /** A test that times out leaves every thread's stack in its report, virtual threads among them. */
 class ThreadsOnTimeoutTest {

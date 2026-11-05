@@ -26,13 +26,14 @@ fun <E, A, B, C, D> Fail<E>.parZip(
     fb: Fail<E>.() -> B,
     fc: Fail<E>.() -> C,
     f: (A, B, C) -> D,
-): D = Tasks<E, Failure<E>?>(FirstFailure()).use { tasks ->
-    val a = tasks.fork(fa)
-    val b = tasks.fork(fb)
-    val c = tasks.fork(fc)
-    tasks.join()?.let { surface(it) }
-    f(valueOf(a), valueOf(b), valueOf(c))
-}
+): D =
+    Tasks<E, Failure<E>?>(FirstFailure()).use { tasks ->
+        val a = tasks.fork(fa)
+        val b = tasks.fork(fb)
+        val c = tasks.fork(fc)
+        tasks.join()?.let { surface(it) }
+        f(valueOf(a), valueOf(b), valueOf(c))
+    }
 
 /** Runs [f] over every element at once and answers in the iterable's order; the first to fail is the answer. */
 fun <E, A, B> Fail<E>.parMap(iterable: Iterable<A>, f: Fail<E>.(A) -> B): List<B> =
@@ -43,8 +44,8 @@ fun <E, A, B> Fail<E>.parMap(iterable: Iterable<A>, f: Fail<E>.(A) -> B): List<B
     }
 
 /**
- * Runs both branches at once and answers with the first to finish, on the side it was given; the loser is
- * cancelled. A branch that fails first loses the race for everyone.
+ * Runs both branches at once and answers with the first to finish, on the side it was given; the loser is cancelled. A
+ * branch that fails first loses the race for everyone.
  */
 fun <E, A, B> Fail<E>.raceN(fa: Fail<E>.() -> A, fb: Fail<E>.() -> B): Either<A, B> =
     Tasks<E, StructuredTaskScope.Subtask<*>?>(FirstToFinish()).use { tasks ->
@@ -73,8 +74,9 @@ private inline fun <E, A> Fail<E>.withDeadline(
     duration: Duration,
     noinline block: Fail<E>.() -> A,
     expired: () -> Nothing,
-): A = Tasks<E, Boolean>(Expiry(), duration).use { tasks ->
-    val answer = tasks.fork(block)
-    // An answer that got in before the deadline is still the answer.
-    if (tasks.join() && !answer.hasAnswered()) expired() else valueOf(answer)
-}
+): A =
+    Tasks<E, Boolean>(Expiry(), duration).use { tasks ->
+        val answer = tasks.fork(block)
+        // An answer that got in before the deadline is still the answer.
+        if (tasks.join() && !answer.hasAnswered()) expired() else valueOf(answer)
+    }

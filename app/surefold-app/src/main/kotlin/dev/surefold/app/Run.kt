@@ -38,22 +38,24 @@ inline fun <reified A : Any> Module.application(
 ): Either<StartupError, Unit> = use<A, Unit> { root -> appScope(shutdown).block(root) }
 
 @PublishedApi
-internal fun appScope(shutdown: Shutdown): AppScope = object : AppScope {
-    override fun awaitShutdown() = shutdown.await()
-}
+internal fun appScope(shutdown: Shutdown): AppScope =
+    object : AppScope {
+        override fun awaitShutdown() = shutdown.await()
+    }
 
 /** What went wrong, in the words the reader needs to fix it. */
-fun StartupError.describe(): String = when (this) {
-    is StartupError.Unwireable -> errors.report(provided)
+fun StartupError.describe(): String =
+    when (this) {
+        is StartupError.Unwireable -> errors.report(provided)
 
-    is StartupError.Refused -> "surefold-app: ${labelOf(key)} refused to start: $reason"
+        is StartupError.Refused -> "surefold-app: ${labelOf(key)} refused to start: $reason"
 
-    is StartupError.NoSuchNode -> "surefold-app: nothing in the graph builds ${labelOf(key)}"
+        is StartupError.NoSuchNode -> "surefold-app: nothing in the graph builds ${labelOf(key)}"
 
-    is StartupError.Unready ->
-        "surefold-app: ${labelOf(key)} started and its $name probe did not answer" +
-            cause?.let { ": it threw ${it::class.simpleName}: ${it.message}" }.orEmpty()
-}
+        is StartupError.Unready ->
+            "surefold-app: ${labelOf(key)} started and its $name probe did not answer" +
+                cause?.let { ": it threw ${it::class.simpleName}: ${it.message}" }.orEmpty()
+    }
 
 /** What the process should leave with. */
 @JvmInline
@@ -69,12 +71,12 @@ value class ExitCode(val code: Int) {
 fun Either<StartupError, Unit>.exitCode(): ExitCode = fold({ ExitCode.Failed }, { ExitCode.Ok })
 
 /**
- * The whole of a `main` bar the leaving: a signal stops the application, its releases run before this
- * answers, and what went wrong is on stderr.
+ * The whole of a `main` bar the leaving: a signal stops the application, its releases run before this answers, and what
+ * went wrong is on stderr.
  *
- * It answers with an [ExitCode] rather than ending the process, so a test can run an application and
- * read what it decided. `exitProcess` is the caller's, and worth making: a stray non-daemon thread
- * keeps a JVM alive after `main` returns.
+ * It answers with an [ExitCode] rather than ending the process, so a test can run an application and read what it
+ * decided. `exitProcess` is the caller's, and worth making: a stray non-daemon thread keeps a JVM alive after `main`
+ * returns.
  *
  * ```kotlin
  * fun main() {
@@ -83,7 +85,9 @@ fun Either<StartupError, Unit>.exitCode(): ExitCode = fold({ ExitCode.Failed }, 
  * ```
  */
 inline fun <reified A : Any> runApp(module: Module, noinline block: AppScope.(A) -> Unit): ExitCode =
-    leaving { shutdown -> module.application(shutdown, block) }
+    leaving { shutdown ->
+        module.application(shutdown, block)
+    }
 
 @PublishedApi
 internal fun leaving(run: (Shutdown) -> Either<StartupError, Unit>): ExitCode {

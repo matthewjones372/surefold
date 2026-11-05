@@ -27,8 +27,8 @@ import org.jetbrains.kotlin.name.FqName
 import org.jetbrains.kotlin.name.Name
 
 /**
- * Calls inside a step that do something besides change `Shared` values (spec 0210). A step runs again whenever
- * another commit beat it, so I/O, a blocking wait or a fork in its body happens once per run, not once per commit.
+ * Calls inside a step that do something besides change `Shared` values (spec 0210). A step runs again whenever another
+ * commit beat it, so I/O, a blocking wait or a fork in its body happens once per run, not once per commit.
  */
 internal class TransactChecker : FirFunctionCallChecker(MppCheckerKind.Common) {
 
@@ -36,23 +36,24 @@ internal class TransactChecker : FirFunctionCallChecker(MppCheckerKind.Common) {
     override fun check(expression: FirFunctionCall) {
         val symbol = expression.calleeReference.toResolvedCallableSymbol() ?: return
         val called = symbol.callableId ?: return
-        val said = when {
-            called == peek -> "${named(symbol, called)} reads outside the step; read it with get()"
+        val said =
+            when {
+                called == peek -> "${named(symbol, called)} reads outside the step; read it with get()"
 
-            called == tell ->
-                "${named(symbol, called)} runs again each time the step does; once the step commits, tell it with " +
-                    "tellAfterCommit(ref, message)"
+                called == tell ->
+                    "${named(symbol, called)} runs again each time the step does; once the step commits, tell it with " +
+                        "tellAfterCommit(ref, message)"
 
-            called in surefoldEffects || called in printed ->
-                "${named(symbol, called)} runs again each time the step does; once the step commits, run it in " +
-                    "afterCommit { }"
+                called in surefoldEffects || called in printed ->
+                    "${named(symbol, called)} runs again each time the step does; once the step commits, run it in " +
+                        "afterCommit { }"
 
-            refused(called) ->
-                "${named(symbol, called)} runs again each time the step does, not once per commit; " +
-                    "do it before or after transact"
+                refused(called) ->
+                    "${named(symbol, called)} runs again each time the step does, not once per commit; " +
+                        "do it before or after transact"
 
-            else -> return
-        }
+                else -> return
+            }
         if (step() != null) report(expression.source, said)
     }
 }
@@ -70,13 +71,15 @@ internal class TransactAssignmentChecker : FirVariableAssignmentChecker(MppCheck
         val access = (target ?: expression.lValue) as? FirQualifiedAccessExpression ?: return
         val variable = access.calleeReference.toResolvedVariableSymbol() as? FirPropertySymbol ?: return
         val step = step() ?: return
-        val outside = when (variable) {
-            is FirLocalPropertySymbol -> !variable.declaredIn(step)
+        val outside =
+            when (variable) {
+                is FirLocalPropertySymbol -> !variable.declaredIn(step)
 
-            // `this.x` or a bare `x` is the enclosing object's; a property of something else the step was handed is not
-            // judged, since the checker cannot see where that object came from.
-            else -> access.explicitReceiver.let { it == null || it is FirThisReceiverExpression }
-        }
+                // `this.x` or a bare `x` is the enclosing object's; a property of something else the step was handed is
+                // not
+                // judged, since the checker cannot see where that object came from.
+                else -> access.explicitReceiver.let { it == null || it is FirThisReceiverExpression }
+            }
         if (outside) {
             report(
                 expression.source,
@@ -115,12 +118,10 @@ context(context: CheckerContext)
 private fun afterCommitted(): Boolean {
     val path = context.containingElements
     val block = path.indexOfLast {
-        (it as? FirFunctionCall)?.calleeReference?.toResolvedCallableSymbol()?.callableId ==
-            afterCommit
+        (it as? FirFunctionCall)?.calleeReference?.toResolvedCallableSymbol()?.callableId == afterCommit
     }
     val innermost = path.indexOfLast {
-        (it as? FirFunction)?.receiverParameter?.typeRef?.coneType?.classId ==
-            transaction
+        (it as? FirFunction)?.receiverParameter?.typeRef?.coneType?.classId == transaction
     }
     return block > innermost
 }
@@ -146,38 +147,40 @@ private val kotlinIo = setOf(FqName("kotlin.io"), FqName("kotlin.io.path"))
 private fun member(pkg: String, cls: String, name: String) =
     CallableId(ClassId(FqName(pkg), Name.identifier(cls)), Name.identifier(name))
 
-private val blocking = setOf(
-    member("java.lang", "Thread", "sleep"),
-    member("java.util.concurrent", "TimeUnit", "sleep"),
-    member("java.util.concurrent", "Future", "get"),
-    member("java.util.concurrent", "CompletableFuture", "get"),
-    member("java.util.concurrent", "CompletableFuture", "join"),
-    member("java.util.concurrent.locks", "Lock", "lock"),
-    member("java.util.concurrent.locks", "Lock", "lockInterruptibly"),
-    member("java.util.concurrent.locks", "ReentrantLock", "lock"),
-    member("java.util.concurrent.locks", "ReentrantLock", "lockInterruptibly"),
-    member(surefold.asString(), "Deferred", "await"),
-    CallableId(FqName("kotlin"), Name.identifier("synchronized")),
-)
+private val blocking =
+    setOf(
+        member("java.lang", "Thread", "sleep"),
+        member("java.util.concurrent", "TimeUnit", "sleep"),
+        member("java.util.concurrent", "Future", "get"),
+        member("java.util.concurrent", "CompletableFuture", "get"),
+        member("java.util.concurrent", "CompletableFuture", "join"),
+        member("java.util.concurrent.locks", "Lock", "lock"),
+        member("java.util.concurrent.locks", "Lock", "lockInterruptibly"),
+        member("java.util.concurrent.locks", "ReentrantLock", "lock"),
+        member("java.util.concurrent.locks", "ReentrantLock", "lockInterruptibly"),
+        member(surefold.asString(), "Deferred", "await"),
+        CallableId(FqName("kotlin"), Name.identifier("synchronized")),
+    )
 
-private val forks = listOf("scope", "parZip", "parMap", "raceN")
-    .map { CallableId(surefold, Name.identifier(it)) }
-    .toSet() + member(surefold.asString(), "Scope", "async")
+private val forks =
+    listOf("scope", "parZip", "parMap", "raceN").map { CallableId(surefold, Name.identifier(it)) }.toSet() +
+        member(surefold.asString(), "Scope", "async")
 
 // An actor's tell has its own after-commit form, which surefold-actor names tellAfterCommit.
 private val tell = member("${surefold.asString()}.actor", "ActorRef", "tell")
 
 // Surefold's own effects: what a step most often wants to happen once it has committed.
-private val surefoldEffects = listOf("logDebug", "logInfo", "logWarn", "logError", "increment")
-    .map { CallableId(surefold, Name.identifier(it)) }
-    .toSet() +
-    setOf(
-        member(surefold.asString(), "Logger", "log"),
-        member(surefold.asString(), "Counter", "increment"),
-        member(surefold.asString(), "Gauge", "set"),
-        member(surefold.asString(), "Histogram", "record"),
-        member("${surefold.asString()}.stream", "Hub", "publish"),
-    )
+private val surefoldEffects =
+    listOf("logDebug", "logInfo", "logWarn", "logError", "increment")
+        .map { CallableId(surefold, Name.identifier(it)) }
+        .toSet() +
+        setOf(
+            member(surefold.asString(), "Logger", "log"),
+            member(surefold.asString(), "Counter", "increment"),
+            member(surefold.asString(), "Gauge", "set"),
+            member(surefold.asString(), "Histogram", "record"),
+            member("${surefold.asString()}.stream", "Hub", "publish"),
+        )
 
 // Kotlin's own print and println. A PrintStream's are refused with the rest of java.io.
 private val printed = listOf("print", "println").map { CallableId(FqName("kotlin.io"), Name.identifier(it)) }.toSet()

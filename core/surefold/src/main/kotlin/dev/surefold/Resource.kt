@@ -36,17 +36,18 @@ interface ResourceScope {
 fun <A> resource(block: ResourceScope.() -> A): Resource<A> = block
 
 /**
- * Runs [block] in a scope of its own, releasing everything installed in it in reverse acquisition order on
- * the way out — by return, raise, throw or interrupt.
+ * Runs [block] in a scope of its own, releasing everything installed in it in reverse acquisition order on the way out
+ * — by return, raise, throw or interrupt.
  */
 fun <A> resourceScope(block: ResourceScope.() -> A): A {
     val scope = Resources()
-    val value = try {
-        scope.block()
-    } catch (t: Throwable) {
-        // The block's own throw is the one that carries on; a release that also throws rides on it.
-        throw scope.releaseAll(exitCaseOf(t), t) ?: t
-    }
+    val value =
+        try {
+            scope.block()
+        } catch (t: Throwable) {
+            // The block's own throw is the one that carries on; a release that also throws rides on it.
+            throw scope.releaseAll(exitCaseOf(t), t) ?: t
+        }
     val releaseFailed = scope.releaseAll(ExitCase.Completed, null)
     if (releaseFailed != null) throw releaseFailed
     return value
@@ -56,14 +57,16 @@ fun <A> resourceScope(block: ResourceScope.() -> A): A {
 infix fun <A, B> Resource<A>.use(block: (A) -> B): B = resourceScope { block(bind()) }
 
 /**
- * A fail unwinds as surefold's [Failed], and a cancellation as a `CancellationException`, and neither is an
- * interrupt or a failure: the boundary it leaves through answers its caller with a value rather than a throw.
+ * A fail unwinds as surefold's [Failed], and a cancellation as a `CancellationException`, and neither is an interrupt
+ * or a failure: the boundary it leaves through answers its caller with a value rather than a throw.
  */
-private fun exitCaseOf(failure: Throwable): ExitCase = when (failure) {
-    is InterruptedException -> ExitCase.Cancelled(failure)
-    is CancellationException, is Failed -> ExitCase.Completed
-    else -> ExitCase.Failure(failure)
-}
+private fun exitCaseOf(failure: Throwable): ExitCase =
+    when (failure) {
+        is InterruptedException -> ExitCase.Cancelled(failure)
+        is CancellationException,
+        is Failed -> ExitCase.Completed
+        else -> ExitCase.Failure(failure)
+    }
 
 private class Resources : ResourceScope {
 
@@ -75,8 +78,8 @@ private class Resources : ResourceScope {
     }
 
     /**
-     * Every release runs, in reverse acquisition order, whatever the ones before it did: the throw that
-     * comes back is [failure] if there was one, with any release's own throw suppressed onto it.
+     * Every release runs, in reverse acquisition order, whatever the ones before it did: the throw that comes back is
+     * [failure] if there was one, with any release's own throw suppressed onto it.
      */
     fun releaseAll(exit: ExitCase, failure: Throwable?): Throwable? =
         releases.asReversed().fold(failure) { carried, release -> carried.orThrowFrom { release(exit) } }

@@ -4,8 +4,8 @@ import dev.surefold.assert.shouldBeNull
 import dev.surefold.assert.shouldBeRight
 import dev.surefold.assert.shouldBeSameInstanceAs
 import dev.surefold.scope
-import org.junit.jupiter.api.Test
 import kotlin.time.Duration.Companion.minutes
+import org.junit.jupiter.api.Test
 
 class InMemorySnapshotsTest : SnapshotContract() {
     override fun store(): SnapshotStore = InMemorySnapshots()
@@ -14,9 +14,10 @@ class InMemorySnapshotsTest : SnapshotContract() {
 /** Answers the snapshot store its actor sees. */
 private data class Which(val reply: Reply<Any>)
 
-private fun which() = behaviour<Which, Unit>(Unit) { ctx, _, which ->
-    stay().also { which.reply(ctx.snapshots ?: "none") }
-}
+private fun which() =
+    behaviour<Which, Unit>(Unit) { ctx, _, which ->
+        stay().also { which.reply(ctx.snapshots ?: "none") }
+    }
 
 class SnapshotsTest {
 

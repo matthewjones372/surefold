@@ -14,7 +14,8 @@ enum class Asked {
 }
 
 /** A question a node answers about itself, and the name the answer is reported under. */
-class Probe internal constructor(
+class Probe
+internal constructor(
     val name: String,
     val key: KType,
     val timeout: Duration,
@@ -26,8 +27,8 @@ class Probe internal constructor(
 )
 
 /**
- * A node is started when its probe answers, not when its recipe returns: a pool with no connection and
- * a consumer with no assignment have both been constructed and neither can serve anything.
+ * A node is started when its probe answers, not when its recipe returns: a pool with no connection and a consumer with
+ * no assignment have both been constructed and neither can serve anything.
  */
 inline fun <reified A : Any> Module.probe(
     name: String,
@@ -47,9 +48,9 @@ internal sealed interface Answer {
 }
 
 /**
- * The probe asked once, inside its timeout. A probe that throws has not said the thing is well, so the throw is a
- * no, and is kept to say why (spec 0126). An interruption is not caught: it is the timeout's race, or the caller's
- * stop, and either is theirs to see.
+ * The probe asked once, inside its timeout. A probe that throws has not said the thing is well, so the throw is a no,
+ * and is kept to say why (spec 0126). An interruption is not caught: it is the timeout's race, or the caller's stop,
+ * and either is theirs to see.
  */
 @Suppress("TooGenericExceptionCaught") // a probe is a question about something failing; any failure is the answer
 internal fun Probe.answered(value: Any): Answer =

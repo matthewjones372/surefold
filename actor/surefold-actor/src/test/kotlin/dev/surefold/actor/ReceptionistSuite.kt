@@ -21,15 +21,16 @@ private val Wickets = ServiceKey<Wicket>("wickets")
 /** Registers itself from its start, so it is listed from before its first message and again after a restart. */
 private fun wicket(log: ConcurrentLinkedQueue<String> = ConcurrentLinkedQueue()) =
     behaviour<Wicket, Unit>(Unit) { _, _, message ->
-        log += "step"
-        when (message) {
-            Retire -> stop()
-            Wobble -> error("the wicket wobbled")
+            log += "step"
+            when (message) {
+                Retire -> stop()
+                Wobble -> error("the wicket wobbled")
+            }
         }
-    }.onStart { ctx ->
-        log += "start"
-        ctx.register(Wickets)
-    }
+        .onStart { ctx ->
+            log += "start"
+            ctx.register(Wickets)
+        }
 
 private sealed interface Usher
 
@@ -40,21 +41,22 @@ private data class Listing(val wickets: Set<ActorRef<Wicket>>) : Usher
 private data class Sizes(val reply: Reply<List<Int>>) : Usher
 
 /** Follows the wickets, and writes down how many there were each time it was told. */
-private fun usher() = behaviour<Usher, List<Int>>(emptyList()) { ctx, sizes, message ->
-    when (message) {
-        Follow -> {
-            ctx.subscribe(Wickets) { Listing(it) }
-            stay()
-        }
+private fun usher() =
+    behaviour<Usher, List<Int>>(emptyList()) { ctx, sizes, message ->
+        when (message) {
+            Follow -> {
+                ctx.subscribe(Wickets) { Listing(it) }
+                stay()
+            }
 
-        is Listing -> become(sizes + message.wickets.size)
+            is Listing -> become(sizes + message.wickets.size)
 
-        is Sizes -> {
-            message.reply(sizes)
-            stay()
+            is Sizes -> {
+                message.reply(sizes)
+                stay()
+            }
         }
     }
-}
 
 object ReceptionistSuite : Suite() {
     init {

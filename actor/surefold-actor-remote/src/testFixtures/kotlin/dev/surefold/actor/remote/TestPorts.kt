@@ -23,9 +23,10 @@ fun freePort(): Int {
     }
 }
 
-private fun bindable(port: Int): Boolean = try {
-    ServerSocket(port).close()
-    true
-} catch (_: IOException) {
-    false
-}
+private fun bindable(port: Int): Boolean =
+    try {
+        ServerSocket(port).close()
+        true
+    } catch (_: IOException) {
+        false
+    }

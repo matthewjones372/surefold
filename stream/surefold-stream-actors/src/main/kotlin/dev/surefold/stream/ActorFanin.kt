@@ -85,8 +85,8 @@ internal class Inflow(room: Int, private var open: Int, private var outerDone: B
 }
 
 /**
- * Pulls [up] into [into] while there is room, [batch] at a time so that it shares its runner, and stalls when the
- * room runs out. [ended] runs once it has put its end.
+ * Pulls [up] into [into] while there is room, [batch] at a time so that it shares its runner, and stalls when the room
+ * runs out. [ended] runs once it has put its end.
  */
 internal class Input(
     private val up: Pull,
@@ -98,21 +98,23 @@ internal class Input(
 
     fun behaviour(): Behaviour<Room, Unit, Nothing> =
         behaviour<Room, Unit>(Unit) { ctx, _, _ ->
-            feed(ctx.self)
-            stay()
-        }.onStart { ctx -> ctx.self.tell(Room) }
+                feed(ctx.self)
+                stay()
+            }
+            .onStart { ctx -> ctx.self.tell(Room) }
 
     // Whatever upstream threw ends what the reader sees, after every element before it.
     @Suppress("TooGenericExceptionCaught")
     private fun feed(self: ActorRef<Room>) {
         var pulled = 0
         while (!done && into.hasRoom() && pulled < batch) {
-            val a = try {
-                up.next()
-            } catch (thrown: Throwable) {
-                end { into.threw(thrown.nonFatalOrThrow()) }
-                return
-            }
+            val a =
+                try {
+                    up.next()
+                } catch (thrown: Throwable) {
+                    end { into.threw(thrown.nonFatalOrThrow()) }
+                    return
+                }
             if (a == null) {
                 end(into::finished)
             } else {
@@ -151,9 +153,10 @@ internal class Outer(
 
     fun behaviour(): Behaviour<Room, Unit, Nothing> =
         behaviour<Room, Unit>(Unit) { ctx, _, _ ->
-            startInners(ctx)
-            stay()
-        }.onStart { ctx -> ctx.self.tell(Room) }
+                startInners(ctx)
+                stay()
+            }
+            .onStart { ctx -> ctx.self.tell(Room) }
 
     // Whatever the outer stream or a build threw is the reader's, after every element before it.
     @Suppress("TooGenericExceptionCaught")
@@ -168,10 +171,11 @@ internal class Outer(
                     val pull = inner(a)
                     running.incrementAndGet()
                     into.started()
-                    val input = Input(pull, into, batch) {
-                        running.decrementAndGet()
-                        ctx.self.tell(Room)
-                    }
+                    val input =
+                        Input(pull, into, batch) {
+                            running.decrementAndGet()
+                            ctx.self.tell(Room)
+                        }
                     ctx.spawn("inner-${++started}", input.behaviour(), null)
                 }
             } catch (thrown: Throwable) {
@@ -221,9 +225,10 @@ internal class Folding(
 ) {
     fun behaviour(): Behaviour<Room, Unit, Nothing> =
         behaviour<Room, Unit>(Unit) { ctx, _, _ ->
-            if (fold()) ctx.self.tell(Room)
-            stay()
-        }.onStart { ctx -> ctx.self.tell(Room) }
+                if (fold()) ctx.self.tell(Room)
+                stay()
+            }
+            .onStart { ctx -> ctx.self.tell(Room) }
 
     /** Whether upstream goes on. */
     // Whatever upstream, the seed or the aggregate threw is the reader's.

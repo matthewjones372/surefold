@@ -7,15 +7,15 @@ import kotlin.concurrent.withLock
 import kotlin.time.Duration
 
 /**
- * A clock that only moves when a test moves it. A sleep waits for the time it was scheduled at rather
- * than for the time it would have taken.
+ * A clock that only moves when a test moves it. A sleep waits for the time it was scheduled at rather than for the time
+ * it would have taken.
  */
 class TestClock(start: Instant = Instant.EPOCH) : Clock {
 
     /**
-     * Work that waits on this clock by its own means, and has to have done what falls due at an instant
-     * before the clock goes past it: a stream on `TestStreams` is one. A move stops at every instant a
-     * waiter asks for on the way, and lets it [settle] there before going on.
+     * Work that waits on this clock by its own means, and has to have done what falls due at an instant before the
+     * clock goes past it: a stream on `TestStreams` is one. A move stops at every instant a waiter asks for on the way,
+     * and lets it [settle] there before going on.
      */
     interface Waiter {
 
@@ -60,16 +60,16 @@ class TestClock(start: Instant = Instant.EPOCH) : Clock {
     fun sleepers(): Int = lock.withLock { waiting.size }
 
     /**
-     * Moves the clock on, stopping at each instant a [Waiter] is waiting for so that what falls due there
-     * runs in time order, and returns once every waiter has settled at the new time.
+     * Moves the clock on, stopping at each instant a [Waiter] is waiting for so that what falls due there runs in time
+     * order, and returns once every waiter has settled at the new time.
      */
     fun adjust(by: Duration) = advance { it.plusNanos(by.inWholeNanoseconds) }
 
     fun setTime(to: Instant) = advance { to }
 
     /**
-     * Waits until something is asleep and then moves, because nothing here knows a fork has reached its
-     * sleep the way a fiber runtime does: a plain [adjust] races the sleeper it means to release.
+     * Waits until something is asleep and then moves, because nothing here knows a fork has reached its sleep the way a
+     * fiber runtime does: a plain [adjust] races the sleeper it means to release.
      */
     fun adjustWhenBlocked(by: Duration) {
         lock.withLock { awaitUntil { waiting.isNotEmpty() && waiting.none { it <= at } } }

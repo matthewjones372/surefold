@@ -30,20 +30,23 @@ private object TransferCodec : StateCodec<Transfer> {
 }
 
 /** The test transfer of spec 0299: a debit undone by a credit back, then a credit, each on a keyed account. */
-private fun transfers(accounts: Sharded<Account>) = durableSaga("transfer", TransferCodec, Says, Says) { move ->
-    entityStep(
-        "debit",
-        accounts,
-        move.from,
-        refused = { "refused $it" },
-        undo = { Move.Credit(move.pence) },
-        within = ASK_WITHIN,
-    ) { Move.Debit(move.pence) }
-    entityStep("credit", accounts, move.to, refused = { "refused $it" }, within = ASK_WITHIN) {
-        Move.Credit(move.pence)
+private fun transfers(accounts: Sharded<Account>) =
+    durableSaga("transfer", TransferCodec, Says, Says) { move ->
+        entityStep(
+            "debit",
+            accounts,
+            move.from,
+            refused = { "refused $it" },
+            undo = { Move.Credit(move.pence) },
+            within = ASK_WITHIN,
+        ) {
+            Move.Debit(move.pence)
+        }
+        entityStep("credit", accounts, move.to, refused = { "refused $it" }, within = ASK_WITHIN) {
+            Move.Credit(move.pence)
+        }
+        "moved ${move.pence}"
     }
-    "moved ${move.pence}"
-}
 
 /** Short, since a lost answer is waited out once each time it is lost. */
 private val ASK_WITHIN = 50.milliseconds
@@ -53,16 +56,20 @@ private const val OPENING = 500L
 private const val RUNS = 200
 
 /** How [move] ends with no fault at all, and the balances it leaves. */
-private fun Map<String, Long>.after(move: Transfer): Pair<Either<String, String>, Map<String, Long>> = when {
-    getValue(move.from) < move.pence -> "refused ${Refusal.Overdrawn}".left() to this
+private fun Map<String, Long>.after(move: Transfer): Pair<Either<String, String>, Map<String, Long>> =
+    when {
+        getValue(move.from) < move.pence -> "refused ${Refusal.Overdrawn}".left() to this
 
-    getValue(move.to) + move.pence > CAP -> "refused ${Refusal.Full}".left() to this
+        getValue(move.to) + move.pence > CAP -> "refused ${Refusal.Full}".left() to this
 
-    else -> "moved ${move.pence}".right() to this + mapOf(
-        move.from to getValue(move.from) - move.pence,
-        move.to to getValue(move.to) + move.pence,
-    )
-}
+        else ->
+            "moved ${move.pence}".right() to
+                this +
+                    mapOf(
+                        move.from to getValue(move.from) - move.pence,
+                        move.to to getValue(move.to) + move.pence,
+                    )
+    }
 
 object TransferSuite : Suite() {
     init {
@@ -90,11 +97,12 @@ object TransferSuite : Suite() {
                     seen.faults.update { Faults(run, lose = 0.2, twice = 0.2) }
 
                     val id = "t-$run"
-                    val first = try {
-                        transfer.run(Crashing(journal, dieAt), id, move)
-                    } catch (_: IllegalStateException) {
-                        null
-                    }
+                    val first =
+                        try {
+                            transfer.run(Crashing(journal, dieAt), id, move)
+                        } catch (_: IllegalStateException) {
+                            null
+                        }
                     // Run again with the same id, as the waker does elsewhere: it replays what was written.
                     val ended = first ?: transfer.run(journal, id, move)
                     endings += ended.fold({ it }, { "moved" })

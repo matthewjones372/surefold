@@ -34,18 +34,20 @@ private fun totals(load: Map<Int, Int>, moved: Map<Int, Incarnation>) = three.as
 }
 
 /** A balance in which every shard's owner reports [load] of entities for it. */
-private fun balance(load: Map<Int, Int>, moved: Map<Int, Incarnation>) = Balance(
-    three.associate { m ->
-        val mine = load.filterKeys { Placement.owner("k", it, three, moved[it]) == m.node }
-        m.node to mapOf("k" to mine.mapValues { ShardLoad(it.value, 0) })
-    },
-    mapOf("k" to moved),
-)
+private fun balance(load: Map<Int, Int>, moved: Map<Int, Incarnation>) =
+    Balance(
+        three.associate { m ->
+            val mine = load.filterKeys { Placement.owner("k", it, three, moved[it]) == m.node }
+            m.node to mapOf("k" to mine.mapValues { ShardLoad(it.value, 0) })
+        },
+        mapOf("k" to moved),
+    )
 
 /** Applies [moves] as the leader's gossip would: a null move sends the shard back to its hash owner. */
-private fun Map<Int, Incarnation>.after(moves: Map<Int, Node?>) = moves.entries.fold(this) { moved, (shard, to) ->
-    if (to == null) moved - shard else moved + (shard to three.first { it.node == to }.life())
-}
+private fun Map<Int, Incarnation>.after(moves: Map<Int, Node?>) =
+    moves.entries.fold(this) { moved, (shard, to) ->
+        if (to == null) moved - shard else moved + (shard to three.first { it.node == to }.life())
+    }
 
 private val rebalance = Rebalance.byLoad(every = 1.minutes, tolerance = 0.2, mostMoves = 4)
 private val led = View(three, emptySet(), three[0].node)
@@ -64,9 +66,10 @@ object RebalanceSuite : Suite() {
             var moved = emptyMap<Int, Incarnation>()
             balancer.round(Duration.ZERO, balance(load, moved)).shouldBeEmpty()
 
-            val rounds = (1..3).map { round ->
-                balancer.round(rebalance.every * round, balance(load, moved)).also { moved = moved.after(it) }
-            }
+            val rounds =
+                (1..3).map { round ->
+                    balancer.round(rebalance.every * round, balance(load, moved)).also { moved = moved.after(it) }
+                }
 
             withClue("no round moves more than mostMoves") {
                 rounds.forAll { it.size shouldBeLessThanOrEqual 4 }
@@ -127,48 +130,71 @@ object RebalanceSuite : Suite() {
 
                 val hot = nodes.last()
                 val members = hot.cluster.view.members
-                val shards = (0 until Sharding.SHARDS)
-                    .filter { Placement.owner("tally", it, members) == hot.cluster.self }.take(12).toSet()
-                val ids = (0 until 100_000).map { "h-$it" }.filter { Placement.shardOf(it, Sharding.SHARDS) in shards }
-                    .groupBy { Placement.shardOf(it, Sharding.SHARDS) }.values.map { it.take(10) }
+                val shards =
+                    (0 until Sharding.SHARDS)
+                        .filter { Placement.owner("tally", it, members) == hot.cluster.self }
+                        .take(12)
+                        .toSet()
+                val ids =
+                    (0 until 100_000)
+                        .map { "h-$it" }
+                        .filter { Placement.shardOf(it, Sharding.SHARDS) in shards }
+                        .groupBy { Placement.shardOf(it, Sharding.SHARDS) }
+                        .values
+                        .map { it.take(10) }
                 ids.flatten() shouldHaveSize 120
                 // Every entity is asked once per tick, however long any one ask takes, so messages follow the entities.
                 val round = AtomicInteger()
-                val _ = pacer.scheduleAtFixedRate({
-                    val next = round.getAndIncrement()
-                    ids.flatten().forEachIndexed { i, id -> senders.execute { nodes[(next + i) % 3].tryTally(id) } }
-                }, 0, 100, TimeUnit.MILLISECONDS)
+                val _ =
+                    pacer.scheduleAtFixedRate(
+                        {
+                            val next = round.getAndIncrement()
+                            ids.flatten().forEachIndexed { i, id ->
+                                senders.execute { nodes[(next + i) % 3].tryTally(id) }
+                            }
+                        },
+                        0,
+                        100,
+                        TimeUnit.MILLISECONDS,
+                    )
 
                 val evenAt = AtomicReference<TimeSource.Monotonic.ValueTimeMark>()
-                val even = leader.cluster.await(30.seconds) { _ ->
-                    val running = leader.running("tally").values
-                    (running.sum() == 120 && running.max() <= 120 / 3 * 1.2).also {
-                        if (it) evenAt.set(TimeSource.Monotonic.markNow())
+                val even =
+                    leader.cluster.await(30.seconds) { _ ->
+                        val running = leader.running("tally").values
+                        (running.sum() == 120 && running.max() <= 120 / 3 * 1.2).also {
+                            if (it) evenAt.set(TimeSource.Monotonic.markNow())
+                        }
                     }
-                }
                 val story = {
                     val t0 = history.first().first
                     history.map { (at, m) ->
                         "${(at - t0).inWholeMilliseconds}ms " + m.mapValues { it.value.node.name }
-                    } +
-                        listOf("even at ${evenAt.get()?.let { it - t0 }}", "hot ${hot.name} ${shards.sorted()}")
+                    } + listOf("even at ${evenAt.get()?.let { it - t0 }}", "hot ${hot.name} ${shards.sorted()}")
                 }
                 withClue({ "entities by member: ${leader.running("tally")} ${story()}" }) {
                     even shouldBe true
                 }
                 val _ = pacer.shutdownNow()
 
-                val rounds = history.filter { it.first <= evenAt.get() }.zipWithNext().count { (was, now) ->
-                    was.second != now.second
-                }
+                val rounds =
+                    history
+                        .filter { it.first <= evenAt.get() }
+                        .zipWithNext()
+                        .count { (was, now) ->
+                            was.second != now.second
+                        }
                 withClue(
                     { "the leader moved shards in at most three rounds before they were even ${story()}" },
                 ) {
                     rounds shouldBeLessThanOrEqual 3
                 }
                 shards.forAll { shard ->
-                    val times = history.zipWithNext().filter { (was, now) -> was.second[shard] != now.second[shard] }
-                        .map { it.second.first }
+                    val times =
+                        history
+                            .zipWithNext()
+                            .filter { (was, now) -> was.second[shard] != now.second[shard] }
+                            .map { it.second.first }
                     times.zipWithNext().forAll { (was, now) ->
                         withClue("shard $shard moved twice within ${now - was}") {
                             (now - was >= every * 3 - 100.milliseconds) shouldBe true

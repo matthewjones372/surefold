@@ -26,26 +26,27 @@ private data class Meddle(val ref: ActorRef<*>) : Brood
 
 private fun leaving() = behaviour<Unit, Unit>(Unit) { _, _, _ -> stop() }
 
-private fun nest() = behaviour<Brood, Map<String, ActorRef<Unit>>>(emptyMap()) { ctx, children, message ->
-    when (message) {
-        is Hatch -> become(children + (message.name to ctx.spawn(message.name, leaving())))
+private fun nest() =
+    behaviour<Brood, Map<String, ActorRef<Unit>>>(emptyMap()) { ctx, children, message ->
+        when (message) {
+            is Hatch -> become(children + (message.name to ctx.spawn(message.name, leaving())))
 
-        is Fledge -> {
-            children.getValue(message.name).tell(Unit)
-            stay()
-        }
+            is Fledge -> {
+                children.getValue(message.name).tell(Unit)
+                stay()
+            }
 
-        is Shoo -> {
-            ctx.stop(children.getValue(message.name))
-            stay()
-        }
+            is Shoo -> {
+                ctx.stop(children.getValue(message.name))
+                stay()
+            }
 
-        is Meddle -> {
-            ctx.stop(message.ref)
-            stay()
+            is Meddle -> {
+                ctx.stop(message.ref)
+                stay()
+            }
         }
     }
-}
 
 private fun idle() = behaviour<Unit, Unit>(Unit) { _, _, _ -> stay() }
 
@@ -53,14 +54,15 @@ private sealed interface Kept
 
 private data class Visit(val reply: Reply<Int>) : Kept
 
-private fun kept() = behaviour<Kept, Int>(0) { _, visits, message ->
-    when (message) {
-        is Visit -> {
-            message.reply(visits + 1)
-            become(visits + 1)
+private fun kept() =
+    behaviour<Kept, Int>(0) { _, visits, message ->
+        when (message) {
+            is Visit -> {
+                message.reply(visits + 1)
+                become(visits + 1)
+            }
         }
     }
-}
 
 object LetGoSuite : Suite() {
     init {
@@ -115,18 +117,19 @@ object LetGoSuite : Suite() {
 
         test("on threads, an entity passivated a thousand times is one child of its manager") {
             val moving = TestClock()
-            val seen = clock.locally(moving) {
-                scope {
-                    val kennel = spawn("kennel", entities(passivateAfter = 10.minutes) { kept() })
-                    repeat(1_000) { _ ->
-                        kennel.entity("rex").ask(1.minutes) { Visit(it) }
-                        moving.adjust(10.minutes)
-                        awaitIdle()
+            val seen =
+                clock.locally(moving) {
+                    scope {
+                        val kennel = spawn("kennel", entities(passivateAfter = 10.minutes) { kept() })
+                        repeat(1_000) { _ ->
+                            kennel.entity("rex").ask(1.minutes) { Visit(it) }
+                            moving.adjust(10.minutes)
+                            awaitIdle()
+                        }
+                        val visits = kennel.entity("rex").ask(1.minutes) { Visit(it) }
+                        visits to kennel.childCount
                     }
-                    val visits = kennel.entity("rex").ask(1.minutes) { Visit(it) }
-                    visits to kennel.childCount
                 }
-            }
 
             seen shouldBe (1.right() to 1)
         }

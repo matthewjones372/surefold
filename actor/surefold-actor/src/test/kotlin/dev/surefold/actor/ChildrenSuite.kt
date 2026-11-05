@@ -17,29 +17,33 @@ private data object Trip : Shift
 private data object Rest
 
 /** Records its own Stopping in [log], under [name]. */
-private fun clerk(name: String, log: AtomicReference<List<String>>) = behaviour<Rest, Unit>(Unit) { _, _, _ ->
-    stay()
-}.onSignal { _, _, signal ->
-    if (signal == Signal.Stopping) log.updateAndGet { it + name }
-    stay()
-}
-
-/** Hires clerks as children; `Shut` stops it, `Trip` fails it. */
-private fun manager(log: AtomicReference<List<String>>) = behaviour<Shift, Unit, String>(Unit) { ctx, _, message ->
-    when (message) {
-        is Hire -> {
-            ctx.spawn(message.name, clerk(message.name, log))
+private fun clerk(name: String, log: AtomicReference<List<String>>) =
+    behaviour<Rest, Unit>(Unit) { _, _, _ ->
+            stay()
+        }
+        .onSignal { _, _, signal ->
+            if (signal == Signal.Stopping) log.updateAndGet { it + name }
             stay()
         }
 
-        Shut -> stop()
+/** Hires clerks as children; `Shut` stops it, `Trip` fails it. */
+private fun manager(log: AtomicReference<List<String>>) =
+    behaviour<Shift, Unit, String>(Unit) { ctx, _, message ->
+            when (message) {
+                is Hire -> {
+                    ctx.spawn(message.name, clerk(message.name, log))
+                    stay()
+                }
 
-        Trip -> fail("tripped")
-    }
-}.onSignal { _, _, signal ->
-    if (signal == Signal.Stopping) log.updateAndGet { it + "manager" }
-    stay()
-}
+                Shut -> stop()
+
+                Trip -> fail("tripped")
+            }
+        }
+        .onSignal { _, _, signal ->
+            if (signal == Signal.Stopping) log.updateAndGet { it + "manager" }
+            stay()
+        }
 
 object ChildrenSuite : Suite() {
     init {
@@ -50,8 +54,7 @@ object ChildrenSuite : Suite() {
                 manager.send(Hire("ann"))
                 manager.send(Hire("bob"))
 
-                manager.children.map { it.address.path } shouldBe
-                    listOf("/user/manager/ann", "/user/manager/bob")
+                manager.children.map { it.address.path } shouldBe listOf("/user/manager/ann", "/user/manager/bob")
                 manager.send(Shut)
             }
 

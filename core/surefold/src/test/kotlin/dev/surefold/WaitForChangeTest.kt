@@ -3,8 +3,8 @@ package dev.surefold
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Test
 
 private const val BUYERS = 500
 
@@ -20,22 +20,24 @@ class WaitForChangeTest {
 
     private fun Shared<*>.awaitWaiters(count: Int) = spinUntil { waiters.size == count }
 
-    private fun Thread.awaitParkedOn(shared: Shared<*>) =
-        spinUntil { this in shared.waiters && state == Thread.State.WAITING }
+    private fun Thread.awaitParkedOn(shared: Shared<*>) = spinUntil {
+        this in shared.waiters && state == Thread.State.WAITING
+    }
 
     @Test
     fun `a waiting step runs again each time a value it read is committed, and finishes once it can`() {
         val free = Shared(0)
         val runs = AtomicInteger()
 
-        val buyer = Thread.ofVirtual().start {
-            transact {
-                runs.incrementAndGet()
-                val left = free.get()
-                if (left < 2) waitForChange()
-                free.set(left - 2)
+        val buyer =
+            Thread.ofVirtual().start {
+                transact {
+                    runs.incrementAndGet()
+                    val left = free.get()
+                    if (left < 2) waitForChange()
+                    free.set(left - 2)
+                }
             }
-        }
         buyer.awaitParkedOn(free)
         transact { free.set(1) }
         spinUntil { runs.get() >= 2 }
@@ -53,9 +55,10 @@ class WaitForChangeTest {
         val stalls = Shared(0)
         val circle = Shared(0)
 
-        val buyer = Thread.ofVirtual().start {
-            transact { if (stalls.get() == 0) waitForChange() }
-        }
+        val buyer =
+            Thread.ofVirtual().start {
+                transact { if (stalls.get() == 0) waitForChange() }
+            }
         buyer.awaitParkedOn(stalls)
 
         circle.waiters.size shouldBe 0
@@ -68,15 +71,16 @@ class WaitForChangeTest {
     fun `seats released one at a time reach every waiting buyer`() {
         val free = Shared(0)
 
-        val buyers = List(BUYERS) {
-            Thread.ofVirtual().start {
-                transact {
-                    val left = free.get()
-                    if (left == 0) waitForChange()
-                    free.set(left - 1)
+        val buyers =
+            List(BUYERS) {
+                Thread.ofVirtual().start {
+                    transact {
+                        val left = free.get()
+                        if (left == 0) waitForChange()
+                        free.set(left - 1)
+                    }
                 }
             }
-        }
         repeat(BUYERS) {
             transact { free.update { it + 1 } }
             Thread.yield()
@@ -153,14 +157,15 @@ class WaitForChangeTest {
         val east = Shared(0)
         val west = Shared(0)
 
-        val buyer = Thread.ofVirtual().start {
-            transact {
-                firstOf(
-                    { if (east.get() == 0) waitForChange() else east.update { it - 1 } },
-                    { if (west.get() == 0) waitForChange() else west.update { it - 1 } },
-                )
+        val buyer =
+            Thread.ofVirtual().start {
+                transact {
+                    firstOf(
+                        { if (east.get() == 0) waitForChange() else east.update { it - 1 } },
+                        { if (west.get() == 0) waitForChange() else west.update { it - 1 } },
+                    )
+                }
             }
-        }
         buyer.awaitParkedOn(west)
         transact { west.set(1) }
         buyer.join()

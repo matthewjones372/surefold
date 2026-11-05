@@ -29,11 +29,10 @@ fun interface Histogram {
 /**
  * Where a measurement goes, and the one thing an adapter implements.
  *
- * Instruments rather than measurements: a `Logger` takes a line per event because every line is
- * wanted, and a metric that handed over a value per increment would give a backend a million a
- * second to add up when holding one number is its whole job. Looking one up by name is a map hit
- * every backend already does, which is what lets a call site be `counter("…").increment()` with
- * nothing held and nothing cached here.
+ * Instruments rather than measurements: a `Logger` takes a line per event because every line is wanted, and a metric
+ * that handed over a value per increment would give a backend a million a second to add up when holding one number is
+ * its whole job. Looking one up by name is a map hit every backend already does, which is what lets a call site be
+ * `counter("…").increment()` with nothing held and nothing cached here.
  */
 interface Metrics {
     fun counter(name: String, tags: Map<String, String>): Counter
@@ -75,11 +74,11 @@ sealed interface Reading {
 
 /** Every instrument, doing nothing. A service with no adapter is not a service with a broken one. */
 object NoMetrics : Metrics {
-    override fun counter(name: String, tags: Map<String, String>): Counter = Counter { }
+    override fun counter(name: String, tags: Map<String, String>): Counter = Counter {}
 
-    override fun gauge(name: String, tags: Map<String, String>): Gauge = Gauge { }
+    override fun gauge(name: String, tags: Map<String, String>): Gauge = Gauge {}
 
-    override fun histogram(name: String, tags: Map<String, String>): Histogram = Histogram { }
+    override fun histogram(name: String, tags: Map<String, String>): Histogram = Histogram {}
 }
 
 /** Where measurements go, and what a fork inherits from its opener. */
@@ -94,30 +93,25 @@ private val discoveredMetrics: Metrics by lazy {
 }
 
 /** The counter of this name, with whatever [metricTags] are bound and [tags] besides. */
-fun counter(name: String, vararg tags: Pair<String, String>): Counter =
-    metrics.get().counter(name, tagsOf(tags))
+fun counter(name: String, vararg tags: Pair<String, String>): Counter = metrics.get().counter(name, tagsOf(tags))
 
 /** The gauge of this name. */
-fun gauge(name: String, vararg tags: Pair<String, String>): Gauge =
-    metrics.get().gauge(name, tagsOf(tags))
+fun gauge(name: String, vararg tags: Pair<String, String>): Gauge = metrics.get().gauge(name, tagsOf(tags))
 
 /** The histogram of this name. */
-fun histogram(name: String, vararg tags: Pair<String, String>): Histogram =
-    metrics.get().histogram(name, tagsOf(tags))
+fun histogram(name: String, vararg tags: Pair<String, String>): Histogram = metrics.get().histogram(name, tagsOf(tags))
 
 /** Every instrument of this name as the metrics in scope hold it now (spec 0109). */
 fun readings(name: String): List<Reading> = metrics.get().read(name)
 
-internal fun tagsOf(tags: Array<out Pair<String, String>>): Map<String, String> =
-    metricTags.get() + tags
+internal fun tagsOf(tags: Array<out Pair<String, String>>): Map<String, String> = metricTags.get() + tags
 
 /**
  * The tags every measurement taken on this thread carries, and the ones a fork inherits.
  *
- * Deliberately not [annotations], which is the same propagation and the wrong source. A log
- * annotation is written to be unique — a correlation id, a pet's identifier — and a tag whose values
- * are unbounded is one time series per request, which is how a metrics backend dies. A tag's values
- * are few and known before the code runs.
+ * Deliberately not [annotations], which is the same propagation and the wrong source. A log annotation is written to be
+ * unique — a correlation id, a pet's identifier — and a tag whose values are unbounded is one time series per request,
+ * which is how a metrics backend dies. A tag's values are few and known before the code runs.
  */
 val metricTags: SurefoldLocal<Map<String, String>> = surefoldLocal { emptyMap() }
 
@@ -128,12 +122,12 @@ fun <A> metricTagged(vararg pairs: Pair<String, String>, block: () -> A): A =
 /**
  * Runs [block] and records how long it took, in seconds, under [name].
  *
- * Seconds rather than milliseconds because that is what a backend assumes a duration is: name the
- * metric for it, as in `petshop.adopt.duration.seconds`, and Prometheus, Grafana and every dashboard
- * agree about the axis without being told. Up to 0.9.2 it recorded milliseconds.
+ * Seconds rather than milliseconds because that is what a backend assumes a duration is: name the metric for it, as in
+ * `petshop.adopt.duration.seconds`, and Prometheus, Grafana and every dashboard agree about the axis without being
+ * told. Up to 0.9.2 it recorded milliseconds.
  *
- * The duration is recorded whether the block returns or throws: a call that fails slowly is the one
- * worth seeing, and leaving it out makes the numbers say the opposite.
+ * The duration is recorded whether the block returns or throws: a call that fails slowly is the one worth seeing, and
+ * leaving it out makes the numbers say the opposite.
  */
 fun <A> timed(name: String, vararg tags: Pair<String, String>, block: () -> A): A {
     val startedAt = System.nanoTime()
@@ -186,9 +180,11 @@ class CapturedMetrics internal constructor() : Metrics {
         return listOfNotNull(
             counters[name]?.let { Reading.Total(name, tags, it.sum()) },
             gauges[name]?.let { Reading.Value(name, tags, it) },
-            histograms[name]?.let { histogram(name) }?.let { taken ->
-                Reading.Distribution(name, tags, taken.size.toLong(), taken.sum(), emptyMap())
-            },
+            histograms[name]
+                ?.let { histogram(name) }
+                ?.let { taken ->
+                    Reading.Distribution(name, tags, taken.size.toLong(), taken.sum(), emptyMap())
+                },
         )
     }
 }

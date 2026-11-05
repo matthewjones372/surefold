@@ -20,14 +20,15 @@ private fun holdTwoThenFail(): Pair<List<String>, List<String>> {
             parZip(
                 {
                     step("a", { _ -> held.update { it + "a" } }) { _, _, _ -> released.update { it + "a" } }
-                    parZip({ }, { }) { _, _ -> }
+                    parZip({}, {}) { _, _ -> }
                 },
                 {
-                    parZip({ }, { }) { _, _ -> }
+                    parZip({}, {}) { _, _ -> }
                     step("b", { _ -> held.update { it + "b" } }) { _, _, _ -> released.update { it + "b" } }
                     fail("full")
                 },
-            ) { _, _ -> }
+            ) { _, _ ->
+            }
         }
     }
     return held.peek() to released.peek()

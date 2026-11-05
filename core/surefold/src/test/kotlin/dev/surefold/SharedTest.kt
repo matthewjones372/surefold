@@ -4,8 +4,8 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldThrow
 import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
-import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicBoolean
+import org.junit.jupiter.api.Test
 
 private const val FORKS = 1_000
 
@@ -46,10 +46,11 @@ class SharedTest {
     fun `awaitUntil wakes on the change that makes it true, and not before`() {
         val ready = Shared(0)
         val woke = AtomicBoolean(false)
-        val waiter = Thread.ofVirtual().start {
-            ready.awaitUntil { it >= 3 } shouldBe 3
-            woke.set(true)
-        }
+        val waiter =
+            Thread.ofVirtual().start {
+                ready.awaitUntil { it >= 3 } shouldBe 3
+                woke.set(true)
+            }
         repeat(2) {
             ready.update { n -> n + 1 }
             parked(waiter)

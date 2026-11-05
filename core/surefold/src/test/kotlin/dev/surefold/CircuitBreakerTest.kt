@@ -5,13 +5,13 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
 import dev.surefold.fail.Fail
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 private const val CALLERS = 10
 
@@ -75,21 +75,22 @@ class CircuitBreakerTest {
         val release = CountDownLatch(1)
         val refused = CountDownLatch(CALLERS - 1)
         val admitted = AtomicInteger()
-        val callers = (1..CALLERS).map {
-            Thread.ofVirtual().start {
-                clock.locally(time) {
-                    go.await()
-                    try {
-                        partner {
-                            admitted.incrementAndGet()
-                            release.await()
+        val callers =
+            (1..CALLERS).map {
+                Thread.ofVirtual().start {
+                    clock.locally(time) {
+                        go.await()
+                        try {
+                            partner {
+                                admitted.incrementAndGet()
+                                release.await()
+                            }
+                        } catch (open: Rejected.CircuitOpen) {
+                            refused.countDown()
                         }
-                    } catch (open: Rejected.CircuitOpen) {
-                        refused.countDown()
                     }
                 }
             }
-        }
 
         go.countDown()
         withClue("every caller but the trial is refused while it is in flight") {
@@ -106,13 +107,15 @@ class CircuitBreakerTest {
     @Test
     fun `a refusal from a guard inside the breaker is not counted`() {
         val breaker = CircuitBreaker("partner", maxFailures = 2, resetAfter = Schedule.spaced(1.seconds))
-        val full = object : Guard {
-            override fun <E, A> Fail<E>.guard(block: Fail<E>.() -> A): A = throw Rejected.BulkheadFull("pool")
-        }
-        val partner = policy("partner") {
-            guard(breaker)
-            guard(full)
-        }
+        val full =
+            object : Guard {
+                override fun <E, A> Fail<E>.guard(block: Fail<E>.() -> A): A = throw Rejected.BulkheadFull("pool")
+            }
+        val partner =
+            policy("partner") {
+                guard(breaker)
+                guard(full)
+            }
 
         repeat(5) { shouldThrow<Rejected.BulkheadFull> { partner { 42 } } }
 
@@ -123,14 +126,16 @@ class CircuitBreakerTest {
     fun `a policy waits for half-open only when it falls within the deadline`() {
         val time = JumpingClock(forksWait = true)
         val breaker = CircuitBreaker("partner", maxFailures = 1, resetAfter = Schedule.spaced(500.milliseconds))
-        val patient = policy("patient") {
-            deadline(1.seconds)
-            guard(breaker)
-        }
-        val hurried = policy("hurried") {
-            deadline(300.milliseconds)
-            guard(breaker)
-        }
+        val patient =
+            policy("patient") {
+                deadline(1.seconds)
+                guard(breaker)
+            }
+        val hurried =
+            policy("hurried") {
+                deadline(300.milliseconds)
+                guard(breaker)
+            }
 
         clock.locally(time) {
             shouldThrow<Boom> { patient { throw Boom() } }
@@ -178,11 +183,12 @@ class CircuitBreakerTest {
     fun `each call is counted by its outcome under the breaker's name`() {
         val breaker = CircuitBreaker("partner", maxFailures = 1, resetAfter = Schedule.spaced(1.seconds))
         val partner = policy("partner") { guard(breaker) }
-        val calls = listOf<Pair<String, () -> Unit>>(
-            "success" to { partner { 42 } shouldBe 42 },
-            "failure" to { shouldThrow<Boom> { partner { throw Boom() } } },
-            "rejected" to { shouldThrow<Rejected.CircuitOpen> { partner { 42 } } },
-        )
+        val calls =
+            listOf<Pair<String, () -> Unit>>(
+                "success" to { partner { 42 } shouldBe 42 },
+                "failure" to { shouldThrow<Boom> { partner { throw Boom() } } },
+                "rejected" to { shouldThrow<Rejected.CircuitOpen> { partner { 42 } } },
+            )
 
         clock.locally(fixedClock()) {
             calls.forEach { (outcome, call) ->

@@ -8,12 +8,12 @@ import dev.surefold.clock
 import dev.surefold.fail.Either
 import dev.surefold.parMap
 import dev.surefold.parZip
-import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 private const val CALLERS = 20
 
@@ -32,18 +32,22 @@ class CacheTest {
     fun `twenty callers asking for one missing key run its lookup once`() {
         val lookups = AtomicInteger()
         val release = Promise<Nothing, Unit>()
-        val prices = cache<String, Int>({ 30.seconds }) {
-            lookups.incrementAndGet()
-            release.awaitValue()
-            Either.Right(7)
-        }
-        val answers = parZip(
-            { parMap(1..CALLERS) { prices.get("sku") } },
-            {
-                while (prices.waiting("sku") < CALLERS) Thread.onSpinWait()
-                release.succeed(Unit)
-            },
-        ) { all, _ -> all }
+        val prices =
+            cache<String, Int>({ 30.seconds }) {
+                lookups.incrementAndGet()
+                release.awaitValue()
+                Either.Right(7)
+            }
+        val answers =
+            parZip(
+                { parMap(1..CALLERS) { prices.get("sku") } },
+                {
+                    while (prices.waiting("sku") < CALLERS) Thread.onSpinWait()
+                    release.succeed(Unit)
+                },
+            ) { all, _ ->
+                all
+            }
         answers.toSet() shouldBe setOf(Either.Right(7))
         lookups.get() shouldBe 1
         prices.get("sku") shouldBe Either.Right(7)
@@ -54,10 +58,11 @@ class CacheTest {
     @Test
     fun `a Left with a two-second ttl is looked up again after two seconds, and not before`() {
         val lookups = AtomicInteger()
-        val prices = cache<String, Int>({ result -> if (result is Either.Right) 30.seconds else 2.seconds }) {
-            lookups.incrementAndGet()
-            Either.Left("source down")
-        }
+        val prices =
+            cache<String, Int>({ result -> if (result is Either.Right) 30.seconds else 2.seconds }) {
+                lookups.incrementAndGet()
+                Either.Left("source down")
+            }
         prices.get("sku") shouldBe Either.Left("source down")
         moving.adjust(1999.milliseconds)
         prices.get("sku") shouldBe Either.Left("source down")
@@ -71,10 +76,13 @@ class CacheTest {
     @Test
     fun `a failing lookup answers the last good value until stale runs out, and the error after`() {
         val source = AtomicReference<Either<String, Int>>(Either.Right(1))
-        val prices = cache<String, Int>(
-            ttl = { result -> if (result is Either.Right) 30.seconds else 2.seconds },
-            stale = 10.minutes,
-        ) { source.get() }
+        val prices =
+            cache<String, Int>(
+                ttl = { result -> if (result is Either.Right) 30.seconds else 2.seconds },
+                stale = 10.minutes,
+            ) {
+                source.get()
+            }
         prices.get("sku") shouldBe Either.Right(1)
         source.set(Either.Left("source down"))
         moving.adjust(31.seconds)

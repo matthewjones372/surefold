@@ -65,12 +65,13 @@ object SurefoldAppSuite : Suite() {
         test("an application with no run waits for shutdown, and its graph is released after") {
             val shutdown = Shutdown()
             val built = CompletableFuture<Released>()
-            val running = Thread.ofVirtual().start {
-                Waits.module.use(Waits.root) { root ->
-                    built.complete(root as Released)
-                    with(Waits) { appScope(shutdown).run(root) }
+            val running =
+                Thread.ofVirtual().start {
+                    Waits.module.use(Waits.root) { root ->
+                        built.complete(root as Released)
+                        with(Waits) { appScope(shutdown).run(root) }
+                    }
                 }
-            }
             val held = built.join()
 
             // Parked in run rather than returned: the thread is waiting, and nothing has been released.
@@ -105,6 +106,7 @@ internal class Ambiguous
 
 internal object TwoOfThem : SurefoldApp<Ambiguous>() {
     override val module: Module = singleOf(::Ambiguous)
+
     override fun AppScope.run(root: Ambiguous) = Unit
 }
 

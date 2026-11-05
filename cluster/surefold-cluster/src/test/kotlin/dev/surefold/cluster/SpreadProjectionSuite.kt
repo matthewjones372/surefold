@@ -34,11 +34,12 @@ private const val IDS = 1_000
 private const val EACH = 1_000
 private const val PARTITIONS = 8
 
-private val paid = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = "$event".toByteArray()
+private val paid =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = "$event".toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
 private val quick =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
@@ -73,27 +74,30 @@ private class Spread {
         private val done = CountDownLatch(1)
         private val ready = CountDownLatch(1)
         private val opened = AtomicReference<Cluster>()
-        private val thread = Thread.ofPlatform().start {
-            scope {
-                val cluster = cluster(node(name, port), seeds, quick)
-                cluster.spread("totals", PARTITIONS) { k ->
-                    Projection.worker {
-                        started += k to name
-                        Projection.partitioned(journal, "till", paid, offsets, "totals", k, PARTITIONS)
-                            .mapFollowed { event ->
-                                times.computeIfAbsent(event.id to event.sequence) { AtomicInteger() }.incrementAndGet()
-                                order.computeIfAbsent(event.id) { ConcurrentLinkedQueue() } += event.sequence
-                                handled.incrementAndGet()
-                            }
-                            .runProjecting()
-                            .start(Forks())
+        private val thread =
+            Thread.ofPlatform().start {
+                scope {
+                    val cluster = cluster(node(name, port), seeds, quick)
+                    cluster.spread("totals", PARTITIONS) { k ->
+                        Projection.worker {
+                            started += k to name
+                            Projection.partitioned(journal, "till", paid, offsets, "totals", k, PARTITIONS)
+                                .mapFollowed { event ->
+                                    times
+                                        .computeIfAbsent(event.id to event.sequence) { AtomicInteger() }
+                                        .incrementAndGet()
+                                    order.computeIfAbsent(event.id) { ConcurrentLinkedQueue() } += event.sequence
+                                    handled.incrementAndGet()
+                                }
+                                .runProjecting()
+                                .start(Forks())
+                        }
                     }
+                    opened.set(cluster)
+                    ready.countDown()
+                    done.await()
                 }
-                opened.set(cluster)
-                ready.countDown()
-                done.await()
             }
-        }
 
         val cluster: Cluster
             get() {
@@ -158,9 +162,10 @@ private class Spread {
         }
     }
 
-    private fun partitionOf(id: PersistenceId): Int = (0 until PARTITIONS).single {
-        Slices.of(id) in Projection.slices(it, PARTITIONS)
-    }
+    private fun partitionOf(id: PersistenceId): Int =
+        (0 until PARTITIONS).single {
+            Slices.of(id) in Projection.slices(it, PARTITIONS)
+        }
 
     private fun await(done: () -> Boolean) {
         val deadline = TimeSource.Monotonic.markNow() + 3.minutes

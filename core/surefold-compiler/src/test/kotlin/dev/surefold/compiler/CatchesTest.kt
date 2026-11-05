@@ -5,7 +5,8 @@ import dev.surefold.assert.withClue
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.junit.jupiter.api.Test
 
-private const val IMPORTS = """
+private const val IMPORTS =
+    """
 import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
 import dev.surefold.fail.bind
@@ -33,8 +34,9 @@ class CatchesTest {
 
     @Test
     fun `an InterruptedException or Exception caught around await and kept warns`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             $IMPORTS
             fun interrupted(): Int = scope {
                 val d = async { 1 }
@@ -45,7 +47,7 @@ class CatchesTest {
                 try { d.await() } catch (e: Exception) { 0 }
             }
             """,
-        )
+            )
 
         withClue(compiled.messages.joinToString("\n")) {
             compiled.surefold.size shouldBe 2
@@ -55,8 +57,9 @@ class CatchesTest {
 
     @Test
     fun `a catch that rethrows, puts the interrupt back, or names its exceptions does not warn`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             $IMPORTS
             fun rethrows() = attempt<String, Int> { try { rows.bind() } catch (e: Throwable) { throw e } }
             fun restores(): Int = scope {
@@ -68,7 +71,7 @@ class CatchesTest {
                 try { d.await() } catch (e: IOException) { 0 }
             }
             """,
-        )
+            )
 
         withClue(compiled.messages.joinToString("\n")) { compiled.surefold shouldBe emptyList() }
     }

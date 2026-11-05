@@ -47,48 +47,53 @@ internal class HandRolledChecker(private val test: Boolean) : FirFunctionCallChe
     }
 }
 
-private val sleeps = setOf(
-    CallableId(ClassId(FqName("java.lang"), Name.identifier("Thread")), Name.identifier("sleep")),
-    CallableId(ClassId(FqName("java.util.concurrent"), Name.identifier("TimeUnit")), Name.identifier("sleep")),
-)
+private val sleeps =
+    setOf(
+        CallableId(ClassId(FqName("java.lang"), Name.identifier("Thread")), Name.identifier("sleep")),
+        CallableId(ClassId(FqName("java.util.concurrent"), Name.identifier("TimeUnit")), Name.identifier("sleep")),
+    )
 
-private val readingString = CallableId(
-    ClassId(FqName("dev.surefold.app.typesafe"), Name.identifier("Reading")),
-    Name.identifier("string"),
-)
+private val readingString =
+    CallableId(
+        ClassId(FqName("dev.surefold.app.typesafe"), Name.identifier("Reading")),
+        Name.identifier("string"),
+    )
 
 /**
  * `Secrets.default`'s names: the checker cannot depend on surefold-app-typesafe, so SecretNamesSuite keeps them equal.
  */
-private val secretNames: Set<String> = setOf(
-    "password",
-    "passphrase",
-    "secret",
-    "secretkey",
-    "token",
-    "apitoken",
-    "accesstoken",
-    "key",
-    "apikey",
-    "accesskey",
-    "privatekey",
-    "credential",
-    "credentials",
-)
+private val secretNames: Set<String> =
+    setOf(
+        "password",
+        "passphrase",
+        "secret",
+        "secretkey",
+        "token",
+        "apitoken",
+        "accesstoken",
+        "key",
+        "apikey",
+        "accesskey",
+        "privatekey",
+        "credential",
+        "credentials",
+    )
 
 private fun schedules(symbol: FirCallableSymbol<*>, called: CallableId): Boolean =
     called in schedulerFactories || (symbol is FirConstructorSymbol && called.classId in schedulers)
 
 private val executors = ClassId(FqName("java.util.concurrent"), Name.identifier("Executors"))
 
-private val schedulerFactories = setOf("newScheduledThreadPool", "newSingleThreadScheduledExecutor")
-    .map { CallableId(executors, Name.identifier(it)) }
-    .toSet()
+private val schedulerFactories =
+    setOf("newScheduledThreadPool", "newSingleThreadScheduledExecutor")
+        .map { CallableId(executors, Name.identifier(it)) }
+        .toSet()
 
-private val schedulers = setOf(
-    ClassId(FqName("java.util.concurrent"), Name.identifier("ScheduledThreadPoolExecutor")),
-    ClassId(FqName("java.util"), Name.identifier("Timer")),
-)
+private val schedulers =
+    setOf(
+        ClassId(FqName("java.util.concurrent"), Name.identifier("ScheduledThreadPoolExecutor")),
+        ClassId(FqName("java.util"), Name.identifier("Timer")),
+    )
 
 /** `Thread.sleep`, or `Timer(..)` for a constructor, whose name is the class's for Java and `<init>` for Kotlin. */
 private fun said(symbol: FirCallableSymbol<*>, called: CallableId): String =

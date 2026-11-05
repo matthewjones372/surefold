@@ -42,7 +42,8 @@ fun <A> testActors(
  * The actors of one test. A tell from the test returns once that message, and every message it caused, has been
  * handled; a tell from inside a turn joins the queue behind whatever is already on it.
  */
-class TestActors internal constructor(
+class TestActors
+internal constructor(
     private val clock: Clock = fixedClock(),
     /** Where this test's actors keep their events, for the test to read. */
     val journal: Journal = InMemoryJournal(),
@@ -62,10 +63,11 @@ class TestActors internal constructor(
     private val queue = AtomicReference<List<Delivery>>(emptyList())
     private val draining = AtomicBoolean(false)
 
-    private val picks = when (order) {
-        Ordering.Told -> null
-        is Ordering.Seeded -> Random(order.seed)
-    }
+    private val picks =
+        when (order) {
+            Ordering.Told -> null
+            is Ordering.Seeded -> Random(order.seed)
+        }
 
     // The actor whose turn is running, which is who a tell made now is from.
     private val stepping = AtomicReference<TestActor<*, *, *>?>()
@@ -81,7 +83,9 @@ class TestActors internal constructor(
     private val crashing = AtomicReference<TestActor<*, *, *>?>()
 
     /** Every message delivered so far, in order. */
-    val trace: List<TraceEntry> get() = traced.toList()
+    val trace: List<TraceEntry>
+        get() = traced.toList()
+
     private val incarnations = AtomicLong()
 
     // The test's own time, which moves only by [advance], and the timers still to fall due in it, soonest first.
@@ -90,12 +94,14 @@ class TestActors internal constructor(
     private val order = compareBy<TestTimer>({ it.at }, { it.seq })
 
     /** How many timers are still to fall due, so that a test can say nothing is left. */
-    val pendingTimers: Int get() = timers.get().size
+    val pendingTimers: Int
+        get() = timers.get().size
 
     private val letters = AtomicReference<List<DeadLetter>>(emptyList())
 
     /** Every message nobody handled, in the order it was found: told to a stopped actor, or answered `unhandled()`. */
-    val deadLetters: List<DeadLetter> get() = letters.get()
+    val deadLetters: List<DeadLetter>
+        get() = letters.get()
 
     internal val receptionist = Receptionist()
 
@@ -107,20 +113,21 @@ class TestActors internal constructor(
     }
 
     /**
-     * Moves the test's time on by [by], delivering each timer that falls due on the way in time order, and returns
-     * once each has run to idle.
+     * Moves the test's time on by [by], delivering each timer that falls due on the way in time order, and returns once
+     * each has run to idle.
      */
     fun advance(by: Duration) {
         require(!by.isNegative()) { "time only moves forward, not by $by" }
         val until = time.get() + by
-        generateSequence { timers.get().firstOrNull()?.takeIf { it.at <= until } }.forEach { timer ->
-            timers.updateAndGet { it - timer }
-            time.set(timer.at)
-            when (val key = timer.key) {
-                is InFlight -> enqueue(Delivery(key.from, timer.to, timer.message))
-                else -> post(timer.to, timer)
+        generateSequence { timers.get().firstOrNull()?.takeIf { it.at <= until } }
+            .forEach { timer ->
+                timers.updateAndGet { it - timer }
+                time.set(timer.at)
+                when (val key = timer.key) {
+                    is InFlight -> enqueue(Delivery(key.from, timer.to, timer.message))
+                    else -> post(timer.to, timer)
+                }
             }
-        }
         time.set(until)
     }
 
@@ -258,10 +265,11 @@ class TestActors internal constructor(
     private tailrec fun drain() {
         val queued = queue.get()
         if (queued.isEmpty()) return
-        val next = picks?.let { random ->
-            val heads = queued.distinctBy { it.from to it.to }
-            heads[random.nextInt(heads.size)]
-        } ?: queued.first()
+        val next =
+            picks?.let { random ->
+                val heads = queued.distinctBy { it.from to it.to }
+                heads[random.nextInt(heads.size)]
+            } ?: queued.first()
         queue.updateAndGet { it - next }
         val step = steps.incrementAndGet()
         bound.get()?.let { (last, max) -> check(step <= last) { "settle ran $max steps without going idle" } }
@@ -277,17 +285,19 @@ class TestActors internal constructor(
     }
 
     private fun traced(delivery: Delivery) {
-        val message = when (val item = delivery.item) {
-            TestStarted -> return
-            is TestTimer -> item.message
-            is TestSignalled -> item.signal
-            else -> item
-        }
+        val message =
+            when (val item = delivery.item) {
+                TestStarted -> return
+                is TestTimer -> item.message
+                is TestSignalled -> item.signal
+                else -> item
+            }
         traced.add(TraceEntry.Delivered(delivery.from, delivery.to.address, message))
     }
 }
 
-class TestActor<M : Any, S, E> internal constructor(
+class TestActor<M : Any, S, E>
+internal constructor(
     private val scope: TestActors,
     private val behaviour: Behaviour<M, S, E>,
     override val address: Address,
@@ -327,112 +337,129 @@ class TestActor<M : Any, S, E> internal constructor(
     // Whether the start to come follows a restart, a failure's or a wrong guess's (spec 0198); a crash's does not.
     private val restarted = AtomicBoolean(false)
 
-    private val ctx = object : Ctx<M>, DeadLetters, Restartable {
-        override val self = this@TestActor
+    private val ctx =
+        object : Ctx<M>, DeadLetters, Restartable {
+            override val self = this@TestActor
 
-        override val restarted get() = this@TestActor.restarted.get()
+            override val restarted
+                get() = this@TestActor.restarted.get()
 
-        override fun deadLetter(letter: DeadLetter) = scope.dead(letter)
+            override fun deadLetter(letter: DeadLetter) = scope.dead(letter)
 
-        // A test actor always has room, so nothing is ever kept for one.
-        override fun kept(delta: Int) = Unit
+            // A test actor always has room, so nothing is ever kept for one.
+            override fun kept(delta: Int) = Unit
 
-        override val journal: Journal get() = scope.journal
+            override val journal: Journal
+                get() = scope.journal
 
-        override val snapshots: SnapshotStore get() = scope.snapshots
+            override val snapshots: SnapshotStore
+                get() = scope.snapshots
 
-        override val timers = object : Timers<M> {
-            override fun after(key: Any, delay: Duration, message: M) = start(key, delay, message, null)
+            override val timers =
+                object : Timers<M> {
+                    override fun after(key: Any, delay: Duration, message: M) = start(key, delay, message, null)
 
-            override fun every(key: Any, interval: Duration, message: M) {
-                require(interval.isPositive()) { "a periodic timer needs a positive interval, was $interval" }
-                start(key, interval, message, interval)
+                    override fun every(key: Any, interval: Duration, message: M) {
+                        require(interval.isPositive()) { "a periodic timer needs a positive interval, was $interval" }
+                        start(key, interval, message, interval)
+                    }
+
+                    override fun cancel(key: Any) = this@TestActor.cancel(key)
+                }
+
+            override fun receiveTimeout(after: Duration, message: M) {
+                run.updateAndGet { it.copy(silence = Silence(after, message)) }
+                start(ReceiveTimeoutKey, after, message, null)
             }
 
-            override fun cancel(key: Any) = this@TestActor.cancel(key)
-        }
-
-        override fun receiveTimeout(after: Duration, message: M) {
-            run.updateAndGet { it.copy(silence = Silence(after, message)) }
-            start(ReceiveTimeoutKey, after, message, null)
-        }
-
-        override fun receiveTimeout(off: Nothing?) {
-            run.updateAndGet { it.copy(silence = null) }
-            cancel(ReceiveTimeoutKey)
-        }
-
-        override fun stash(message: M) {
-            (stashed.get() ?: Stash(stashCapacity, address.path).also(stashed::set)).keep(message)
-        }
-
-        override fun register(key: ServiceKey<M>) = scope.receptionist.register(key, this@TestActor)
-
-        override fun <K : Any> subscribe(key: ServiceKey<K>, listing: (Set<ActorRef<K>>) -> M) =
-            scope.receptionist.subscribe(key, this@TestActor) { refs ->
-                @Suppress("UNCHECKED_CAST")
-                scope.post(this@TestActor, listing(refs as Set<ActorRef<K>>))
+            override fun receiveTimeout(off: Nothing?) {
+                run.updateAndGet { it.copy(silence = null) }
+                cancel(ReceiveTimeoutKey)
             }
 
-        override fun unstashAll() {
-            stashed.get()?.unstashAll()
-        }
-
-        override fun <T> become(state: T, timers: StateTimers<M>.() -> Unit): Next<T> {
-            run.get().asked?.let(::drop)
-            val asked = startTimers(state, timers, ::start)
-            run.updateAndGet { it.copy(asked = asked) }
-            return Next.Become(state)
-        }
-
-        override fun watch(ref: ActorRef<*>) =
-            requireNotNull(ref as? TestActor<*, *, *>) { "$ref is not a test actor, so a test actor cannot watch it" }
-                .watchedBy(this@TestActor)
-
-        override fun stop(child: ActorRef<*>) {
-            // A child that has already ended is no longer among the children, and stopping it again does nothing.
-            val actor = child as? TestActor<*, *, *>
-            require(actor?.parent === this@TestActor) {
-                "$child is not a child of ${address.path}, so it cannot stop it"
+            override fun stash(message: M) {
+                (stashed.get() ?: Stash(stashCapacity, address.path).also(stashed::set)).keep(message)
             }
-            actor.halt()
+
+            override fun register(key: ServiceKey<M>) = scope.receptionist.register(key, this@TestActor)
+
+            override fun <K : Any> subscribe(key: ServiceKey<K>, listing: (Set<ActorRef<K>>) -> M) =
+                scope.receptionist.subscribe(key, this@TestActor) { refs ->
+                    @Suppress("UNCHECKED_CAST") scope.post(this@TestActor, listing(refs as Set<ActorRef<K>>))
+                }
+
+            override fun unstashAll() {
+                stashed.get()?.unstashAll()
+            }
+
+            override fun <T> become(state: T, timers: StateTimers<M>.() -> Unit): Next<T> {
+                run.get().asked?.let(::drop)
+                val asked = startTimers(state, timers, ::start)
+                run.updateAndGet { it.copy(asked = asked) }
+                return Next.Become(state)
+            }
+
+            override fun watch(ref: ActorRef<*>) =
+                requireNotNull(ref as? TestActor<*, *, *>) {
+                        "$ref is not a test actor, so a test actor cannot watch it"
+                    }
+                    .watchedBy(this@TestActor)
+
+            override fun stop(child: ActorRef<*>) {
+                // A child that has already ended is no longer among the children, and stopping it again does nothing.
+                val actor = child as? TestActor<*, *, *>
+                require(actor?.parent === this@TestActor) {
+                    "$child is not a child of ${address.path}, so it cannot stop it"
+                }
+                actor.halt()
+            }
+
+            override fun <C : Any, T, F> spawn(
+                name: String,
+                behaviour: Behaviour<C, T, F>,
+                restart: Schedule<Failure<F>, *>?,
+            ): ActorRef<C> =
+                scope.spawnAt("${address.path}/$name", behaviour, restart, stashCapacity).also { child ->
+                    child.parent = this@TestActor
+                    run.updateAndGet { it.copy(children = it.children + child) }
+                }
         }
 
-        override fun <C : Any, T, F> spawn(
-            name: String,
-            behaviour: Behaviour<C, T, F>,
-            restart: Schedule<Failure<F>, *>?,
-        ): ActorRef<C> = scope.spawnAt("${address.path}/$name", behaviour, restart, stashCapacity).also { child ->
-            child.parent = this@TestActor
-            run.updateAndGet { it.copy(children = it.children + child) }
-        }
-    }
+    val state: S
+        get() = run.get().state
 
-    val state: S get() = run.get().state
+    val stopped: Boolean
+        get() = run.get().stopped
 
-    val stopped: Boolean get() = run.get().stopped
-
-    val unhandled: List<M> get() = run.get().unhandled
+    val unhandled: List<M>
+        get() = run.get().unhandled
 
     /** Why the actor stopped, when it was a raise or a throw rather than `stop()`. */
-    val failure: Failure<E>? get() = run.get().failure
+    val failure: Failure<E>?
+        get() = run.get().failure
 
-    val restarts: Int get() = run.get().delays.size
+    val restarts: Int
+        get() = run.get().delays.size
 
     /** Every signal this actor has taken, in order. */
-    val signals: List<Signal> get() = run.get().signals
+    val signals: List<Signal>
+        get() = run.get().signals
 
     /** The children it has now; a stop or a restart takes them all. */
-    val children: List<ActorRef<*>> get() = run.get().children
+    val children: List<ActorRef<*>>
+        get() = run.get().children
 
     /** The delay each restart waited, in order. */
-    val delays: List<Duration> get() = run.get().delays
+    val delays: List<Duration>
+        get() = run.get().delays
 
     /** The test's timers still to fall due, this actor's and every other's. */
-    val pendingTimers: Int get() = scope.pendingTimers
+    val pendingTimers: Int
+        get() = scope.pendingTimers
 
     /** The test's dead letters, this actor's and every other's. */
-    val deadLetters: List<DeadLetter> get() = scope.deadLetters
+    val deadLetters: List<DeadLetter>
+        get() = scope.deadLetters
 
     /** Moves the test's time on; see [TestActors.advance]. */
     fun advance(by: Duration) = scope.advance(by)
@@ -493,11 +520,12 @@ class TestActor<M : Any, S, E> internal constructor(
     private fun dead(message: Any, why: DeadLetter.Why) = scope.dead(DeadLetter(address, message, why))
 
     private fun turned(message: M) {
-        val next = try {
-            supervised { behaviour.turn(this, ctx, state, message) }
-        } catch (_: WrongGuess) {
-            return guessedWrong(message)
-        } ?: return
+        val next =
+            try {
+                supervised { behaviour.turn(this, ctx, state, message) }
+            } catch (_: WrongGuess) {
+                return guessedWrong(message)
+            } ?: return
         if (next === Next.Unhandled) dead(message, DeadLetter.Why.Unhandled)
         run.updateAndGet { after(it, next, message) }
         settled(next)
@@ -520,8 +548,7 @@ class TestActor<M : Any, S, E> internal constructor(
      */
     private fun timed(timer: TestTimer) {
         if (run.get().timers[timer.key] !== timer) return
-        @Suppress("UNCHECKED_CAST")
-        turned(timer.message as M)
+        @Suppress("UNCHECKED_CAST") turned(timer.message as M)
         if (run.get().timers[timer.key] === timer) {
             val every = timer.every
             if (every == null) {
@@ -556,8 +583,7 @@ class TestActor<M : Any, S, E> internal constructor(
         if (stopped) return
         if (starting.get()) started()
         val message = stashed.get()?.next() ?: return
-        @Suppress("UNCHECKED_CAST")
-        turned(message as M)
+        @Suppress("UNCHECKED_CAST") turned(message as M)
         heard()
         replayed()
     }
@@ -635,8 +661,11 @@ class TestActor<M : Any, S, E> internal constructor(
         scope.receptionist.forget(this)
         stashed.set(null)
         run.getAndUpdate {
-            it.copy(timers = emptyMap(), silence = null, scoped = null, asked = null)
-        }.timers.values.forEach(scope::unschedule)
+                it.copy(timers = emptyMap(), silence = null, scoped = null, asked = null)
+            }
+            .timers
+            .values
+            .forEach(scope::unschedule)
     }
 
     private fun signalled(signal: Signal) {
@@ -725,12 +754,13 @@ class TestActor<M : Any, S, E> internal constructor(
             }
         }
 
-    private fun after(run: Run<M, S, E>, next: Next<S>, message: M?): Run<M, S, E> = when (next) {
-        Next.Stay -> run
-        is Next.Become -> run.copy(state = next.state)
-        Next.Stop -> run.copy(stopped = true)
-        Next.Unhandled -> if (message == null) run else run.copy(unhandled = run.unhandled + message)
-    }
+    private fun after(run: Run<M, S, E>, next: Next<S>, message: M?): Run<M, S, E> =
+        when (next) {
+            Next.Stay -> run
+            is Next.Become -> run.copy(state = next.state)
+            Next.Stop -> run.copy(stopped = true)
+            Next.Unhandled -> if (message == null) run else run.copy(unhandled = run.unhandled + message)
+        }
 }
 
 /** A timer in the test's own time: also what goes on the queue once it falls due. */

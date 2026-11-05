@@ -7,8 +7,8 @@ import dev.surefold.fail.right
 import java.util.concurrent.Executor
 
 /**
- * Runs both branches on forks of their own and answers with the first to return; the losers are interrupted
- * and their outcomes dropped, and a branch that fails first loses the race for everyone.
+ * Runs both branches on forks of their own and answers with the first to return; the losers are interrupted and their
+ * outcomes dropped, and a branch that fails first loses the race for everyone.
  */
 fun <E, A, B> Fail<E>.raceN(fa: Fail<E>.() -> A, fb: Fail<E>.() -> B): Either<A, B> = raceN(VirtualThreads, fa, fb)
 

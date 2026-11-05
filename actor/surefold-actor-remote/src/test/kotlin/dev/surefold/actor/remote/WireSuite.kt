@@ -16,12 +16,12 @@ import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
 /** A port nothing is listening on yet: bound and let go, so a node can be named before it listens. */
-
 private fun node(name: String) = Node(name, "127.0.0.1", freePort())
 
 private fun frame(n: Int) = Frame("/user/clinic", 1, byteArrayOf(n.toByte(), (n shr 8).toByte()))
 
-private val Frame.n: Int get() = (payload[0].toInt() and 0xff) or ((payload[1].toInt() and 0xff) shl 8)
+private val Frame.n: Int
+    get() = (payload[0].toInt() and 0xff) or ((payload[1].toInt() and 0xff) shl 8)
 
 /** Everything a transport tells its node, as events a test can wait for one at a time. */
 private class Heard : Listener {
@@ -169,21 +169,22 @@ object WireSuite : Suite() {
                 // Answers the handshake as "stuck", then reads nothing, so the sender's socket fills and its writes
                 // block.
                 val stuck = ServerSocket(0).closedAfter()
-                val answered = Thread.ofVirtual().start {
-                    val socket = stuck.accept()
-                    val input = DataInputStream(socket.getInputStream())
-                    input.readInt()
-                    input.readInt()
-                    input.readUTF()
-                    input.readLong()
-                    DataOutputStream(socket.getOutputStream()).apply {
-                        writeInt(0x4C41524B)
-                        writeInt(2)
-                        writeUTF("stuck@127.0.0.1:${stuck.localPort}")
-                        writeLong(1)
-                        flush()
+                val answered =
+                    Thread.ofVirtual().start {
+                        val socket = stuck.accept()
+                        val input = DataInputStream(socket.getInputStream())
+                        input.readInt()
+                        input.readInt()
+                        input.readUTF()
+                        input.readLong()
+                        DataOutputStream(socket.getOutputStream()).apply {
+                            writeInt(0x4C41524B)
+                            writeInt(2)
+                            writeUTF("stuck@127.0.0.1:${stuck.localPort}")
+                            writeLong(1)
+                            flush()
+                        }
                     }
-                }
                 val heard = Heard()
                 val first = Transport(node("one"), heard, drainWithin = 200.milliseconds)
                 val peer = Node("stuck", "127.0.0.1", stuck.localPort)

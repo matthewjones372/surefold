@@ -4,9 +4,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater
 
 /** One message in a [Mailbox]. */
 internal class MailboxNode(@Volatile @JvmField var message: Any?) {
-    @Volatile
-    @JvmField
-    var next: MailboxNode? = null
+    @Volatile @JvmField var next: MailboxNode? = null
 }
 
 /**
@@ -18,14 +16,10 @@ internal class MailboxNode(@Volatile @JvmField var message: Any?) {
  */
 internal open class Mailbox {
 
-    @Volatile
-    @JvmField
-    var tail: MailboxNode = MailboxNode(null)
+    @Volatile @JvmField var tail: MailboxNode = MailboxNode(null)
 
     // Read and written only by the activation that holds the actor.
-    @Volatile
-    @JvmField
-    var head: MailboxNode = tail
+    @Volatile @JvmField var head: MailboxNode = tail
 
     fun add(message: Any) {
         val node = MailboxNode(message)

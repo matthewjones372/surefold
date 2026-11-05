@@ -36,19 +36,23 @@ class Plan internal constructor(val layers: List<List<KType>>)
 fun Module.render(): String {
     val keys = (nodes.keys + nodes.values.flatMap { it.dependencies }).distinct().sortedBy { it.toString() }
     val declarations = keys.map { "    ${idOf(it)}[${labelOf(it)}]" }
-    val edges = nodes.values.sortedBy { it.key.toString() }.flatMap { node ->
-        node.dependencies.sortedBy { it.toString() }.map { "    ${idOf(it)} --> ${idOf(node.key)}" }
-    }
+    val edges =
+        nodes.values
+            .sortedBy { it.key.toString() }
+            .flatMap { node ->
+                node.dependencies.sortedBy { it.toString() }.map { "    ${idOf(it)} --> ${idOf(node.key)}" }
+            }
     return (listOf("graph TD") + declarations + edges).joinToString("\n")
 }
 
 /** Every fault in the graph, or the order it starts in. Runs no recipe. */
 fun Module.validate(): Either<NonEmptyList<WiringError>, Plan> {
-    val missing = nodes.values.flatMap { node ->
-        node.dependencies
-            .filterNot { nodes.containsKey(it) || it in runtimeProvided }
-            .map { WiringError.Missing(it, node.key, node.site) }
-    }
+    val missing =
+        nodes.values.flatMap { node ->
+            node.dependencies
+                .filterNot { nodes.containsKey(it) || it in runtimeProvided }
+                .map { WiringError.Missing(it, node.key, node.site) }
+        }
 
     // Every missing key at once: a graph is usually short of a module, not of one node.
     return missing.toNonEmptyListOrNull()?.left()
@@ -63,24 +67,27 @@ fun NonEmptyList<WiringError>.report(): String = report(emptySet())
 /**
  * The report, with a key that reads the same as a missing one named beside it.
  *
- * A Java factory hands back a platform type, so `single { sdk: Sdk -> sdk.getTracer("app") }` builds
- * a node keyed `Tracer!` that nothing asking for a `Tracer` will ever match — and "missing Tracer"
- * with a `Tracer` sitting in the graph is the least helpful true sentence a build can print.
+ * A Java factory hands back a platform type, so `single { sdk: Sdk -> sdk.getTracer("app") }` builds a node keyed
+ * `Tracer!` that nothing asking for a `Tracer` will ever match — and "missing Tracer" with a `Tracer` sitting in the
+ * graph is the least helpful true sentence a build can print.
  */
 fun NonEmptyList<WiringError>.report(provided: Set<KType>): String {
-    val missing = filterIsInstance<WiringError.Missing>()
-        .groupBy { it.key }
-        .entries
-        .sortedBy { (key, _) -> key.toString() }
-        .map { (key, asked) ->
-            val consumers = asked.map { "❯     for ${at(labelOf(it.neededBy), it.site)}" }.sorted()
-            val alike = provided.firstOrNull { it != key && plainly(it) == plainly(key) }
-            val nearly = alike?.let { listOf("❯     the graph has $it, which is not the same type") }.orEmpty()
-            (listOf("❯ missing ${labelOf(key)}") + consumers + nearly).joinToString("\n")
-        }
+    val missing =
+        filterIsInstance<WiringError.Missing>()
+            .groupBy { it.key }
+            .entries
+            .sortedBy { (key, _) -> key.toString() }
+            .map { (key, asked) ->
+                val consumers = asked.map { "❯     for ${at(labelOf(it.neededBy), it.site)}" }.sorted()
+                val alike = provided.firstOrNull { it != key && plainly(it) == plainly(key) }
+                val nearly = alike?.let { listOf("❯     the graph has $it, which is not the same type") }.orEmpty()
+                (listOf("❯ missing ${labelOf(key)}") + consumers + nearly).joinToString("\n")
+            }
 
-    val cycles = filterIsInstance<WiringError.Cycle>()
-        .map { cycle -> "❯ cycle ${cycle.path.joinToString(" → ", transform = ::labelOf)}" }
+    val cycles =
+        filterIsInstance<WiringError.Cycle>().map { cycle ->
+            "❯ cycle ${cycle.path.joinToString(" → ", transform = ::labelOf)}"
+        }
 
     return (listOf("surefold-app wiring error") + missing + cycles).joinToString("\n\n")
 }
@@ -105,10 +112,11 @@ private tailrec fun layers(
 
         ready.isEmpty() -> remaining.left()
 
-        else -> layers(
-            (remaining - ready.toSet()).mapValues { (_, needs) -> needs - ready.toSet() },
-            planned + listOf(ready),
-        )
+        else ->
+            layers(
+                (remaining - ready.toSet()).mapValues { (_, needs) -> needs - ready.toSet() },
+                planned + listOf(ready),
+            )
     }
 }
 

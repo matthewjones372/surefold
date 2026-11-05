@@ -6,10 +6,10 @@ import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
 import dev.surefold.fail.Either
 import dev.surefold.fail.attempt
-import org.junit.jupiter.api.Test
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Test
 
 private const val BALANCES = 10
 private const val THREADS = 1_000
@@ -114,18 +114,19 @@ class TransactTest {
     fun `transfers on a thousand virtual threads leave the total unchanged`() {
         val balances = List(BALANCES) { Shared(100) }
 
-        val threads = List(THREADS) { t ->
-            Thread.ofVirtual().start {
-                repeat(TRANSFERS) { i ->
-                    val from = balances[(t + i) % BALANCES]
-                    val to = balances[(t + i + 1 + t % (BALANCES - 1)) % BALANCES]
-                    transact {
-                        from.update { it - 1 }
-                        to.update { it + 1 }
+        val threads =
+            List(THREADS) { t ->
+                Thread.ofVirtual().start {
+                    repeat(TRANSFERS) { i ->
+                        val from = balances[(t + i) % BALANCES]
+                        val to = balances[(t + i + 1 + t % (BALANCES - 1)) % BALANCES]
+                        transact {
+                            from.update { it - 1 }
+                            to.update { it + 1 }
+                        }
                     }
                 }
             }
-        }
         threads.forEach { it.join() }
 
         balances.sumOf { it.peek() } shouldBe BALANCES * 100
@@ -140,30 +141,32 @@ class TransactTest {
 
         // Writers yield after each commit: a virtual thread is never preempted, so writers that spin would keep the
         // readers off every carrier.
-        val writers = List(WRITERS) { t ->
-            Thread.ofVirtual().start {
-                repeat(WRITES) { i ->
-                    transact {
-                        balances[(t + i) % BALANCES].update { it - 1 }
-                        balances[(t + i + 1) % BALANCES].update { it + 1 }
+        val writers =
+            List(WRITERS) { t ->
+                Thread.ofVirtual().start {
+                    repeat(WRITES) { i ->
+                        transact {
+                            balances[(t + i) % BALANCES].update { it - 1 }
+                            balances[(t + i + 1) % BALANCES].update { it + 1 }
+                        }
+                        Thread.yield()
                     }
-                    Thread.yield()
                 }
             }
-        }
         // Readers keep reading for as long as anyone writes, so reads and commits overlap.
-        val readers = List(READERS) {
-            Thread.ofVirtual().start {
-                while (!writersDone.get()) {
-                    transact {
-                        // Every run counts, including one that is about to retry.
-                        val total = balances.sumOf { balance -> balance.get().also { Thread.yield() } }
-                        runs.incrementAndGet()
-                        if (total != BALANCES * 100) torn.add(total)
+        val readers =
+            List(READERS) {
+                Thread.ofVirtual().start {
+                    while (!writersDone.get()) {
+                        transact {
+                            // Every run counts, including one that is about to retry.
+                            val total = balances.sumOf { balance -> balance.get().also { Thread.yield() } }
+                            runs.incrementAndGet()
+                            if (total != BALANCES * 100) torn.add(total)
+                        }
                     }
                 }
             }
-        }
         writers.forEach { it.join() }
         writersDone.set(true)
         readers.forEach { it.join() }

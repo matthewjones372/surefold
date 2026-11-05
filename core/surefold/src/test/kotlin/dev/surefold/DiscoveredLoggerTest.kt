@@ -3,11 +3,11 @@ package dev.surefold
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.util.ServiceConfigurationError
 import java.util.ServiceLoader
+import org.junit.jupiter.api.Test
 
 /** Where a line goes when nobody has bound anything: whatever the classpath registered, or stderr. */
 class DiscoveredLoggerTest {
@@ -25,12 +25,15 @@ class DiscoveredLoggerTest {
         val said = ByteArrayOutputStream()
         val err = System.err
 
-        val fallen = try {
-            System.setErr(PrintStream(said, true))
-            firstRegistered("Logger", StderrLogger) { throw ServiceConfigurationError("petshop.LoggerThatIsNotThere") }
-        } finally {
-            System.setErr(err)
-        }
+        val fallen =
+            try {
+                System.setErr(PrintStream(said, true))
+                firstRegistered("Logger", StderrLogger) {
+                    throw ServiceConfigurationError("petshop.LoggerThatIsNotThere")
+                }
+            } finally {
+                System.setErr(err)
+            }
 
         withClue("a service file naming a class that will not link must not take the first line out") {
             fallen shouldBe StderrLogger
@@ -42,13 +45,13 @@ class DiscoveredLoggerTest {
 
     @Test
     fun `a binding still wins over whatever the classpath had`() {
-        val mine = Logger { }
+        val mine = Logger {}
 
         logger.locally(mine) { logger.get() } shouldBe mine
     }
 
     @Test
     fun `unbound answers what the classpath had, under a binding of another`() {
-        logger.locally(Logger { }) { logger.unbound() } shouldBe StderrLogger
+        logger.locally(Logger {}) { logger.unbound() } shouldBe StderrLogger
     }
 }

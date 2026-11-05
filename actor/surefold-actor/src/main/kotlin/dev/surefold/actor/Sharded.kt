@@ -49,11 +49,12 @@ data class SliceMap(val version: Long, val ranges: List<Pair<IntRange, String>>)
     fun owner(slice: Int): String = checkNotNull(owners[slice])
 
     /** The databases that own any slice. */
-    val databases: Set<String> get() = ranges.mapTo(LinkedHashSet()) { it.second }
+    val databases: Set<String>
+        get() = ranges.mapTo(LinkedHashSet()) { it.second }
 
     /**
-     * This map with [slices] given to [owner], as the next version: adjacent ranges of one owner are merged, so the
-     * map stays as short as the moves allow.
+     * This map with [slices] given to [owner], as the next version: adjacent ranges of one owner are merged, so the map
+     * stays as short as the moves allow.
      */
     fun moving(slices: IntRange, owner: String): SliceMap {
         val next = Array(Slices.COUNT) { if (it in slices) owner else owner(it) }
@@ -87,8 +88,8 @@ data class SliceMap(val version: Long, val ranges: List<Pair<IntRange, String>>)
 }
 
 /**
- * Where a sharded journal learns its [SliceMap] (spec 0105). [current] may answer one a moment old; [refresh] reads
- * it again, as after a database refused an append for a slice it no longer takes.
+ * Where a sharded journal learns its [SliceMap] (spec 0105). [current] may answer one a moment old; [refresh] reads it
+ * again, as after a database refused an append for a slice it no longer takes.
  */
 interface SliceTable {
     fun current(): SliceMap
@@ -97,9 +98,10 @@ interface SliceTable {
 
     companion object {
         /** A map that never changes: the formula of spec 0088 when nothing else is given. */
-        fun fixed(map: SliceMap): SliceTable = object : SliceTable {
-            override fun current(): SliceMap = map
-        }
+        fun fixed(map: SliceMap): SliceTable =
+            object : SliceTable {
+                override fun current(): SliceMap = map
+            }
     }
 }
 
@@ -135,16 +137,14 @@ private class Routing<T : Any>(databases: List<Pair<String, T>>, table: SliceTab
 }
 
 /**
- * A journal split across databases by id (spec 0088): each id's events, and each append's optimistic check, stay in
- * the one database its slice belongs to. There is no order across databases; each has its own feed in [feeds].
+ * A journal split across databases by id (spec 0088): each id's events, and each append's optimistic check, stay in the
+ * one database its slice belongs to. There is no order across databases; each has its own feed in [feeds].
  *
  * Which database owns which slices is [slices]' (spec 0105), by default the fixed ranges of spec 0088. A database that
- * refuses an append for a slice it has given away sends the append on to the slice's new owner once, after reading
- * the table again; while a slice is still moving, the append is [JournalUnavailable].
+ * refuses an append for a slice it has given away sends the append on to the slice's new owner once, after reading the
+ * table again; while a slice is still moving, the append is [JournalUnavailable].
  */
-class ShardedJournal(databases: List<Pair<String, Journal>>, slices: SliceTable? = null) :
-    Journal,
-    JournalPruning {
+class ShardedJournal(databases: List<Pair<String, Journal>>, slices: SliceTable? = null) : Journal, JournalPruning {
     private val routing = Routing(databases, slices)
 
     /** Each database's own feed, by name, for one projection per database. */
@@ -205,10 +205,11 @@ internal fun murmur3(data: ByteArray): Int {
     val blocks = data.size / 4
     for (i in 0 until blocks) {
         val at = i * 4
-        var k = (data[at].toInt() and 0xff) or
-            ((data[at + 1].toInt() and 0xff) shl 8) or
-            ((data[at + 2].toInt() and 0xff) shl 16) or
-            ((data[at + 3].toInt() and 0xff) shl 24)
+        var k =
+            (data[at].toInt() and 0xff) or
+                ((data[at + 1].toInt() and 0xff) shl 8) or
+                ((data[at + 2].toInt() and 0xff) shl 16) or
+                ((data[at + 3].toInt() and 0xff) shl 24)
         k = Integer.rotateLeft(k * c1, 15) * c2
         h = Integer.rotateLeft(h xor k, 13) * 5 + -0x19ab949c
     }

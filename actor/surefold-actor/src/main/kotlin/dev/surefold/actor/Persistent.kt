@@ -48,8 +48,8 @@ fun interface Prune {
         }
 
         /**
-         * As [after], for a [journal] across databases (spec 0088): each id waits only on what [names] have read of
-         * its own database, by the offsets saved under [ShardedJournal.progress].
+         * As [after], for a [journal] across databases (spec 0088): each id waits only on what [names] have read of its
+         * own database, by the offsets saved under [ShardedJournal.progress].
          */
         fun after(offsets: OffsetStore, journal: ShardedJournal, vararg names: String): Prune {
             require(names.isNotEmpty()) { "pruning after no read model is Prune.always" }
@@ -97,7 +97,8 @@ fun <S> every(n: Int, codec: StateCodec<S>, prune: Prune = Prune.never): Snapsho
 }
 
 /** What a command does: persist events, or not, and what runs once they are written and applied. */
-class Effect<out Ev, S> internal constructor(
+class Effect<out Ev, S>
+internal constructor(
     internal val events: List<Ev>,
     internal val next: Next<Nothing>?,
     internal val then: ((S) -> Unit)?,
@@ -158,19 +159,19 @@ internal interface Restartable {
  * turn's own thread, applies them, and then runs the effect's `then`; the next command sees the new state. An append
  * that conflicts with another writer is raised as the behaviour's failure, so supervision decides.
  *
- * With [snapshots], and a scope that has a store, a persist that carries the sequence number across a multiple of
- * its `every` saves the state it reached, before `then`; a start loads the newest snapshot and replays only the
- * events after it. A save that throws is logged and the turn goes on: the events are already written, and the next
- * multiple saves again.
+ * With [snapshots], and a scope that has a store, a persist that carries the sequence number across a multiple of its
+ * `every` saves the state it reached, before `then`; a start loads the newest snapshot and replays only the events
+ * after it. A save that throws is logged and the turn goes on: the events are already written, and the next multiple
+ * saves again.
  *
  * A [Delivered] command whose sequence number is no greater than the last this actor handled from its producer is
- * dropped without a turn (spec 0079). One that persists events writes a mark of its delivery in the same append, so
- * the actor remembers it across restarts and moves, as a snapshot does; one that persists nothing is remembered until
- * the actor stops, and handled again after that, where it changes nothing the journal holds. One its turn stashes is
- * not remembered until it is handled once put back.
+ * dropped without a turn (spec 0079). One that persists events writes a mark of its delivery in the same append, so the
+ * actor remembers it across restarts and moves, as a snapshot does; one that persists nothing is remembered until the
+ * actor stops, and handled again after that, where it changes nothing the journal holds. One its turn stashes is not
+ * remembered until it is handled once put back.
  *
- * With [start] of [Start.assumingNew], an actor's first start reads nothing until its first command, or its first
- * run of commands with a [batch], shows whether it is new.
+ * With [start] of [Start.assumingNew], an actor's first start reads nothing until its first command, or its first run
+ * of commands with a [batch], shows whether it is new.
  */
 fun <M : Any, Ev, S> persistent(
     id: PersistenceId,
@@ -180,9 +181,9 @@ fun <M : Any, Ev, S> persistent(
     event: (state: S, event: Ev) -> S,
     snapshots: Snapshotting<S>? = null,
     /**
-     * How many of the commands already waiting are decided before one append writes all their events (spec 0086).
-     * With more than 1, each command is still decided against the state the one before it left, and each `then` runs
-     * after the append, in order; a conflict fails the whole batch.
+     * How many of the commands already waiting are decided before one append writes all their events (spec 0086). With
+     * more than 1, each command is still decided against the state the one before it left, and each `then` runs after
+     * the append, in order; a conflict fails the whole batch.
      */
     batch: Int = 1,
     start: Start = Start.recovering,
@@ -215,14 +216,15 @@ fun <M : Any, Ev, S> persistent(
                 // Still on a guess that the journal is empty: an answer from it is only safe once an append proves it.
                 val guessed = start.guessing && remembered === initial
                 if (guessed && effect.events.isEmpty()) throw WrongGuess
-                val after = when {
-                    effect.events.isNotEmpty() ->
-                        written(id, codec, event, snapshots, ctx, remembered, effect.events, delivery, guessed)
+                val after =
+                    when {
+                        effect.events.isNotEmpty() ->
+                            written(id, codec, event, snapshots, ctx, remembered, effect.events, delivery, guessed)
 
-                    delivery != null -> remembered.copy(delivered = remembered.delivered.after(delivery))
+                        delivery != null -> remembered.copy(delivered = remembered.delivered.after(delivery))
 
-                    else -> remembered
-                }
+                        else -> remembered
+                    }
                 effect.then?.invoke(after.value)
                 effect.next ?: if (after === remembered) Next.Stay else Next.Become(after)
             }
@@ -271,9 +273,9 @@ private fun <M : Any, Ev, S> recovered(
     snapshots: Snapshotting<S>?,
     ctx: Ctx<M>,
 ): Remembered<S> {
-    val from = snapshots?.let { ctx.snapshots?.latest(id) }
-        ?.let { decode(snapshots.codec, it.bytes, it.sequence) }
-        ?: Remembered(empty, 0)
+    val from =
+        snapshots?.let { ctx.snapshots?.latest(id) }?.let { decode(snapshots.codec, it.bytes, it.sequence) }
+            ?: Remembered(empty, 0)
     val stored = ctx.journal.read(id, from.sequence + 1)
     val first = stored.firstOrNull()?.sequence ?: (from.sequence + 1)
     check(first == from.sequence + 1) {
@@ -333,8 +335,8 @@ private class Deciding<M : Any, Ev, S>(
 }
 
 /**
- * A batch of [messages] decided in turn, each against the state the one before left, and every event and delivery
- * mark among them written in one append; then each `then` runs, in order, with the state its own command left. On a
+ * A batch of [messages] decided in turn, each against the state the one before left, and every event and delivery mark
+ * among them written in one append; then each `then` runs, in order, with the state its own command left. On a
  * [guessed] state, a batch that writes nothing, or whose append conflicts, is the guess shown wrong: no `then` has run,
  * and the whole batch is handed back once the actor has recovered.
  */
@@ -355,11 +357,12 @@ private fun <M : Any, Ev, S> Fail<JournalConflict>.decided(
         ctx.snapshots?.snapshot(id, remembered.sequence, reached, snapshots, ctx.journal)
     }
     deciding.decided.forEach { it.effect.then?.invoke(it.after) }
-    val next = when {
-        deciding.stopped -> Next.Stop
-        reached == remembered -> Next.Stay
-        else -> Next.Become(reached)
-    }
+    val next =
+        when {
+            deciding.stopped -> Next.Stop
+            reached == remembered -> Next.Stay
+            else -> Next.Become(reached)
+        }
     return Batched(next, deciding.unhandled, messages.drop(taken))
 }
 
@@ -411,9 +414,10 @@ private fun <S> SnapshotStore.snapshot(
     journal: Journal,
 ) {
     if (before / how.every == reached.sequence / how.every) return
-    val saved = logged("the snapshot of $id at ${reached.sequence} was not saved; the next one will be") {
-        save(id, reached.sequence, encode(how.codec, reached))
-    }
+    val saved =
+        logged("the snapshot of $id at ${reached.sequence} was not saved; the next one will be") {
+            save(id, reached.sequence, encode(how.codec, reached))
+        }
     val pruning = journal as? JournalPruning
     if (saved && how.prune !== Prune.never && pruning != null) {
         val upTo = reached.sequence - how.every

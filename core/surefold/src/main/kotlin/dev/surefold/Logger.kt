@@ -4,7 +4,12 @@ import java.lang.invoke.MethodHandles
 import java.time.Instant
 import java.util.ServiceLoader
 
-enum class LogLevel { Debug, Info, Warn, Error }
+enum class LogLevel {
+    Debug,
+    Info,
+    Warn,
+    Error,
+}
 
 /** One line, as a value: what a backend renders and what a test asserts on. */
 data class LogLine(
@@ -39,14 +44,13 @@ val logger: SurefoldLocal<Logger> = surefoldLocal { discovered }
 /**
  * The [Logger] a jar on the classpath registered, or [StderrLogger].
  *
- * So an adapter is a dependency and not a line in `main`: `surefold-slf4j` ships a service file, and a
- * service that puts it on the classpath has bound nothing and still logs where everything else does.
- * `logger.locally` overrides it, which is what a test does and what an application does where it
- * builds its own.
+ * So an adapter is a dependency and not a line in `main`: `surefold-slf4j` ships a service file, and a service that
+ * puts it on the classpath has bound nothing and still logs where everything else does. `logger.locally` overrides it,
+ * which is what a test does and what an application does where it builds its own.
  *
- * Resolved once, because the initial value of a [SurefoldLocal] is asked for on every unbound read, and
- * a `ServiceLoader` scan per log line is a scan per log line. Loaded through this class's own loader
- * rather than the thread's: which thread a line is written on is exactly what surefold makes vary.
+ * Resolved once, because the initial value of a [SurefoldLocal] is asked for on every unbound read, and a
+ * `ServiceLoader` scan per log line is a scan per log line. Loaded through this class's own loader rather than the
+ * thread's: which thread a line is written on is exactly what surefold makes vary.
  */
 private val discovered: Logger by lazy {
     firstRegistered("Logger", StderrLogger) {
@@ -70,9 +74,10 @@ inline fun logError(message: String, cause: Throwable? = null) =
     logAt(LogLevel.Error, message, cause, MethodHandles.lookup().lookupClass())
 
 /** A companion, a nested class, a lambda or an anonymous object reports the class that holds it. */
-private val topLevel = object : ClassValue<String>() {
-    override fun computeValue(type: Class<*>): String = generateSequence(type) { it.enclosingClass }.last().name
-}
+private val topLevel =
+    object : ClassValue<String>() {
+        override fun computeValue(type: Class<*>): String = generateSequence(type) { it.enclosingClass }.last().name
+    }
 
 @PublishedApi
 internal fun logAt(level: LogLevel, message: String, cause: Throwable?, caller: Class<*>) {

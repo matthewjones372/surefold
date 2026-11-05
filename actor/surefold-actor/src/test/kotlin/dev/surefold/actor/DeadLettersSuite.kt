@@ -25,26 +25,27 @@ private data object Seal : Mail
 /** Posts two letters to itself, then stops before either is handled. */
 private data object Burn : Mail
 
-private fun postbox() = behaviour<Mail, List<Int>>(emptyList()) { ctx, letters, message ->
-    when (message) {
-        is Letter -> become(letters + message.n)
+private fun postbox() =
+    behaviour<Mail, List<Int>>(emptyList()) { ctx, letters, message ->
+        when (message) {
+            is Letter -> become(letters + message.n)
 
-        Junk -> unhandled()
+            Junk -> unhandled()
 
-        is Hold -> {
-            ctx.stash(message)
-            stay()
-        }
+            is Hold -> {
+                ctx.stash(message)
+                stay()
+            }
 
-        Seal -> stop()
+            Seal -> stop()
 
-        Burn -> {
-            ctx.self.tell(Letter(1))
-            ctx.self.tell(Letter(2))
-            stop()
+            Burn -> {
+                ctx.self.tell(Letter(1))
+                ctx.self.tell(Letter(2))
+                stop()
+            }
         }
     }
-}
 
 object DeadLettersSuite : Suite() {
     private const val RACES = 200
@@ -66,8 +67,7 @@ object DeadLettersSuite : Suite() {
 
             postbox.send(Junk)
 
-            postbox.deadLetters shouldContainExactly
-                listOf(DeadLetter(postbox.address, Junk, DeadLetter.Why.Unhandled))
+            postbox.deadLetters shouldContainExactly listOf(DeadLetter(postbox.address, Junk, DeadLetter.Why.Unhandled))
             postbox.unhandled shouldContainExactly listOf(Junk)
         }
 
@@ -76,10 +76,11 @@ object DeadLettersSuite : Suite() {
 
             postbox.send(Burn)
 
-            postbox.deadLetters shouldContainExactly listOf(
-                DeadLetter(postbox.address, Letter(1), DeadLetter.Why.Stopped),
-                DeadLetter(postbox.address, Letter(2), DeadLetter.Why.Stopped),
-            )
+            postbox.deadLetters shouldContainExactly
+                listOf(
+                    DeadLetter(postbox.address, Letter(1), DeadLetter.Why.Stopped),
+                    DeadLetter(postbox.address, Letter(2), DeadLetter.Why.Stopped),
+                )
         }
 
         test("a stashed message is a dead letter when the actor stops") {
@@ -103,16 +104,18 @@ object DeadLettersSuite : Suite() {
                 watch(postbox).await()
                 postbox.tell(Letter(3))
                 postbox.address
-            }.let { address ->
-                letters.toList() shouldContainExactlyInAnyOrder listOf(
-                    DeadLetter(address, Junk, DeadLetter.Why.Unhandled),
-                    DeadLetter(address, Hold(7), DeadLetter.Why.Stopped),
-                    DeadLetter(address, Letter(1), DeadLetter.Why.Stopped),
-                    DeadLetter(address, Letter(2), DeadLetter.Why.Stopped),
-                    DeadLetter(address, Letter(3), DeadLetter.Why.Stopped),
-                )
-                letters.size shouldBe 5
             }
+                .let { address ->
+                    letters.toList() shouldContainExactlyInAnyOrder
+                        listOf(
+                            DeadLetter(address, Junk, DeadLetter.Why.Unhandled),
+                            DeadLetter(address, Hold(7), DeadLetter.Why.Stopped),
+                            DeadLetter(address, Letter(1), DeadLetter.Why.Stopped),
+                            DeadLetter(address, Letter(2), DeadLetter.Why.Stopped),
+                            DeadLetter(address, Letter(3), DeadLetter.Why.Stopped),
+                        )
+                    letters.size shouldBe 5
+                }
         }
 
         test("after its scope has closed, a dead letter is only logged, and a spawn is refused") {
@@ -136,12 +139,14 @@ object DeadLettersSuite : Suite() {
                 onDeadLetter(letters::add)
                 // As a transport does when its actor stops: what it could not deliver becomes this scope's
                 // dead letter.
-                val transport = behaviour<Int, Unit>(Unit) { _, _, _ -> stay() }.onSignal { ctx, _, signal ->
-                    if (signal is Signal.Stopping) {
-                        deadLetter(DeadLetter(ctx.self.address, 1, DeadLetter.Why.Unreachable))
-                    }
-                    stay()
-                }
+                val transport =
+                    behaviour<Int, Unit>(Unit) { _, _, _ -> stay() }
+                        .onSignal { ctx, _, signal ->
+                            if (signal is Signal.Stopping) {
+                                deadLetter(DeadLetter(ctx.self.address, 1, DeadLetter.Why.Unreachable))
+                            }
+                            stay()
+                        }
                 spawn("transport", transport)
             }
 
@@ -162,14 +167,15 @@ object DeadLettersSuite : Suite() {
                 scope {
                     spawn("postbox", postbox())
                     val closing = this
-                    transport = Thread.ofPlatform().start {
-                        telling.countDown()
-                        try {
-                            while (!done.get()) closing.deadLetter(letter)
-                        } catch (thrown: IllegalStateException) {
-                            failed += thrown
+                    transport =
+                        Thread.ofPlatform().start {
+                            telling.countDown()
+                            try {
+                                while (!done.get()) closing.deadLetter(letter)
+                            } catch (thrown: IllegalStateException) {
+                                failed += thrown
+                            }
                         }
-                    }
                     telling.await()
                 }
                 done.set(true)

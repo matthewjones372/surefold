@@ -33,16 +33,18 @@ private class OldNode : AutoCloseable {
     val node = Node("old", "127.0.0.1", server.localPort)
     val payloads = LinkedBlockingQueue<List<Byte>>()
     val refused = LinkedBlockingQueue<Int>()
-    private val accepting = Thread.ofVirtual().start {
-        while (!server.isClosed) {
-            val socket = try {
-                server.accept()
-            } catch (_: java.net.SocketException) {
-                return@start
+    private val accepting =
+        Thread.ofVirtual().start {
+            while (!server.isClosed) {
+                val socket =
+                    try {
+                        server.accept()
+                    } catch (_: java.net.SocketException) {
+                        return@start
+                    }
+                Thread.ofVirtual().start { serve(socket) }
             }
-            Thread.ofVirtual().start { serve(socket) }
         }
-    }
 
     private fun serve(socket: Socket) {
         socket.use {

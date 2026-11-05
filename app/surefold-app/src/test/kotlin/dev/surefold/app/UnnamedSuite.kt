@@ -9,9 +9,9 @@ import java.nio.charset.CodingErrorAction
 import java.security.MessageDigest
 
 /**
- * Names this public repository never prints: the private services built on it. The names are held as SHA-256 digests
- * of their lower-case spelling, so this file does not print them either; a word in any tracked text file whose digest
- * is one of them fails the build.
+ * Names this public repository never prints: the private services built on it. The names are held as SHA-256 digests of
+ * their lower-case spelling, so this file does not print them either; a word in any tracked text file whose digest is
+ * one of them fails the build.
  */
 object UnnamedSuite : Suite() {
     private val unnamed = setOf("dc5d2b2b022126bf2c22d2095324c43e3947ffa8a58711ba1b98ffd718907dc8")
@@ -30,22 +30,24 @@ object UnnamedSuite : Suite() {
     }
 
     /** [file]'s text, or null for a file that is not UTF-8 text: an image, a jar. */
-    private fun textOf(file: File): String? = try {
-        Charsets.UTF_8.newDecoder()
-            .onMalformedInput(CodingErrorAction.REPORT)
-            .decode(java.nio.ByteBuffer.wrap(file.readBytes()))
-            .toString()
-    } catch (_: CharacterCodingException) {
-        null
-    }
+    private fun textOf(file: File): String? =
+        try {
+            Charsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPORT)
+                .decode(java.nio.ByteBuffer.wrap(file.readBytes()))
+                .toString()
+        } catch (_: CharacterCodingException) {
+            null
+        }
 
     init {
         test("no tracked file names a private service built on Surefold") {
             System.getProperty("surefold.app.repoRoot").shouldNotBeNull { root ->
-                val named = tracked(File(root)).filter { file ->
-                    val text = textOf(file) ?: return@filter false
-                    word.findAll(text.lowercase()).map { it.value }.toSet().any { digest(it) in unnamed }
-                }
+                val named =
+                    tracked(File(root)).filter { file ->
+                        val text = textOf(file) ?: return@filter false
+                        word.findAll(text.lowercase()).map { it.value }.toSet().any { digest(it) in unnamed }
+                    }
                 named.map { it.relativeTo(File(root)).path } shouldBe emptyList()
             }
         }

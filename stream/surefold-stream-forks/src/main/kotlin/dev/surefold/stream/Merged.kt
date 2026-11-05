@@ -67,12 +67,12 @@ private fun feed(up: Pull, into: Ring) {
 }
 
 /**
- * Reads one ring of each input, an element from each in turn, so an input that keeps its ring full cannot starve
- * one that does not. It drops a ring once its end has been read, and parks only once every ring is empty.
+ * Reads one ring of each input, an element from each in turn, so an input that keeps its ring full cannot starve one
+ * that does not. It drops a ring once its end has been read, and parks only once every ring is empty.
  *
- * It parks on all the rings at once: named on each, a fence, then one more look at all of them. Each producer
- * fences between publishing an element and looking for the name, as it does for a ring's own consumer, so either
- * this sees the element or the producer sees the name and wakes it.
+ * It parks on all the rings at once: named on each, a fence, then one more look at all of them. Each producer fences
+ * between publishing an element and looking for the name, as it does for a ring's own consumer, so either this sees the
+ * element or the producer sees the name and wakes it.
  */
 internal class InTurn(private val rings: Array<Ring>) {
     private var open = rings.size
@@ -142,8 +142,8 @@ private class Confluence(private val queue: ArrayBlockingQueue<Any>) {
 }
 
 /**
- * Both streams at once, each drained on a fork of its own into a [Ring] of its own, and read a ring at a time in
- * turn (spec 0185). It ends once both have, and fails as soon as the reader comes to either's failure.
+ * Both streams at once, each drained on a fork of its own into a [Ring] of its own, and read a ring at a time in turn
+ * (spec 0185). It ends once both have, and fails as soon as the reader comes to either's failure.
  */
 context(ctx: PullContext)
 internal fun Node.Merge.merged(): Pull {
@@ -156,9 +156,9 @@ internal fun Node.Merge.merged(): Pull {
 }
 
 /**
- * Up to [breadth] inner streams at once, each drained on a fork of its own into one bounded queue. The
- * outer stream is pulled on a fork too, which starts an inner stream only while fewer than [breadth] are
- * running. The run lets go of the outer fork before the inner ones, so no inner stream starts after.
+ * Up to [breadth] inner streams at once, each drained on a fork of its own into one bounded queue. The outer stream is
+ * pulled on a fork too, which starts an inner stream only while fewer than [breadth] are running. The run lets go of
+ * the outer fork before the inner ones, so no inner stream starts after.
  */
 // The catch is as wide as a pipeline: whatever the outer stream or a build threw is the reader's.
 @Suppress("TooGenericExceptionCaught")
@@ -170,28 +170,31 @@ internal fun Node.FlatMap.merged(breadth: Int): Pull {
     val on = ctx.releases?.on ?: VirtualThreads
     val room = Semaphore(breadth)
     val inners = ConcurrentLinkedQueue<InFlight<Unit>>()
-    val outer = InFlight(on) {
-        try {
-            generateSequence { up.next() }.forEach { a ->
-                room.acquire()
-                val inner = build(a).node.optimised().pull()
-                queue.put(Signal.Started)
-                inners += InFlight(on) {
-                    feed(inner, queue)
-                    room.release()
+    val outer =
+        InFlight(on) {
+            try {
+                generateSequence { up.next() }
+                    .forEach { a ->
+                        room.acquire()
+                        val inner = build(a).node.optimised().pull()
+                        queue.put(Signal.Started)
+                        inners +=
+                            InFlight(on) {
+                                feed(inner, queue)
+                                room.release()
+                            }
+                    }
+                queue.put(Signal.OuterDone)
+            } catch (_: InterruptedException) {
+                // Let go of by the run.
+            } catch (thrown: Throwable) {
+                try {
+                    queue.put(Signal.Threw(thrown))
+                } catch (_: InterruptedException) {
+                    // Let go of by the run while waiting for room.
                 }
             }
-            queue.put(Signal.OuterDone)
-        } catch (_: InterruptedException) {
-            // Let go of by the run.
-        } catch (thrown: Throwable) {
-            try {
-                queue.put(Signal.Threw(thrown))
-            } catch (_: InterruptedException) {
-                // Let go of by the run while waiting for room.
-            }
         }
-    }
     ctx.releases?.add {
         outer.cancel()
         generateSequence { inners.poll() }.forEach(InFlight<Unit>::cancel)

@@ -34,11 +34,12 @@ import kotlin.time.measureTimedValue
 /** Asks which cluster answers for an account. */
 private data class WhoHolds(val reply: Reply<String>)
 
-private val whoHoldsCodec = object : MessageCodec<WhoHolds> {
-    override fun write(message: WhoHolds, out: WireOut) = out.reply(message.reply, Codecs.string)
+private val whoHoldsCodec =
+    object : MessageCodec<WhoHolds> {
+        override fun write(message: WhoHolds, out: WireOut) = out.reply(message.reply, Codecs.string)
 
-    override fun read(input: WireIn): WhoHolds = WhoHolds(input.reply(Codecs.string))
-}
+        override fun read(input: WireIn): WhoHolds = WhoHolds(input.reply(Codecs.string))
+    }
 
 private val brisk = Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 500.milliseconds)
 
@@ -53,18 +54,23 @@ private class OneNodeCluster(name: String, port: Int, northPort: Int) : AutoClos
     private val ready = CountDownLatch(1)
     private val done = CountDownLatch(1)
     private lateinit var north: FederatedKind<WhoHolds>
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val member = cluster(node(name, port), Discovery.static(Node("", "127.0.0.1", port)), brisk)
-            check(member.await(1.minutes) { v -> v.members.any { it.status == Status.Up } }) { "$name never came up" }
-            val _ = member.sharding("account", whoHoldsCodec, 1.minutes) { answering(name) }
-            member.acceptFederated("north")
-            north = member.federate("north", Discovery.static(Node("", "127.0.0.1", northPort)), name, plaintext = true)
-                .sharding("account", whoHoldsCodec)
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val member = cluster(node(name, port), Discovery.static(Node("", "127.0.0.1", port)), brisk)
+                check(member.await(1.minutes) { v -> v.members.any { it.status == Status.Up } }) {
+                    "$name never came up"
+                }
+                val _ = member.sharding("account", whoHoldsCodec, 1.minutes) { answering(name) }
+                member.acceptFederated("north")
+                north =
+                    member
+                        .federate("north", Discovery.static(Node("", "127.0.0.1", northPort)), name, plaintext = true)
+                        .sharding("account", whoHoldsCodec)
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     /** Who answers for [id] in the north cluster, asked from this one. */
     fun askNorth(id: String) = north.entity(id).ask(1.minutes) { WhoHolds(it) }
@@ -95,13 +101,16 @@ object FederationSuite : Suite() {
                     check(north.await(1.minutes) { v -> v.members.any { it.status == Status.Up } }) { "north is down" }
                     val _ = north.sharding("account", whoHoldsCodec, 1.minutes) { answering("north") }
                     north.acceptFederated("south")
-                    val accounts = north.federate(
-                        "south",
-                        Discovery.static(Node("", "127.0.0.1", southPort)),
-                        from = "north",
-                        retryAfter = 1.seconds,
-                        plaintext = true,
-                    ).sharding("account", whoHoldsCodec)
+                    val accounts =
+                        north
+                            .federate(
+                                "south",
+                                Discovery.static(Node("", "127.0.0.1", southPort)),
+                                from = "north",
+                                retryAfter = 1.seconds,
+                                plaintext = true,
+                            )
+                            .sharding("account", whoHoldsCodec)
 
                     accounts.entity("s-7").ask(1.minutes) { WhoHolds(it) } shouldBeRight "south"
                     south.askNorth("n-3") shouldBeRight "north"
@@ -118,12 +127,16 @@ object FederationSuite : Suite() {
                         (gone.duration < 20.seconds) shouldBe true
                     }
                     accounts.entity("s-8").tell(WhoHolds(DroppedReply))
-                    val letter = generateSequence { letters.poll(1, TimeUnit.MINUTES) }
+                    val letter = generateSequence {
+                        letters.poll(1, TimeUnit.MINUTES)
+                    }
                         .first { it.why == DeadLetter.Why.Unreachable && it.recipient.path == Sharding.path("account") }
                     letter.recipient.node shouldBe "@127.0.0.1:$southPort"
 
                     south = OneNodeCluster("south", southPort, northPort)
-                    val back = generateSequence { accounts.entity("s-7").ask(2.seconds) { WhoHolds(it) } }
+                    val back = generateSequence {
+                        accounts.entity("s-7").ask(2.seconds) { WhoHolds(it) }
+                    }
                         .take(60)
                         .firstOrNull { it.isRight() }
                     withClue("an ask once south is back, without restarting north") { back shouldBe "south".right() }
@@ -144,15 +157,20 @@ object FederationSuite : Suite() {
                 south.acceptFederated("east")
                 val westPort = freePort()
                 val west = cluster(node("west", westPort), Discovery.static(Node("", "127.0.0.1", westPort)), brisk)
-                val accounts = west.federate(
-                    "south",
-                    Discovery.static(Node("", "127.0.0.1", southPort)),
-                    from = "west",
-                    plaintext = true,
-                ).sharding("account", whoHoldsCodec)
+                val accounts =
+                    west
+                        .federate(
+                            "south",
+                            Discovery.static(Node("", "127.0.0.1", southPort)),
+                            from = "west",
+                            plaintext = true,
+                        )
+                        .sharding("account", whoHoldsCodec)
 
                 accounts.entity("s-1").ask(2.seconds) { WhoHolds(it) } shouldBe AskFailure.TimedOut.left()
-                val refused = generateSequence { letters.poll(1, TimeUnit.MINUTES) }
+                val refused = generateSequence {
+                    letters.poll(1, TimeUnit.MINUTES)
+                }
                     .first { it.why == DeadLetter.Why.Unhandled }
                 refused.recipient.path shouldBe Sharding.path("account")
                 (refused.message as Region.Envelope<*>).from shouldBe "west"

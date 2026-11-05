@@ -26,28 +26,30 @@ class ContainsTest {
     @Test
     fun `every matcher passes when it holds`() {
         events shouldHaveSucceeded listOf("passes every matcher")
-        failures.keys shouldContainExactlyInAnyOrder listOf(
-            "fails a string shouldContain",
-            "fails a null string",
-            "fails a string shouldNotContain",
-            "fails a collection shouldContain",
-            "fails a collection shouldNotContain",
-            "fails shouldBeSameInstanceAs",
-            "fails shouldNotBeSameInstanceAs",
-        )
+        failures.keys shouldContainExactlyInAnyOrder
+            listOf(
+                "fails a string shouldContain",
+                "fails a null string",
+                "fails a string shouldNotContain",
+                "fails a collection shouldContain",
+                "fails a collection shouldNotContain",
+                "fails shouldBeSameInstanceAs",
+                "fails shouldNotBeSameInstanceAs",
+            )
     }
 
     @Test
     fun `a failed matcher says what it wanted and what it found, at the test's line`() {
-        val wanted = mapOf(
-            "fails a string shouldContain" to listOf("expected: a string containing \"w\"", "but was:  \"one\""),
-            "fails a null string" to listOf("expected: a string containing \"w\"", "but was:  null"),
-            "fails a string shouldNotContain" to listOf("expected: a string without \"n\"", "but was:  \"one\""),
-            "fails a collection shouldContain" to
-                listOf("expected: a collection containing three", "but was:  [one, two]"),
-            "fails a collection shouldNotContain" to
-                listOf("expected: a collection without one", "but was:  [one, two]"),
-        )
+        val wanted =
+            mapOf(
+                "fails a string shouldContain" to listOf("expected: a string containing \"w\"", "but was:  \"one\""),
+                "fails a null string" to listOf("expected: a string containing \"w\"", "but was:  null"),
+                "fails a string shouldNotContain" to listOf("expected: a string without \"n\"", "but was:  \"one\""),
+                "fails a collection shouldContain" to
+                    listOf("expected: a collection containing three", "but was:  [one, two]"),
+                "fails a collection shouldNotContain" to
+                    listOf("expected: a collection without one", "but was:  [one, two]"),
+            )
         failures.filterKeys(wanted::containsKey).mapValues { (_, lines) -> lines.take(2) } shouldBe wanted
         failures.values.forEach { lines -> lines[2] shouldMatch Regex("at Samples\\.kt:\\d+") }
     }

@@ -27,13 +27,18 @@ object CombinatorsSuite : Suite() {
             // Each branch waits for the other to arrive: run one after the other, the first would time out.
             val both = CyclicBarrier(2)
             attempt<Nothing, String> {
-                parZip({
-                    both.await(5, TimeUnit.SECONDS)
-                    "a"
-                }, {
-                    both.await(5, TimeUnit.SECONDS)
-                    "b"
-                }) { a, b -> a + b }
+                parZip(
+                    {
+                        both.await(5, TimeUnit.SECONDS)
+                        "a"
+                    },
+                    {
+                        both.await(5, TimeUnit.SECONDS)
+                        "b"
+                    },
+                ) { a, b ->
+                    a + b
+                }
             } shouldBe "ab".right()
         }
 
@@ -44,12 +49,18 @@ object CombinatorsSuite : Suite() {
 
         test("the first branch to fail cancels the other and is the answer") {
             val blocker = Blocker()
-            val answer = attempt<Boom, String> {
-                parZip({ blocker.body() }, {
-                    blocker.awaitStart()
-                    fail(Boom)
-                }) { a, _ -> a }
-            }
+            val answer =
+                attempt<Boom, String> {
+                    parZip(
+                        { blocker.body() },
+                        {
+                            blocker.awaitStart()
+                            fail(Boom)
+                        },
+                    ) { a, _ ->
+                        a
+                    }
+                }
             answer shouldBe Boom.left()
             blocker.wasInterrupted() shouldBe true
         }
@@ -70,12 +81,16 @@ object CombinatorsSuite : Suite() {
 
         test("raceN answers with the first to finish, on its side, and cancels the loser") {
             val blocker = Blocker()
-            val answer = attempt<Nothing, Either<String, String>> {
-                raceN({ blocker.body() }, {
-                    blocker.awaitStart()
-                    "fast"
-                })
-            }
+            val answer =
+                attempt<Nothing, Either<String, String>> {
+                    raceN(
+                        { blocker.body() },
+                        {
+                            blocker.awaitStart()
+                            "fast"
+                        },
+                    )
+                }
             answer shouldBe "fast".right().right()
             blocker.wasInterrupted() shouldBe true
         }
@@ -83,10 +98,13 @@ object CombinatorsSuite : Suite() {
         test("a branch that fails first loses the race for everyone") {
             val blocker = Blocker()
             attempt<Boom, Either<String, String>> {
-                raceN({ blocker.body() }, {
-                    blocker.awaitStart()
-                    fail(Boom)
-                })
+                raceN(
+                    { blocker.body() },
+                    {
+                        blocker.awaitStart()
+                        fail(Boom)
+                    },
+                )
             } shouldBe Boom.left()
         }
 

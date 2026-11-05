@@ -18,35 +18,39 @@ private data class Lodge(val pence: Int, val then: Int = 0) : Drawer
 
 private data class Balance(val reply: Reply<Int>) : Drawer
 
-private val coins = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = event.toString().toByteArray()
+private val coins =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = event.toString().toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
-private fun drawer(lodged: () -> Unit = {}) = persistent<Drawer, Int, Int>(
-    id = PersistenceId("till", "1"),
-    empty = 0,
-    codec = coins,
-    command = { ctx, _, command ->
-        when (command) {
-            is Lodge -> persist(command.pence).then {
-                if (command.then > 0) {
-                    ctx.self.tell(Lodge(command.then))
-                    lodged()
-                }
+private fun drawer(lodged: () -> Unit = {}) =
+    persistent<Drawer, Int, Int>(
+        id = PersistenceId("till", "1"),
+        empty = 0,
+        codec = coins,
+        command = { ctx, _, command ->
+            when (command) {
+                is Lodge ->
+                    persist(command.pence).then {
+                        if (command.then > 0) {
+                            ctx.self.tell(Lodge(command.then))
+                            lodged()
+                        }
+                    }
+
+                is Balance -> none().then { command.reply(it) }
             }
+        },
+        event = { total, pence -> total + pence },
+    )
 
-            is Balance -> none().then { command.reply(it) }
-        }
-    },
-    event = { total, pence -> total + pence },
-)
-
-private fun courier(to: ActorRef<Drawer>): Behaviour<Int, Unit, Nothing> = behaviour(Unit) { _, _, pence ->
-    to.tell(Lodge(pence))
-    stay()
-}
+private fun courier(to: ActorRef<Drawer>): Behaviour<Int, Unit, Nothing> =
+    behaviour(Unit) { _, _, pence ->
+        to.tell(Lodge(pence))
+        stay()
+    }
 
 object CrashSuite : Suite() {
     init {
@@ -64,13 +68,14 @@ object CrashSuite : Suite() {
         test("a crash from the test loses the actor's timers, and its next message recovers it") {
             testActors {
                 val till = spawn("till", drawer())
-                val ticker = spawn(
-                    "ticker",
-                    behaviour<String, Int>(0) { ctx, ticks, _ ->
-                        ctx.timers.after("tick", 1.seconds, "tick")
-                        become(ticks + 1)
-                    },
-                )
+                val ticker =
+                    spawn(
+                        "ticker",
+                        behaviour<String, Int>(0) { ctx, ticks, _ ->
+                            ctx.timers.after("tick", 1.seconds, "tick")
+                            become(ticks + 1)
+                        },
+                    )
                 till.tell(Lodge(3))
                 ticker.tell("start")
                 crash(till)

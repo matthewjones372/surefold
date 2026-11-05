@@ -18,10 +18,13 @@ object NoShadowedClassesSuite : Suite() {
             val packagePath = Actors::class.java.packageName.replace('.', '/')
             val loader = Actors::class.java.classLoader
 
-            val shadowed = File(here, packagePath).listFiles().orEmpty()
-                .map { it.name }
-                .filter { it.endsWith(".class") }
-                .filter { loader.getResources("$packagePath/$it").toList().size > 1 }
+            val shadowed =
+                File(here, packagePath)
+                    .listFiles()
+                    .orEmpty()
+                    .map { it.name }
+                    .filter { it.endsWith(".class") }
+                    .filter { loader.getResources("$packagePath/$it").toList().size > 1 }
 
             withClue("classes that another module of the package also has") { shadowed.shouldBeEmpty() }
         }

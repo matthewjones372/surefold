@@ -37,9 +37,12 @@ object BusySingletonSuite : Suite() {
                 val cluster = cluster(node("solo", port), seeds, unhurried, leaveWithin = Duration.ZERO)
                 cluster.await(1.minutes) { v -> v.members.any { it.status == Status.Up } } shouldBe true
                 // Its first message holds its step until the burst is all sent, so its mailbox fills behind it.
-                val clock = cluster.singleton("clock", Codecs.int) {
-                    behaviour<Int, Unit>(Unit) { _, _, n -> stay().also { if (n == 0) open.await() else heard += n } }
-                }
+                val clock =
+                    cluster.singleton("clock", Codecs.int) {
+                        behaviour<Int, Unit>(Unit) { _, _, n ->
+                            stay().also { if (n == 0) open.await() else heard += n }
+                        }
+                    }
                 clock.tell(0)
                 (1..5_000).forEach(clock::tell)
                 open.countDown()

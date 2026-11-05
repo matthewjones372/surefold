@@ -5,21 +5,17 @@ private val walker: StackWalker = StackWalker.getInstance(StackWalker.Option.RET
 /**
  * The first frame outside surefold's own node factories, as a source path and a line.
  *
- * `single` and `singleOf` are inline, so their frames are the caller's already; `actor` and
- * `migrations` are not, and naming those would put every actor node in `surefold-app-pekko`. A surefold
- * factory is always a top-level function, so its frame is a file facade, which is what the `Kt`
- * distinguishes from a caller written as a class.
+ * `single` and `singleOf` are inline, so their frames are the caller's already; `actor` and `migrations` are not, and
+ * naming those would put every actor node in `surefold-app-pekko`. A surefold factory is always a top-level function,
+ * so its frame is a file facade, which is what the `Kt` distinguishes from a caller written as a class.
  *
- * The package rides along as a directory — `com/petshop/Wiring.kt:92` rather than `Wiring.kt:92` —
- * because a build that wants to turn this into a link has only the source directories to search, and
- * two modules in a project each having a `Wiring.kt` is the normal case rather than the exotic one.
- * Everything that prints a site for a person to read trims it back.
+ * The package rides along as a directory — `com/petshop/Wiring.kt:92` rather than `Wiring.kt:92` — because a build that
+ * wants to turn this into a link has only the source directories to search, and two modules in a project each having a
+ * `Wiring.kt` is the normal case rather than the exotic one. Everything that prints a site for a person to read trims
+ * it back.
  */
 internal fun callSite(): String? = walker.walk { frames ->
-    frames.filter { !surefoldFactory(it.className) }
-        .map { frame -> siteOf(frame) }
-        .findFirst()
-        .orElse(null)
+    frames.filter { !surefoldFactory(it.className) }.map { frame -> siteOf(frame) }.findFirst().orElse(null)
 }
 
 private fun siteOf(frame: StackWalker.StackFrame): String? {
@@ -36,5 +32,4 @@ private fun directoryOf(className: String): String =
 internal fun shortly(site: String): String = site.substringAfterLast('/')
 
 private fun surefoldFactory(className: String): Boolean =
-    className.startsWith("dev.surefold.") &&
-        className.substringAfterLast('.').endsWith("Kt")
+    className.startsWith("dev.surefold.") && className.substringAfterLast('.').endsWith("Kt")

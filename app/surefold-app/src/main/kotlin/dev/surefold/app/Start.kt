@@ -22,8 +22,7 @@ import kotlin.reflect.typeOf
 sealed class StartupError {
 
     /** The graph was faulty before anything was built. [provided] is what it did hold. */
-    data class Unwireable(val errors: NonEmptyList<WiringError>, val provided: Set<KType> = emptySet()) :
-        StartupError()
+    data class Unwireable(val errors: NonEmptyList<WiringError>, val provided: Set<KType> = emptySet()) : StartupError()
 
     /** A recipe declined, naming [reason]. */
     data class Refused(val key: KType, val reason: String) : StartupError()
@@ -41,8 +40,8 @@ sealed class StartupError {
 /**
  * What a recipe is handed: somewhere to install a release, and a way to decline.
  *
- * Not also a `Fail<StartupError>`: `ResourceScope.bind` takes a `Resource<A>` and `Raise.bind` a
- * function too, and the two erase to one JVM signature.
+ * Not also a `Fail<StartupError>`: `ResourceScope.bind` takes a `Resource<A>` and `Raise.bind` a function too, and the
+ * two erase to one JVM signature.
  */
 interface Wiring : ResourceScope {
 
@@ -59,8 +58,7 @@ interface Wiring : ResourceScope {
 /** Starts the graph, hands [block] the node it asks for, and gives everything back on the way out. */
 inline fun <reified A : Any, B> Module.use(noinline block: (A) -> B): Either<StartupError, B> =
     use(typeOf<A>()) {
-        @Suppress("UNCHECKED_CAST")
-        block(it as A)
+        @Suppress("UNCHECKED_CAST") block(it as A)
     }
 
 @PublishedApi
@@ -79,18 +77,20 @@ internal fun <B> Module.use(root: KType, block: (Any) -> B): Either<StartupError
         val starts = Starts()
         val built = build(this@use, releases, starts, health, order)
         starts.run(order.toList(), this@attempt)
-        probes.filter { it.asked == Asked.WhenStarted }.forEach { probe ->
-            val answer = answers(probe, built.getValue(probe.key))
-            if (answer is Answer.No) fail(StartupError.Unready(probe.key, probe.name, answer.cause))
-        }
+        probes
+            .filter { it.asked == Asked.WhenStarted }
+            .forEach { probe ->
+                val answer = answers(probe, built.getValue(probe.key))
+                if (answer is Answer.No) fail(StartupError.Unready(probe.key, probe.name, answer.cause))
+            }
         health.running()
         block(built.getValue(root))
     }
 }
 
 /**
- * A layer at a time: every node whose dependencies are built. A choice whose dependencies are built is expanded
- * first, its branch taking its place, and the layers are worked out again with the branch in them.
+ * A layer at a time: every node whose dependencies are built. A choice whose dependencies are built is expanded first,
+ * its branch taking its place, and the layers are worked out again with the branch in them.
  */
 private fun Fail<StartupError>.build(
     start: Module,
@@ -114,30 +114,37 @@ private fun Fail<StartupError>.build(
         when {
             choices.isNotEmpty() -> module = choices.fold(module) { m, choice -> expanded(m, choice, built, health) }
 
-            nodes.isEmpty() -> fail(
-                StartupError.Refused(
-                    remaining.first().key,
-                    "a chosen branch left ${remaining.joinToString { labelOf(it.key) }} needing each other",
-                ),
-            )
+            nodes.isEmpty() ->
+                fail(
+                    StartupError.Refused(
+                        remaining.first().key,
+                        "a chosen branch left ${remaining.joinToString { labelOf(it.key) }} needing each other",
+                    ),
+                )
 
             else -> {
                 val layer = nodes.map { it.key }.sortedBy { it.toString() }
                 val current = module
                 // Each node fails into its own fork's scope, never into this one from another thread.
-                built = built + attempt {
-                    parMap(layer) { key ->
-                        val node = current.nodes.getValue(key)
-                        val wiring = NodeWiring(key, releases, starts, this)
-                        val value = node.build(wiring, node.dependencies.map(built::getValue))
-                        current.probes.filter { it.key == key && it.asked == Asked.WhenBuilt }.forEach { probe ->
-                            val answer = answers(probe, value)
-                            if (answer is Answer.No) fail(StartupError.Unready(key, probe.name, answer.cause))
-                        }
-                        health.started(key, value)
-                        key to value
-                    }
-                }.fold({ fail(it) }, { it })
+                built =
+                    built +
+                        attempt {
+                                parMap(layer) { key ->
+                                    val node = current.nodes.getValue(key)
+                                    val wiring = NodeWiring(key, releases, starts, this)
+                                    val value = node.build(wiring, node.dependencies.map(built::getValue))
+                                    current.probes
+                                        .filter { it.key == key && it.asked == Asked.WhenBuilt }
+                                        .forEach { probe ->
+                                            val answer = answers(probe, value)
+                                            if (answer is Answer.No)
+                                                fail(StartupError.Unready(key, probe.name, answer.cause))
+                                        }
+                                    health.started(key, value)
+                                    key to value
+                                }
+                            }
+                            .fold({ fail(it) }, { it })
                 order += layer
             }
         }
@@ -145,9 +152,9 @@ private fun Fail<StartupError>.build(
 }
 
 /**
- * [module] with [choice]'s branch in its place. A branch node never replaces one the graph already holds under its
- * key, so what a test overrode stays overridden; a branch that does not provide the choice's key, or needs what
- * nothing builds, refuses the start under that key.
+ * [module] with [choice]'s branch in its place. A branch node never replaces one the graph already holds under its key,
+ * so what a test overrode stays overridden; a branch that does not provide the choice's key, or needs what nothing
+ * builds, refuses the start under that key.
  */
 private fun Fail<StartupError>.expanded(
     module: Module,
@@ -159,11 +166,15 @@ private fun Fail<StartupError>.expanded(
     val branch = checkNotNull(choice.choice).pick(choice.dependencies.map(built::getValue))
     if (key !in branch.nodes) fail(StartupError.Refused(key, "the branch chosen for it does not provide it"))
     // What a test overrode wins: a node already in the graph, or one waiting for a branch to bring its key.
-    val added = branch.nodes.filterKeys { it == key || it !in module.nodes }
-        .mapValues { (brought, node) -> module.pending[brought] ?: node }
-    val missing = added.values.flatMap { it.dependencies }
-        .filterNot { it in module.nodes || it in added || it in runtimeProvided }
-        .distinct()
+    val added =
+        branch.nodes
+            .filterKeys { it == key || it !in module.nodes }
+            .mapValues { (brought, node) -> module.pending[brought] ?: node }
+    val missing =
+        added.values
+            .flatMap { it.dependencies }
+            .filterNot { it in module.nodes || it in added || it in runtimeProvided }
+            .distinct()
     if (missing.isNotEmpty()) {
         fail(
             StartupError.Refused(
@@ -178,8 +189,8 @@ private fun Fail<StartupError>.expanded(
 }
 
 /**
- * Asked again up to [Probe.attempts] times, waiting out [Probe.interval] on the inherited clock. A throw is asked
- * again like a no, since a pool whose database is still coming up throws rather than answering.
+ * Asked again up to [Probe.attempts] times, waiting out [Probe.interval] on the inherited clock. A throw is asked again
+ * like a no, since a pool whose database is still coming up throws rather than answering.
  */
 private fun answers(probe: Probe, value: Any): Answer {
     var last: Answer = Answer.No(null)
@@ -211,8 +222,8 @@ private class NodeWiring(
 private class Refusal(val key: KType, val reason: String) : RuntimeException(reason)
 
 /**
- * The releases of every node, kept by the node that installed them, because a layer's forks install at
- * once and acquisition order under `parMap` is whichever thread got there first.
+ * The releases of every node, kept by the node that installed them, because a layer's forks install at once and
+ * acquisition order under `parMap` is whichever thread got there first.
  */
 private class Releases {
 

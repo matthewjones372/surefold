@@ -49,8 +49,8 @@ internal fun <T> Sleeper.losingWith(answer: T): T {
 }
 
 /**
- * Every branch has to arrive before any of them leaves, so branches run one after another never get past
- * this; the bound is there to fail such a test rather than hang it.
+ * Every branch has to arrive before any of them leaves, so branches run one after another never get past this; the
+ * bound is there to fail such a test rather than hang it.
  */
 internal fun CountDownLatch.rendezvous(): Boolean {
     countDown()

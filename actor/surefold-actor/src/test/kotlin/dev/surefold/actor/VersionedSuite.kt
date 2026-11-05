@@ -15,41 +15,46 @@ private data class PlacedV2(val lines: List<Long>)
 /** Version 3, today's: each line an event of its own. */
 private data class LineAdded(val pence: Long)
 
-private val v1 = object : EventCodec<PlacedV1> {
-    override fun encode(event: PlacedV1) = "${event.totalPence}".toByteArray()
+private val v1 =
+    object : EventCodec<PlacedV1> {
+        override fun encode(event: PlacedV1) = "${event.totalPence}".toByteArray()
 
-    override fun decode(bytes: ByteArray) = PlacedV1(String(bytes).toLong())
-}
+        override fun decode(bytes: ByteArray) = PlacedV1(String(bytes).toLong())
+    }
 
-private val v2 = object : EventCodec<PlacedV2> {
-    override fun encode(event: PlacedV2) = event.lines.joinToString(",").toByteArray()
+private val v2 =
+    object : EventCodec<PlacedV2> {
+        override fun encode(event: PlacedV2) = event.lines.joinToString(",").toByteArray()
 
-    override fun decode(bytes: ByteArray) = PlacedV2(String(bytes).split(",").map(String::toLong))
-}
+        override fun decode(bytes: ByteArray) = PlacedV2(String(bytes).split(",").map(String::toLong))
+    }
 
-private val v3 = object : EventCodec<LineAdded> {
-    override fun encode(event: LineAdded) = "${event.pence}".toByteArray()
+private val v3 =
+    object : EventCodec<LineAdded> {
+        override fun encode(event: LineAdded) = "${event.pence}".toByteArray()
 
-    override fun decode(bytes: ByteArray) = LineAdded(String(bytes).toLong())
-}
+        override fun decode(bytes: ByteArray) = LineAdded(String(bytes).toLong())
+    }
 
 /** 1 to 2: a total is one line. 2 to 3: each line is an event of its own. */
-private val upgrades = mapOf(
-    1 to Upgrade { bytes -> listOf(v2.encode(PlacedV2(listOf(v1.decode(bytes).totalPence)))) },
-    2 to Upgrade { bytes -> v2.decode(bytes).lines.map { v3.encode(LineAdded(it)) } },
-)
+private val upgrades =
+    mapOf(
+        1 to Upgrade { bytes -> listOf(v2.encode(PlacedV2(listOf(v1.decode(bytes).totalPence)))) },
+        2 to Upgrade { bytes -> v2.decode(bytes).lines.map { v3.encode(LineAdded(it)) } },
+    )
 
 private val orders = versioned(current = 3, codec = v3, upgrades = upgrades)
 
 private val orderId = PersistenceId("order", "o-1")
 
-private fun order() = persistent<Long, LineAdded, List<Long>>(
-    id = orderId,
-    empty = emptyList(),
-    codec = orders,
-    command = { _, _, pence -> persist(LineAdded(pence)) },
-    event = { lines, added -> lines + added.pence },
-)
+private fun order() =
+    persistent<Long, LineAdded, List<Long>>(
+        id = orderId,
+        empty = emptyList(),
+        codec = orders,
+        command = { _, _, pence -> persist(LineAdded(pence)) },
+        event = { lines, added -> lines + added.pence },
+    )
 
 object VersionedSuite : Suite() {
     init {
@@ -88,8 +93,9 @@ object VersionedSuite : Suite() {
         ) {
             testActors {
                 journal.append(orderId, 0, listOf(versionedBytes(4, v3.encode(LineAdded(1)))))
-                val expected = "PersistenceId(kind=order, id=o-1) cannot be recovered: " +
-                    "event 1 is version 4, newer than this codec's 3"
+                val expected =
+                    "PersistenceId(kind=order, id=o-1) cannot be recovered: " +
+                        "event 1 is version 4, newer than this codec's 3"
                 shouldThrow<IllegalStateException>({ spawn("order", order()) }) { failure ->
                     failure.message shouldBe expected
                 }

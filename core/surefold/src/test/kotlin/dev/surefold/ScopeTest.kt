@@ -15,11 +15,11 @@ import dev.surefold.fail.bind
 import dev.surefold.fail.ensure
 import dev.surefold.fail.left
 import dev.surefold.fail.right
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.SynchronousQueue
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Test
 
 class ScopeTest {
 
@@ -28,13 +28,14 @@ class ScopeTest {
 
     @Test
     fun `a value forked with async comes back from await, and the block's value is the Right`() {
-        val sum = attempt<Bad, Int> {
-            scope {
-                val first = async { 20 }
-                val second = async { 22 }
-                first.await() + second.await()
+        val sum =
+            attempt<Bad, Int> {
+                scope {
+                    val first = async { 20 }
+                    val second = async { 22 }
+                    first.await() + second.await()
+                }
             }
-        }
 
         sum shouldBeRight 42
     }
@@ -43,14 +44,15 @@ class ScopeTest {
     fun `a raise inside a fork surfaces at await as the block's Left`() {
         val afterTheAwait = AtomicBoolean(false)
 
-        val result = attempt<Bad, Int> {
-            scope {
-                val forked = async<Int> { fail(Bad("forked")) }
-                val value = forked.await()
-                afterTheAwait.set(true)
-                value
+        val result =
+            attempt<Bad, Int> {
+                scope {
+                    val forked = async<Int> { fail(Bad("forked")) }
+                    val value = forked.await()
+                    afterTheAwait.set(true)
+                    value
+                }
             }
-        }
 
         result shouldBeLeft Bad("forked")
         withClue("await() must leave the block by raising, not return to it") {
@@ -62,9 +64,10 @@ class ScopeTest {
     fun `a throw inside a fork rethrows at await as the same instance`() {
         val boom = Boom()
 
-        val thrown = shouldThrow<Boom> {
-            attempt<Bad, Int> { scope { async<Int> { throw boom }.await() } }
-        }
+        val thrown =
+            shouldThrow<Boom> {
+                attempt<Bad, Int> { scope { async<Int> { throw boom }.await() } }
+            }
 
         thrown shouldBeSameInstanceAs boom
     }
@@ -73,9 +76,8 @@ class ScopeTest {
     fun `a fork runs on a virtual thread of its own, not on the caller's`() {
         val caller = Thread.currentThread()
 
-        val forked = attempt<Bad, Thread> { scope { async { Thread.currentThread() }.await() } }
-            .getOrNull()
-            .shouldNotBeNull()
+        val forked =
+            attempt<Bad, Thread> { scope { async { Thread.currentThread() }.await() } }.getOrNull().shouldNotBeNull()
 
         withClue("a fork is started with Thread.ofVirtual(), so isVirtual holds in its body") {
             forked.isVirtual shouldBe true
@@ -88,13 +90,14 @@ class ScopeTest {
         val sleeper = Sleeper()
 
         val startedAt = System.nanoTime()
-        val result = attempt<Bad, String> {
-            scope {
-                async { sleeper.body() }
-                sleeper.awaitStart()
-                "returned"
+        val result =
+            attempt<Bad, String> {
+                scope {
+                    async { sleeper.body() }
+                    sleeper.awaitStart()
+                    "returned"
+                }
             }
-        }
         val elapsedMillis = (System.nanoTime() - startedAt) / 1_000_000
 
         result shouldBeRight "returned"
@@ -113,16 +116,17 @@ class ScopeTest {
         val interruptedAtCancel = AtomicBoolean(false)
         val aliveAtCancel = AtomicBoolean(true)
 
-        val result = attempt<Bad, String> {
-            scope {
-                val fork = async { sleeper.body() }
-                sleeper.awaitStart()
-                fork.cancel()
-                interruptedAtCancel.set(sleeper.wasInterrupted())
-                aliveAtCancel.set(sleeper.isAlive())
-                "returned"
+        val result =
+            attempt<Bad, String> {
+                scope {
+                    val fork = async { sleeper.body() }
+                    sleeper.awaitStart()
+                    fork.cancel()
+                    interruptedAtCancel.set(sleeper.wasInterrupted())
+                    aliveAtCancel.set(sleeper.isAlive())
+                    "returned"
+                }
             }
-        }
 
         result shouldBeRight "returned"
         interruptedAtCancel.get() shouldBe true
@@ -135,32 +139,34 @@ class ScopeTest {
     fun `a fork cancelled and never awaited does not fail the block`() {
         val started = CountDownLatch(1)
 
-        val result = attempt<Bad, String> {
-            scope {
-                val fork = async {
-                    started.countDown()
-                    // Nothing catches it, so the interrupt is what this fork ends with.
-                    Thread.sleep(NEVER_FINISHES_MILLIS)
-                    "slept"
+        val result =
+            attempt<Bad, String> {
+                scope {
+                    val fork = async {
+                        started.countDown()
+                        // Nothing catches it, so the interrupt is what this fork ends with.
+                        Thread.sleep(NEVER_FINISHES_MILLIS)
+                        "slept"
+                    }
+                    started.await()
+                    fork.cancel()
+                    "returned"
                 }
-                started.await()
-                fork.cancel()
-                "returned"
             }
-        }
 
         result shouldBeRight "returned"
     }
 
     @Test
     fun `a fork cancelled after it raised does not fail the block`() {
-        val result = attempt<Bad, String> {
-            scope {
-                val fork = async<Int> { fail(Bad("forked")) }
-                fork.cancel()
-                "returned"
+        val result =
+            attempt<Bad, String> {
+                scope {
+                    val fork = async<Int> { fail(Bad("forked")) }
+                    fork.cancel()
+                    "returned"
+                }
             }
-        }
 
         result shouldBeRight "returned"
     }
@@ -169,15 +175,16 @@ class ScopeTest {
     fun `a sibling of a cancelled fork runs to completion`() {
         val sleeper = Sleeper()
 
-        val result = attempt<Bad, Int> {
-            scope {
-                val stopped = async { sleeper.body() }
-                val sibling = async { 42 }
-                sleeper.awaitStart()
-                stopped.cancel()
-                sibling.await()
+        val result =
+            attempt<Bad, Int> {
+                scope {
+                    val stopped = async { sleeper.body() }
+                    val sibling = async { 42 }
+                    sleeper.awaitStart()
+                    stopped.cancel()
+                    sibling.await()
+                }
             }
-        }
 
         result shouldBeRight 42
         sleeper.wasInterrupted() shouldBe true
@@ -187,12 +194,13 @@ class ScopeTest {
     fun `a lazy fork nobody awaits never runs, and the scope still returns`() {
         val ran = AtomicBoolean(false)
 
-        val result = attempt<Bad, String> {
-            scope {
-                async(start = Lazy) { ran.set(true) }
-                "returned"
+        val result =
+            attempt<Bad, String> {
+                scope {
+                    async(start = Lazy) { ran.set(true) }
+                    "returned"
+                }
             }
-        }
 
         result shouldBeRight "returned"
         withClue("a scope that closes must not wait on a fork that never ran") {
@@ -209,18 +217,20 @@ class ScopeTest {
 
     @Test
     fun `a lazy fork nobody awaits cannot fail the block, where the eager form would`() {
-        val lazily = attempt<Bad, String> {
-            scope {
-                async<Int>(start = Lazy) { fail(Bad("never asked for")) }
-                "returned"
+        val lazily =
+            attempt<Bad, String> {
+                scope {
+                    async<Int>(start = Lazy) { fail(Bad("never asked for")) }
+                    "returned"
+                }
             }
-        }
-        val eagerly = attempt<Bad, String> {
-            scope {
-                async<Int> { fail(Bad("forked")) }
-                "returned"
+        val eagerly =
+            attempt<Bad, String> {
+                scope {
+                    async<Int> { fail(Bad("forked")) }
+                    "returned"
+                }
             }
-        }
 
         lazily shouldBeRight "returned"
         eagerly shouldBeLeft Bad("forked")
@@ -230,12 +240,13 @@ class ScopeTest {
     fun `a lazy fork awaited twice runs once`() {
         val runs = AtomicInteger(0)
 
-        val result = attempt<Bad, Int> {
-            scope {
-                val counted = async(start = Lazy) { runs.incrementAndGet() }
-                counted.await() + counted.await()
+        val result =
+            attempt<Bad, Int> {
+                scope {
+                    val counted = async(start = Lazy) { runs.incrementAndGet() }
+                    counted.await() + counted.await()
+                }
             }
-        }
 
         result shouldBeRight 2
         runs.get() shouldBe 1
@@ -245,13 +256,14 @@ class ScopeTest {
     fun `a lazy fork cancelled before it was awaited never runs`() {
         val ran = AtomicBoolean(false)
 
-        val result = attempt<Bad, String> {
-            scope {
-                val fork = async(start = Lazy) { ran.set(true) }
-                fork.cancel()
-                "returned"
+        val result =
+            attempt<Bad, String> {
+                scope {
+                    val fork = async(start = Lazy) { ran.set(true) }
+                    fork.cancel()
+                    "returned"
+                }
             }
-        }
 
         result shouldBeRight "returned"
         ran.get() shouldBe false
@@ -259,12 +271,13 @@ class ScopeTest {
 
     @Test
     fun `a fork that raised and was never awaited becomes the block's Left`() {
-        val result = attempt<Bad, String> {
-            scope {
-                async { fail(Bad("orphan")) }
-                "returned anyway"
+        val result =
+            attempt<Bad, String> {
+                scope {
+                    async { fail(Bad("orphan")) }
+                    "returned anyway"
+                }
             }
-        }
 
         result shouldBeLeft Bad("orphan")
     }
@@ -273,14 +286,15 @@ class ScopeTest {
     fun `a fork that threw and was never awaited rethrows when the scope closes`() {
         val boom = Boom()
 
-        val thrown = shouldThrow<Boom> {
-            attempt<Bad, String> {
-                scope {
-                    async { throw boom }
-                    "returned anyway"
+        val thrown =
+            shouldThrow<Boom> {
+                attempt<Bad, String> {
+                    scope {
+                        async { throw boom }
+                        "returned anyway"
+                    }
                 }
             }
-        }
 
         thrown shouldBeSameInstanceAs boom
     }
@@ -300,13 +314,14 @@ class ScopeTest {
 
     @Test
     fun `inside attempt, scope is the attempt's own, so a fork's fail is the attempt's Left`() {
-        val result = attempt<Bad, Int> {
-            scope {
-                // Only a Scope<Bad> compiles here: the top-level scope would be a Scope<Nothing>.
-                val typed: Scope<Bad> = this
-                typed.async<Int> { fail(Bad("forked")) }.await()
+        val result =
+            attempt<Bad, Int> {
+                scope {
+                    // Only a Scope<Bad> compiles here: the top-level scope would be a Scope<Nothing>.
+                    val typed: Scope<Bad> = this
+                    typed.async<Int> { fail(Bad("forked")) }.await()
+                }
             }
-        }
 
         result shouldBeLeft Bad("forked")
     }
@@ -315,12 +330,13 @@ class ScopeTest {
     fun `a fork that threw and was never awaited rethrows from scope`() {
         val boom = Boom()
 
-        val thrown = shouldThrow<Boom> {
-            scope {
-                async { throw boom }
-                "returned anyway"
+        val thrown =
+            shouldThrow<Boom> {
+                scope {
+                    async { throw boom }
+                    "returned anyway"
+                }
             }
-        }
 
         thrown shouldBeSameInstanceAs boom
     }
@@ -330,23 +346,24 @@ class ScopeTest {
         val secondStarted = CountDownLatch(1)
         val bothAtTheRaise = CountDownLatch(2)
 
-        val result = attempt<Bad, String> {
-            scope {
-                async {
-                    // The fork started first fails last, so finishing order would answer "second".
-                    secondStarted.await()
-                    bothAtTheRaise.countDown()
-                    fail(Bad("first"))
+        val result =
+            attempt<Bad, String> {
+                scope {
+                    async {
+                        // The fork started first fails last, so finishing order would answer "second".
+                        secondStarted.await()
+                        bothAtTheRaise.countDown()
+                        fail(Bad("first"))
+                    }
+                    async<Nothing> {
+                        secondStarted.countDown()
+                        bothAtTheRaise.countDown()
+                        fail(Bad("second"))
+                    }
+                    bothAtTheRaise.await()
+                    "returned anyway"
                 }
-                async<Nothing> {
-                    secondStarted.countDown()
-                    bothAtTheRaise.countDown()
-                    fail(Bad("second"))
-                }
-                bothAtTheRaise.await()
-                "returned anyway"
             }
-        }
 
         withClue("start order, not finishing order, names the scope's failure") {
             result shouldBeLeft Bad("first")
@@ -357,16 +374,17 @@ class ScopeTest {
     fun `a fork forked inside a fork is joined when the outer fork's body ends`() {
         val inner = Sleeper()
 
-        val outcome = attempt<Bad, Pair<String, Boolean>> {
-            scope {
-                val outer = async {
-                    async { inner.body() }
-                    inner.awaitStart()
-                    "outer done"
+        val outcome =
+            attempt<Bad, Pair<String, Boolean>> {
+                scope {
+                    val outer = async {
+                        async { inner.body() }
+                        inner.awaitStart()
+                        "outer done"
+                    }
+                    outer.await() to inner.isAlive()
                 }
-                outer.await() to inner.isAlive()
             }
-        }
 
         outcome shouldBeRight ("outer done" to false)
         inner.wasInterrupted() shouldBe true
@@ -376,13 +394,14 @@ class ScopeTest {
     fun `a raise on the calling thread interrupts and joins a running fork before scope returns`() {
         val sleeper = Sleeper()
 
-        val result = attempt<Bad, String> {
-            scope {
-                async { sleeper.body() }
-                sleeper.awaitStart()
-                fail(Bad("caller"))
+        val result =
+            attempt<Bad, String> {
+                scope {
+                    async { sleeper.body() }
+                    sleeper.awaitStart()
+                    fail(Bad("caller"))
+                }
             }
-        }
 
         result shouldBeLeft Bad("caller")
         sleeper.wasInterrupted() shouldBe true
@@ -391,13 +410,14 @@ class ScopeTest {
 
     @Test
     fun `bind and ensure work in the block`() {
-        val bound = attempt<Bad, Int> {
-            scope {
-                val value = twentyOne.bind()
-                ensure(value == 21) { Bad("not 21") }
-                value * 2
+        val bound =
+            attempt<Bad, Int> {
+                scope {
+                    val value = twentyOne.bind()
+                    ensure(value == 21) { Bad("not 21") }
+                    value * 2
+                }
             }
-        }
 
         bound shouldBeRight 42
         attempt<Bad, Int> { scope { broken.bind() } } shouldBeLeft Bad("bound")
@@ -411,15 +431,17 @@ class ScopeTest {
 
     @Test
     fun `bind and ensure work in a fork body`() {
-        val bound = attempt<Bad, Int> {
-            scope {
-                async {
-                    val value = twentyOne.bind()
-                    ensure(value == 21) { Bad("not 21") }
-                    value * 2
-                }.await()
+        val bound =
+            attempt<Bad, Int> {
+                scope {
+                    async {
+                        val value = twentyOne.bind()
+                        ensure(value == 21) { Bad("not 21") }
+                        value * 2
+                    }
+                        .await()
+                }
             }
-        }
 
         bound shouldBeRight 42
         attempt<Bad, Int> { scope { async { broken.bind() }.await() } } shouldBeLeft Bad("bound")

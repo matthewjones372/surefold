@@ -31,16 +31,16 @@ internal val spans: SurefoldLocal<List<Span>> = surefoldLocal { emptyList() }
 internal class Span(val name: String, val startedAt: Instant)
 
 /** How long each span had been running, keyed by its name, for the line written at [at]. */
-internal fun List<Span>.elapsedAt(at: Instant): Map<String, String> =
-    associate { span -> "${span.name}_ms" to Duration.between(span.startedAt, at).toMillis().toString() }
+internal fun List<Span>.elapsedAt(at: Instant): Map<String, String> = associate { span ->
+    "${span.name}_ms" to Duration.between(span.startedAt, at).toMillis().toString()
+}
 
 /** Runs [block] with [pairs] on every line written inside it, this thread's forks included. */
 fun <A> logAnnotated(vararg pairs: Pair<String, String>, block: () -> A): A =
     annotations.locally(Annotated(pairs, annotations.get()), block)
 
 /** Runs [block] with [name] and how long it has been running on every line written inside it. */
-fun <A> logSpan(name: String, block: () -> A): A =
-    spans.locally(spans.get() + Span(name, clock.get().now()), block)
+fun <A> logSpan(name: String, block: () -> A): A = spans.locally(spans.get() + Span(name, clock.get().now()), block)
 
 /** What was logged inside a [capturingLogs] block. */
 class CapturedLogs internal constructor() : Logger {

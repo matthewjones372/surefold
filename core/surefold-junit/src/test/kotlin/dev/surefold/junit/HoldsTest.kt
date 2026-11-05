@@ -26,15 +26,18 @@ class HoldsTest {
 
     @Test
     fun `each block that throws an assertion is its own failure, naming the line that called holds`() {
-        val failed = events.failureOf("fails once for each block that throws an assertion")
-            .shouldBeInstanceOf<MultipleFailuresError>()
+        val failed =
+            events
+                .failureOf("fails once for each block that throws an assertion")
+                .shouldBeInstanceOf<MultipleFailuresError>()
 
         failed.message.orEmpty().lines().first() shouldBe
             "fails once for each block that throws an assertion: 2 of 3 expectations failed (2 failures)"
-        failed.failures.map { it.message.orEmpty().lines().take(2) } shouldBe listOf(
-            listOf("the golden file differs", "at HoldsSamples.kt:12"),
-            listOf("the stub file differs", "at HoldsSamples.kt:14"),
-        )
+        failed.failures.map { it.message.orEmpty().lines().take(2) } shouldBe
+            listOf(
+                listOf("the golden file differs", "at HoldsSamples.kt:12"),
+                listOf("the stub file differs", "at HoldsSamples.kt:14"),
+            )
         failed.failures.map { it.cause?.message } shouldBe listOf("the golden file differs", "the stub file differs")
     }
 

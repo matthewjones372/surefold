@@ -3,11 +3,11 @@ package dev.surefold.junit
 import dev.surefold.assert.FailureSeam
 import dev.surefold.assert.failureAt
 import dev.surefold.assert.mismatchAt
+import dev.surefold.assert.withClue as clued
 import dev.surefold.test.Verdict
+import kotlin.time.Duration
 import org.opentest4j.AssertionFailedError
 import org.opentest4j.MultipleFailuresError
-import kotlin.time.Duration
-import dev.surefold.assert.withClue as clued
 
 /**
  * What a test's checks found: every failure is kept, and none is thrown until the test has returned. Each check made
@@ -20,7 +20,8 @@ internal class Expectations(
 ) : Verdict {
 
     /** Whether every check held, for [eventually] to stop trying. */
-    override val held: Boolean get() = failures.isEmpty()
+    override val held: Boolean
+        get() = failures.isEmpty()
 
     /** The same failures, recorded, each saying first that [eventually] gave up after [tries] tries in [elapsed]. */
     override fun gaveUp(tries: Long, elapsed: Duration): Expectations =
@@ -40,8 +41,8 @@ internal class Expectations(
         Expectations(failures + other.failures, checked + other.checked)
 
     /**
-     * Throws nothing if every expectation held, the one failure alone, or all of them as one error. A test that
-     * checked nothing fails too.
+     * Throws nothing if every expectation held, the one failure alone, or all of them as one error. A test that checked
+     * nothing fails too.
      */
     internal fun verify(test: String) {
         if (checked == 0) throw AssertionFailedError("$test: no checks were made")
@@ -106,8 +107,7 @@ fun not(check: () -> Unit) {
 }
 
 /** A check that passed, recorded: for [expect] and the matchers that take a lambda. */
-@PublishedApi
-internal fun held(): Expectations = recorded(passed(1))
+@PublishedApi internal fun held(): Expectations = recorded(passed(1))
 
 /** No checks at all, for a record to start from. */
 internal fun nothingChecked(): Expectations = passed(0)
@@ -117,20 +117,22 @@ internal fun passed(checked: Int) = Expectations(emptyList(), checked)
 /** The same failure, with [heading] above its message and the same expected and actual. */
 private fun AssertionFailedError.headed(heading: String): AssertionFailedError {
     val text = "$heading\n$message"
-    val headed = when {
-        isExpectedDefined -> AssertionFailedError(text, expected, actual, cause)
-        else -> AssertionFailedError(text, cause)
-    }
+    val headed =
+        when {
+            isExpectedDefined -> AssertionFailedError(text, expected, actual, cause)
+            else -> AssertionFailedError(text, cause)
+        }
     return headed.also { it.stackTrace = stackTrace }
 }
 
 // This module's frames that build a failure, so a failure's first frame is the test's.
-private val own = setOf(
-    Expectations::class.java.name,
-    Expectations::class.java.name + "Kt",
-    Expectations::class.java.packageName + ".MatchersKt",
-    Expectations::class.java.packageName + ".CollectionMatchersKt",
-)
+private val own =
+    setOf(
+        Expectations::class.java.name,
+        Expectations::class.java.name + "Kt",
+        Expectations::class.java.packageName + ".MatchersKt",
+        Expectations::class.java.packageName + ".CollectionMatchersKt",
+    )
 
 @OptIn(FailureSeam::class)
 internal fun failedHere(message: String, quoting: Boolean = true): Expectations =
@@ -139,13 +141,14 @@ internal fun failedHere(message: String, quoting: Boolean = true): Expectations 
 /** [thrown]'s message, and its expected and actual where it has them, at the test's line; [thrown] is the cause. */
 @OptIn(FailureSeam::class)
 private fun thrownHere(thrown: AssertionError): Expectations {
-    val failure = failureAt(thrown.message.orEmpty().trim(), skipping = { it.className in own }) { located ->
-        if (thrown is AssertionFailedError && thrown.isExpectedDefined) {
-            AssertionFailedError(located, thrown.expected?.value, thrown.actual?.value, thrown)
-        } else {
-            AssertionFailedError(located, thrown)
+    val failure =
+        failureAt(thrown.message.orEmpty().trim(), skipping = { it.className in own }) { located ->
+            if (thrown is AssertionFailedError && thrown.isExpectedDefined) {
+                AssertionFailedError(located, thrown.expected?.value, thrown.actual?.value, thrown)
+            } else {
+                AssertionFailedError(located, thrown)
+            }
         }
-    }
     return recorded(Expectations(listOf(failure), 1))
 }
 
@@ -155,6 +158,7 @@ internal fun mismatchedHere(
     actual: Any?,
     expectedText: String? = null,
     cause: Throwable? = null,
-): Expectations = recorded(
-    Expectations(listOf(mismatchAt(expected, actual, skipping = { it.className in own }, expectedText, cause)), 1),
-)
+): Expectations =
+    recorded(
+        Expectations(listOf(mismatchAt(expected, actual, skipping = { it.className in own }, expectedText, cause)), 1),
+    )

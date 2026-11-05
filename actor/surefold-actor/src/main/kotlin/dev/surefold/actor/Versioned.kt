@@ -18,13 +18,13 @@ class UnreadableEvent internal constructor(message: String) : IllegalStateExcept
 private val MARK = "\u0000surefold:v".toByteArray()
 
 /**
- * [codec], writing each event as version [current], and reading every older version through [upgrades]: an event
- * of version n goes through the upgrade from n, then from n+1, and so on to [current]. [upgrades] needs one from each
- * version below [current] and none from any other, which is checked here, before any event is read. Bytes written
- * with no version, before a service versioned its codec, are version 1 (spec 0091).
+ * [codec], writing each event as version [current], and reading every older version through [upgrades]: an event of
+ * version n goes through the upgrade from n, then from n+1, and so on to [current]. [upgrades] needs one from each
+ * version below [current] and none from any other, which is checked here, before any event is read. Bytes written with
+ * no version, before a service versioned its codec, are version 1 (spec 0091).
  *
- * An event that upgrades to several is read with [EventCodec.decodeAll], as a persistent entity's replay, a
- * projection and [Journal.events] read; [EventCodec.decode] refuses one.
+ * An event that upgrades to several is read with [EventCodec.decodeAll], as a persistent entity's replay, a projection
+ * and [Journal.events] read; [EventCodec.decode] refuses one.
  */
 fun <E> versioned(current: Int, codec: EventCodec<E>, upgrades: Map<Int, Upgrade> = emptyMap()): EventCodec<E> {
     chained(current, upgrades.keys)
@@ -72,8 +72,8 @@ fun interface StateUpgrade {
 
 /**
  * [codec] for a persistent actor's snapshots, versioned as [versioned] versions events: each state written as version
- * [current], and an older one read through [upgrades] from each version on the way. A snapshot written with no
- * version is version 1, and a chain with a gap is refused here (spec 0091).
+ * [current], and an older one read through [upgrades] from each version on the way. A snapshot written with no version
+ * is version 1, and a chain with a gap is refused here (spec 0091).
  */
 fun <S> versionedState(
     current: Int,

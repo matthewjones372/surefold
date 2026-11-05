@@ -3,22 +3,18 @@ package dev.surefold.assert
 // The checks behind the map matchers: each answers what went wrong, or null when nothing did.
 
 /** This has an entry where none was wanted. */
-@FailureSeam
-fun Map<*, *>.notEmpty(): Miss? = if (isEmpty()) null else Miss(null, this, "no entries")
+@FailureSeam fun Map<*, *>.notEmpty(): Miss? = if (isEmpty()) null else Miss(null, this, "no entries")
 
 /** This has no entry. */
-@FailureSeam
-fun Map<*, *>.empty(): Miss? = if (isNotEmpty()) null else Miss(null, this, "at least one entry")
+@FailureSeam fun Map<*, *>.empty(): Miss? = if (isNotEmpty()) null else Miss(null, this, "at least one entry")
 
 /** This has no entry for [key]. */
 @FailureSeam
-fun <K> Map<K, *>.missingKey(key: K): Miss? =
-    if (key in this) null else Miss(null, this, "a map with the key $key")
+fun <K> Map<K, *>.missingKey(key: K): Miss? = if (key in this) null else Miss(null, this, "a map with the key $key")
 
 /** This has an entry for [key]. */
 @FailureSeam
-fun <K> Map<K, *>.holdingKey(key: K): Miss? =
-    if (key !in this) null else Miss(null, this, "a map without the key $key")
+fun <K> Map<K, *>.holdingKey(key: K): Miss? = if (key !in this) null else Miss(null, this, "a map without the key $key")
 
 /** This does not map [entry]'s key to its value. */
 @FailureSeam

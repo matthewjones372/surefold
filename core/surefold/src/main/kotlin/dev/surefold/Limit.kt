@@ -8,11 +8,12 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.ZERO
 
 /**
- * How many calls may be inside one dependency at once (spec 0171). [fixed] is a number somebody picked;
- * [adaptive] finds its own from how long calls take, growing while they take no longer than they do unloaded
- * and shrinking once they queue. One value shared by every caller of a dependency bounds them all together.
+ * How many calls may be inside one dependency at once (spec 0171). [fixed] is a number somebody picked; [adaptive]
+ * finds its own from how long calls take, growing while they take no longer than they do unloaded and shrinking once
+ * they queue. One value shared by every caller of a dependency bounds them all together.
  */
-class Limit private constructor(
+class Limit
+private constructor(
     val name: String,
     initial: Int,
     /** The most the limit will ever allow, and so the most a window built on it needs room for. */
@@ -25,22 +26,24 @@ class Limit private constructor(
     private var using = 0
 
     /** What the limit allows now. */
-    val current: Int get() = lock.withLock { allowed }
+    val current: Int
+        get() = lock.withLock { allowed }
 
     /** Calls inside the limit now. */
-    val inFlight: Int get() = lock.withLock { using }
+    val inFlight: Int
+        get() = lock.withLock { using }
 
     /**
-     * Runs [block] once the limit has room for it, waiting until then. How long [block] took is what an adaptive
-     * limit learns from; a block that throws counts as a call the dependency failed, unless it was interrupted or
-     * cancelled, which says nothing about the dependency. Nor does a `fail` passing through: it is the call's own
-     * answer, so a lookup that answers "not found" is not taken for overload.
+     * Runs [block] once the limit has room for it, waiting until then. How long [block] took is what an adaptive limit
+     * learns from; a block that throws counts as a call the dependency failed, unless it was interrupted or cancelled,
+     * which says nothing about the dependency. Nor does a `fail` passing through: it is the call's own answer, so a
+     * lookup that answers "not found" is not taken for overload.
      */
     fun <A> withPermit(block: () -> A): A = measured(acquire(), block = block)
 
     /**
-     * Room for one call if it comes within [wait], and how many calls are inside with it; null if none came. The
-     * call that was let in then runs through [measured], which gives the room back.
+     * Room for one call if it comes within [wait], and how many calls are inside with it; null if none came. The call
+     * that was let in then runs through [measured], which gives the room back.
      */
     internal fun admit(wait: Duration): Int? = lock.withLock {
         var left = wait.coerceAtLeast(ZERO).inWholeNanoseconds
@@ -99,7 +102,11 @@ class Limit private constructor(
         gauge("surefold.limit.in_use", "name" to name).set(using.toDouble())
     }
 
-    private enum class Outcome { ANSWERED, FAILED, UNMEASURED }
+    private enum class Outcome {
+        ANSWERED,
+        FAILED,
+        UNMEASURED,
+    }
 
     companion object {
         /** Today's behaviour as a value: at most [n] at once, always. */

@@ -17,24 +17,26 @@ private data class Watch(val ref: ActorRef<*>) : Lookout
 private data class Seen(val reply: Reply<Int>) : Lookout
 
 /** Counts every `Terminated` it hears, and answers `Seen` with the count. */
-private fun counted() = behaviour<Lookout, Int>(0) { ctx, heard, message ->
-    when (message) {
-        is Watch -> {
-            ctx.watch(message.ref)
-            stay()
-        }
+private fun counted() =
+    behaviour<Lookout, Int>(0) { ctx, heard, message ->
+            when (message) {
+                is Watch -> {
+                    ctx.watch(message.ref)
+                    stay()
+                }
 
-        is Seen -> {
-            message.reply(heard)
-            stay()
+                is Seen -> {
+                    message.reply(heard)
+                    stay()
+                }
+            }
         }
-    }
-}.onSignal { _, heard, signal ->
-    when (signal) {
-        Signal.Stopping -> stay()
-        is Signal.Terminated -> become(heard + 1)
-    }
-}
+        .onSignal { _, heard, signal ->
+            when (signal) {
+                Signal.Stopping -> stay()
+                is Signal.Terminated -> become(heard + 1)
+            }
+        }
 
 /** A ref to something that is not an actor on threads, which says when it has ended once [end] is called. */
 private class Faraway : ActorRef<Unit>, Watchable {
@@ -56,15 +58,17 @@ private data object Leave : Hand
 
 private data object Burst : Hand
 
-private fun worker(stopping: AtomicReference<List<String>>) = behaviour<Hand, Unit>(Unit) { _, _, message ->
-    when (message) {
-        Leave -> stop()
-        Burst -> error("burst")
-    }
-}.onSignal { _, _, signal ->
-    if (signal == Signal.Stopping) stopping.updateAndGet { it + "stopping" }
-    stay()
-}
+private fun worker(stopping: AtomicReference<List<String>>) =
+    behaviour<Hand, Unit>(Unit) { _, _, message ->
+            when (message) {
+                Leave -> stop()
+                Burst -> error("burst")
+            }
+        }
+        .onSignal { _, _, signal ->
+            if (signal == Signal.Stopping) stopping.updateAndGet { it + "stopping" }
+            stay()
+        }
 
 object WatchSuite : Suite() {
     init {

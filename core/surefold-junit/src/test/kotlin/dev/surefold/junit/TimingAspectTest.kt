@@ -4,7 +4,6 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
@@ -12,6 +11,7 @@ import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import org.junit.jupiter.api.Test
 
 class TimingAspectTest {
 
@@ -82,16 +82,17 @@ class TimingAspectTest {
     fun `timeout interrupts a sleeping test and fails naming the duration`() {
         val interrupted = CountDownLatch(1)
 
-        val failure = shouldThrow<TimeoutException> {
-            timeout(100.milliseconds).run {
-                try {
-                    Thread.sleep(1.minutes.inWholeMilliseconds)
-                } catch (e: InterruptedException) {
-                    interrupted.countDown()
-                    throw e
+        val failure =
+            shouldThrow<TimeoutException> {
+                timeout(100.milliseconds).run {
+                    try {
+                        Thread.sleep(1.minutes.inWholeMilliseconds)
+                    } catch (e: InterruptedException) {
+                        interrupted.countDown()
+                        throw e
+                    }
                 }
             }
-        }
 
         failure.message shouldContain "100ms"
         withClue("the sleeping test saw an interrupt") { interrupted.await(10, TimeUnit.SECONDS) shouldBe true }

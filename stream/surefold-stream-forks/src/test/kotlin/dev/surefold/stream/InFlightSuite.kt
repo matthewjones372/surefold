@@ -50,7 +50,11 @@ object InFlightSuite : Suite() {
     init {
         test("a pull parked on a body is woken by its answer") {
             val release = CountDownLatch(1)
-            val flight = InFlight(VirtualThreads) { release.await(); "answer" }
+            val flight =
+                InFlight(VirtualThreads) {
+                    release.await()
+                    "answer"
+                }
             val awaited = CompletableFuture<String>()
             val puller = Thread.ofVirtual().start { awaited.complete(flight.await()) }
             waitUntilParked(puller)
@@ -65,10 +69,11 @@ object InFlightSuite : Suite() {
             val answers = onVirtualThread {
                 List(count) { i ->
                     // Some bodies finish before the pull looks, some while it yields, some once it has parked.
-                    val flight = InFlight(VirtualThreads) {
-                        if (i % BODY_PAUSES_EVERY == 0) LockSupport.parkNanos(PAUSE_NANOS)
-                        i
-                    }
+                    val flight =
+                        InFlight(VirtualThreads) {
+                            if (i % BODY_PAUSES_EVERY == 0) LockSupport.parkNanos(PAUSE_NANOS)
+                            i
+                        }
                     if (i % PULL_PAUSES_EVERY == 0) LockSupport.parkNanos(PAUSE_NANOS)
                     flight.await()
                 }
@@ -103,14 +108,15 @@ object InFlightSuite : Suite() {
         test("an interrupt reaches a pull parked on a body that has not answered") {
             val flight = InFlight(VirtualThreads) { Thread.sleep(Long.MAX_VALUE) }
             val outcome = CompletableFuture<Throwable?>()
-            val puller = Thread.ofVirtual().start {
-                try {
-                    flight.await()
-                    outcome.complete(null)
-                } catch (thrown: InterruptedException) {
-                    outcome.complete(thrown)
+            val puller =
+                Thread.ofVirtual().start {
+                    try {
+                        flight.await()
+                        outcome.complete(null)
+                    } catch (thrown: InterruptedException) {
+                        outcome.complete(thrown)
+                    }
                 }
-            }
             waitUntilParked(puller)
 
             puller.interrupt()
@@ -122,16 +128,17 @@ object InFlightSuite : Suite() {
         test("cancel interrupts a running body and returns only once it has stopped") {
             val started = CountDownLatch(1)
             val stopped = AtomicInteger()
-            val flight = InFlight(VirtualThreads) {
-                started.countDown()
-                try {
-                    Thread.sleep(Long.MAX_VALUE)
-                } finally {
-                    // Still running after the interrupt: cancel must wait for this.
-                    LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(STOPPING_MILLIS))
-                    stopped.incrementAndGet()
+            val flight =
+                InFlight(VirtualThreads) {
+                    started.countDown()
+                    try {
+                        Thread.sleep(Long.MAX_VALUE)
+                    } finally {
+                        // Still running after the interrupt: cancel must wait for this.
+                        LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(STOPPING_MILLIS))
+                        stopped.incrementAndGet()
+                    }
                 }
-            }
             started.await()
 
             flight.cancel()
@@ -159,20 +166,22 @@ object InFlightSuite : Suite() {
         test("a cancel interrupted while it waits still waits, and keeps the interrupt") {
             val started = CountDownLatch(1)
             val release = CountDownLatch(1)
-            val flight = InFlight(VirtualThreads) {
-                started.countDown()
-                try {
-                    Thread.sleep(Long.MAX_VALUE)
-                } catch (_: InterruptedException) {
-                    release.await()
+            val flight =
+                InFlight(VirtualThreads) {
+                    started.countDown()
+                    try {
+                        Thread.sleep(Long.MAX_VALUE)
+                    } catch (_: InterruptedException) {
+                        release.await()
+                    }
                 }
-            }
             started.await()
             val keptInterrupt = CompletableFuture<Boolean>()
-            val canceller = Thread.ofVirtual().start {
-                flight.cancel()
-                keptInterrupt.complete(Thread.currentThread().isInterrupted)
-            }
+            val canceller =
+                Thread.ofVirtual().start {
+                    flight.cancel()
+                    keptInterrupt.complete(Thread.currentThread().isInterrupted)
+                }
             waitUntilParked(canceller)
             canceller.interrupt()
             Thread.sleep(STOPPING_MILLIS)

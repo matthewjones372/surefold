@@ -3,8 +3,8 @@ package dev.surefold.actor
 import java.lang.reflect.Modifier
 
 /**
- * Why each message in [protocol] could not cross to another node: a function, a `var`, or a class that is neither
- * data nor an object. Empty when every one could. A field is judged by its declared type only.
+ * Why each message in [protocol] could not cross to another node: a function, a `var`, or a class that is neither data
+ * nor an object. Empty when every one could. A field is judged by its declared type only.
  */
 fun protocolFaults(protocol: Class<*>): List<String> = messages(protocol).flatMap(::faults)
 

@@ -45,12 +45,13 @@ private class Bank {
     fun find(key: String): Settled<Long> = applied.peek()[key]?.let { Settled.Happened(it) } ?: Settled.DidNot
 }
 
-private fun transfer(bank: Bank) = durableSaga("transfer", Pence, Text, Text) { pence ->
-    val debited = step("debit", Pence, { key -> bank.move(key, -pence) }, { key -> bank.find(key) })
-    if (debited > 0) fail("never")
-    val credited = step("credit", Pence, { key -> bank.move(key, pence) }, { key -> bank.find(key) })
-    "moved $credited"
-}
+private fun transfer(bank: Bank) =
+    durableSaga("transfer", Pence, Text, Text) { pence ->
+        val debited = step("debit", Pence, { key -> bank.move(key, -pence) }, { key -> bank.find(key) })
+        if (debited > 0) fail("never")
+        val credited = step("credit", Pence, { key -> bank.move(key, pence) }, { key -> bank.find(key) })
+        "moved $credited"
+    }
 
 /** Throws, as a node dying would, instead of the append numbered [dieAt]; the appends before it are kept. */
 private class Dying(private val inner: Journal, private val dieAt: Int) : Journal by inner {
@@ -95,9 +96,10 @@ object DurableSagaSuite : Suite() {
         }
 
         test("a node that dies at any append leaves a saga that, run again, ends exactly as it would have") {
-            val reference = Bank().let { bank ->
-                transfer(bank).run(InMemoryJournal(), "t", 400) to bank.applied.peek()
-            }
+            val reference =
+                Bank().let { bank ->
+                    transfer(bank).run(InMemoryJournal(), "t", 400) to bank.applied.peek()
+                }
             for (dieAt in 1..6) {
                 val bank = Bank()
                 val journal = InMemoryJournal()
@@ -122,13 +124,18 @@ object DurableSagaSuite : Suite() {
 
         test("a step that began, may have happened and has no check stops the saga Unsettled") {
             val calls = Shared(0)
-            val unchecked = durableSaga("transfer", Pence, Text, Text) { pence ->
-                step("debit", Pence, { _ ->
-                    calls.update { it + 1 }
-                    pence
-                })
-                "done"
-            }
+            val unchecked =
+                durableSaga("transfer", Pence, Text, Text) { pence ->
+                    step(
+                        "debit",
+                        Pence,
+                        { _ ->
+                            calls.update { it + 1 }
+                            pence
+                        },
+                    )
+                    "done"
+                }
             val journal = InMemoryJournal()
             shouldThrow<IllegalStateException> { unchecked.run(Dying(journal, 3), "t", 400) }
 
@@ -141,10 +148,11 @@ object DurableSagaSuite : Suite() {
             val journal = InMemoryJournal()
             val bank = Bank()
             shouldThrow<IllegalStateException> { transfer(bank).run(Dying(journal, 4), "t", 400) }
-            val changed = durableSaga("transfer", Pence, Text, Text) { pence ->
-                step("fraud-check", Pence, { _ -> pence })
-                "done"
-            }
+            val changed =
+                durableSaga("transfer", Pence, Text, Text) { pence ->
+                    step("fraud-check", Pence, { _ -> pence })
+                    "done"
+                }
 
             shouldThrow<Diverged>({ changed.run(journal, "t", 400) }) { diverged ->
                 diverged.called shouldBe "fraud-check"
@@ -154,13 +162,14 @@ object DurableSagaSuite : Suite() {
         test("now and uuid answer the same after a restart as they did the first time") {
             val time = TestClock(Instant.parse("2026-11-04T12:00:00Z"))
             val seen = Shared(emptyList<String>())
-            val stamped = durableSaga("stamp", Pence, Text, Text) { _ ->
-                val at = now()
-                val ref = uuid()
-                seen.update { it + "$at $ref" }
-                step("after", Pence, { _ -> 1L }, { _ -> Settled.Happened(1L) })
-                "$at $ref"
-            }
+            val stamped =
+                durableSaga("stamp", Pence, Text, Text) { _ ->
+                    val at = now()
+                    val ref = uuid()
+                    seen.update { it + "$at $ref" }
+                    step("after", Pence, { _ -> 1L }, { _ -> Settled.Happened(1L) })
+                    "$at $ref"
+                }
             val journal = InMemoryJournal()
             clock.locally(time) { shouldThrow<IllegalStateException> { stamped.run(Dying(journal, 4), "s", 0) } }
 
@@ -173,9 +182,10 @@ object DurableSagaSuite : Suite() {
 
         test("uuid is a version 7 UUID whose first 48 bits are the clock's millisecond") {
             val at = Instant.parse("2026-11-04T12:00:00.123Z")
-            val made = clock.locally(TestClock(at)) {
-                durableSaga("ids", Pence, Text, Text) { _ -> uuid() }.run(InMemoryJournal(), "i", 0)
-            }
+            val made =
+                clock.locally(TestClock(at)) {
+                    durableSaga("ids", Pence, Text, Text) { _ -> uuid() }.run(InMemoryJournal(), "i", 0)
+                }
             val id = java.util.UUID.fromString((made as Either.Right).value)
 
             id.version() shouldBe 7
@@ -190,11 +200,12 @@ object DurableSagaSuite : Suite() {
         }
 
         test("two steps with one name in a saga are refused") {
-            val twice = durableSaga("twice", Pence, Text, Text) { _ ->
-                step("a", Pence, { _ -> 1L })
-                step("a", Pence, { _ -> 2L })
-                "done"
-            }
+            val twice =
+                durableSaga("twice", Pence, Text, Text) { _ ->
+                    step("a", Pence, { _ -> 1L })
+                    step("a", Pence, { _ -> 2L })
+                    "done"
+                }
 
             shouldThrow<IllegalArgumentException> { twice.run(InMemoryJournal(), "x", 0) }
         }

@@ -14,10 +14,8 @@ object FuseSuite : Suite() {
 
     init {
         test("adjacent element-at-a-time operators become one fused node, their steps in order") {
-            val stream = source.map { it + 1 }
-                .filter { it > 1 }
-                .mapOrFail<Nothing, Int, Int> { it * 2 }
-                .filterNot { it > 9 }
+            val stream =
+                source.map { it + 1 }.filter { it > 1 }.mapOrFail<Nothing, Int, Int> { it * 2 }.filterNot { it > 9 }
 
             stream.node.fused().shouldBeInstanceOf<Node.Fused> { fused ->
                 fused.steps.map { it.operator } shouldContainExactly listOf("map", "filter", "mapOrFail", "filterNot")
@@ -61,8 +59,13 @@ object FuseSuite : Suite() {
         }
 
         test("a step body answers null where a filter drops, and runs the rest of the steps where it keeps") {
-            source.map { it + 1 }.filter { it % 2 == 0 }.map { it * 10 }
-                .node.fused().shouldBeInstanceOf<Node.Fused> { fused ->
+            source
+                .map { it + 1 }
+                .filter { it % 2 == 0 }
+                .map { it * 10 }
+                .node
+                .fused()
+                .shouldBeInstanceOf<Node.Fused> { fused ->
                     val steps = fused.steps.map { it.body() }.toTypedArray()
 
                     steps.through(1) shouldBe 20

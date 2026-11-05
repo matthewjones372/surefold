@@ -14,8 +14,8 @@ import java.util.concurrent.ConcurrentLinkedQueue
 import javax.sql.DataSource
 
 /**
- * Appends that share a commit (spec 0108): up to [maxAppends] of them in one transaction, and up to [committers]
- * such transactions at once, each on its own connection.
+ * Appends that share a commit (spec 0108): up to [maxAppends] of them in one transaction, and up to [committers] such
+ * transactions at once, each on its own connection.
  */
 data class GroupCommit(val maxAppends: Int = 64, val committers: Int = 2) {
     init {
@@ -28,12 +28,12 @@ data class GroupCommit(val maxAppends: Int = 64, val committers: Int = 2) {
 internal class Append(val id: PersistenceId, val expected: Long, val events: List<ByteArray>, val metadata: String?)
 
 /**
- * Takes whatever appends are queued and commits them together: [group] writes them all on one connection in one
- * round trip, and one commit follows. There is no timer and no thread of its own: an append that finds a place free,
- * and appends queued, commits groups on its caller's thread until its own is answered, then gives the place up to an
- * append still waiting. A lone append goes at once, and appends that arrive while a commit is in flight form the next
- * group, as at most [GroupCommit.committers] groups commit at once. A group whose writing fails, as two writers racing
- * for one id do, is rolled back and each of its appends is made [alone], as it would have been without group commit.
+ * Takes whatever appends are queued and commits them together: [group] writes them all on one connection in one round
+ * trip, and one commit follows. There is no timer and no thread of its own: an append that finds a place free, and
+ * appends queued, commits groups on its caller's thread until its own is answered, then gives the place up to an append
+ * still waiting. A lone append goes at once, and appends that arrive while a commit is in flight form the next group,
+ * as at most [GroupCommit.committers] groups commit at once. A group whose writing fails, as two writers racing for one
+ * id do, is rolled back and each of its appends is made [alone], as it would have been without group commit.
  */
 internal class Committer(
     private val dataSource: DataSource,
@@ -58,14 +58,16 @@ internal class Committer(
         queue.add(pending)
         while (true) {
             // Answered, or a place to commit from: whichever comes first. A wait wakes when either changes.
-            val answered = transact("surefold.journal.committers") {
-                pending.answer.peek() ?: if (committing.get() < settings.committers && queue.isNotEmpty()) {
-                    committing.set(committing.get() + 1)
-                    null
-                } else {
-                    pending.answer.await()
+            val answered =
+                transact("surefold.journal.committers") {
+                    pending.answer.peek()
+                        ?: if (committing.get() < settings.committers && queue.isNotEmpty()) {
+                            committing.set(committing.get() + 1)
+                            null
+                        } else {
+                            pending.answer.await()
+                        }
                 }
-            }
             if (answered != null) return answered.fold({ throw it }, { it })
             try {
                 commitUntil(pending)
@@ -89,13 +91,16 @@ internal class Committer(
         try {
             dataSource.connection.use { connection ->
                 connection.autoCommit = false
-                val results = try {
-                    group(connection, taken.map { it.append })
-                } catch (raced: SQLException) {
-                    connection.rollback()
-                    logDebug("journal: a group of ${taken.size} failed as one (${raced.message}); making each alone")
-                    null
-                }
+                val results =
+                    try {
+                        group(connection, taken.map { it.append })
+                    } catch (raced: SQLException) {
+                        connection.rollback()
+                        logDebug(
+                            "journal: a group of ${taken.size} failed as one (${raced.message}); making each alone",
+                        )
+                        null
+                    }
                 if (results == null) {
                     taken.forEach { pending -> answerAlone(pending) }
                     return

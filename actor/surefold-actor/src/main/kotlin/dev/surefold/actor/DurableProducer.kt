@@ -24,12 +24,12 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * A producer whose unconfirmed commands are kept in this scope's journal (spec 0085), so a crash loses none of them:
  * started again under the same [id], on this node or another, it sends each entity's first unconfirmed command again
- * and numbers on from where it stopped. Its deliveries carry [id] alone, so an entity's deduplication holds across
- * the restart. [codec] keeps each command with its delivery blanked, and a command is sent again through
- * [Delivered.redeliver]. Two producers running under one [id] at once conflict, as two writers for one entity do.
- * It snapshots every 1,000 events and prunes what a snapshot covers, where the scope's stores allow. A journal that
- * throws restarts its actor, 100 ms after the first throw and doubling to 5 s, and the restart replays what was
- * written; until a replay succeeds, `send` answers [Unwritten] at once (spec 0098).
+ * and numbers on from where it stopped. Its deliveries carry [id] alone, so an entity's deduplication holds across the
+ * restart. [codec] keeps each command with its delivery blanked, and a command is sent again through
+ * [Delivered.redeliver]. Two producers running under one [id] at once conflict, as two writers for one entity do. It
+ * snapshots every 1,000 events and prunes what a snapshot covers, where the scope's stores allow. A journal that throws
+ * restarts its actor, 100 ms after the first throw and doubling to 5 s, and the restart replays what was written; until
+ * a replay succeeds, `send` answers [Unwritten] at once (spec 0098).
  */
 fun <F, M : Any> Scope<F>.durableProducer(
     id: String,
@@ -44,11 +44,12 @@ fun <F, M : Any> Scope<F>.durableProducer(
     val meters = meters(id)
     val recovered = CountDownLatch(1)
     val down = AtomicReference<Throwable?>()
-    val actor = spawn(
-        "producer-$id",
-        outbox(id, codec, resendAfter, room, keep, meters, recovered, down, route),
-        restart = backoff(),
-    )
+    val actor =
+        spawn(
+            "producer-$id",
+            outbox(id, codec, resendAfter, room, keep, meters, recovered, down, route),
+            restart = backoff(),
+        )
     return Producer(room, keep, within, meters, Encoding(id, codec, actor), recovered, down)
         .drainedOnClose(this, id, drainWithin)
 }
@@ -63,14 +64,15 @@ fun <M : Any> TestActors.durableProducer(
     route: (to: String) -> ActorRef<M>,
 ): Producer<M> {
     val room = room(keep)
-    val meters = ProducerMeters(Gauge { }, Counter { }, Counter { }, Counter { })
+    val meters = ProducerMeters(Gauge {}, Counter {}, Counter {}, Counter {})
     val recovered = CountDownLatch(1)
     val down = AtomicReference<Throwable?>()
-    val actor = spawn(
-        "producer-$id",
-        outbox(id, codec, resendAfter, room, keep, meters, recovered, down, route),
-        restart = backoff(),
-    )
+    val actor =
+        spawn(
+            "producer-$id",
+            outbox(id, codec, resendAfter, room, keep, meters, recovered, down, route),
+            restart = backoff(),
+        )
     return Producer(room, keep, within, meters, Encoding(id, codec, actor), recovered, down)
 }
 
@@ -95,9 +97,9 @@ private class Encoding<M : Any>(
 }
 
 /**
- * The durable producer [id] started again as a child of this actor, to send only what an earlier run of it kept
- * (spec 0099), and that child, which stopping stops it. It holds room for all it recovers, so its `drain` waits for
- * every command; it takes no new ones. It restarts and answers [Unwritten] as [Scope.durableProducer] does.
+ * The durable producer [id] started again as a child of this actor, to send only what an earlier run of it kept (spec
+ * 0099), and that child, which stopping stops it. It holds room for all it recovers, so its `drain` waits for every
+ * command; it takes no new ones. It restarts and answers [Unwritten] as [Scope.durableProducer] does.
  */
 fun <M : Any> Ctx<*>.resumedProducer(
     id: String,
@@ -106,14 +108,15 @@ fun <M : Any> Ctx<*>.resumedProducer(
     route: (to: String) -> ActorRef<M>,
 ): Pair<Producer<M>, ActorRef<*>> {
     val room = room(Int.MAX_VALUE)
-    val meters = ProducerMeters(Gauge { }, Counter { }, Counter { }, Counter { })
+    val meters = ProducerMeters(Gauge {}, Counter {}, Counter {}, Counter {})
     val recovered = CountDownLatch(1)
     val down = AtomicReference<Throwable?>()
-    val actor = spawn(
-        "producer-$id",
-        outbox(id, codec, resendAfter, room, Int.MAX_VALUE, meters, recovered, down, route),
-        restart = backoff(),
-    )
+    val actor =
+        spawn(
+            "producer-$id",
+            outbox(id, codec, resendAfter, room, Int.MAX_VALUE, meters, recovered, down, route),
+            restart = backoff(),
+        )
     val producer = Producer(room, Int.MAX_VALUE, Duration.ZERO, meters, Encoding(id, codec, actor), recovered, down)
     return producer to actor
 }
@@ -159,51 +162,56 @@ private fun <M : Any> outbox(
 
     val sending = Sending(producer, codec, meters, route)
     return persistent<Any, OutboxEvent, Stored>(
-        id = PersistenceId("surefold-producer", producer),
-        empty = Stored(),
-        codec = OutboxEventCodec,
-        snapshots = every(SNAPSHOT_EVERY, OutboxesCodec, prune = Prune.always),
-        command = { ctx, stored, message ->
-            when (message) {
-                is KeepDurably -> {
-                    val sequence = stored.next[message.to] ?: 1
-                    val (_, send) = stored.outboxes.kept(message.to, sequence, message.bytes)
-                    persist(OutboxEvent.Kept(message.to, sequence, message.bytes)).then { _ ->
-                        // Written: from here a throw leaves its room held, for the restart's replay to find it, and
-                        // the caller hears so before the send, which cannot take it back.
-                        held.kept(message.to, sequence)
-                        message.written()
-                        send?.let { sending.perform(ctx, it) }
+            id = PersistenceId("surefold-producer", producer),
+            empty = Stored(),
+            codec = OutboxEventCodec,
+            snapshots = every(SNAPSHOT_EVERY, OutboxesCodec, prune = Prune.always),
+            command = { ctx, stored, message ->
+                when (message) {
+                    is KeepDurably -> {
+                        val sequence = stored.next[message.to] ?: 1
+                        val (_, send) = stored.outboxes.kept(message.to, sequence, message.bytes)
+                        persist(OutboxEvent.Kept(message.to, sequence, message.bytes)).then { _ ->
+                            // Written: from here a throw leaves its room held, for the restart's replay to find it, and
+                            // the caller hears so before the send, which cannot take it back.
+                            held.kept(message.to, sequence)
+                            message.written()
+                            send?.let { sending.perform(ctx, it) }
+                        }
                     }
+
+                    is Confirmed ->
+                        when (val confirmed = stored.outboxes.confirmed(message.to, message.sequence)) {
+                            null -> none()
+
+                            else ->
+                                persist(OutboxEvent.Done(message.to, message.sequence)).then { after ->
+                                    held.confirmed(after.outboxes, message.to, message.sequence)
+                                    confirmed.second?.let { sending.perform(ctx, it) }
+                                }
+                        }
+
+                    ResendUnconfirmed -> none().then { now -> sending.resend(ctx, now.outboxes) }
+
+                    Recovered ->
+                        none().then { now ->
+                            held.claim(now.outboxes)
+                            recovered.countDown()
+                            sending.resend(ctx, now.outboxes)
+                        }
+
+                    else -> unhandled()
                 }
-
-                is Confirmed -> when (val confirmed = stored.outboxes.confirmed(message.to, message.sequence)) {
-                    null -> none()
-
-                    else -> persist(OutboxEvent.Done(message.to, message.sequence)).then { after ->
-                        held.confirmed(after.outboxes, message.to, message.sequence)
-                        confirmed.second?.let { sending.perform(ctx, it) }
-                    }
-                }
-
-                ResendUnconfirmed -> none().then { now -> sending.resend(ctx, now.outboxes) }
-
-                Recovered -> none().then { now ->
-                    held.claim(now.outboxes)
-                    recovered.countDown()
-                    sending.resend(ctx, now.outboxes)
-                }
-
-                else -> unhandled()
-            }
-        },
-        event = ::applied,
-    ).onThrow { message, cause -> threw(producer, down, held, message, cause) }.onStart { ctx ->
-        if (down.getAndSet(null) != null) logInfo("producer $producer writes to its journal again")
-        ctx.timers.every(ResendUnconfirmed, resendAfter, ResendUnconfirmed)
-        // What the start recovered holds room, and goes out at once rather than a resendAfter later.
-        ctx.timers.after(Recovered, Duration.ZERO, Recovered)
-    }
+            },
+            event = ::applied,
+        )
+        .onThrow { message, cause -> threw(producer, down, held, message, cause) }
+        .onStart { ctx ->
+            if (down.getAndSet(null) != null) logInfo("producer $producer writes to its journal again")
+            ctx.timers.every(ResendUnconfirmed, resendAfter, ResendUnconfirmed)
+            // What the start recovered holds room, and goes out at once rather than a resendAfter later.
+            ctx.timers.after(Recovered, Duration.ZERO, Recovered)
+        }
 }
 
 /** How a durable producer sends what [Outboxes] says to: decoded from its bytes, and redelivered from it. */
@@ -218,19 +226,19 @@ private class Sending<M : Any>(
         val kept = codec.decode(bytes)
         check(kept is Delivered) { "a durable producer sends only Delivered commands, not $kept" }
         // A copy that finds the entity's mailbox full is not lost: it is sent again on the next resend.
-        @Suppress("UNCHECKED_CAST")
-        route(to).handed(kept.redeliver(Delivery(producer, to, sequence, ctx.self)) as M)
+        @Suppress("UNCHECKED_CAST") route(to).handed(kept.redeliver(Delivery(producer, to, sequence, ctx.self)) as M)
     }
 
-    fun resend(ctx: Ctx<Any>, outboxes: Outboxes<ByteArray>) = outboxes.heads().forEach {
-        meters.resent.increment()
-        perform(ctx, it)
-    }
+    fun resend(ctx: Ctx<Any>, outboxes: Outboxes<ByteArray>) =
+        outboxes.heads().forEach {
+            meters.resent.increment()
+            perform(ctx, it)
+        }
 }
 
 /**
- * The journal threw, on [message] or on a replay: [producer] is [down] until a replay succeeds, and a command that
- * was not written is answered [Unwritten] and gives its room back.
+ * The journal threw, on [message] or on a replay: [producer] is [down] until a replay succeeds, and a command that was
+ * not written is answered [Unwritten] and gives its room back.
  */
 private fun threw(
     producer: String,
@@ -311,25 +319,29 @@ private inline fun <M : Any, S, E> Fail<E>.told(
     crossinline body: Fail<E>.() -> Next<S>,
 ): Next<S> =
     try {
-        attempt<E, Next<S>> { body(this) }
-    } catch (thrown: Exception) {
-        failed(message, thrown)
-        throw thrown
-    }.bind()
+            attempt<E, Next<S>> { body(this) }
+        } catch (thrown: Exception) {
+            failed(message, thrown)
+            throw thrown
+        }
+        .bind()
 
 /** [stored] after [event], through the same [Outboxes] steps a live command takes. */
-private fun applied(stored: Stored, event: OutboxEvent): Stored = when (event) {
-    is OutboxEvent.Kept -> Stored(
-        stored.outboxes.kept(event.to, event.sequence, event.bytes).first,
-        stored.next + (event.to to event.sequence + 1),
-    )
+private fun applied(stored: Stored, event: OutboxEvent): Stored =
+    when (event) {
+        is OutboxEvent.Kept ->
+            Stored(
+                stored.outboxes.kept(event.to, event.sequence, event.bytes).first,
+                stored.next + (event.to to event.sequence + 1),
+            )
 
-    // Only a head is confirmed, so a Done the journal holds is for a head; any other is passed over, and what it
-    // names is sent again, never lost.
-    is OutboxEvent.Done -> stored.copy(
-        outboxes = stored.outboxes.confirmed(event.to, event.sequence)?.first ?: stored.outboxes,
-    )
-}
+        // Only a head is confirmed, so a Done the journal holds is for a head; any other is passed over, and what it
+        // names is sent again, never lost.
+        is OutboxEvent.Done ->
+            stored.copy(
+                outboxes = stored.outboxes.confirmed(event.to, event.sequence)?.first ?: stored.outboxes,
+            )
+    }
 
 private object OutboxEventCodec : EventCodec<OutboxEvent> {
     override fun encode(event: OutboxEvent): ByteArray = written { data ->
@@ -350,13 +362,15 @@ private object OutboxEventCodec : EventCodec<OutboxEvent> {
         }
     }
 
-    override fun decode(bytes: ByteArray): OutboxEvent = read(bytes) { data ->
-        when (val tag = data.readInt()) {
-            KEPT -> OutboxEvent.Kept(data.readUTF(), data.readLong(), ByteArray(data.readInt()).also(data::readFully))
-            DONE -> OutboxEvent.Done(data.readUTF(), data.readLong())
-            else -> error("no outbox event has the tag $tag")
+    override fun decode(bytes: ByteArray): OutboxEvent =
+        read(bytes) { data ->
+            when (val tag = data.readInt()) {
+                KEPT ->
+                    OutboxEvent.Kept(data.readUTF(), data.readLong(), ByteArray(data.readInt()).also(data::readFully))
+                DONE -> OutboxEvent.Done(data.readUTF(), data.readLong())
+                else -> error("no outbox event has the tag $tag")
+            }
         }
-    }
 }
 
 private object OutboxesCodec : StateCodec<Stored> {
@@ -376,19 +390,23 @@ private object OutboxesCodec : StateCodec<Stored> {
         }
     }
 
-    override fun decode(bytes: ByteArray): Stored = read(bytes) { data ->
-        val entities = List(data.readInt()) {
-            Triple(
-                data.readUTF(),
-                data.readLong(),
-                List(data.readInt()) { KeptCommand(data.readLong(), ByteArray(data.readInt()).also(data::readFully)) },
+    override fun decode(bytes: ByteArray): Stored =
+        read(bytes) { data ->
+            val entities =
+                List(data.readInt()) {
+                    Triple(
+                        data.readUTF(),
+                        data.readLong(),
+                        List(data.readInt()) {
+                            KeptCommand(data.readLong(), ByteArray(data.readInt()).also(data::readFully))
+                        },
+                    )
+                }
+            Stored(
+                Outboxes(entities.filter { it.third.isNotEmpty() }.associate { (to, _, kept) -> to to kept }),
+                entities.associate { (to, next, _) -> to to next },
             )
         }
-        Stored(
-            Outboxes(entities.filter { it.third.isNotEmpty() }.associate { (to, _, kept) -> to to kept }),
-            entities.associate { (to, next, _) -> to to next },
-        )
-    }
 }
 
 private fun written(write: (DataOutputStream) -> Unit): ByteArray =

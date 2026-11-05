@@ -19,7 +19,7 @@ internal class NodeMetrics : Metrics {
 
     override fun gauge(name: String, tags: Map<String, String>): Gauge = Gauge { gauges[name to tags] = it }
 
-    override fun histogram(name: String, tags: Map<String, String>): Histogram = Histogram { }
+    override fun histogram(name: String, tags: Map<String, String>): Histogram = Histogram {}
 
     fun counter(name: String, vararg tags: Pair<String, String>): Double = counters[name to tags.toMap()]?.sum() ?: 0.0
 

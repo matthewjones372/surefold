@@ -10,7 +10,6 @@ import dev.surefold.assert.withClue
 import dev.surefold.fail.attempt
 import dev.surefold.fail.left
 import dev.surefold.fail.right
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -18,6 +17,7 @@ import kotlin.random.Random
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 /** Every decision a schedule makes for one input, so no test has to time a delay to know it was decided. */
 private fun <A, B> Schedule<A, B>.decisionsFor(input: A, limit: Int): List<Schedule.Decision<A, B>> {
@@ -47,12 +47,13 @@ class ScheduleTest {
         val boom = Boom()
         val attempts = AtomicInteger(0)
 
-        val thrown = shouldThrow<Boom> {
-            Schedule.recurs<Throwable>(3).retry {
-                attempts.incrementAndGet()
-                throw boom
+        val thrown =
+            shouldThrow<Boom> {
+                Schedule.recurs<Throwable>(3).retry {
+                    attempts.incrementAndGet()
+                    throw boom
+                }
             }
-        }
 
         thrown shouldBeSameInstanceAs boom
         withClue("the first attempt is not a retry, so three retries is four calls") {
@@ -64,9 +65,10 @@ class ScheduleTest {
     fun `retry returns as soon as the action stops throwing`() {
         val attempts = AtomicInteger(0)
 
-        val answer = Schedule.recurs<Throwable>(5).retry {
-            if (attempts.incrementAndGet() < 3) throw Boom() else "answered"
-        }
+        val answer =
+            Schedule.recurs<Throwable>(5).retry {
+                if (attempts.incrementAndGet() < 3) throw Boom() else "answered"
+            }
 
         answer shouldBe "answered"
         attempts.get() shouldBe 3
@@ -76,9 +78,10 @@ class ScheduleTest {
     fun `retryOrElse answers from the last failure and the schedule's last output`() {
         val boom = Boom()
 
-        val answer = Schedule.recurs<Throwable>(2).retryOrElse({ throw boom }) { failure, count ->
-            "gave up after $count on ${failure.message}"
-        }
+        val answer =
+            Schedule.recurs<Throwable>(2).retryOrElse({ throw boom }) { failure, count ->
+                "gave up after $count on ${failure.message}"
+            }
 
         answer shouldBe "gave up after 2 on boom"
     }
@@ -87,9 +90,10 @@ class ScheduleTest {
     fun `retrying re-raises the last raise once the schedule is done`() {
         val attempts = AtomicInteger(0)
 
-        val raised = Schedule.recurs<Bad>(2).retrying {
-            fail(Bad("attempt ${attempts.incrementAndGet()}"))
-        }
+        val raised =
+            Schedule.recurs<Bad>(2).retrying {
+                fail(Bad("attempt ${attempts.incrementAndGet()}"))
+            }
 
         raised shouldBe Bad("attempt 3").left()
         attempts.get() shouldBe 3
@@ -159,13 +163,16 @@ class ScheduleTest {
 
     @Test
     fun `doWhile stops at the first input it does not hold of, and doUntil is its inverse`() {
-        Schedule.doWhile<Int> { input, _ -> input < 10 }.outputsFor(3, 4) shouldContainExactly
-            listOf(3, 3, 3, 3)
+        Schedule.doWhile<Int> { input, _ -> input < 10 }.outputsFor(3, 4) shouldContainExactly listOf(3, 3, 3, 3)
 
-        Schedule.doWhile<Int> { input, _ -> input < 10 }.decisionsFor(30, 4).single()
+        Schedule.doWhile<Int> { input, _ -> input < 10 }
+            .decisionsFor(30, 4)
+            .single()
             .shouldBeInstanceOf<Schedule.Decision.Done<Int>>()
 
-        Schedule.doUntil<Int> { input, _ -> input < 10 }.decisionsFor(3, 4).single()
+        Schedule.doUntil<Int> { input, _ -> input < 10 }
+            .decisionsFor(3, 4)
+            .single()
             .shouldBeInstanceOf<Schedule.Decision.Done<Int>>()
     }
 
@@ -178,18 +185,25 @@ class ScheduleTest {
             paired.delaysFor(Unit, 5) shouldContainExactly listOf(50.milliseconds, 50.milliseconds)
         }
 
-        val summed = Schedule.spaced<Unit>(50.milliseconds)
-            .and(Schedule.spaced(30.milliseconds), { a, b -> a + b }) { left, right -> left + right }
+        val summed =
+            Schedule.spaced<Unit>(50.milliseconds).and(Schedule.spaced(30.milliseconds), { a, b -> a + b }) {
+                left,
+                right ->
+                left + right
+            }
         summed.delaysFor(Unit, 2) shouldContainExactly listOf(80.milliseconds, 80.milliseconds)
         summed.outputsFor(Unit, 2) shouldContainExactly listOf(0L, 2L)
     }
 
     @Test
     fun `or continues while either does, with the stopped side's output null`() {
-        val either = Schedule.recurs<Unit>(1).or(
-            Schedule.spaced(50.milliseconds),
-            { left, right -> "$left/$right" },
-        ) { left, right -> maxOf(left ?: Duration.ZERO, right ?: Duration.ZERO) }
+        val either =
+            Schedule.recurs<Unit>(1).or(
+                Schedule.spaced(50.milliseconds),
+                { left, right -> "$left/$right" },
+            ) { left, right ->
+                maxOf(left ?: Duration.ZERO, right ?: Duration.ZERO)
+            }
 
         either.outputsFor(Unit, 3) shouldContainExactly listOf("0/0", "null/1", "null/2")
     }
@@ -199,13 +213,11 @@ class ScheduleTest {
         val chained = Schedule.recurs<Unit>(1) andThen Schedule.recurs(1)
 
         withClue("the first schedule's own last output is a Left, and the second starts after it") {
-            chained.outputsFor(Unit, 5) shouldContainExactly
-                listOf(0L.left(), 1L.left(), 0L.right(), 1L.right())
+            chained.outputsFor(Unit, 5) shouldContainExactly listOf(0L.left(), 1L.left(), 0L.right(), 1L.right())
         }
 
         val merged = Schedule.recurs<Unit>(1).andThen(Schedule.recurs(1), { "first $it" }) { "second $it" }
-        merged.outputsFor(Unit, 5) shouldContainExactly
-            listOf("first 0", "first 1", "second 0", "second 1")
+        merged.outputsFor(Unit, 5) shouldContainExactly listOf("first 0", "first 1", "second 0", "second 1")
     }
 
     @Test
@@ -216,8 +228,7 @@ class ScheduleTest {
         val right = Schedule.recurs<Unit>(2) zipRight Schedule.spaced(10.milliseconds)
         right.outputsFor(Unit, 4) shouldContainExactly listOf(0L, 1L, 2L)
 
-        Schedule.recurs<Unit>(1).map { "run $it" }.outputsFor(Unit, 4) shouldContainExactly
-            listOf("run 0", "run 1")
+        Schedule.recurs<Unit>(1).map { "run $it" }.outputsFor(Unit, 4) shouldContainExactly listOf("run 0", "run 1")
 
         Schedule.spaced<Unit>(40.milliseconds).delayed { _, delay -> delay / 2 }.delaysFor(Unit, 2) shouldContainExactly
             listOf(20.milliseconds, 20.milliseconds)
@@ -272,22 +283,23 @@ class ScheduleTest {
         val boom = Boom()
         val attempts = AtomicInteger(0)
 
-        val thrown = clock.locally(moving) {
-            scope {
-                val retrying = async {
-                    try {
-                        (Schedule.spaced<Throwable>(1.seconds) zipLeft Schedule.upTo(5.seconds)).retry {
-                            attempts.incrementAndGet()
-                            throw boom
+        val thrown =
+            clock.locally(moving) {
+                scope {
+                    val retrying = async {
+                        try {
+                            (Schedule.spaced<Throwable>(1.seconds) zipLeft Schedule.upTo(5.seconds)).retry {
+                                attempts.incrementAndGet()
+                                throw boom
+                            }
+                        } catch (last: Boom) {
+                            last
                         }
-                    } catch (last: Boom) {
-                        last
                     }
+                    repeat(5) { moving.adjustWhenBlocked(1.seconds) }
+                    retrying.await()
                 }
-                repeat(5) { moving.adjustWhenBlocked(1.seconds) }
-                retrying.await()
             }
-        }
 
         thrown shouldBeSameInstanceAs boom
         withClue("a try at each second from 0 to 5: the one at 5 finds five seconds gone and stops") {
@@ -300,8 +312,8 @@ class ScheduleTest {
         val moving = TestClock()
 
         clock.locally(moving) {
-            val first = Schedule.upTo<Unit>(5.seconds)(Unit)
-                .shouldBeInstanceOf<Schedule.Decision.Continue<Unit, Duration>>()
+            val first =
+                Schedule.upTo<Unit>(5.seconds)(Unit).shouldBeInstanceOf<Schedule.Decision.Continue<Unit, Duration>>()
             first.output shouldBe Duration.ZERO
             first.delay shouldBe Duration.ZERO
 

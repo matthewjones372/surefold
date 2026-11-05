@@ -21,12 +21,14 @@ object ChangelogSuite : Suite() {
     /** The type of every column of surefold's tables that holds a string. */
     private fun DataSource.stringColumns(): Set<String> = connection.use { connection ->
         connection.createStatement().use { statement ->
-            statement.executeQuery(
-                """
+            statement
+                .executeQuery(
+                    """
                 select distinct data_type from information_schema.columns
                 where table_name like 'surefold\_%' and data_type in ('text', 'character varying')
                 """,
-            ).use { rows -> generateSequence { if (rows.next()) rows.getString(1) else null }.toSet() }
+                )
+                .use { rows -> generateSequence { if (rows.next()) rows.getString(1) else null }.toSet() }
         }
     }
 }

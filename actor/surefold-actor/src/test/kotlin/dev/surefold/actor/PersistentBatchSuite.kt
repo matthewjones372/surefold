@@ -14,17 +14,19 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.minutes
 
-private val batchPence = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = "$event".toByteArray()
+private val batchPence =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = "$event".toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
-private val batchTotal = object : StateCodec<Int> {
-    override fun encode(state: Int): ByteArray = "$state".toByteArray()
+private val batchTotal =
+    object : StateCodec<Int> {
+        override fun encode(state: Int): ByteArray = "$state".toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
 private sealed interface BatchTill
 
@@ -32,9 +34,7 @@ private sealed interface BatchTill
 private data class BatchRing(val batchPence: Int, val totals: MutableList<Int>? = null) : BatchTill
 
 /** Pays in reliably, and says nothing. */
-private data class BatchDeposit(val batchPence: Int, override val delivery: Delivery) :
-    BatchTill,
-    Delivered
+private data class BatchDeposit(val batchPence: Int, override val delivery: Delivery) : BatchTill, Delivered
 
 private data object BatchLook : BatchTill
 
@@ -57,25 +57,27 @@ private class AppendCounting(
 }
 
 /** A batchTill that holds its first message until [opened], so every message told before then is waiting at once. */
-private fun batchTill(batch: Int, opened: CountDownLatch, every: Int? = null) = delivered(
-    persistent<BatchTill, Int, Int>(
-        id = batchTillId,
-        empty = 0,
-        codec = batchPence,
-        command = { _, _, command ->
-            when (command) {
-                is BatchRing -> persist(command.batchPence).then { after -> command.totals?.add(after) }
-                is BatchDeposit -> persist(command.batchPence)
-                BatchLook -> unhandled()
-                BatchClose -> stop()
-                is BatchCount -> none().then { now -> command.reply(now) }
-            }
-        },
-        event = { sum, paid -> sum + paid },
-        snapshots = every?.let { every(it, batchTotal) },
-        batch = batch,
-    ),
-).onStart { opened.await() }
+private fun batchTill(batch: Int, opened: CountDownLatch, every: Int? = null) =
+    delivered(
+            persistent<BatchTill, Int, Int>(
+                id = batchTillId,
+                empty = 0,
+                codec = batchPence,
+                command = { _, _, command ->
+                    when (command) {
+                        is BatchRing -> persist(command.batchPence).then { after -> command.totals?.add(after) }
+                        is BatchDeposit -> persist(command.batchPence)
+                        BatchLook -> unhandled()
+                        BatchClose -> stop()
+                        is BatchCount -> none().then { now -> command.reply(now) }
+                    }
+                },
+                event = { sum, paid -> sum + paid },
+                snapshots = every?.let { every(it, batchTotal) },
+                batch = batch,
+            ),
+        )
+        .onStart { opened.await() }
 
 object PersistentBatchSuite : Suite() {
     private fun rung(batch: Int, n: Int): Pair<AppendCounting, List<Int>> {
@@ -119,13 +121,14 @@ object PersistentBatchSuite : Suite() {
             val confirmed = CopyOnWriteArrayList<Confirmed>()
             val counted = scope {
                 journal(journal)
-                val confirms = spawn(
-                    "confirms",
-                    behaviour<Confirmed, Unit>(Unit) { _, _, confirmation ->
-                        confirmed += confirmation
-                        stay()
-                    },
-                )
+                val confirms =
+                    spawn(
+                        "confirms",
+                        behaviour<Confirmed, Unit>(Unit) { _, _, confirmation ->
+                            confirmed += confirmation
+                            stay()
+                        },
+                    )
                 val batchTill = spawn("batchTill", batchTill(batch = 64, opened))
                 val first = Delivery("checkout", "t-1", 1, confirms)
                 batchTill.tell(BatchDeposit(10, first))

@@ -16,7 +16,7 @@ class ColourTest {
         val story = Story()
         shouldThrow<IllegalStateException> {
             with(story) {
-                Given("a step that passes") { }
+                Given("a step that passes") {}
                 Then("a step that fails") { error("expected:<0L> but was:<3L>") }
             }
         }
@@ -40,9 +40,10 @@ class ColourTest {
 
     @Test
     fun `the thrown transcript holds no escape code, whatever the console gets`() {
-        val failed = shouldThrow<StoryFailed> {
-            story("plain") { Then("it fails") { error("no") } }
-        }
+        val failed =
+            shouldThrow<StoryFailed> {
+                story("plain") { Then("it fails") { error("no") } }
+            }
 
         failed.message!! shouldNotContain escape
     }

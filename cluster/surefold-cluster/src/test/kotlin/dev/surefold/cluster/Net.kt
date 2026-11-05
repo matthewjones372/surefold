@@ -14,8 +14,8 @@ internal fun at(n: Int) = Node("n$n", "10.0.0.$n", 25520)
 internal fun seeds(vararg n: Int) = n.map { Node("", at(it).host, at(it).port) }
 
 /**
- * Nodes on a network that is a test step: every message sent in a step arrives within it, unless its link is cut or
- * a side has stopped. Time moves only when the test says.
+ * Nodes on a network that is a test step: every message sent in a step arrives within it, unless its link is cut or a
+ * side has stopped. Time moves only when the test says.
  */
 internal class Net(private val seed: Int = 1, private val downing: Downing = Downing.keepMajority(20.seconds)) {
     val nodes = mutableMapOf<Node, Membership>()
@@ -28,8 +28,9 @@ internal class Net(private val seed: Int = 1, private val downing: Downing = Dow
 
     fun start(n: Int, seeds: List<Node>, uid: Long = n.toLong(), ready: Boolean = true): Membership {
         val random = Random(seed * 31 + n + uid.toInt())
-        return Membership(Incarnation(at(n), uid), { seeds }, settings, downing, random, now, ready)
-            .also { nodes[at(n)] = it }
+        return Membership(Incarnation(at(n), uid), { seeds }, settings, downing, random, now, ready).also {
+            nodes[at(n)] = it
+        }
     }
 
     fun stop(n: Int) {
@@ -94,9 +95,10 @@ internal class Net(private val seed: Int = 1, private val downing: Downing = Dow
     private fun live() = nodes.filterKeys { it !in stopped }
 
     /** Whether the network carries [message] from [from] to [to]: not across a cut, nor lost as this net loses it. */
-    private fun carried(from: Node, to: Node, message: Swim) = setOf(from, to) !in cut &&
-        !(message is Swim.Ack && setOf(from, to) in deaf) &&
-        !(message is Swim.Join && from in unheard)
+    private fun carried(from: Node, to: Node, message: Swim) =
+        setOf(from, to) !in cut &&
+            !(message is Swim.Ack && setOf(from, to) in deaf) &&
+            !(message is Swim.Join && from in unheard)
 
     private fun reaches(address: Node, node: Node) =
         address.host == node.host && address.port == node.port && (address.name.isEmpty() || address.name == node.name)

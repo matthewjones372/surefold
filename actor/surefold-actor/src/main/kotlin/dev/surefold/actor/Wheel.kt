@@ -47,14 +47,15 @@ internal fun <M : Any> startTimers(
     start: (key: Any, delay: Duration, message: M, every: Duration?) -> Unit,
 ): TimersOfState {
     val keys = mutableListOf<Any>()
-    val starting = object : StateTimers<M> {
-        override fun after(delay: Duration, message: M) = start(StateKey().also(keys::add), delay, message, null)
+    val starting =
+        object : StateTimers<M> {
+            override fun after(delay: Duration, message: M) = start(StateKey().also(keys::add), delay, message, null)
 
-        override fun every(interval: Duration, message: M) {
-            require(interval.isPositive()) { "a periodic timer needs a positive interval, was $interval" }
-            start(StateKey().also(keys::add), interval, message, interval)
+            override fun every(interval: Duration, message: M) {
+                require(interval.isPositive()) { "a periodic timer needs a positive interval, was $interval" }
+                start(StateKey().also(keys::add), interval, message, interval)
+            }
         }
-    }
     starting.timers()
     return TimersOfState(state, keys.toList())
 }
@@ -64,8 +65,8 @@ internal class Silence(val after: Duration, val message: Any)
 
 /**
  * Every timer of one scope's actors, on the scope's clock. On a [TestClock] the clock's moves deliver them, each
- * instant in turn, and a move returns once what fell due has been handled; on any other clock one thread, started
- * with the first timer, sleeps until the soonest and is woken early when a sooner one is started.
+ * instant in turn, and a move returns once what fell due has been handled; on any other clock one thread, started with
+ * the first timer, sleeps until the soonest and is woken early when a sooner one is started.
  */
 internal class Wheel(private val clock: Clock, private val idle: () -> Unit) : TestClock.Waiter {
     private val lock = ReentrantLock()

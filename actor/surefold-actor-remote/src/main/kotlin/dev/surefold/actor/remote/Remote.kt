@@ -47,12 +47,14 @@ private const val TERMINATED = "/system/terminated"
 
 /** A watched actor's path and incarnation, as the watch and its end carry them. */
 private fun target(address: Address): ByteArray =
-    ByteArrayOutputStream().also { bytes ->
-        DataOutputStream(bytes).use {
-            it.writeUTF(address.path)
-            it.writeLong(address.incarnation)
+    ByteArrayOutputStream()
+        .also { bytes ->
+            DataOutputStream(bytes).use {
+                it.writeUTF(address.path)
+                it.writeLong(address.incarnation)
+            }
         }
-    }.toByteArray()
+        .toByteArray()
 
 /** The address [target] wrote, on the node [on]. */
 private fun targetOf(on: Node, payload: ByteArray): Address =
@@ -61,8 +63,8 @@ private fun targetOf(on: Node, payload: ByteArray): Address =
 /**
  * This scope as a node named [name], listening on [host] and [port], until the scope closes. An actor of this node is
  * reached from another only once it is [RemoteNode.expose]d with the codec its messages cross in, or when a ref to it
- * crosses inside a message, which exposes it with the codec the message gave for it. With [tls], every connection
- * to and from this node is TLS, and only nodes whose certificates name them are let in (spec 0073).
+ * crosses inside a message, which exposes it with the codec the message gave for it. With [tls], every connection to
+ * and from this node is TLS, and only nodes whose certificates name them are let in (spec 0073).
  */
 fun <F> Scope<F>.node(
     name: String,
@@ -89,11 +91,12 @@ private typealias Watchers = Map<ActorRef<*>, Set<Pair<Node, Address>>>
 class UnreadMessage(val bytes: ByteArray)
 
 /**
- * A node: the actors it exposes, the replies it waits on, the watches on other nodes' actors, and the transport to
- * the others. A watch ends with `Terminated` when the actor stops, and when its node has been unreachable for
+ * A node: the actors it exposes, the replies it waits on, the watches on other nodes' actors, and the transport to the
+ * others. A watch ends with `Terminated` when the actor stops, and when its node has been unreachable for
  * [unreachableAfter], or, once a membership has [takeOverWatches], when the membership says the node is gone.
  */
-class RemoteNode internal constructor(
+class RemoteNode
+internal constructor(
     val self: Node,
     private val scope: Scope<*>,
     private val unreachableAfter: Duration,
@@ -105,8 +108,10 @@ class RemoteNode internal constructor(
     /** One peer's instruments, looked up once: counting a frame is then a map hit and no allocation. */
     private inner class PeerMetrics(peer: Node) {
         private val name = peer.toString()
+
         private fun byLane(metric: String, vararg tags: Pair<String, String>) =
             Lane.entries.associateWith { scope.counter(metric, "peer" to name, *tags, "lane" to it.name.lowercase()) }
+
         val sent = byLane("surefold.remote.frames", "direction" to "out")
         val received = byLane("surefold.remote.frames", "direction" to "in")
         val dropped = byLane("surefold.remote.dropped")
@@ -146,8 +151,7 @@ class RemoteNode internal constructor(
     private val up = ConcurrentHashMap.newKeySet<Pair<Node, Lane>>()
     private val timing = ConcurrentHashMap.newKeySet<Node>()
 
-    @Volatile
-    private var membershipEndsWatches = false
+    @Volatile private var membershipEndsWatches = false
 
     internal val transport = Transport(self, Inbound(), tls = tls)
 
@@ -169,8 +173,8 @@ class RemoteNode internal constructor(
 
     /**
      * The actor at [address] on another node, told messages written with [codec]. An incarnation of 0 is whichever
-     * actor is at the path when a message arrives; any other is that one actor, and a message for an earlier one is
-     * not delivered to its successor.
+     * actor is at the path when a message arrives; any other is that one actor, and a message for an earlier one is not
+     * delivered to its successor.
      */
     fun <M : Any> remote(address: Address, codec: MessageCodec<M>, lane: Lane? = null): ActorRef<M> {
         if (lane == Lane.Control) control += address.path
@@ -178,8 +182,8 @@ class RemoteNode internal constructor(
     }
 
     /**
-     * Hands ending watches on other nodes' actors to a membership, which knows better than a timer when a node is
-     * gone: from now on an unreachable peer ends none, and what this returns ends every watch on the peer it is given.
+     * Hands ending watches on other nodes' actors to a membership, which knows better than a timer when a node is gone:
+     * from now on an unreachable peer ends none, and what this returns ends every watch on the peer it is given.
      */
     fun takeOverWatches(): (Node) -> Unit {
         membershipEndsWatches = true
@@ -203,8 +207,10 @@ class RemoteNode internal constructor(
     /** Another node watches [address] here: it hears once the actor there ends, or at once if none is there. */
     private fun watchedFrom(peer: Node, address: Address) {
         if (!watched.add(peer to address)) return
-        val actor = exposed[address.path]?.ref
-            ?.takeIf { address.incarnation == 0L || it.address.incarnation == address.incarnation }
+        val actor =
+            exposed[address.path]?.ref?.takeIf {
+                address.incarnation == 0L || it.address.incarnation == address.incarnation
+            }
         if (actor == null) return send(peer, Frame(TERMINATED, 0, target(address)))
         keeper.tell(Keep.Watch(peer, address, actor))
     }
@@ -232,53 +238,56 @@ class RemoteNode internal constructor(
         data class Unreachable(val peer: Node) : Keep
     }
 
-    @Volatile
-    internal lateinit var keeper: ActorRef<Keep>
+    @Volatile internal lateinit var keeper: ActorRef<Keep>
 
     /**
-     * The node's own actor: it watches each actor another node watches here and tells that node when it ends, and
-     * waits out [unreachableAfter] on the scope's clock, so neither holds a thread, and both stop with the scope.
+     * The node's own actor: it watches each actor another node watches here and tells that node when it ends, and waits
+     * out [unreachableAfter] on the scope's clock, so neither holds a thread, and both stop with the scope.
      */
-    internal fun keeping() = behaviour<Keep, Watchers>(emptyMap()) { ctx, watchers, message ->
-        when (message) {
-            is Keep.Watch -> try {
-                ctx.watch(message.actor)
-                val peers = watchers[message.actor].orEmpty() + (message.peer to message.address)
-                become(watchers + (message.actor to peers))
-            } catch (unwatchable: IllegalArgumentException) {
-                // Not an actor on threads: it never ends as far as this node can tell, as before.
-                watched -= message.peer to message.address
-                log.log(
-                    LogLine(
-                        LogLevel.Warn,
-                        "surefold-actor-remote: ${message.peer} cannot watch ${message.actor}: $unwatchable",
-                        time.now(),
-                        unwatchable,
-                        origin = RemoteNode::class.java.name,
-                    ),
-                )
-                stay()
-            }
+    internal fun keeping() =
+        behaviour<Keep, Watchers>(emptyMap()) { ctx, watchers, message ->
+                when (message) {
+                    is Keep.Watch ->
+                        try {
+                            ctx.watch(message.actor)
+                            val peers = watchers[message.actor].orEmpty() + (message.peer to message.address)
+                            become(watchers + (message.actor to peers))
+                        } catch (unwatchable: IllegalArgumentException) {
+                            // Not an actor on threads: it never ends as far as this node can tell, as before.
+                            watched -= message.peer to message.address
+                            log.log(
+                                LogLine(
+                                    LogLevel.Warn,
+                                    "surefold-actor-remote: ${message.peer} cannot watch ${message.actor}: $unwatchable",
+                                    time.now(),
+                                    unwatchable,
+                                    origin = RemoteNode::class.java.name,
+                                ),
+                            )
+                            stay()
+                        }
 
-            is Keep.Quiet -> stay().also {
-                ctx.timers.after(message.peer, unreachableAfter, Keep.Unreachable(message.peer))
-            }
+                    is Keep.Quiet ->
+                        stay().also {
+                            ctx.timers.after(message.peer, unreachableAfter, Keep.Unreachable(message.peer))
+                        }
 
-            is Keep.Unreachable -> stay().also { unreachable(message.peer) }
-        }
-    }.onSignal { _, watchers, signal ->
-        when (signal) {
-            is Signal.Terminated -> {
-                watchers[signal.ref].orEmpty().forEach { (peer, address) ->
-                    watched -= peer to address
-                    send(peer, Frame(TERMINATED, 0, target(address)))
+                    is Keep.Unreachable -> stay().also { unreachable(message.peer) }
                 }
-                become(watchers - signal.ref)
             }
+            .onSignal { _, watchers, signal ->
+                when (signal) {
+                    is Signal.Terminated -> {
+                        watchers[signal.ref].orEmpty().forEach { (peer, address) ->
+                            watched -= peer to address
+                            send(peer, Frame(TERMINATED, 0, target(address)))
+                        }
+                        become(watchers - signal.ref)
+                    }
 
-            Signal.Stopping -> stay().also { transport.close() }
-        }
-    }
+                    Signal.Stopping -> stay().also { transport.close() }
+                }
+            }
 
     private class Pending<A : Any>(val reply: Reply<A>, val answers: MessageCodec<A>, val since: Long) {
         fun answer(payload: ByteArray, refs: Refs) = reply(answers.decode(payload, refs))

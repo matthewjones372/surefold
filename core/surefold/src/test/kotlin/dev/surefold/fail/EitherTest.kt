@@ -3,8 +3,8 @@ package dev.surefold.fail
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeSameInstanceAs
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CancellationException
+import org.junit.jupiter.api.Test
 
 class EitherTest {
 

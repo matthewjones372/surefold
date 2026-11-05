@@ -14,12 +14,14 @@ class ReportsTest {
 
     @Test
     fun `logs answers a failed test's lines, one string each, and leaves out a test that published none`() {
-        events.logs() shouldBe mapOf(
-            "logs, then fails" to listOf(
-                "INFO ${ReportsSuite::class.java.name} first",
-                "WARN ${ReportsSuite::class.java.name} second",
-            ),
-        )
+        events.logs() shouldBe
+            mapOf(
+                "logs, then fails" to
+                    listOf(
+                        "INFO ${ReportsSuite::class.java.name} first",
+                        "WARN ${ReportsSuite::class.java.name} second",
+                    ),
+            )
     }
 
     @Test

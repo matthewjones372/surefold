@@ -28,7 +28,6 @@ import dev.surefold.stream.runFold
 import dev.surefold.stream.start
 import dev.surefold.stream.take
 import dev.surefold.stream.tick
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.CyclicBarrier
 import java.util.concurrent.Executor
@@ -37,6 +36,7 @@ import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.milliseconds
+import org.junit.jupiter.api.Test
 
 /** A stream with no end: a run of it ends only when it is stopped. */
 private fun endless() = Stream.from(Iterable { generateSequence(1) { it + 1 }.iterator() })
@@ -52,8 +52,13 @@ class ActorsTest {
     @Test
     fun `a run pulls its whole chain on an actor, in batches, and ends with the answer`() {
         val exit = scope {
-            Stream.from(1..1_000).map { it * 2 }.filter { it % 3 == 0 }.runFold(0) { sum, n -> sum + n }
-                .run(Actors(this, batch = 7)).toCompletableFuture().join()
+            Stream.from(1..1_000)
+                .map { it * 2 }
+                .filter { it % 3 == 0 }
+                .runFold(0) { sum, n -> sum + n }
+                .run(Actors(this, batch = 7))
+                .toCompletableFuture()
+                .join()
         }
 
         exit shouldBe Exit.Done((1..1_000).map { it * 2 }.filter { it % 3 == 0 }.sum())
@@ -63,10 +68,20 @@ class ActorsTest {
     fun `a declared failure ends the run Failed, and a throw ends it Died`() {
         val exits = scope {
             val actors = Actors(this)
-            val failed = Stream.from(1..10).mapOrFail { if (it == 5) fail("five") else it }.runCollect()
-                .run(actors).toCompletableFuture().join()
-            val died = Stream.from(1..10).map { check(it < 5) { "too big" } }.runCollect()
-                .run(actors).toCompletableFuture().join()
+            val failed =
+                Stream.from(1..10)
+                    .mapOrFail { if (it == 5) fail("five") else it }
+                    .runCollect()
+                    .run(actors)
+                    .toCompletableFuture()
+                    .join()
+            val died =
+                Stream.from(1..10)
+                    .map { check(it < 5) { "too big" } }
+                    .runCollect()
+                    .run(actors)
+                    .toCompletableFuture()
+                    .join()
             failed to died
         }
 
@@ -78,9 +93,10 @@ class ActorsTest {
     fun `runs without end share the runners, so a short run started after them still ends`() {
         val answer = scope {
             val actors = Actors(this)
-            val endless = (1..Runtime.getRuntime().availableProcessors() * 4).map {
-                endless().runCollect().start(actors)
-            }
+            val endless =
+                (1..Runtime.getRuntime().availableProcessors() * 4).map {
+                    endless().runCollect().start(actors)
+                }
             val short = Stream.from(1..3).runCollect().run(actors).toCompletableFuture().join()
             endless.forEach { it.close() }
             short to actors.running
@@ -95,12 +111,15 @@ class ActorsTest {
             val actors = Actors(this)
             val given = LinkedBlockingQueue<Int>()
             val taken = CountDownLatch(2)
-            val running = Stream.blocking(
-                open = { given },
-                next = { queue -> queue.take().also { taken.countDown() }.takeIf { it > 0 } },
-                wake = { queue -> queue.put(0) },
-                close = { },
-            ).runCollect().start(actors)
+            val running =
+                Stream.blocking(
+                        open = { given },
+                        next = { queue -> queue.take().also { taken.countDown() }.takeIf { it > 0 } },
+                        wake = { queue -> queue.put(0) },
+                        close = {},
+                    )
+                    .runCollect()
+                    .start(actors)
             given.put(1)
             given.put(2)
             taken.await()
@@ -119,12 +138,17 @@ class ActorsTest {
         // Three bodies meet at the barrier each time, so a mapPar(3) that ran them one at a time would never pass it.
         val together = CyclicBarrier(3)
         val exit = scope {
-            Stream.from(1..9).mapPar(3) { n ->
-                most.accumulateAndGet(inFlight.incrementAndGet(), ::maxOf)
-                together.await(1, TimeUnit.MINUTES)
-                inFlight.decrementAndGet()
-                n * 10
-            }.runCollect().run(Actors(this)).toCompletableFuture().join()
+            Stream.from(1..9)
+                .mapPar(3) { n ->
+                    most.accumulateAndGet(inFlight.incrementAndGet(), ::maxOf)
+                    together.await(1, TimeUnit.MINUTES)
+                    inFlight.decrementAndGet()
+                    n * 10
+                }
+                .runCollect()
+                .run(Actors(this))
+                .toCompletableFuture()
+                .join()
         }
 
         exit shouldBe Exit.Done((1..9).map { it * 10 })
@@ -136,10 +160,20 @@ class ActorsTest {
         val exits = scope {
             val actors = Actors(this)
             val numbers: Stream<String, Int> = Stream.from(1..10)
-            val failed = numbers.mapPar(2) { if (it == 4) fail("four") else it }.runCollect()
-                .run(actors).toCompletableFuture().join()
-            val died = Stream.from(1..10).mapPar(2) { check(it < 4) { "too big" } }.runCollect()
-                .run(actors).toCompletableFuture().join()
+            val failed =
+                numbers
+                    .mapPar(2) { if (it == 4) fail("four") else it }
+                    .runCollect()
+                    .run(actors)
+                    .toCompletableFuture()
+                    .join()
+            val died =
+                Stream.from(1..10)
+                    .mapPar(2) { check(it < 4) { "too big" } }
+                    .runCollect()
+                    .run(actors)
+                    .toCompletableFuture()
+                    .join()
             failed to died
         }
 
@@ -152,8 +186,14 @@ class ActorsTest {
         val exits = scope {
             val actors = Actors(this, batch = 2)
             val all = Stream.from(1..100).buffer(3).runCollect().run(actors).toCompletableFuture().join()
-            val threw = Stream.from(1..10).map { check(it < 6) { "six" } }.buffer(3).runCollect()
-                .run(actors).toCompletableFuture().join()
+            val threw =
+                Stream.from(1..10)
+                    .map { check(it < 6) { "six" } }
+                    .buffer(3)
+                    .runCollect()
+                    .run(actors)
+                    .toCompletableFuture()
+                    .join()
             all to threw
         }
 
@@ -169,10 +209,15 @@ class ActorsTest {
             Thread.ofVirtual().start(task)
         }
         val exit = scope {
-            Stream.from(1..50).mapPar(4) { it + 1 }.buffer(8)
+            Stream.from(1..50)
+                .mapPar(4) { it + 1 }
+                .buffer(8)
                 .merge(Stream.from(1..3).flatMapMerge(2) { Stream.of(it * 1000) })
                 .conflateWithSeed({ listOf(it) }, { batch, n -> batch + n })
-                .runCollect().run(Actors(this, on = counting)).toCompletableFuture().join()
+                .runCollect()
+                .run(Actors(this, on = counting))
+                .toCompletableFuture()
+                .join()
         }
 
         exit.shouldBeInstanceOf<Exit.Done<List<List<Int>>>>().value.flatten().sorted() shouldBe
@@ -187,16 +232,22 @@ class ActorsTest {
         val together = CyclicBarrier(3)
         val exits = scope {
             val actors = Actors(this, batch = 3)
-            val merged = Stream.from(1..50).merge(Stream.from(101..150)).runCollect()
-                .run(actors).toCompletableFuture().join()
-            val flat = Stream.from(1..9).flatMapMerge<Nothing, Nothing, Int, Int>(3) { n ->
-                Stream.of(n).map {
-                    most.accumulateAndGet(inFlight.incrementAndGet(), ::maxOf)
-                    together.await(1, TimeUnit.MINUTES)
-                    inFlight.decrementAndGet()
-                    it
-                }
-            }.runCollect().run(actors).toCompletableFuture().join()
+            val merged =
+                Stream.from(1..50).merge(Stream.from(101..150)).runCollect().run(actors).toCompletableFuture().join()
+            val flat =
+                Stream.from(1..9)
+                    .flatMapMerge<Nothing, Nothing, Int, Int>(3) { n ->
+                        Stream.of(n).map {
+                            most.accumulateAndGet(inFlight.incrementAndGet(), ::maxOf)
+                            together.await(1, TimeUnit.MINUTES)
+                            inFlight.decrementAndGet()
+                            it
+                        }
+                    }
+                    .runCollect()
+                    .run(actors)
+                    .toCompletableFuture()
+                    .join()
             merged to flat
         }
 
@@ -211,10 +262,14 @@ class ActorsTest {
     fun `conflate folds what upstream sent while the reader was busy, and loses nothing`() {
         val sent = CountDownLatch(200)
         val exit = scope {
-            Stream.from(1..200).map { it.also { sent.countDown() } }
+            Stream.from(1..200)
+                .map { it.also { sent.countDown() } }
                 .conflateWithSeed({ listOf(it) }, { batch, n -> batch + n })
                 .map { batch -> batch.also { sent.await() } }
-                .runCollect().run(Actors(this)).toCompletableFuture().join()
+                .runCollect()
+                .run(Actors(this))
+                .toCompletableFuture()
+                .join()
         }
 
         val batches = exit.shouldBeInstanceOf<Exit.Done<List<List<Int>>>>().value
@@ -227,21 +282,27 @@ class ActorsTest {
         val tries = AtomicInteger()
         val exits = scope {
             val actors = Actors(this)
-            val ticks = Stream.tick(1.milliseconds, "tick").take(3).runCollect()
-                .run(actors).toCompletableFuture().join()
-            val groups = Stream.from(1..5).groupedWithin(2, 1.hours).runCollect()
-                .run(actors).toCompletableFuture().join()
-            val restarted = Stream.of(1).map { if (tries.incrementAndGet() == 1) error("first try") else it }
-                .restartOnDefect(Schedule.recurs(1)).runCollect()
-                .run(actors).toCompletableFuture().join()
+            val ticks =
+                Stream.tick(1.milliseconds, "tick").take(3).runCollect().run(actors).toCompletableFuture().join()
+            val groups =
+                Stream.from(1..5).groupedWithin(2, 1.hours).runCollect().run(actors).toCompletableFuture().join()
+            val restarted =
+                Stream.of(1)
+                    .map { if (tries.incrementAndGet() == 1) error("first try") else it }
+                    .restartOnDefect(Schedule.recurs(1))
+                    .runCollect()
+                    .run(actors)
+                    .toCompletableFuture()
+                    .join()
             Triple(ticks, groups, restarted)
         }
 
-        exits shouldBe Triple(
-            Exit.Done(listOf("tick", "tick", "tick")),
-            Exit.Done(listOf(listOf(1, 2), listOf(3, 4), listOf(5))),
-            Exit.Done(listOf(1)),
-        )
+        exits shouldBe
+            Triple(
+                Exit.Done(listOf("tick", "tick", "tick")),
+                Exit.Done(listOf(listOf(1, 2), listOf(3, 4), listOf(5))),
+                Exit.Done(listOf(1)),
+            )
     }
 
     @Test

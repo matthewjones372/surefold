@@ -9,19 +9,23 @@ import dev.surefold.actor.remote.WireOut
 import dev.surefold.actor.topic
 
 /**
- * The topic [name] across the cluster (spec 0082): a publish on any member reaches the subscribers of every member,
- * at most once each, in the order one member published. Each publish here is sent once to the topic of every other
- * `Up` member, whether or not it has subscribers, and goes no further from there. Every node calls this with the
- * same [name] and [codec].
+ * The topic [name] across the cluster (spec 0082): a publish on any member reaches the subscribers of every member, at
+ * most once each, in the order one member published. Each publish here is sent once to the topic of every other `Up`
+ * member, whether or not it has subscribers, and goes no further from there. Every node calls this with the same [name]
+ * and [codec].
  */
 fun <M : Any> Cluster.topic(name: String, codec: MessageCodec<M>): Topic<M> {
     val wire = ArriveCodec(codec)
-    val topic = scope.topic<M>(name) { message ->
-        view.members.filter { it.status == Status.Up && it.node != self }.forEach { member ->
-            remote.remote(Address(member.node.toString(), "/user/topic-$name", 0), wire)
-                .tell(TopicMessage.Arrive(message))
+    val topic =
+        scope.topic<M>(name) { message ->
+            view.members
+                .filter { it.status == Status.Up && it.node != self }
+                .forEach { member ->
+                    remote
+                        .remote(Address(member.node.toString(), "/user/topic-$name", 0), wire)
+                        .tell(TopicMessage.Arrive(message))
+                }
         }
-    }
     remote.expose(topic.ref, wire)
     return topic
 }

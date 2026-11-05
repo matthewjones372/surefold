@@ -21,8 +21,7 @@ fun <A : Any> Pipe.Companion.takeWhile(predicate: (A) -> Boolean): Pipe<Nothing,
 fun <E, In, Out : Any> Pipe<E, In, Out>.takeWhile(predicate: (Out) -> Boolean): Pipe<E, In, Out> =
     via(Pipe.takeWhile(predicate))
 
-fun <E, A : Any> Stream<E, A>.takeWhile(predicate: (A) -> Boolean): Stream<E, A> =
-    via(Pipe.takeWhile(predicate))
+fun <E, A : Any> Stream<E, A>.takeWhile(predicate: (A) -> Boolean): Stream<E, A> = via(Pipe.takeWhile(predicate))
 
 /** Elements from where [predicate] first answers false, that one included. */
 fun <A : Any> Pipe.Companion.dropWhile(predicate: (A) -> Boolean): Pipe<Nothing, A, A> =
@@ -31,8 +30,7 @@ fun <A : Any> Pipe.Companion.dropWhile(predicate: (A) -> Boolean): Pipe<Nothing,
 fun <E, In, Out : Any> Pipe<E, In, Out>.dropWhile(predicate: (Out) -> Boolean): Pipe<E, In, Out> =
     via(Pipe.dropWhile(predicate))
 
-fun <E, A : Any> Stream<E, A>.dropWhile(predicate: (A) -> Boolean): Stream<E, A> =
-    via(Pipe.dropWhile(predicate))
+fun <E, A : Any> Stream<E, A>.dropWhile(predicate: (A) -> Boolean): Stream<E, A> = via(Pipe.dropWhile(predicate))
 
 /** The elements [predicate] answers false for, which is [filter]'s mirror and Pekko's own name. */
 fun <A : Any> Pipe.Companion.filterNot(predicate: (A) -> Boolean): Pipe<Nothing, A, A> =
@@ -41,5 +39,4 @@ fun <A : Any> Pipe.Companion.filterNot(predicate: (A) -> Boolean): Pipe<Nothing,
 fun <E, In, Out : Any> Pipe<E, In, Out>.filterNot(predicate: (Out) -> Boolean): Pipe<E, In, Out> =
     via(Pipe.filterNot(predicate))
 
-fun <E, A : Any> Stream<E, A>.filterNot(predicate: (A) -> Boolean): Stream<E, A> =
-    via(Pipe.filterNot(predicate))
+fun <E, A : Any> Stream<E, A>.filterNot(predicate: (A) -> Boolean): Stream<E, A> = via(Pipe.filterNot(predicate))

@@ -31,8 +31,9 @@ object CollapseSuite : Suite() {
 
         test("drop after drop is one drop of both counts, and a sum past Long's range stays at its end") {
             numbers.drop(1).drop(2).node.collapsed().shouldBeInstanceOf<Node.Drop> { it.n shouldBe 3 }
-            numbers.drop(Long.MAX_VALUE).drop(2).node.collapsed()
-                .shouldBeInstanceOf<Node.Drop> { it.n shouldBe Long.MAX_VALUE }
+            numbers.drop(Long.MAX_VALUE).drop(2).node.collapsed().shouldBeInstanceOf<Node.Drop> {
+                it.n shouldBe Long.MAX_VALUE
+            }
         }
 
         test("a recovery over a stream that cannot fail is removed, and one over a stream that can is kept") {
@@ -46,7 +47,11 @@ object CollapseSuite : Suite() {
         }
 
         test("mapError and orElse over a stream that cannot fail are removed too") {
-            numbers.filter { it > 1 }.mapError { _: Nothing -> Odd(0) }.node.collapsed()
+            numbers
+                .filter { it > 1 }
+                .mapError { _: Nothing -> Odd(0) }
+                .node
+                .collapsed()
                 .shouldBeInstanceOf<Node.Filter>()
             numbers.orElse(Stream.of(9)).node.collapsed() shouldBeSameInstanceAs numbers.node
         }

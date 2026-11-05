@@ -13,9 +13,9 @@ private const val NANOS_PER_SECOND = 1_000_000_000.0
 private const val SAMPLE_EVERY = 64
 
 /**
- * Where a run's numbers go, and what they are filed under. Each stage reports `surefold.stream.elements`,
- * the elements it emitted, and `surefold.stream.busy`, the time inside its own body for one element in
- * [sampleEvery], tagged `pipeline`, `stage`, `at` and `step`, its place in the order data moves.
+ * Where a run's numbers go, and what they are filed under. Each stage reports `surefold.stream.elements`, the elements
+ * it emitted, and `surefold.stream.busy`, the time inside its own body for one element in [sampleEvery], tagged
+ * `pipeline`, `stage`, `at` and `step`, its place in the order data moves.
  */
 class Measured(
     val pipeline: String,
@@ -28,8 +28,8 @@ class Measured(
 }
 
 /**
- * This run with every stage measured. Built once and started as often as needed, as any run is: the
- * instruments are looked up here, not per element. An unmeasured run is untouched and pays nothing.
+ * This run with every stage measured. Built once and started as often as needed, as any run is: the instruments are
+ * looked up here, not per element. An unmeasured run is untouched and pays nothing.
  */
 fun <E, R> Run<E, R>.measured(by: Measured): Run<E, R> = Run(node.measuredBy(by), end)
 
@@ -48,22 +48,25 @@ fun Node.measuredBy(by: Measured): Node {
 }
 
 /**
- * Every node once, each after the nodes it reads from: the order data moves, and the order a rendering
- * and a measurement number the stages in.
+ * Every node once, each after the nodes it reads from: the order data moves, and the order a rendering and a
+ * measurement number the stages in.
  */
 @StreamSpi
 fun Node.dataOrder(): List<Node> =
-    children().fold(emptyList<Node>()) { seen, child ->
-        seen + child.dataOrder().filter { n -> seen.none { it === n } }
-    }.let { before -> if (before.any { it === this }) before else before + this }
+    children()
+        .fold(emptyList<Node>()) { seen, child ->
+            seen + child.dataOrder().filter { n -> seen.none { it === n } }
+        }
+        .let { before -> if (before.any { it === this }) before else before + this }
 
 /**
- * What a backend calls as elements pass a [Node.Probed]: [Watch.emitted] as one goes by, [Watch.asked] when
- * the stage after it asks for the next. A backend takes one [watch] per run, so two runs of one measured
- * description never share a timestamp.
+ * What a backend calls as elements pass a [Node.Probed]: [Watch.emitted] as one goes by, [Watch.asked] when the stage
+ * after it asks for the next. A backend takes one [watch] per run, so two runs of one measured description never share
+ * a timestamp.
  */
 @StreamSpi
-class Probe internal constructor(
+class Probe
+internal constructor(
     private val elements: Counter?,
     private val waiting: Lazy<Histogram>,
     private val every: Long,
@@ -92,12 +95,13 @@ private const val NOT_WAITING = -1L
 
 /** One stage's instruments. Each histogram is looked up on its first sample, so a stage reports only what it has. */
 private class Instruments(by: Measured, node: Node, step: Int) {
-    private val tags = mapOf(
-        "pipeline" to by.pipeline,
-        "stage" to node.operator,
-        "at" to (node.site ?: "-"),
-        "step" to step.toString(),
-    )
+    private val tags =
+        mapOf(
+            "pipeline" to by.pipeline,
+            "stage" to node.operator,
+            "at" to (node.site ?: "-"),
+            "step" to step.toString(),
+        )
     val elements: Counter = by.metrics.counter("surefold.stream.elements", tags)
     private val busy: Histogram by lazy { by.metrics.histogram("surefold.stream.busy", tags) }
     private val waiting: Lazy<Histogram> = lazy { by.metrics.histogram("surefold.stream.waiting", tags) }
@@ -124,9 +128,9 @@ private fun Node.isStep(): Boolean =
     this is Node.Map || this is Node.MapOrFail || this is Node.Filter || this is Node.FilterNot
 
 /**
- * The tree with each stage's body timed and its elements counted and watched. A run of fusable operators
- * counts inside its bodies and is watched by one probe after its last step, so a measured run fuses as
- * an unmeasured one does; every other stage is followed by a probe of its own.
+ * The tree with each stage's body timed and its elements counted and watched. A run of fusable operators counts inside
+ * its bodies and is watched by one probe after its last step, so a measured run fuses as an unmeasured one does; every
+ * other stage is followed by a probe of its own.
  */
 private fun Node.measured(of: (Node) -> Instruments): Node {
     val stage = of(this)
@@ -137,38 +141,69 @@ private fun Node.measured(of: (Node) -> Instruments): Node {
     return when (this) {
         is Node.Map -> Node.Map(child(upstream), { a -> stage.timed { f(a) }.also { stage.elements.increment() } }, at)
 
-        is Node.MapOrFail -> Node.MapOrFail(
-            child(upstream),
-            { a -> stage.timed { f(a) }.also { stage.elements.increment() } },
-            at,
-        )
+        is Node.MapOrFail ->
+            Node.MapOrFail(
+                child(upstream),
+                { a -> stage.timed { f(a) }.also { stage.elements.increment() } },
+                at,
+            )
 
         is Node.Filter -> Node.Filter(child(upstream), stage.keeping(predicate, keep = true), at)
 
         is Node.FilterNot -> Node.FilterNot(child(upstream), stage.keeping(predicate, keep = false), at)
 
-        is Node.MapConcat -> Node.Probed(
-            Node.MapConcat(child(upstream), { a -> stage.timed { f(a) } }, at),
-            stage.probe(counts = true),
-        )
+        is Node.MapConcat ->
+            Node.Probed(
+                Node.MapConcat(child(upstream), { a -> stage.timed { f(a) } }, at),
+                stage.probe(counts = true),
+            )
 
-        is Node.MapPar -> Node.Probed(
-            Node.MapPar(child(upstream), parallelism, on, { a -> stage.timed { f(a) } }, at, key, ordered),
-            stage.probe(counts = true),
-        )
+        is Node.MapPar ->
+            Node.Probed(
+                Node.MapPar(child(upstream), parallelism, on, { a -> stage.timed { f(a) } }, at, key, ordered),
+                stage.probe(counts = true),
+            )
 
         Node.Hole -> this
 
-        is Node.Native, is Node.Elements, is Node.Single, is Node.Tick, is Node.FromStage, is Node.Fail,
+        is Node.Native,
+        is Node.Elements,
+        is Node.Single,
+        is Node.Tick,
+        is Node.FromStage,
+        is Node.Fail,
         is Node.Blocking,
-        Node.Empty, is Node.Merge, is Node.Interleave, is Node.ZipWith, is Node.Prepend, is Node.Concat,
-        is Node.RestartOnDefect, is Node.Stage, is Node.Take, is Node.Drop, is Node.TakeWhile, is Node.DropWhile,
-        is Node.Grouped, is Node.Sliding, is Node.Buffer, is Node.GroupedWithin, is Node.Scan, is Node.StatefulMap,
-        is Node.MapAsync, is Node.Conflate, is Node.Either, is Node.Absolve, is Node.CatchAll, is Node.MapError,
-        is Node.OrFailIfEmpty, is Node.FlatMap, is Node.Fused, is Node.Probed,
-        -> Node.Probed(withChildren(child), stage.probe(counts = true))
+        Node.Empty,
+        is Node.Merge,
+        is Node.Interleave,
+        is Node.ZipWith,
+        is Node.Prepend,
+        is Node.Concat,
+        is Node.RestartOnDefect,
+        is Node.Stage,
+        is Node.Take,
+        is Node.Drop,
+        is Node.TakeWhile,
+        is Node.DropWhile,
+        is Node.Grouped,
+        is Node.Sliding,
+        is Node.Buffer,
+        is Node.GroupedWithin,
+        is Node.Scan,
+        is Node.StatefulMap,
+        is Node.MapAsync,
+        is Node.Conflate,
+        is Node.Either,
+        is Node.Absolve,
+        is Node.CatchAll,
+        is Node.MapError,
+        is Node.OrFailIfEmpty,
+        is Node.FlatMap,
+        is Node.Fused,
+        is Node.Probed -> Node.Probed(withChildren(child), stage.probe(counts = true))
     }
 }
 
-private fun Instruments.keeping(predicate: (Any) -> Boolean, keep: Boolean): (Any) -> Boolean =
-    { a -> timed { predicate(a) }.also { kept -> if (kept == keep) elements.increment() } }
+private fun Instruments.keeping(predicate: (Any) -> Boolean, keep: Boolean): (Any) -> Boolean = { a ->
+    timed { predicate(a) }.also { kept -> if (kept == keep) elements.increment() }
+}

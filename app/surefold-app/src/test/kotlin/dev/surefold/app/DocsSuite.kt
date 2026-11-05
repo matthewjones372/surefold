@@ -9,9 +9,11 @@ import java.io.File
 /** What the fence-compiling tests do not check: the order of an example's imports, and the coordinates it names. */
 object DocsSuite : Suite() {
     private fun pages(root: File, then: (List<File>) -> Unit) =
-        File(root, "docs").listFiles { file -> file.extension == "md" }.shouldNotBeNull { docs ->
-            then(listOf(File(root, "README.md")) + docs.sortedBy { it.name })
-        }
+        File(root, "docs")
+            .listFiles { file -> file.extension == "md" }
+            .shouldNotBeNull { docs ->
+                then(listOf(File(root, "README.md")) + docs.sortedBy { it.name })
+            }
 
     private fun root(then: (File) -> Unit) =
         System.getProperty("surefold.app.repoRoot").shouldNotBeNull { root -> then(File(root)) }
@@ -21,7 +23,8 @@ object DocsSuite : Suite() {
             root { root ->
                 pages(root) { pages ->
                     val unordered = pages.flatMap { page ->
-                        importBlocks(page.readText()).filter { it != it.sortedWith(ktlintImportOrder) }
+                        importBlocks(page.readText())
+                            .filter { it != it.sortedWith(ktlintImportOrder) }
                             .map { "${page.name}: ${it.first()}" }
                     }
                     unordered shouldBe emptyList()
@@ -40,7 +43,8 @@ object DocsSuite : Suite() {
                             taggedVersion(modulesPage) shouldBe released
                         }
                         val wrong = pages.flatMap { page ->
-                            COORDINATE.findAll(page.readText()).map { it.groupValues }
+                            COORDINATE.findAll(page.readText())
+                                .map { it.groupValues }
                                 .filterNot { (_, module, version) ->
                                     module in published && (version == released || version.endsWith("-SNAPSHOT"))
                                 }
@@ -67,24 +71,32 @@ internal fun taggedVersion(modules: String): String? = Regex("""after `v([^`]+)`
 
 /** Each run of consecutive `import` lines inside a ```kotlin fence. */
 internal fun importBlocks(page: String): List<List<String>> =
-    Regex("""```kotlin\n(.*?)```""", RegexOption.DOT_MATCHES_ALL).findAll(page).flatMap { fence ->
-        fence.groupValues[1].lines().fold(listOf(emptyList<String>())) { blocks, line ->
-            when {
-                line.startsWith("import ") -> blocks.dropLast(1) + listOf(blocks.last() + line)
-                blocks.last().isEmpty() -> blocks
-                else -> blocks + listOf(emptyList())
-            }
-        }.filter { it.isNotEmpty() }
-    }.toList()
+    Regex("""```kotlin\n(.*?)```""", RegexOption.DOT_MATCHES_ALL)
+        .findAll(page)
+        .flatMap { fence ->
+            fence.groupValues[1]
+                .lines()
+                .fold(listOf(emptyList<String>())) { blocks, line ->
+                    when {
+                        line.startsWith("import ") -> blocks.dropLast(1) + listOf(blocks.last() + line)
+                        blocks.last().isEmpty() -> blocks
+                        else -> blocks + listOf(emptyList())
+                    }
+                }
+                .filter { it.isNotEmpty() }
+        }
+        .toList()
 
 /** ktlint's `intellij_idea` layout, `*,java.**,javax.**,kotlin.**,^`: each group in plain string order. */
-internal val ktlintImportOrder: Comparator<String> = compareBy<String> { line ->
-    val path = line.removePrefix("import ")
-    when {
-        " as " in path -> 4
-        path.startsWith("java.") -> 1
-        path.startsWith("javax.") -> 2
-        path.startsWith("kotlin.") -> 3
-        else -> 0
-    }
-}.thenBy { it.removePrefix("import ").substringBefore(" as ").replace("`", "") }
+internal val ktlintImportOrder: Comparator<String> =
+    compareBy<String> { line ->
+            val path = line.removePrefix("import ")
+            when {
+                " as " in path -> 4
+                path.startsWith("java.") -> 1
+                path.startsWith("javax.") -> 2
+                path.startsWith("kotlin.") -> 3
+                else -> 0
+            }
+        }
+        .thenBy { it.removePrefix("import ").substringBefore(" as ").replace("`", "") }

@@ -6,8 +6,8 @@ import org.junit.jupiter.api.Test
 import org.junit.platform.commons.annotation.Testable
 
 /**
- * A suite object is `@Testable` through its superclasses, which is where IntelliJ looks for it before giving a class
- * a run icon (spec 0251). The annotation is not `@Inherited`, so the walk up the hierarchy is the test's to make.
+ * A suite object is `@Testable` through its superclasses, which is where IntelliJ looks for it before giving a class a
+ * run icon (spec 0251). The annotation is not `@Inherited`, so the walk up the hierarchy is the test's to make.
  */
 class TestableTest {
 

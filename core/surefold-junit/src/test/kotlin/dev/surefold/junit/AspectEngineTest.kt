@@ -31,8 +31,11 @@ class AspectEngineTest {
     private val tagged = arrayOf(TaggedSuite::class.java, PartlyTaggedSuite::class.java, MixedSuite::class.java)
 
     private fun run(vararg suites: Class<*>, filters: List<Filter<*>> = emptyList()): Events =
-        EngineTestKit.engine("surefold").selectors(*suites.map { selectClass(it) }.toTypedArray())
-            .filters(*filters.toTypedArray()).execute().testEvents()
+        EngineTestKit.engine("surefold")
+            .selectors(*suites.map { selectClass(it) }.toTypedArray())
+            .filters(*filters.toTypedArray())
+            .execute()
+            .testEvents()
 
     @Test
     fun `including a tag runs the tests tagged with it, and every test of a suite tagged with it`() {
@@ -51,10 +54,11 @@ class AspectEngineTest {
 
     @Test
     fun `a test carries its suite's tags and its own`() {
-        run(PartlyTaggedSuite::class.java).started().tags() shouldBe mapOf(
-            "tagged" to setOf("suite", "io"),
-            "untagged" to setOf("suite"),
-        )
+        run(PartlyTaggedSuite::class.java).started().tags() shouldBe
+            mapOf(
+                "tagged" to setOf("suite", "io"),
+                "untagged" to setOf("suite"),
+            )
     }
 
     @Test

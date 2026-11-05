@@ -24,8 +24,7 @@ infix fun <T> Iterable<T>.shouldContain(element: T) = verdict(missing(element))
 infix fun <T> Iterable<T>.shouldNotContain(element: T) = verdict(holding(element))
 
 /** Holds if this has exactly [elements], each as many times, in any order; fails carrying the elements found. */
-infix fun <T> Iterable<T>.shouldContainExactlyInAnyOrder(elements: Iterable<T>) =
-    verdict(missingInAnyOrder(elements))
+infix fun <T> Iterable<T>.shouldContainExactlyInAnyOrder(elements: Iterable<T>) = verdict(missingInAnyOrder(elements))
 
 /** Holds if this has exactly [elements], each as many times, in any order. */
 fun <T> Iterable<T>.shouldContainExactlyInAnyOrder(vararg elements: T) =

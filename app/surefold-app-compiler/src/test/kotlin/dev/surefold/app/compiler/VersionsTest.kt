@@ -7,8 +7,8 @@ import org.jetbrains.kotlin.config.KotlinCompilerVersion
 import org.junit.jupiter.api.Test
 
 /**
- * The version guard, tested where it can be: the compiler on this module's own test classpath is
- * the one it was built against, so the answer here is the answer a consumer on the same Kotlin gets.
+ * The version guard, tested where it can be: the compiler on this module's own test classpath is the one it was built
+ * against, so the answer here is the answer a consumer on the same Kotlin gets.
  */
 class VersionsTest {
 

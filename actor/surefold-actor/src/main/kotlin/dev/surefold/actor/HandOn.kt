@@ -22,7 +22,8 @@ class HandOn<K : Any, M : Any> {
     private val waiting = LinkedHashMap<K, ArrayDeque<Kept<M>>>()
 
     /** The keys anything is kept under. */
-    val keys: Set<K> get() = waiting.keys
+    val keys: Set<K>
+        get() = waiting.keys
 
     operator fun contains(key: K): Boolean = key in waiting
 
@@ -49,8 +50,8 @@ class HandOn<K : Any, M : Any> {
     fun drain(ctx: Ctx<*>): Boolean {
         var handed = 0
         waiting.values.removeIf { kept ->
-            while (kept.isNotEmpty() &&
-                kept.first().let { Carriers.within(it.carried) { it.to.tellIfRoom(it.message) } }
+            while (
+                kept.isNotEmpty() && kept.first().let { Carriers.within(it.carried) { it.to.tellIfRoom(it.message) } }
             ) {
                 kept.removeFirst()
                 handed++

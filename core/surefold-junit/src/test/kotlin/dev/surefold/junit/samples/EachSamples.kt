@@ -22,7 +22,9 @@ object EachSuite : Suite() {
             listOf(Case("1s", 1.seconds), Case("2m", 2.minutes), Case("90m", 1.seconds)),
             aspects = tag("parsing"),
             named = { it.text },
-        ) { case -> expect(Duration.parse(case.text) == case.expected) }
+        ) { case ->
+            expect(Duration.parse(case.text) == case.expected)
+        }
         testEach("nothing to check", emptyList<Int>()) { expect(it > 0) }
     }
 }

@@ -8,8 +8,9 @@ import org.junit.jupiter.api.Test
 class DrainingCompileTest {
     @Test
     fun `cleanup bodies permit non-local returns`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             import dev.surefold.draining
             import dev.surefold.uninterruptible
             import dev.surefold.onThrow
@@ -17,14 +18,15 @@ class DrainingCompileTest {
             fun waitForEnd(): String { uninterruptible { return "done" } }
             fun acquire(): String { onThrow({ println(it::class) }) { return "done" } }
             """,
-        )
+            )
         withClue(compiled.messages.joinToString("\n")) { compiled.exit shouldBe ExitCode.OK }
     }
 
     @Test
     fun `the eaten-failure checker flags a raw interrupt catch around await but not the primitives`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             import dev.surefold.draining
             import dev.surefold.fail.Either
             import dev.surefold.fail.attempt
@@ -43,7 +45,7 @@ class DrainingCompileTest {
             }
             fun observed() = attempt<String, Int> { onThrow({ println(it) }) { rows.bind() } }
             """,
-        )
+            )
         withClue(compiled.messages.joinToString("\n")) {
             compiled.exit shouldBe ExitCode.OK
             compiled.surefold.size shouldBe 1
@@ -53,12 +55,13 @@ class DrainingCompileTest {
 
     @Test
     fun `throw observers cannot recover through a non-local return`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             import dev.surefold.onThrow
             fun escaped(): Int = onThrow({ return 42 }) { error("original") }
             """,
-        )
+            )
         withClue(compiled.messages.joinToString("\n")) {
             compiled.exit shouldBe ExitCode.COMPILATION_ERROR
             compiled.messages.any { "Unresolved reference" in it } shouldBe false
@@ -67,12 +70,13 @@ class DrainingCompileTest {
 
     @Test
     fun `interrupt observers cannot finish a wait through a non-local return`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             import dev.surefold.uninterruptible
             fun escaped(): Int = uninterruptible(onInterrupted = { return 42 }) { 1 }
             """,
-        )
+            )
         withClue(compiled.messages.joinToString("\n")) {
             compiled.exit shouldBe ExitCode.COMPILATION_ERROR
             compiled.messages.any { "Unresolved reference" in it } shouldBe false

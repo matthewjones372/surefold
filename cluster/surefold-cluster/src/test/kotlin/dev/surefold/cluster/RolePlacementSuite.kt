@@ -26,17 +26,19 @@ import kotlin.time.Duration.Companion.minutes
 /** Asks where the actor it reaches runs. */
 private data class WhereAreYou(val reply: Reply<String>)
 
-private val whereCodec = object : MessageCodec<WhereAreYou> {
-    override fun write(message: WhereAreYou, out: WireOut) = out.reply(message.reply, Codecs.string)
+private val whereCodec =
+    object : MessageCodec<WhereAreYou> {
+        override fun write(message: WhereAreYou, out: WireOut) = out.reply(message.reply, Codecs.string)
 
-    override fun read(input: WireIn): WhereAreYou = WhereAreYou(input.reply(Codecs.string))
-}
-
-private fun answering(on: String) = behaviour<WhereAreYou, Unit>(Unit) { _, _, asked ->
-    stay().also {
-        asked.reply(on)
+        override fun read(input: WireIn): WhereAreYou = WhereAreYou(input.reply(Codecs.string))
     }
-}
+
+private fun answering(on: String) =
+    behaviour<WhereAreYou, Unit>(Unit) { _, _, asked ->
+        stay().also {
+            asked.reply(on)
+        }
+    }
 
 private val lively =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
@@ -46,23 +48,25 @@ private class RoleNode(val name: String, port: Int, seeds: Discovery, roles: Set
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Triple<Cluster, Sharded<WhereAreYou>, ActorRef<WhereAreYou>>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val cluster = cluster(node(name, port), seeds, lively, roles = roles)
-            val ledgers = cluster.sharding("ledger", whereCodec, 1.minutes, role = "ledger") { answering(name) }
-            val clock = cluster.singleton("clock", whereCodec, role = "ledger") { answering(name) }
-            opened.set(Triple(cluster, ledgers, clock))
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val cluster = cluster(node(name, port), seeds, lively, roles = roles)
+                val ledgers = cluster.sharding("ledger", whereCodec, 1.minutes, role = "ledger") { answering(name) }
+                val clock = cluster.singleton("clock", whereCodec, role = "ledger") { answering(name) }
+                opened.set(Triple(cluster, ledgers, clock))
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     private fun opened(): Triple<Cluster, Sharded<WhereAreYou>, ActorRef<WhereAreYou>> {
         ready.await()
         return opened.get()
     }
 
-    val cluster: Cluster get() = opened().first
+    val cluster: Cluster
+        get() = opened().first
 
     fun where(id: String): String = opened().second.entity(id).ask(1.minutes) { WhereAreYou(it) }.getOrNull()!!
 
@@ -82,12 +86,13 @@ object RolePlacementSuite : Suite() {
             val ports = List(5) { freePort() }
             val seeds = Discovery.static(*ports.take(4).map { Node("", "127.0.0.1", it) }.toTypedArray())
             val ledger = setOf("ledger")
-            val offices = mutableListOf(
-                RoleNode("o1", ports[0], seeds, ledger),
-                RoleNode("o2", ports[1], seeds, setOf("web")),
-                RoleNode("o3", ports[2], seeds, ledger),
-                RoleNode("o4", ports[3], seeds, setOf("web")),
-            )
+            val offices =
+                mutableListOf(
+                    RoleNode("o1", ports[0], seeds, ledger),
+                    RoleNode("o2", ports[1], seeds, setOf("web")),
+                    RoleNode("o3", ports[2], seeds, ledger),
+                    RoleNode("o4", ports[3], seeds, setOf("web")),
+                )
             try {
                 offices.forAll { o ->
                     o.cluster.await(1.minutes) { v -> v.members.count { it.status == Status.Up } == 4 } shouldBe true

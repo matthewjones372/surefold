@@ -3,9 +3,9 @@ package dev.surefold.assert
 import dev.surefold.fail.Either
 import dev.surefold.fail.left
 import dev.surefold.fail.right
+import java.io.File
 import org.junit.jupiter.api.Test
 import org.opentest4j.AssertionFailedError
-import java.io.File
 
 class EitherMatchersTest {
 
@@ -30,12 +30,14 @@ class EitherMatchersTest {
     fun `a failure says what was expected and what was found, then where and the line itself`() {
         val failed = shouldThrow<AssertionFailedError> { left shouldBeRight 42 }
 
-        failed.message shouldBe """
+        failed.message shouldBe
+            """
             expected: Right(value=42)
             but was:  Left(value=Bad(why=broken))
             at EitherMatchersTest.kt:${lineOf("{ left shouldBeRight 42 }")}
                 val failed = shouldThrow<AssertionFailedError> { left shouldBeRight 42 }
-        """.trimIndent()
+        """
+                .trimIndent()
     }
 
     @Test
@@ -68,10 +70,11 @@ class EitherMatchersTest {
 
         val failed = shouldThrow<AssertionFailedError> { long shouldBeRight 42 }
 
-        failed.message!!.lines().take(2) shouldBe listOf(
-            "expected: Right(value=42) of kotlin.Int",
-            "but was:  Right(value=42) of kotlin.Long",
-        )
+        failed.message!!.lines().take(2) shouldBe
+            listOf(
+                "expected: Right(value=42) of kotlin.Int",
+                "but was:  Right(value=42) of kotlin.Long",
+            )
     }
 
     @Test
@@ -85,6 +88,6 @@ class EitherMatchersTest {
 
 /** The line of this file that holds [text], as a stack frame numbers it. */
 private fun lineOf(text: String): Int =
-    File("src/test/kotlin/dev/surefold/assert/EitherMatchersTest.kt")
-        .readLines()
-        .indexOfFirst { text in it && "lineOf" !in it } + 1
+    File("src/test/kotlin/dev/surefold/assert/EitherMatchersTest.kt").readLines().indexOfFirst {
+        text in it && "lineOf" !in it
+    } + 1

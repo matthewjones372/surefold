@@ -21,23 +21,26 @@ internal sealed interface Moved {
 
 internal data object Funds
 
-internal val movedCodec = object : EventCodec<Moved> {
-    override fun encode(event: Moved): ByteArray = when (event) {
-        is Moved.Debited -> "D:${event.pence}"
-        is Moved.Credited -> "C:${event.pence}"
-    }.toByteArray()
+internal val movedCodec =
+    object : EventCodec<Moved> {
+        override fun encode(event: Moved): ByteArray =
+            when (event) {
+                is Moved.Debited -> "D:${event.pence}"
+                is Moved.Credited -> "C:${event.pence}"
+            }.toByteArray()
 
-    override fun decode(bytes: ByteArray): Moved {
-        val (kind, pence) = String(bytes).split(":")
-        return if (kind == "D") Moved.Debited(pence.toLong()) else Moved.Credited(pence.toLong())
+        override fun decode(bytes: ByteArray): Moved {
+            val (kind, pence) = String(bytes).split(":")
+            return if (kind == "D") Moved.Debited(pence.toLong()) else Moved.Credited(pence.toLong())
+        }
     }
-}
 
-internal val fundsCodec = object : EventCodec<Funds> {
-    override fun encode(event: Funds): ByteArray = "funds".toByteArray()
+internal val fundsCodec =
+    object : EventCodec<Funds> {
+        override fun encode(event: Funds): ByteArray = "funds".toByteArray()
 
-    override fun decode(bytes: ByteArray): Funds = Funds
-}
+        override fun decode(bytes: ByteArray): Funds = Funds
+    }
 
 internal fun accountOf(id: String) = PersistenceId("account", id)
 
@@ -45,26 +48,27 @@ internal fun account(
     id: String,
     remember: Duration = 30.days,
     snapshots: Snapshotting<Long>? = null,
-) = keyed<Move, Moved, Long, Funds>(
-    id = accountOf(id),
-    remember = remember,
-    snapshots = snapshots,
-    empty = 0L,
-    codec = movedCodec,
-    refusals = fundsCodec,
-    decide = { balance, move ->
-        when (move) {
-            is Move.Debit -> if (balance < move.pence) refuse(Funds) else accept(Moved.Debited(move.pence))
-            is Move.Credit -> accept(Moved.Credited(move.pence))
-        }
-    },
-    event = { balance, moved ->
-        when (moved) {
-            is Moved.Debited -> balance - moved.pence
-            is Moved.Credited -> balance + moved.pence
-        }
-    },
-)
+) =
+    keyed<Move, Moved, Long, Funds>(
+        id = accountOf(id),
+        remember = remember,
+        snapshots = snapshots,
+        empty = 0L,
+        codec = movedCodec,
+        refusals = fundsCodec,
+        decide = { balance, move ->
+            when (move) {
+                is Move.Debit -> if (balance < move.pence) refuse(Funds) else accept(Moved.Debited(move.pence))
+                is Move.Credit -> accept(Moved.Credited(move.pence))
+            }
+        },
+        event = { balance, moved ->
+            when (moved) {
+                is Moved.Debited -> balance - moved.pence
+                is Moved.Credited -> balance + moved.pence
+            }
+        },
+    )
 
 object KeyedSuite : Suite() {
     init {

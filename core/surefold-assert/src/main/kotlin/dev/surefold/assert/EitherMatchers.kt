@@ -5,10 +5,11 @@ package dev.surefold.assert
 import dev.surefold.fail.Either
 
 /** Asserts this is a [Either.Right] and returns its value. */
-fun <E, A> Either<E, A>.shouldBeRight(): A = when (this) {
-    is Either.Right -> value
-    is Either.Left -> thrown(Miss(null, this, "a Right"))
-}
+fun <E, A> Either<E, A>.shouldBeRight(): A =
+    when (this) {
+        is Either.Right -> value
+        is Either.Left -> thrown(Miss(null, this, "a Right"))
+    }
 
 /** Asserts this is a [Either.Right] holding [expected], and returns it. */
 infix fun <E, A> Either<E, A>.shouldBeRight(expected: A): A {
@@ -17,10 +18,11 @@ infix fun <E, A> Either<E, A>.shouldBeRight(expected: A): A {
 }
 
 /** Asserts this is a [Either.Left] and returns its error. */
-fun <E, A> Either<E, A>.shouldBeLeft(): E = when (this) {
-    is Either.Left -> value
-    is Either.Right -> thrown(Miss(null, this, "a Left"))
-}
+fun <E, A> Either<E, A>.shouldBeLeft(): E =
+    when (this) {
+        is Either.Left -> value
+        is Either.Right -> thrown(Miss(null, this, "a Left"))
+    }
 
 /** Asserts this is a [Either.Left] holding [expected], and returns it. */
 infix fun <E, A> Either<E, A>.shouldBeLeft(expected: E): E {

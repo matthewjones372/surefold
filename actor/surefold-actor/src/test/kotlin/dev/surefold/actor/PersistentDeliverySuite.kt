@@ -8,32 +8,30 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private data class Paid(val pence: Int)
 
-private val paidCodec = object : EventCodec<Paid> {
-    override fun encode(event: Paid): ByteArray = "${event.pence}".toByteArray()
+private val paidCodec =
+    object : EventCodec<Paid> {
+        override fun encode(event: Paid): ByteArray = "${event.pence}".toByteArray()
 
-    override fun decode(bytes: ByteArray): Paid = Paid(String(bytes).toInt())
-}
+        override fun decode(bytes: ByteArray): Paid = Paid(String(bytes).toInt())
+    }
 
-private val purseCodec = object : StateCodec<Int> {
-    override fun encode(state: Int): ByteArray = "$state".toByteArray()
+private val purseCodec =
+    object : StateCodec<Int> {
+        override fun encode(state: Int): ByteArray = "$state".toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
 private sealed interface PurseCommand
 
 /** Pays [pence] in, sent reliably. */
-private data class PayIn(val pence: Int, override val delivery: Delivery) :
-    PurseCommand,
-    Delivered
+private data class PayIn(val pence: Int, override val delivery: Delivery) : PurseCommand, Delivered
 
 /** Puts back the payments kept while the purse was held. */
 private data object Unhold : PurseCommand
 
 /** Persists nothing and says so, sent reliably. */
-private data class Peek(override val delivery: Delivery) :
-    PurseCommand,
-    Delivered
+private data class Peek(override val delivery: Delivery) : PurseCommand, Delivered
 
 private val purseId = PersistenceId("purse", "p-1")
 
@@ -46,24 +44,25 @@ private fun purse(
     every: Int? = null,
     held: AtomicBoolean = AtomicBoolean(),
     batch: Int = 1,
-) = delivered(
-    persistent<PurseCommand, Paid, Int>(
-        id = purseId,
-        empty = 0,
-        codec = paidCodec,
-        batch = batch,
-        command = { ctx, _, command ->
-            when (command) {
-                is PayIn if held.get() -> none().also { ctx.stash(command) }
-                is PayIn -> persist(Paid(command.pence))
-                is Peek -> none().then { peeks += command.delivery.sequence }
-                Unhold -> none().also { ctx.unstashAll() }
-            }
-        },
-        event = { pence, paid -> pence + paid.pence },
-        snapshots = every?.let { every(it, purseCodec, prune = Prune.always) },
-    ),
-)
+) =
+    delivered(
+        persistent<PurseCommand, Paid, Int>(
+            id = purseId,
+            empty = 0,
+            codec = paidCodec,
+            batch = batch,
+            command = { ctx, _, command ->
+                when (command) {
+                    is PayIn if held.get() -> none().also { ctx.stash(command) }
+                    is PayIn -> persist(Paid(command.pence))
+                    is Peek -> none().then { peeks += command.delivery.sequence }
+                    Unhold -> none().also { ctx.unstashAll() }
+                }
+            },
+            event = { pence, paid -> pence + paid.pence },
+            snapshots = every?.let { every(it, purseCodec, prune = Prune.always) },
+        ),
+    )
 
 /** Spawns the actor that collects each confirmation into [confirmed], which belongs to the test that calls it. */
 private fun TestActors.confirms(confirmed: ConcurrentLinkedQueue<Confirmed>) =

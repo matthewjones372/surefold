@@ -17,8 +17,8 @@ object OverrideSuite : Suite() {
             val ports = List(3) { freePort() }
             val seeds = seedsAt(ports)
             val rarely = Rebalance.byLoad(every = 1.minutes)
-            val nodes = ports.indices.map { LoadNode("v${it + 1}", ports[it], seeds, rarely, 1.minutes) }
-                .toMutableList()
+            val nodes =
+                ports.indices.map { LoadNode("v${it + 1}", ports[it], seeds, rarely, 1.minutes) }.toMutableList()
             try {
                 nodes.forAll { n ->
                     n.cluster.await(1.minutes) { v -> v.members.count { it.status == Status.Up } == 3 } shouldBe true
@@ -30,8 +30,11 @@ object OverrideSuite : Suite() {
 
                 val ids = (0 until 200).map { "o-$it" }
                 val before = ids.withIndex().associate { (i, id) -> id to nodes[i % 3].tally(id) }
-                val (shard, moving) = ids.groupBy { Placement.shardOf(it, Sharding.SHARDS) }.entries
-                    .filter { (_, of) -> before.getValue(of.first()) != target.name }.maxBy { it.value.size }
+                val (shard, moving) =
+                    ids.groupBy { Placement.shardOf(it, Sharding.SHARDS) }
+                        .entries
+                        .filter { (_, of) -> before.getValue(of.first()) != target.name }
+                        .maxBy { it.value.size }
                 leader.cluster.move("tally", shard, target.cluster.self)
 
                 // An ask can be lost while its shard moves, so one asked during the move may not be answered at all.
@@ -51,9 +54,10 @@ object OverrideSuite : Suite() {
                 target.close()
                 nodes -= target
                 nodes.forAll { n ->
-                    val gone = n.cluster.await(30.seconds) { v ->
-                        v.members.none { it.node == target.cluster.self } && n.moved().isEmpty()
-                    }
+                    val gone =
+                        n.cluster.await(30.seconds) { v ->
+                            v.members.none { it.node == target.cluster.self } && n.moved().isEmpty()
+                        }
                     withClue("${n.name} still has ${n.cluster.balance.moved}") { gone shouldBe true }
                 }
                 val owner = Placement.owner("tally", shard, nodes.first().cluster.view.members)?.name

@@ -42,24 +42,26 @@ infix fun <E, A> Either<E, A>.shouldBeRight(expected: A) = verdict(notEqual(Eith
 infix fun <E, A> Either<E, A>.shouldBeLeft(expected: E) = verdict(notEqual(Either.Left(expected)))
 
 /** Holds if this is a [Either.Right] and [then], given its value, holds too. [then] runs only on a Right. */
-inline fun <E, A> Either<E, A>.shouldBeRight(then: (A) -> Unit) = when (this) {
-    is Either.Right -> {
-        held()
-        then(value)
-    }
+inline fun <E, A> Either<E, A>.shouldBeRight(then: (A) -> Unit) =
+    when (this) {
+        is Either.Right -> {
+            held()
+            then(value)
+        }
 
-    is Either.Left -> notEither(this, "a Right")
-}
+        is Either.Left -> notEither(this, "a Right")
+    }
 
 /** Holds if this is a [Either.Left] and [then], given its error, holds too. [then] runs only on a Left. */
-inline fun <E, A> Either<E, A>.shouldBeLeft(then: (E) -> Unit) = when (this) {
-    is Either.Left -> {
-        held()
-        then(value)
-    }
+inline fun <E, A> Either<E, A>.shouldBeLeft(then: (E) -> Unit) =
+    when (this) {
+        is Either.Left -> {
+            held()
+            then(value)
+        }
 
-    is Either.Right -> notEither(this, "a Left")
-}
+        is Either.Right -> notEither(this, "a Left")
+    }
 
 /** Holds if this string contains [part]; fails as surefold-assert's `shouldContain` does, carrying the string. */
 infix fun String?.shouldContain(part: String) = verdict(missing(part))
@@ -95,17 +97,18 @@ infix fun <A> A.shouldNotBeSameInstanceAs(unexpected: A) = verdict(sameAs(unexpe
 inline fun <reified T : Throwable> shouldThrow(block: () -> Any?) = shouldThrow<T>(block) { held() }
 
 /**
- * Holds if [block] throws a [T] and [then], given what it threw, holds too. [then] runs only on a [T]. An interrupt,
- * a cancellation or a VM error that is not a [T] goes on up, so the test stops as it would have without the check.
+ * Holds if [block] throws a [T] and [then], given what it threw, holds too. [then] runs only on a [T]. An interrupt, a
+ * cancellation or a VM error that is not a [T] goes on up, so the test stops as it would have without the check.
  */
 inline fun <reified T : Throwable> shouldThrow(block: () -> Any?, then: (T) -> Unit) {
     @Suppress("TooGenericExceptionCaught") // catching everything is the point; nonFatalOrThrow sorts it
-    val thrown = try {
-        val _ = block()
-        null
-    } catch (caught: Throwable) {
-        caught
-    }
+    val thrown =
+        try {
+            val _ = block()
+            null
+        } catch (caught: Throwable) {
+            caught
+        }
     return when (thrown) {
         is T -> {
             held()

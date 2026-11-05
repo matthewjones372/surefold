@@ -42,21 +42,22 @@ class Ledger(val log: ConcurrentLinkedQueue<String>)
 
 private fun tally(ledger: Ledger? = null, log: ConcurrentLinkedQueue<String> = ConcurrentLinkedQueue()) =
     behaviour<Tally, Int>(0) { _, total, message ->
-        when (message) {
-            is Add -> {
-                ledger?.log?.add("added ${message.by}")
-                become(total + message.by)
-            }
+            when (message) {
+                is Add -> {
+                    ledger?.log?.add("added ${message.by}")
+                    become(total + message.by)
+                }
 
-            is Total -> {
-                message.reply(total)
-                stay()
+                is Total -> {
+                    message.reply(total)
+                    stay()
+                }
             }
         }
-    }.onSignal { _, _, signal ->
-        if (signal == Signal.Stopping) log += "tally stopped"
-        stay()
-    }
+        .onSignal { _, _, signal ->
+            if (signal == Signal.Stopping) log += "tally stopped"
+            stay()
+        }
 
 private fun greeter() = behaviour<Greet, Unit>(Unit) { _, _, _ -> stay() }
 
@@ -65,11 +66,12 @@ object ActorSuite : Suite() {
         test("an actor is a node, and what depends on it is handed its ref") {
             val module = actors() + actor<Tally>("tally") { tally() }
 
-            val total = testApp(module) { tally: ActorRef<Tally> ->
-                tally.tell(Add(2))
-                tally.tell(Add(3))
-                tally.ask(1.minutes) { Total(it) }
-            }
+            val total =
+                testApp(module) { tally: ActorRef<Tally> ->
+                    tally.tell(Add(2))
+                    tally.tell(Add(3))
+                    tally.ask(1.minutes) { Total(it) }
+                }
 
             total shouldBe 5.right()
         }
@@ -86,10 +88,11 @@ object ActorSuite : Suite() {
             val ledger = single<Ledger> { install({ Ledger(log) }) { _, _ -> log += "ledger released" } }
             val module = actors() + ledger + actor<Tally, Ledger>("tally") { found -> tally(found, log) }
 
-            val _ = testApp(module) { tally: ActorRef<Tally> ->
-                tally.tell(Add(1))
-                tally.ask(1.minutes) { Total(it) }
-            }
+            val _ =
+                testApp(module) { tally: ActorRef<Tally> ->
+                    tally.tell(Add(1))
+                    tally.ask(1.minutes) { Total(it) }
+                }
 
             log.toList() shouldContainExactly listOf("added 1", "tally stopped", "ledger released")
         }
@@ -118,9 +121,10 @@ object ActorSuite : Suite() {
         test("within runs with every local bound where the actors were opened, not only clock, metrics and logger") {
             val tenant = surefoldLocal { "nobody" }
 
-            val seen = tenant.locally("tills") {
-                testApp(actors()) { actors: Actors -> actors.within { tenant.get() } }
-            }
+            val seen =
+                tenant.locally("tills") {
+                    testApp(actors()) { actors: Actors -> actors.within { tenant.get() } }
+                }
 
             seen shouldBe "tills"
         }
@@ -133,13 +137,14 @@ object ActorSuite : Suite() {
 
         test("the actors record to the metrics, tags and logger bound where the application runs") {
             val counted = ConcurrentLinkedQueue<Pair<String, Map<String, String>>>()
-            val recording = object : Metrics {
-                override fun counter(name: String, tags: Map<String, String>) = Counter { counted += name to tags }
+            val recording =
+                object : Metrics {
+                    override fun counter(name: String, tags: Map<String, String>) = Counter { counted += name to tags }
 
-                override fun gauge(name: String, tags: Map<String, String>) = Gauge { }
+                    override fun gauge(name: String, tags: Map<String, String>) = Gauge {}
 
-                override fun histogram(name: String, tags: Map<String, String>) = Histogram { }
-            }
+                    override fun histogram(name: String, tags: Map<String, String>) = Histogram {}
+                }
 
             metrics.locally(recording) {
                 metricTags.locally(mapOf("service" to "tills")) {
