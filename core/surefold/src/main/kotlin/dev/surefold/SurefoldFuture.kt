@@ -5,8 +5,8 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * Runs [block] on a virtual thread of its own, with the caller's bindings as a fork has them, and answers
- * with a future whose `cancel` interrupts it: a caller that gives up stops the block's forks too.
+ * Runs [block] on a virtual thread of its own, with the caller's bindings as a fork has them, and answers with a future
+ * whose `cancel` interrupts it: a caller that gives up stops the block's forks too.
  */
 fun <A> surefoldFuture(block: () -> A): CompletableFuture<A> {
     val inherited = Bindings.snapshot()

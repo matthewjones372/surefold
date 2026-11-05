@@ -11,10 +11,10 @@ enum class Status {
     Up,
     Leaving,
     Down,
-    Removed,
-    ;
+    Removed;
 
-    internal val isLive: Boolean get() = this == Joining || this == Up || this == Leaving
+    internal val isLive: Boolean
+        get() = this == Joining || this == Up || this == Leaving
 }
 
 /** One member as the agreed view has it. [upNumber] orders members by when they came up: lower is older. */
@@ -38,9 +38,9 @@ data class View(val members: List<Member>, val unreachable: Set<Node>, val leade
 }
 
 /**
- * How a node probes and joins. Each round it probes one member; one that has not answered within [ackWithin] is
- * probed by [helpers] others for it, and one nobody answered for by the end of the round is unreachable. A node that
- * is the lowest of its seeds forms the cluster once no other seed has let it join for [formAfter].
+ * How a node probes and joins. Each round it probes one member; one that has not answered within [ackWithin] is probed
+ * by [helpers] others for it, and one nobody answered for by the end of the round is unreachable. A node that is the
+ * lowest of its seeds forms the cluster once no other seed has let it join for [formAfter].
  */
 data class Gossiping(
     val probeEvery: Duration = 1.seconds,

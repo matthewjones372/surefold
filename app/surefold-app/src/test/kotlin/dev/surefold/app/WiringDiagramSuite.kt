@@ -9,12 +9,19 @@ import java.io.File
 import java.security.MessageDigest
 
 private class Tuning
+
 private class Database
+
 private class Memo
+
 private class Accounts
+
 private class Postings
+
 private class Opening
+
 private class Reporting
+
 private class Frontage
 
 private val fenced = Regex("""<!-- cookbook-diagram -->\s*```mermaid\n(.*?)\n```""", RegexOption.DOT_MATCHES_ALL)
@@ -32,8 +39,8 @@ private inline fun withRepo(check: (File) -> Unit) {
 }
 
 /**
- * The diagram the cookbook prints, held to what `render` actually answers. A drawing of a graph is
- * worth having in review only while it is the graph.
+ * The diagram the cookbook prints, held to what `render` actually answers. A drawing of a graph is worth having in
+ * review only while it is the graph.
  */
 object WiringDiagramSuite : Suite() {
     private val app: Module =
@@ -66,9 +73,9 @@ object WiringDiagramSuite : Suite() {
 /**
  * The PNG beside the fence, held to the fence it was drawn from.
  *
- * The picture cannot be re-rendered here — that needs a browser, and CI has no business drawing
- * pictures — so what is checked is the recording of what it was drawn from. A graph that changes
- * fails this until `docs/render-diagram.sh` has been run.
+ * The picture cannot be re-rendered here — that needs a browser, and CI has no business drawing pictures — so what is
+ * checked is the recording of what it was drawn from. A graph that changes fails this until `docs/render-diagram.sh`
+ * has been run.
  */
 object DiagramImageSuite : Suite() {
     private fun drawnFence(repo: File): String =
@@ -83,9 +90,10 @@ object DiagramImageSuite : Suite() {
                         recorded.exists() shouldBe true
                     }
                 } else {
-                    val hashed = MessageDigest.getInstance("SHA-256")
-                        .digest(drawnFence(repo).toByteArray())
-                        .joinToString("") { "%02x".format(it) }
+                    val hashed =
+                        MessageDigest.getInstance("SHA-256").digest(drawnFence(repo).toByteArray()).joinToString("") {
+                            "%02x".format(it)
+                        }
 
                     withClue("the graph moved and the picture did not: run docs/render-diagram.sh") {
                         recorded.readText().trim() shouldBe hashed

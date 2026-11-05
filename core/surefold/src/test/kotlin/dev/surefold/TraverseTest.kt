@@ -6,9 +6,9 @@ import dev.surefold.assert.shouldBeRight
 import dev.surefold.assert.shouldThrow
 import dev.surefold.fail.Either
 import dev.surefold.fail.traverse
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Test
 
 class TraverseTest {
 
@@ -83,10 +83,11 @@ class TraverseTest {
         val inside = AtomicInteger()
         val most = AtomicInteger()
 
-        val met = (1..200).toList().parTraverse<Bad, Int, Boolean> {
-            most.accumulateAndGet(inside.incrementAndGet(), ::maxOf)
-            together.rendezvous().also { inside.decrementAndGet() }
-        }
+        val met =
+            (1..200).toList().parTraverse<Bad, Int, Boolean> {
+                most.accumulateAndGet(inside.incrementAndGet(), ::maxOf)
+                together.rendezvous().also { inside.decrementAndGet() }
+            }
 
         met shouldBe Either.Right(List(200) { true })
         most.get() shouldBe PAR_TRAVERSE_DEFAULT
@@ -98,10 +99,11 @@ class TraverseTest {
         val inside = AtomicInteger()
         val most = AtomicInteger()
 
-        val met = (1..20).toList().parTraverse<Bad, Int, Boolean>(Limit.fixed(2)) {
-            most.accumulateAndGet(inside.incrementAndGet(), ::maxOf)
-            together.rendezvous().also { inside.decrementAndGet() }
-        }
+        val met =
+            (1..20).toList().parTraverse<Bad, Int, Boolean>(Limit.fixed(2)) {
+                most.accumulateAndGet(inside.incrementAndGet(), ::maxOf)
+                together.rendezvous().also { inside.decrementAndGet() }
+            }
 
         met shouldBe Either.Right(List(20) { true })
         most.get() shouldBe 2

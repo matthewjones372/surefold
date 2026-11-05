@@ -17,7 +17,9 @@ class ZipOrAccumulateTest {
             zipOrAccumulate(
                 { fail(Bad("first")) },
                 { fail(Bad("second")) },
-            ) { _: Int, _: Int -> 0 }
+            ) { _: Int, _: Int ->
+                0
+            }
         } shouldBeLeft nonEmptyListOf(Bad("first"), Bad("second"))
     }
 
@@ -38,7 +40,9 @@ class ZipOrAccumulateTest {
                     Thread.currentThread() shouldBe caller
                     1
                 },
-            ) { _: Int, b: Int -> b }
+            ) { _: Int, b: Int ->
+                b
+            }
         } shouldBeLeft nonEmptyListOf(Bad("a"))
         ran shouldBe listOf("a", "b")
     }
@@ -48,14 +52,17 @@ class ZipOrAccumulateTest {
         val boom = Boom()
         var secondRan = false
 
-        val thrown = shouldThrow<Boom> {
-            attempt<NonEmptyList<Bad>, Int> {
-                zipOrAccumulate(
-                    { throw boom },
-                    { secondRan = true },
-                ) { _: Int, _: Unit -> 0 }
+        val thrown =
+            shouldThrow<Boom> {
+                attempt<NonEmptyList<Bad>, Int> {
+                    zipOrAccumulate(
+                        { throw boom },
+                        { secondRan = true },
+                    ) { _: Int, _: Unit ->
+                        0
+                    }
+                }
             }
-        }
 
         (thrown === boom) shouldBe true
         secondRan shouldBe false
@@ -76,7 +83,9 @@ class ZipOrAccumulateTest {
                 { fail(Bad("a")) },
                 { 1 },
                 { fail(Bad("c")) },
-            ) { _: Int, _: Int, _: Int -> 0 }
+            ) { _: Int, _: Int, _: Int ->
+                0
+            }
         } shouldBeLeft Bad("ac")
     }
 
@@ -101,7 +110,9 @@ class ZipOrAccumulateTest {
                 { fail(Bad("3")) },
                 { "d" },
                 { fail(Bad("5")) },
-            ) { a: String, b, c: String, d, e: String -> a + b + c + d + e }
+            ) { a: String, b, c: String, d, e: String ->
+                a + b + c + d + e
+            }
         } shouldBeLeft nonEmptyListOf(Bad("1"), Bad("3"), Bad("5"))
     }
 
@@ -123,7 +134,11 @@ class ZipOrAccumulateTest {
         } shouldBeRight "abcde"
         attempt<Bad, String> {
             zipOrAccumulate(worst, { "a" }, { fail(Bad("b")) }, { "c" }, { "d" }, { fail(Bad("e")) }) {
-                    a, b: String, c, d, e: String ->
+                a,
+                b: String,
+                c,
+                d,
+                e: String ->
                 a + b + c + d + e
             }
         } shouldBeLeft Bad("b")
@@ -143,13 +158,28 @@ class ZipOrAccumulateTest {
         } shouldBeRight "abcdefg"
         attempt<NonEmptyList<Bad>, String> {
             zipOrAccumulate({ "a" }, { "b" }, { "c" }, { "d" }, { "e" }, { "f" }, { "g" }, { "h" }) {
-                    a, b, c, d, e, f, g, h ->
+                a,
+                b,
+                c,
+                d,
+                e,
+                f,
+                g,
+                h ->
                 a + b + c + d + e + f + g + h
             }
         } shouldBeRight "abcdefgh"
         attempt<NonEmptyList<Bad>, String> {
             zipOrAccumulate({ "a" }, { "b" }, { "c" }, { "d" }, { "e" }, { "f" }, { "g" }, { "h" }, { "i" }) {
-                    a, b, c, d, e, f, g, h, i ->
+                a,
+                b,
+                c,
+                d,
+                e,
+                f,
+                g,
+                h,
+                i ->
                 a + b + c + d + e + f + g + h + i
             }
         } shouldBeRight "abcdefghi"
@@ -159,25 +189,55 @@ class ZipOrAccumulateTest {
     fun `six to nine branches answer their failures in branch order`() {
         attempt<NonEmptyList<Bad>, Int> {
             zipOrAccumulate({ fail(Bad("1")) }, { "b" }, { "c" }, { "d" }, { "e" }, { fail(Bad("6")) }) {
-                    _: String, _, _, _, _, _: String ->
+                _: String,
+                _,
+                _,
+                _,
+                _,
+                _: String ->
                 0
             }
         } shouldBeLeft nonEmptyListOf(Bad("1"), Bad("6"))
         attempt<NonEmptyList<Bad>, Int> {
             zipOrAccumulate({ "a" }, { fail(Bad("2")) }, { "c" }, { "d" }, { "e" }, { "f" }, { fail(Bad("7")) }) {
-                    _, _: String, _, _, _, _, _: String ->
+                _,
+                _: String,
+                _,
+                _,
+                _,
+                _,
+                _: String ->
                 0
             }
         } shouldBeLeft nonEmptyListOf(Bad("2"), Bad("7"))
         attempt<NonEmptyList<Bad>, Int> {
             zipOrAccumulate(
-                { "a" }, { "b" }, { fail(Bad("3")) }, { "d" }, { "e" }, { "f" }, { "g" }, { fail(Bad("8")) },
-            ) { _, _, _: String, _, _, _, _, _: String -> 0 }
+                { "a" },
+                { "b" },
+                { fail(Bad("3")) },
+                { "d" },
+                { "e" },
+                { "f" },
+                { "g" },
+                { fail(Bad("8")) },
+            ) { _, _, _: String, _, _, _, _, _: String ->
+                0
+            }
         } shouldBeLeft nonEmptyListOf(Bad("3"), Bad("8"))
         attempt<NonEmptyList<Bad>, Int> {
             zipOrAccumulate(
-                { "a" }, { "b" }, { "c" }, { fail(Bad("4")) }, { "e" }, { "f" }, { "g" }, { "h" }, { fail(Bad("9")) },
-            ) { _, _, _, _: String, _, _, _, _, _: String -> 0 }
+                { "a" },
+                { "b" },
+                { "c" },
+                { fail(Bad("4")) },
+                { "e" },
+                { "f" },
+                { "g" },
+                { "h" },
+                { fail(Bad("9")) },
+            ) { _, _, _, _: String, _, _, _, _, _: String ->
+                0
+            }
         } shouldBeLeft nonEmptyListOf(Bad("4"), Bad("9"))
     }
 
@@ -187,7 +247,12 @@ class ZipOrAccumulateTest {
 
         attempt<Bad, Int> {
             zipOrAccumulate(both, { fail(Bad("1")) }, { 2 }, { 3 }, { 4 }, { 5 }, { fail(Bad("6")) }) {
-                    _: Int, _, _, _, _, _: Int ->
+                _: Int,
+                _,
+                _,
+                _,
+                _,
+                _: Int ->
                 0
             }
         } shouldBeLeft Bad("16")
@@ -198,13 +263,28 @@ class ZipOrAccumulateTest {
         } shouldBeRight 28
         attempt<Bad, Int> {
             zipOrAccumulate(both, { 1 }, { 2 }, { 3 }, { 4 }, { 5 }, { 6 }, { 7 }, { fail(Bad("8")) }) {
-                    _, _, _, _, _, _, _, _: Int ->
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _,
+                _: Int ->
                 0
             }
         } shouldBeLeft Bad("8")
         attempt<Bad, Int> {
             zipOrAccumulate(both, { 1 }, { 2 }, { 3 }, { 4 }, { 5 }, { 6 }, { 7 }, { 8 }, { 9 }) {
-                    a, b, c, d, e, f, g, h, i ->
+                a,
+                b,
+                c,
+                d,
+                e,
+                f,
+                g,
+                h,
+                i ->
                 a + b + c + d + e + f + g + h + i
             }
         } shouldBeRight 45

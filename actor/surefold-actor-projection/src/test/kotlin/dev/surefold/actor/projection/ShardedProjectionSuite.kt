@@ -21,29 +21,32 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 
-private val shardedAmount = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = event.toString().toByteArray()
+private val shardedAmount =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = event.toString().toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
-private val shardedTotal = object : StateCodec<Long> {
-    override fun encode(state: Long): ByteArray = state.toString().toByteArray()
+private val shardedTotal =
+    object : StateCodec<Long> {
+        override fun encode(state: Long): ByteArray = state.toString().toByteArray()
 
-    override fun decode(bytes: ByteArray): Long = String(bytes).toLong()
-}
+        override fun decode(bytes: ByteArray): Long = String(bytes).toLong()
+    }
 
 /** Pays [amount] into a till, as one event. */
 private data class Pay(val amount: Int)
 
-private fun till(id: PersistenceId, prune: Prune) = persistent<Pay, Int, Long>(
-    id = id,
-    empty = 0,
-    codec = shardedAmount,
-    snapshots = every(100, shardedTotal, prune = prune),
-    command = { _, _, pay -> persist(pay.amount) },
-    event = { sum, paid -> sum + paid },
-)
+private fun till(id: PersistenceId, prune: Prune) =
+    persistent<Pay, Int, Long>(
+        id = id,
+        empty = 0,
+        codec = shardedAmount,
+        snapshots = every(100, shardedTotal, prune = prune),
+        command = { _, _, pay -> persist(pay.amount) },
+        event = { sum, paid -> sum + paid },
+    )
 
 /** A journal over two databases, and its read models' offsets, for one test. */
 private class TwoDatabases {
@@ -61,21 +64,28 @@ object ShardedProjectionSuite : Suite() {
 
                 val seen = ConcurrentHashMap<String, MutableList<Pair<PersistenceId, Long>>>()
                 val all = CountDownLatch(ids.size * 5)
-                val runs = journal.feeds.map { (database, feed) ->
-                    Projection.follow(feed, "till", shardedAmount, offsets, ShardedJournal.progress("totals", database))
-                        .mapFollowed { event ->
-                            seen.computeIfAbsent(database) { Collections.synchronizedList(mutableListOf()) }
-                                .add(event.id to event.sequence)
-                            all.countDown()
-                        }
-                        .runProjecting()
-                        .start(Forks())
-                }
+                val runs =
+                    journal.feeds.map { (database, feed) ->
+                        Projection.follow(
+                                feed,
+                                "till",
+                                shardedAmount,
+                                offsets,
+                                ShardedJournal.progress("totals", database),
+                            )
+                            .mapFollowed { event ->
+                                seen
+                                    .computeIfAbsent(database) { Collections.synchronizedList(mutableListOf()) }
+                                    .add(event.id to event.sequence)
+                                all.countDown()
+                            }
+                            .runProjecting()
+                            .start(Forks())
+                    }
                 all.await(1, TimeUnit.MINUTES) shouldBe true
                 runs.forEach { it.close() }
 
-                seen.values.flatten() shouldContainExactlyInAnyOrder
-                    ids.flatMap { id -> (1L..5L).map { id to it } }
+                seen.values.flatten() shouldContainExactlyInAnyOrder ids.flatMap { id -> (1L..5L).map { id to it } }
                 seen.entries.forAll { (database, events) ->
                     events.all { (id, _) -> journal.database(id) == database } shouldBe true
                 }

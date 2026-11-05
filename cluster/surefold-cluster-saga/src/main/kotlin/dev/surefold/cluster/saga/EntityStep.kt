@@ -30,11 +30,11 @@ class Outlived(val saga: String, val step: String) :
     IllegalStateException("saga $saga was stopped longer than $step's entity remembers its key")
 
 /**
- * A step that has the keyed entity [id] of [sharded] apply [command] under the step's key, and waits for its answer.
- * A refusal fails the saga with [refused] of its reason; an answer lost on the way back is asked for with
+ * A step that has the keyed entity [id] of [sharded] apply [command] under the step's key, and waits for its answer. A
+ * refusal fails the saga with [refused] of its reason; an answer lost on the way back is asked for with
  * `Keyed.Applied`, and the command sent again only if the entity never had it. A step begun when its node died is
- * settled the same way, so one on reachable entities always settles. [undo] is applied under the key's `/undo`, and
- * a refused undo leaves the saga [Stuck]. [remember] is the entity kind's own window: past it, resuming the step throws
+ * settled the same way, so one on reachable entities always settles. [undo] is applied under the key's `/undo`, and a
+ * refused undo leaves the saga [Stuck]. [remember] is the entity kind's own window: past it, resuming the step throws
  * [Outlived]. Each ask waits [within] for its answer.
  */
 fun <E, C : Any, R : Any> DurableScope<E>.entityStep(
@@ -51,11 +51,12 @@ fun <E, C : Any, R : Any> DurableScope<E>.entityStep(
     // Journalled, so a resumed run knows when the command was first sent.
     val sent = now()
     val remembered = { if (clock.get().now() > sent + remember) throw Outlived(this.id, name) }
-    fun answered(answer: KeyAnswer<R>): Unit = when (answer) {
-        KeyAnswer.Accepted -> Unit
-        is KeyAnswer.Refused -> fail(refused(answer.reason))
-        KeyAnswer.Unknown -> error("$name's entity answered an apply with Unknown")
-    }
+    fun answered(answer: KeyAnswer<R>): Unit =
+        when (answer) {
+            KeyAnswer.Accepted -> Unit
+            is KeyAnswer.Refused -> fail(refused(answer.reason))
+            KeyAnswer.Unknown -> error("$name's entity answered an apply with Unknown")
+        }
     step(
         name,
         NoValue,
@@ -64,16 +65,18 @@ fun <E, C : Any, R : Any> DurableScope<E>.entityStep(
             remembered()
             when (val answer = entity.asked(key, within)) {
                 KeyAnswer.Unknown -> Settled.DidNot
-                KeyAnswer.Accepted, is KeyAnswer.Refused -> Settled.Happened(answered(answer))
+                KeyAnswer.Accepted,
+                is KeyAnswer.Refused -> Settled.Happened(answered(answer))
             }
         },
-        undo = undo?.let { undoing ->
-            { key, _, _ ->
-                remembered()
-                val answer = entity.applied(key, undoing(), within)
-                check(answer == KeyAnswer.Accepted) { "$name's entity answered its undo $answer" }
-            }
-        },
+        undo =
+            undo?.let { undoing ->
+                { key, _, _ ->
+                    remembered()
+                    val answer = entity.applied(key, undoing(), within)
+                    check(answer == KeyAnswer.Accepted) { "$name's entity answered its undo $answer" }
+                }
+            },
     )
 }
 
@@ -83,19 +86,24 @@ private operator fun Instant.plus(duration: Duration): Instant = plus(duration.t
 private val ASK_AGAIN_AFTER = 100.milliseconds
 
 /**
- * What the entity answers [command] under [key]. An answer that does not come is asked for, and the command sent
- * again only once the entity says it never had the key.
+ * What the entity answers [command] under [key]. An answer that does not come is asked for, and the command sent again
+ * only once the entity says it never had the key.
  */
 private fun <C : Any, R : Any> ActorRef<Keyed<C, R>>.applied(key: String, command: C, within: Duration): KeyAnswer<R> {
     fun apply() = ask<Keyed<C, R>, KeyAnswer<R>>(within) { Keyed.Apply(key, command, it) }
-    return apply().fold({
-        answering { asked(key, within).takeUnless { it == KeyAnswer.Unknown } ?: apply().bind() }
-    }) { it }
+    return apply().fold(
+        {
+            answering { asked(key, within).takeUnless { it == KeyAnswer.Unknown } ?: apply().bind() }
+        },
+    ) {
+        it
+    }
 }
 
 /** What the entity says [key] got, asked until it answers. */
-private fun <C : Any, R : Any> ActorRef<Keyed<C, R>>.asked(key: String, within: Duration): KeyAnswer<R> =
-    answering { ask<Keyed<C, R>, KeyAnswer<R>>(within) { Keyed.Applied(key, it) }.bind() }
+private fun <C : Any, R : Any> ActorRef<Keyed<C, R>>.asked(key: String, within: Duration): KeyAnswer<R> = answering {
+    ask<Keyed<C, R>, KeyAnswer<R>>(within) { Keyed.Applied(key, it) }.bind()
+}
 
 /** [ask] again every [ASK_AGAIN_AFTER] until it answers: a step on our own entities waits for them to be reachable. */
 private fun <A> answering(ask: Fail<AskFailure>.() -> A): A =

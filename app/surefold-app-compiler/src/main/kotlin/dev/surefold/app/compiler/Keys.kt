@@ -9,9 +9,9 @@ import org.jetbrains.kotlin.fir.types.classId
 /**
  * A type as the key it would be at runtime, written the way `surefold-app` writes one.
  *
- * The two have to agree exactly, because the whole claim of this plugin is that it answers what
- * `surefoldWiring` answers, only sooner. So the rendering is `KType.toString()`'s — the qualified name
- * and its arguments — and the trimming that follows is `labelOf`'s.
+ * The two have to agree exactly, because the whole claim of this plugin is that it answers what `surefoldWiring`
+ * answers, only sooner. So the rendering is `KType.toString()`'s — the qualified name and its arguments — and the
+ * trimming that follows is `labelOf`'s.
  */
 internal fun keyOf(type: ConeKotlinType): String? {
     // A Java method's return type is flexible, and `typeOf` renders the same thing with a `!`. This
@@ -20,9 +20,10 @@ internal fun keyOf(type: ConeKotlinType): String? {
     if (type is ConeFlexibleType) return keyOf(type.lowerBound)?.let { "$it!" }
 
     val named = type as? ConeClassLikeType ?: return null
-    val arguments = named.typeArguments.map { argument ->
-        (argument as? ConeKotlinTypeProjection)?.type?.let(::keyOf) ?: return null
-    }
+    val arguments =
+        named.typeArguments.map { argument ->
+            (argument as? ConeKotlinTypeProjection)?.type?.let(::keyOf) ?: return null
+        }
     val name = named.classId.asFqNameString()
     val applied = if (arguments.isEmpty()) name else "$name<${arguments.joinToString(", ")}>"
     return if (type.isMarkedNullable) "$applied?" else applied

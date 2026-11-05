@@ -11,8 +11,8 @@ import dev.surefold.fail.nonFatalOrThrow
 fun <A> Schedule<Throwable, *>.retry(action: () -> A): A = retryOrElse(action) { failure, _ -> throw failure }
 
 /**
- * The same, answering with [orElse] of the last throw and the schedule's last output instead of rethrowing.
- * A throw the JVM cannot be asked to carry on from — and a `fail` passing through — is never retried.
+ * The same, answering with [orElse] of the last throw and the schedule's last output instead of rethrowing. A throw the
+ * JVM cannot be asked to carry on from — and a `fail` passing through — is never retried.
  */
 fun <Output, A> Schedule<Throwable, Output>.retryOrElse(action: () -> A, orElse: (Throwable, Output) -> A): A {
     var next = step
@@ -36,10 +36,11 @@ fun <Output, A> Schedule<Throwable, Output>.retryOrElse(action: () -> A, orElse:
 fun <E, Output, A> Fail<E>.retry(schedule: Schedule<E, Output>, action: Fail<E>.() -> A): A {
     var next = schedule.step
     while (true) {
-        val error = when (val tried = attempt(action)) {
-            is Either.Right -> return tried.value
-            is Either.Left -> tried.value
-        }
+        val error =
+            when (val tried = attempt(action)) {
+                is Either.Right -> return tried.value
+                is Either.Left -> tried.value
+            }
         when (val decision = next(error)) {
             is Continue -> {
                 decision.delay.sleepOff()

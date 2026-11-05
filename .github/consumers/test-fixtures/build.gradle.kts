@@ -38,7 +38,9 @@ configurations.testRuntimeClasspath {
 // Each module's fixtures jar and its main jar, and what the journal's Postgres fixture runs on: a fixture whose
 // dependencies were left out of the published metadata resolves here, then fails in a consumer's first test.
 val expected =
-    fixtureModules.flatMap { listOf(Regex("$it-\\d.*-test-fixtures\\.jar"), Regex("$it-\\d.*(?<!-test-fixtures)\\.jar")) } +
+    fixtureModules.flatMap {
+        listOf(Regex("$it-\\d.*-test-fixtures\\.jar"), Regex("$it-\\d.*(?<!-test-fixtures)\\.jar"))
+    } +
         listOf("postgresql", "testcontainers-postgresql", "liquibase-core").map { Regex("$it-\\d.*\\.jar") }
 
 tasks.register("checkFixtures") {

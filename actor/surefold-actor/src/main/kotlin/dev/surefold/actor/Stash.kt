@@ -1,8 +1,8 @@
 package dev.surefold.actor
 
 /**
- * An actor's stash: messages it has kept, and those it has put back to be handled before its mailbox. Only the
- * actor's own activation touches it.
+ * An actor's stash: messages it has kept, and those it has put back to be handled before its mailbox. Only the actor's
+ * own activation touches it.
  */
 internal class Stash(private val capacity: Int, private val owner: String) {
     private val kept = ArrayDeque<Any>()
@@ -23,10 +23,11 @@ internal class Stash(private val capacity: Int, private val owner: String) {
     fun isReplaying(): Boolean = replay.isNotEmpty()
 
     /** Every message still here, those put back first, leaving it empty. */
-    fun drain(): List<Any> = (replay + kept).also {
-        replay.clear()
-        kept.clear()
-    }
+    fun drain(): List<Any> =
+        (replay + kept).also {
+            replay.clear()
+            kept.clear()
+        }
 
     /** The next message put back, or null when there is none. */
     fun next(): Any? = replay.removeFirstOrNull()

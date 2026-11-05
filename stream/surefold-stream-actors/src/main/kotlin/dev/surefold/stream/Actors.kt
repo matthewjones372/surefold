@@ -24,9 +24,9 @@ private const val BATCH = 64
 /**
  * surefold-stream on surefold-actor: a run is an actor of [scope]'s, which pulls the run's loop [batch] elements at a
  * time and then tells itself to go on, so runs share the scope's runners and a long one never holds one. A stage that
- * blocks parks its runner, as any step may. `mapPar` runs on worker actors and `buffer` on a feeder actor, each a
- * child of the run's; the other operators that run something beside the loop start it from [on], as on [Forks].
- * Time is surefold's `clock`, read when the run starts. A run cannot outlive [scope]: its close stops it.
+ * blocks parks its runner, as any step may. `mapPar` runs on worker actors and `buffer` on a feeder actor, each a child
+ * of the run's; the other operators that run something beside the loop start it from [on], as on [Forks]. Time is
+ * surefold's `clock`, read when the run starts. A run cannot outlive [scope]: its close stops it.
  */
 class Actors(
     private val scope: Scope<*>,
@@ -46,13 +46,12 @@ class Actors(
 
     /** How many runs started here have not yet ended, for a test to say that none outlived its exit. */
     @StreamSpi
-    val running: Int get() = live.get()
+    val running: Int
+        get() = live.get()
 
-    @StreamSpi
-    override val key: BackendKey = forks.key
+    @StreamSpi override val key: BackendKey = forks.key
 
-    @StreamSpi
-    override fun runs(node: Node): Boolean = forks.runs(node)
+    @StreamSpi override fun runs(node: Node): Boolean = forks.runs(node)
 
     @StreamSpi
     override fun <E, R : Any> materialise(run: Run<E, R>): Running<E, R> {
@@ -79,35 +78,36 @@ private class ActorRun<E, R : Any>(
 
     override val exit = CompletableFuture<Exit<E, R>>()
 
-    @Volatile
-    lateinit var ref: ActorRef<More>
+    @Volatile lateinit var ref: ActorRef<More>
 
     // How the loop ended, once it has; read by the actor's own ending, on the actor's own thread.
     private var ended: Exit<E, R>? = null
 
     fun behaviour(): Behaviour<More, Unit, Nothing> =
         behaviour<More, Unit>(Unit) { ctx, _, _ ->
-            val pulled = boundaries.step(ctx) { pulling.pull(batch) }
-            if (pulled == null) {
-                ctx.self.tell(More)
+                val pulled = boundaries.step(ctx) { pulling.pull(batch) }
+                if (pulled == null) {
+                    ctx.self.tell(More)
+                    stay()
+                } else {
+                    ended = pulled
+                    // The actor's own stop, not this run's: the member of the same name would stop it from outside.
+                    Next.Stop
+                }
+            }
+            .onStart { ctx -> ctx.self.tell(More) }
+            .onSignal { _, _, signal ->
+                // The exit completes as the actor ends, however it ends, and after anything the run started has.
+                if (signal == Signal.Stopping) {
+                    live.decrementAndGet()
+                    exit.complete(pulling.finish(ended ?: pulling.done()))
+                }
                 stay()
-            } else {
-                ended = pulled
-                // The actor's own stop, not this run's: the member of the same name would stop it from outside.
-                Next.Stop
             }
-        }.onStart { ctx -> ctx.self.tell(More) }.onSignal { _, _, signal ->
-            // The exit completes as the actor ends, however it ends, and after anything the run started has.
-            if (signal == Signal.Stopping) {
-                live.decrementAndGet()
-                exit.complete(pulling.finish(ended ?: pulling.done()))
-            }
-            stay()
-        }
 
     /**
-     * Ends the run now: the loop stops before its next element, a source it is blocked in is woken, and a step
-     * that is running is interrupted. The exit is `Done` with what the end had by then.
+     * Ends the run now: the loop stops before its next element, a source it is blocked in is woken, and a step that is
+     * running is interrupted. The exit is `Done` with what the end had by then.
      */
     override fun stop() {
         pulling.stop()

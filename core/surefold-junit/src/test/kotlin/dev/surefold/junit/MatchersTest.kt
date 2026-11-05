@@ -24,17 +24,19 @@ class MatchersTest {
 
     @Test
     fun `matchers pass and fail as their names say, alone and combined`() {
-        events shouldHaveSucceeded listOf(
-            "passes shouldBe and shouldNotBe",
-            "passes either matcher",
-            "passes shouldBeRight and shouldBeLeft",
-        )
-        failures.mapValues { (_, thrown) -> thrown::class } shouldContainExactly mapOf(
-            "fails shouldBe" to AssertionFailedError::class,
-            "fails shouldNotBe" to AssertionFailedError::class,
-            "fails both matchers" to MultipleFailuresError::class,
-            "fails shouldBeRight" to AssertionFailedError::class,
-        )
+        events shouldHaveSucceeded
+            listOf(
+                "passes shouldBe and shouldNotBe",
+                "passes either matcher",
+                "passes shouldBeRight and shouldBeLeft",
+            )
+        failures.mapValues { (_, thrown) -> thrown::class } shouldContainExactly
+            mapOf(
+                "fails shouldBe" to AssertionFailedError::class,
+                "fails shouldNotBe" to AssertionFailedError::class,
+                "fails both matchers" to MultipleFailuresError::class,
+                "fails shouldBeRight" to AssertionFailedError::class,
+            )
     }
 
     @Test
@@ -43,22 +45,24 @@ class MatchersTest {
 
         failed.expected.value shouldBe 3
         failed.actual.value shouldBe 2
-        failed.message.orEmpty().lines() shouldBe listOf(
-            "fails shouldBe: 1 of 1 expectations failed",
-            "expected: 3",
-            "but was:  2",
-            "at Samples.kt:${failed.stackTrace.first().lineNumber}",
-            "    test(\"fails shouldBe\") { two -> two shouldBe 3 }",
-        )
+        failed.message.orEmpty().lines() shouldBe
+            listOf(
+                "fails shouldBe: 1 of 1 expectations failed",
+                "expected: 3",
+                "but was:  2",
+                "at Samples.kt:${failed.stackTrace.first().lineNumber}",
+                "    test(\"fails shouldBe\") { two -> two shouldBe 3 }",
+            )
     }
 
     @Test
     fun `a failed shouldNotBe names the value it should not have been`() {
-        failures.getValue("fails shouldNotBe").message.orEmpty().lines().take(3) shouldBe listOf(
-            "fails shouldNotBe: 1 of 1 expectations failed",
-            "expected: anything but 2",
-            "but was:  2",
-        )
+        failures.getValue("fails shouldNotBe").message.orEmpty().lines().take(3) shouldBe
+            listOf(
+                "fails shouldNotBe: 1 of 1 expectations failed",
+                "expected: anything but 2",
+                "but was:  2",
+            )
     }
 
     @Test

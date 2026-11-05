@@ -26,5 +26,6 @@ data class Faults(
         require(maxDelay.isPositive()) { "maxDelay must be positive, was $maxDelay" }
     }
 
-    internal val any: Boolean get() = drop + duplicate + delay + crash > 0.0
+    internal val any: Boolean
+        get() = drop + duplicate + delay + crash > 0.0
 }

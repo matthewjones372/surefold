@@ -13,8 +13,8 @@ import kotlin.time.TimeSource
 
 /**
  * The slice map in `surefold_journal_slices`, in the first database, [primary] (spec 0105). A journal whose table is
- * empty is given the ranges spec 0088's formula gives [databases], as version 1, so one created before this spec
- * routes every id where it did. The newest version is read at most every [refreshEvery], and at once on [refresh].
+ * empty is given the ranges spec 0088's formula gives [databases], as version 1, so one created before this spec routes
+ * every id where it did. The newest version is read at most every [refreshEvery], and at once on [refresh].
  */
 class JdbcSliceTable(
     private val primary: DataSource,
@@ -26,8 +26,7 @@ class JdbcSliceTable(
     // A lock rather than a monitor: an append waiting on it is a virtual thread, which a monitor pins to its carrier.
     private val reading = ReentrantLock()
 
-    @Volatile
-    private var held: Pair<SliceMap, TimeSource.Monotonic.ValueTimeMark>? = null
+    @Volatile private var held: Pair<SliceMap, TimeSource.Monotonic.ValueTimeMark>? = null
 
     /**
      * The map held, read again when it is [refreshEvery] old by one caller only: every other goes on with the map it
@@ -50,15 +49,16 @@ class JdbcSliceTable(
     }
 
     private fun read(): SliceMap {
-        val map = primary.connection.use { connection ->
-            val newest = connection.newest()
-            val held = held?.first
-            when {
-                held != null && held.version == newest -> held
-                newest != null -> connection.load(newest)
-                else -> connection.first()
+        val map =
+            primary.connection.use { connection ->
+                val newest = connection.newest()
+                val held = held?.first
+                when {
+                    held != null && held.version == newest -> held
+                    newest != null -> connection.load(newest)
+                    else -> connection.first()
+                }
             }
-        }
         held = map to time.markNow()
         return map
     }
@@ -74,26 +74,28 @@ class JdbcSliceTable(
         return load(checkNotNull(newest()))
     }
 
-    private fun Connection.newest(): Long? = statement("select max(version) from surefold_journal_slices") { select ->
-        select.executeQuery().use { rows ->
-            rows.next()
-            rows.getLong(1).takeUnless { rows.wasNull() }
+    private fun Connection.newest(): Long? =
+        statement("select max(version) from surefold_journal_slices") { select ->
+            select.executeQuery().use { rows ->
+                rows.next()
+                rows.getLong(1).takeUnless { rows.wasNull() }
+            }
         }
-    }
 
     @Suppress("MagicNumber") // column indices
-    private fun Connection.load(version: Long): SliceMap = SliceMap(
-        version,
-        statement(
-            "select from_slice, to_slice, owner from surefold_journal_slices where version = ? order by from_slice",
+    private fun Connection.load(version: Long): SliceMap =
+        SliceMap(
             version,
-        ) { select ->
-            select.executeQuery().use { rows ->
-                generateSequence { if (rows.next()) rows.getInt(1)..rows.getInt(2) to rows.getString(3) else null }
-                    .toList()
-            }
-        },
-    )
+            statement(
+                "select from_slice, to_slice, owner from surefold_journal_slices where version = ? order by from_slice",
+                version,
+            ) { select ->
+                select.executeQuery().use { rows ->
+                    generateSequence { if (rows.next()) rows.getInt(1)..rows.getInt(2) to rows.getString(3) else null }
+                        .toList()
+                }
+            },
+        )
 }
 
 /** Writes [map]'s ranges under its version, in one transaction: a version already written fails on its key. */

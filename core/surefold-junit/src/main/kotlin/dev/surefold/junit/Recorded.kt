@@ -12,7 +12,8 @@ import java.util.concurrent.CopyOnWriteArrayList
 internal class Record {
     private val checks = CopyOnWriteArrayList<Expectations>()
 
-    val size: Int get() = checks.size
+    val size: Int
+        get() = checks.size
 
     fun add(check: Expectations) {
         checks += check
@@ -44,9 +45,10 @@ internal fun <A> recording(block: () -> A): Pair<A, Expectations> {
 
 /** [check], added to the record bound here. A check made where none is, outside a test, is an error. */
 internal fun recorded(check: Expectations): Expectations {
-    val into = checkNotNull(record.get()) {
-        "a check made outside a test, or on a thread surefold does not carry the test's context to: $check"
-    }
+    val into =
+        checkNotNull(record.get()) {
+            "a check made outside a test, or on a thread surefold does not carry the test's context to: $check"
+        }
     into.add(check)
     return check
 }

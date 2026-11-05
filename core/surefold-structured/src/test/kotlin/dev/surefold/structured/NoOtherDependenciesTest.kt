@@ -3,8 +3,8 @@ package dev.surefold.structured
 import dev.surefold.assert.shouldBeEmpty
 import dev.surefold.assert.shouldNotBeNull
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.io.File
+import org.junit.jupiter.api.Test
 
 /** surefold and the JDK: the module's whole point is that the JDK now has what it needs. */
 class NoOtherDependenciesTest {
@@ -18,9 +18,11 @@ class NoOtherDependenciesTest {
             raw.shouldNotBeNull()
         }
 
-        val unexpected = raw!!.split(File.pathSeparator)
-            .filter { it.isNotBlank() }
-            .filterNot { entry -> allowed.any { entry.startsWith(it) } }
+        val unexpected =
+            raw!!
+                .split(File.pathSeparator)
+                .filter { it.isNotBlank() }
+                .filterNot { entry -> allowed.any { entry.startsWith(it) } }
 
         withClue("surefold-structured must stay surefold and the JDK, but found: $unexpected") {
             unexpected.shouldBeEmpty()

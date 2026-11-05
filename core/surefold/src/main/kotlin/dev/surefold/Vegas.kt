@@ -4,16 +4,16 @@ import kotlin.math.log10
 import kotlin.math.max
 
 /**
- * TCP Vegas, as a concurrency limit (specs 0171 and 0187). The fastest window seen is the dependency unloaded; a
- * window slower than that means about `limit * (1 - unloaded / took)` calls are queueing inside it. Windows rather
- * than single calls on both sides, since the fastest single call is luck, and comparing with it reads a dependency's
- * ordinary jitter as queueing, more so the higher the limit.
+ * TCP Vegas, as a concurrency limit (specs 0171 and 0187). The fastest window seen is the dependency unloaded; a window
+ * slower than that means about `limit * (1 - unloaded / took)` calls are queueing inside it. Windows rather than single
+ * calls on both sides, since the fastest single call is luck, and comparing with it reads a dependency's ordinary
+ * jitter as queueing, more so the higher the limit.
  *
- * The limit moves once per window of about `limit` calls. With no queue it doubles until the first window that
- * queues, as TCP's slow start does, and grows by a tenth after that; with a short one by `log10(limit)`; with a long
- * one it drops at once to what the dependency is serving plus a short queue. What counts as no, short or long
- * queue scales with the limit as well as `log10(limit)`: jitter of a few percent reads as that many percent of the
- * limit queueing, which at a limit of hundreds is past any fixed number of calls. A failed call backs it off at once.
+ * The limit moves once per window of about `limit` calls. With no queue it doubles until the first window that queues,
+ * as TCP's slow start does, and grows by a tenth after that; with a short one by `log10(limit)`; with a long one it
+ * drops at once to what the dependency is serving plus a short queue. What counts as no, short or long queue scales
+ * with the limit as well as `log10(limit)`: jitter of a few percent reads as that many percent of the limit queueing,
+ * which at a limit of hundreds is past any fixed number of calls. A failed call backs it off at once.
  */
 internal class Vegas(initial: Int, private val min: Int, private val max: Int) {
     private var limit = initial.toDouble()
@@ -61,22 +61,23 @@ internal class Vegas(initial: Int, private val min: Int, private val max: Int) {
         val calm = queued < max(1.0, limit * CALM)
         if (!calm) starting = false
         val epochEnds = ++windows % FORGET_EVERY == 0L
-        val next = when {
-            // Once an epoch, down to what the dependency is serving, so that every epoch has a window with no queue
-            // in it, as BBR probes for its round trip: the fastest window of an epoch that was queueing throughout
-            // would otherwise be forgotten into unloaded, and the limit would queue more each epoch.
-            epochEnds -> minOf(limit, max(serving, limit * MOST_CUT))
+        val next =
+            when {
+                // Once an epoch, down to what the dependency is serving, so that every epoch has a window with no queue
+                // in it, as BBR probes for its round trip: the fastest window of an epoch that was queueing throughout
+                // would otherwise be forgotten into unloaded, and the limit would queue more each epoch.
+                epochEnds -> minOf(limit, max(serving, limit * MOST_CUT))
 
-            // Only a limit that is being used grows: an idle one would otherwise climb to max on quiet calls.
-            calm && busy -> limit + max(step, limit * if (starting) 1.0 else GROWTH)
+                // Only a limit that is being used grows: an idle one would otherwise climb to max on quiet calls.
+                calm && busy -> limit + max(step, limit * if (starting) 1.0 else GROWTH)
 
-            queued <= max(GROW_BELOW * step, limit * SHORT) && busy -> limit + step
+                queued <= max(GROW_BELOW * step, limit * SHORT) && busy -> limit + step
 
-            queued >= max(SHRINK_ABOVE * step, limit * LONG) ->
-                minOf(limit, max(serving + GROW_BELOW * step, limit * MOST_CUT))
+                queued >= max(SHRINK_ABOVE * step, limit * LONG) ->
+                    minOf(limit, max(serving + GROW_BELOW * step, limit * MOST_CUT))
 
-            else -> limit
-        }
+                else -> limit
+            }
         // Forget the fastest window now and then, so a dependency that got slower for good is not read as queueing
         // for ever.
         if (epochEnds) {

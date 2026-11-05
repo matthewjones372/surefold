@@ -18,13 +18,13 @@ import kotlin.time.Duration.Companion.milliseconds
 fun <A> eventually(within: Duration, every: Duration = 20.milliseconds, block: () -> A): A =
     Schedule.spaced<Throwable>(every)
         .and(Schedule.upTo(within)) { retried, elapsed -> Waited(retried + 1, elapsed) }
-        .retryOrElse({
-            tries.get().attempt(block).also {
-                if (it is Verdict &&
-                    !it.held
-                ) throw NotYet(it)
-            }
-        }) { last, w ->
+        .retryOrElse(
+            {
+                tries.get().attempt(block).also {
+                    if (it is Verdict && !it.held) throw NotYet(it)
+                }
+            },
+        ) { last, w ->
             when (last) {
                 is NotYet -> last.verdict.gaveUpAs(w)
                 is NotHeld -> last.gaveUp(w)
@@ -41,8 +41,7 @@ interface Tries {
 }
 
 /** The [Tries] [eventually] runs its tries through; unbound, each try is just [block]. */
-@TrySeam
-val tries: SurefoldLocal<Tries> = surefoldLocal { Plainly }
+@TrySeam val tries: SurefoldLocal<Tries> = surefoldLocal { Plainly }
 
 /** A seam for surefold's own modules that keep a record of each try, such as a test engine. */
 @RequiresOptIn("A seam for surefold's own modules that keep a record of each try.")
@@ -72,8 +71,7 @@ interface Verdict {
  * A try whose checks, its [verdict], did not hold though it returned [answered]: thrown by a [Tries] so that
  * [eventually] tries again, and if time runs out gives the checks up and answers what the last try returned.
  */
-@TrySeam
-class NotHeld(val answered: Any?, val verdict: Verdict) : RuntimeException(null, null, false, false)
+@TrySeam class NotHeld(val answered: Any?, val verdict: Verdict) : RuntimeException(null, null, false, false)
 
 /** An [eventually] that ran out of time after [tries] tries in [elapsed]; its cause is what the last try threw. */
 class GaveUp(val tries: Long, val elapsed: Duration, last: Throwable) :

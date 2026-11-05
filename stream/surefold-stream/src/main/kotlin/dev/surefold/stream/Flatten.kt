@@ -1,9 +1,9 @@
 package dev.surefold.stream
 
 /**
- * Each element expanded into a stream of its own, one after another. The inner stream may fail, which
- * is why it is a [Stream] rather than a `Source`: a paged fetch that can fail would otherwise go back
- * to the untyped side, which is the shape this exists to delete.
+ * Each element expanded into a stream of its own, one after another. The inner stream may fail, which is why it is a
+ * [Stream] rather than a `Source`: a paged fetch that can fail would otherwise go back to the untyped side, which is
+ * the shape this exists to delete.
  */
 fun <E, A : Any, B : Any> Pipe.Companion.flatMapConcat(f: (A) -> Stream<E, B>): Pipe<E, A, B> =
     Pipe(Node.FlatMap(Node.Hole, f.erased(), breadth = null, buildSite()))

@@ -13,50 +13,52 @@ private const val PING_REQ = 5
 
 /** The protocol as it crosses between nodes. */
 internal object SwimCodec : MessageCodec<Swim> {
-    override fun write(message: Swim, out: WireOut) = when (message) {
-        is Swim.Join -> {
-            out.int(JOIN)
-            out.incarnation(message.from)
+    override fun write(message: Swim, out: WireOut) =
+        when (message) {
+            is Swim.Join -> {
+                out.int(JOIN)
+                out.incarnation(message.from)
+            }
+
+            is Swim.Welcome -> {
+                out.int(WELCOME)
+                out.incarnation(message.to)
+                out.gossip(message.gossip)
+            }
+
+            is Swim.Ping -> {
+                out.int(PING)
+                out.incarnation(message.from)
+                out.incarnation(message.to)
+                out.long(message.seq)
+                out.gossip(message.gossip)
+            }
+
+            is Swim.Ack -> {
+                out.int(ACK)
+                out.incarnation(message.from)
+                out.long(message.seq)
+                out.gossip(message.gossip)
+            }
+
+            is Swim.PingReq -> {
+                out.int(PING_REQ)
+                out.incarnation(message.from)
+                out.incarnation(message.target)
+                out.long(message.seq)
+                out.gossip(message.gossip)
+            }
         }
 
-        is Swim.Welcome -> {
-            out.int(WELCOME)
-            out.incarnation(message.to)
-            out.gossip(message.gossip)
+    override fun read(input: WireIn): Swim =
+        when (val tag = input.int()) {
+            JOIN -> Swim.Join(input.incarnation())
+            WELCOME -> Swim.Welcome(input.incarnation(), input.gossip())
+            PING -> Swim.Ping(input.incarnation(), input.incarnation(), input.long(), input.gossip())
+            ACK -> Swim.Ack(input.incarnation(), input.long(), input.gossip())
+            PING_REQ -> Swim.PingReq(input.incarnation(), input.incarnation(), input.long(), input.gossip())
+            else -> error("no cluster message has the tag $tag")
         }
-
-        is Swim.Ping -> {
-            out.int(PING)
-            out.incarnation(message.from)
-            out.incarnation(message.to)
-            out.long(message.seq)
-            out.gossip(message.gossip)
-        }
-
-        is Swim.Ack -> {
-            out.int(ACK)
-            out.incarnation(message.from)
-            out.long(message.seq)
-            out.gossip(message.gossip)
-        }
-
-        is Swim.PingReq -> {
-            out.int(PING_REQ)
-            out.incarnation(message.from)
-            out.incarnation(message.target)
-            out.long(message.seq)
-            out.gossip(message.gossip)
-        }
-    }
-
-    override fun read(input: WireIn): Swim = when (val tag = input.int()) {
-        JOIN -> Swim.Join(input.incarnation())
-        WELCOME -> Swim.Welcome(input.incarnation(), input.gossip())
-        PING -> Swim.Ping(input.incarnation(), input.incarnation(), input.long(), input.gossip())
-        ACK -> Swim.Ack(input.incarnation(), input.long(), input.gossip())
-        PING_REQ -> Swim.PingReq(input.incarnation(), input.incarnation(), input.long(), input.gossip())
-        else -> error("no cluster message has the tag $tag")
-    }
 }
 
 private fun WireOut.incarnation(of: Incarnation) {
@@ -117,12 +119,13 @@ private fun WireOut.gossip(gossip: Gossip) {
     gossip.admitted.forEach { incarnation(it) }
 }
 
-private fun WireIn.gossip() = Gossip(
-    origin = nullable { incarnation() },
-    members = map { incarnation() to Entry(Status.entries[int()], int()) },
-    observed = map { Observation(incarnation(), incarnation()) to Seen(boolean(), long()) },
-    digests = map { incarnation() to Digest(long(), long()) },
-    loads = map { incarnation() to Load(long(), map { string() to map { int() to ShardLoad(int(), int()) } }) },
-    moves = map { string() to Moves(long(), map { int() to incarnation() }) },
-    admitted = List(int()) { incarnation() }.toSet(),
-)
+private fun WireIn.gossip() =
+    Gossip(
+        origin = nullable { incarnation() },
+        members = map { incarnation() to Entry(Status.entries[int()], int()) },
+        observed = map { Observation(incarnation(), incarnation()) to Seen(boolean(), long()) },
+        digests = map { incarnation() to Digest(long(), long()) },
+        loads = map { incarnation() to Load(long(), map { string() to map { int() to ShardLoad(int(), int()) } }) },
+        moves = map { string() to Moves(long(), map { int() to incarnation() }) },
+        admitted = List(int()) { incarnation() }.toSet(),
+    )

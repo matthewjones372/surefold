@@ -28,8 +28,7 @@ interface Guard {
 sealed class Rejected(val guard: String, message: String) : RuntimeException(message) {
     class CircuitOpen(guard: String, val retryAt: Instant) : Rejected(guard, "$guard is open until $retryAt")
 
-    class RateLimited(guard: String, val retryAfter: Duration) :
-        Rejected(guard, "$guard has no token for $retryAfter")
+    class RateLimited(guard: String, val retryAfter: Duration) : Rejected(guard, "$guard has no token for $retryAfter")
 
     class BulkheadFull(guard: String) : Rejected(guard, "$guard has no permit free")
 }
@@ -92,9 +91,9 @@ class PolicyBuilder internal constructor() {
     }
 
     /**
-     * Calls kept inside [limit], in a bulkhead's place: the one value every caller of a dependency shares, so a
-     * stream, a `parMap` and this policy draw on one budget (spec 0171). A call waits up to [maxWait] for room,
-     * as at a [Bulkhead], and is refused with [Rejected.BulkheadFull] after.
+     * Calls kept inside [limit], in a bulkhead's place: the one value every caller of a dependency shares, so a stream,
+     * a `parMap` and this policy draw on one budget (spec 0171). A call waits up to [maxWait] for room, as at a
+     * [Bulkhead], and is refused with [Rejected.BulkheadFull] after.
      */
     fun guard(limit: Limit, maxWait: Duration = ZERO) {
         steps += Step.Concurrency(limit, maxWait)
@@ -122,9 +121,9 @@ fun <E, A> Fail<E>.guarded(policy: Policy, ifRejected: (Rejected) -> E, block: F
  * Runs [block] under this policy with its answer kept as a value (spec 0272). A left [countsAsFailure] picks is a
  * failed call to every step: retried, counted by a breaker that counts it, and learnt from by a limit. Any other left
  * is the dependency's answer and a success: it resets a breaker's failure streak and closes a half-open one, so the
- * selector should spare only errors the dependency itself answered with. What [block] throws, and a guard's refusal
- * or timeout, is handled as `policy { }` handles it and answered on the left. A fatal, an interrupt, a cancellation
- * or a `fail` on its way out goes up instead, even when [block] returned it on the left.
+ * selector should spare only errors the dependency itself answered with. What [block] throws, and a guard's refusal or
+ * timeout, is handled as `policy { }` handles it and answered on the left. A fatal, an interrupt, a cancellation or a
+ * `fail` on its way out goes up instead, even when [block] returned it on the left.
  *
  * [countsAsFailure] is asked once an attempt, inside the attempt: within its timeout's fork and the time a limit
  * measures. A selector that throws is a throw from [block], retried, counted and answered on the left as one.
@@ -132,16 +131,19 @@ fun <E, A> Fail<E>.guarded(policy: Policy, ifRejected: (Rejected) -> E, block: F
 fun <A> Policy.guardResult(
     countsAsFailure: (Throwable) -> Boolean = { true },
     block: () -> Either<Throwable, A>,
-): Either<Throwable, A> = Either.catch {
-    Unraisable.runPolicy(this, Answer<A>::failure) { Answer(block(), countsAsFailure) }.result
-}.flatMap { it }
+): Either<Throwable, A> =
+    Either.catch {
+            Unraisable.runPolicy(this, Answer<A>::failure) { Answer(block(), countsAsFailure) }.result
+        }
+        .flatMap { it }
 
 // What a block answered, and the failure in it if the caller's selector picked one: asked once an attempt.
 private class Answer<A>(val result: Either<Throwable, A>, selected: (Throwable) -> Boolean) {
-    val failure: Throwable? = when (result) {
-        is Either.Right -> null
-        is Either.Left -> result.value.nonFatalOrThrow().takeIf(selected)
-    }
+    val failure: Throwable? =
+        when (result) {
+            is Either.Right -> null
+            is Either.Left -> result.value.nonFatalOrThrow().takeIf(selected)
+        }
 }
 
 // The order the runner reads a plan in. A guard Surefold cannot see into has no place in it.
@@ -155,22 +157,27 @@ private enum class Kind(val label: String) {
 }
 
 private val Step.kind: Kind?
-    get() = when (this) {
-        is Step.Deadline -> Kind.DEADLINE
-        is Step.Retry -> Kind.RETRY
-        is Step.Breaker -> Kind.BREAKER
-        is Step.Limit -> Kind.LIMIT
-        is Step.Bulkhead, is Step.Concurrency -> Kind.BULKHEAD
-        is Step.AttemptTimeout -> Kind.ATTEMPT_TIMEOUT
-        is Step.Custom -> null
-    }
+    get() =
+        when (this) {
+            is Step.Deadline -> Kind.DEADLINE
+            is Step.Retry -> Kind.RETRY
+            is Step.Breaker -> Kind.BREAKER
+            is Step.Limit -> Kind.LIMIT
+            is Step.Bulkhead,
+            is Step.Concurrency -> Kind.BULKHEAD
+            is Step.AttemptTimeout -> Kind.ATTEMPT_TIMEOUT
+            is Step.Custom -> null
+        }
 
 private fun checkOrder(name: String, steps: List<Step>) {
     val expected = "Expected order: " + Kind.entries.joinToString(" → ") { it.label }
-    steps.mapNotNull { it.kind }.zipWithNext().forEach { (before, after) ->
-        require(before != after) { "Policy \"$name\": ${after.label} appears twice. $expected" }
-        require(before < after) { "Policy \"$name\": ${after.label} comes after ${before.label}. $expected" }
-    }
+    steps
+        .mapNotNull { it.kind }
+        .zipWithNext()
+        .forEach { (before, after) ->
+            require(before != after) { "Policy \"$name\": ${after.label} appears twice. $expected" }
+            require(before < after) { "Policy \"$name\": ${after.label} comes after ${before.label}. $expected" }
+        }
     val total = steps.firstNotNullOfOrNull { (it as? Step.Deadline)?.total }
     val each = steps.firstNotNullOfOrNull { (it as? Step.AttemptTimeout)?.each }
     require(total == null || each == null || each <= total) {
@@ -202,35 +209,44 @@ private fun <E, A> Fail<E>.runPolicy(
     } finally {
         outcome?.let { (result, by) ->
             counter(
-                "surefold.policy.calls",
-                "policy" to policy.name,
-                "outcome" to result,
-                "refused_by" to by,
-            ).increment()
+                    "surefold.policy.calls",
+                    "policy" to policy.name,
+                    "outcome" to result,
+                    "refused_by" to by,
+                )
+                .increment()
         }
     }
 }
 
 /** What a call that threw is counted as; nothing for a fail or a cancellation. */
-private fun outcomeOf(thrown: Throwable): Pair<String, String>? = when (thrown) {
-    is Rejected -> "rejected" to thrown.refusedBy
-    is DeadlinePassed -> "rejected" to "deadline"
-    is CancellationException, is Failed -> null
-    else -> "failure" to "none"
-}
+private fun outcomeOf(thrown: Throwable): Pair<String, String>? =
+    when (thrown) {
+        is Rejected -> "rejected" to thrown.refusedBy
+        is DeadlinePassed -> "rejected" to "deadline"
+        is CancellationException,
+        is Failed -> null
+        else -> "failure" to "none"
+    }
 
 // The throws nonFatalOrThrow rethrows: neither a fault in the call nor one a breaker should count.
-private fun Throwable.isNonFatal(): Boolean = when (this) {
-    is VirtualMachineError, is LinkageError, is InterruptedException, is CancellationException, is Failed -> false
-    else -> true
-}
+private fun Throwable.isNonFatal(): Boolean =
+    when (this) {
+        is VirtualMachineError,
+        is LinkageError,
+        is InterruptedException,
+        is CancellationException,
+        is Failed -> false
+        else -> true
+    }
 
 private val Rejected.refusedBy: String
-    get() = when (this) {
-        is Rejected.CircuitOpen -> "breaker"
-        is Rejected.RateLimited -> "limiter"
-        is Rejected.BulkheadFull -> "bulkhead"
-    }
+    get() =
+        when (this) {
+            is Rejected.CircuitOpen -> "breaker"
+            is Rejected.RateLimited -> "limiter"
+            is Rejected.BulkheadFull -> "bulkhead"
+        }
 
 /** The policy's deadline ran out, as against a timeout of the call's own or one attempt's. */
 private class DeadlinePassed : TimeoutException("the policy's deadline has passed")
@@ -298,11 +314,12 @@ private fun <E, A> Fail<E>.through(
     try {
         return block().also { answer ->
             val failed = failure(answer)
-            result = when {
-                failed == null -> CircuitBreaker.Result.SUCCESS
-                breaker.countsAsFailure(failed) -> CircuitBreaker.Result.FAILURE
-                else -> CircuitBreaker.Result.UNCOUNTED
-            }
+            result =
+                when {
+                    failed == null -> CircuitBreaker.Result.SUCCESS
+                    breaker.countsAsFailure(failed) -> CircuitBreaker.Result.FAILURE
+                    else -> CircuitBreaker.Result.UNCOUNTED
+                }
         }
     } catch (thrown: Throwable) {
         // Not for a fail or an interrupt, nor for what the JVM cannot recover from.
@@ -376,18 +393,19 @@ private fun <E, A> Fail<E>.inside(
 
 // One fork for an attempt, and none at all when nothing bounds it. A timeout that leaves no budget is the
 // deadline's, whichever limit was the shorter.
-private fun <E, A> Fail<E>.cut(limit: Duration, budget: Budget, block: Fail<E>.() -> A): A = when {
-    limit <= ZERO -> throw DeadlinePassed()
+private fun <E, A> Fail<E>.cut(limit: Duration, budget: Budget, block: Fail<E>.() -> A): A =
+    when {
+        limit <= ZERO -> throw DeadlinePassed()
 
-    limit.isInfinite() -> block()
+        limit.isInfinite() -> block()
 
-    else ->
-        try {
-            timeout(limit, block)
-        } catch (timedOut: TimeoutException) {
-            throw if (budget.remaining() <= ZERO) DeadlinePassed().apply { initCause(timedOut) } else timedOut
-        }
-}
+        else ->
+            try {
+                timeout(limit, block)
+            } catch (timedOut: TimeoutException) {
+                throw if (budget.remaining() <= ZERO) DeadlinePassed().apply { initCause(timedOut) } else timedOut
+            }
+    }
 
 // Stops a schedule instead of letting it sleep into a deadline the next attempt could not meet.
 private fun <Output> Schedule<Throwable, Output>.within(budget: Budget): Schedule<Throwable, Output> {

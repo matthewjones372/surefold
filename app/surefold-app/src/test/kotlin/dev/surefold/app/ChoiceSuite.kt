@@ -8,7 +8,10 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.time.Duration.Companion.seconds
 
 object ChoiceSuite : Suite() {
-    private enum class Kind { InProcess, Remote }
+    private enum class Kind {
+        InProcess,
+        Remote,
+    }
 
     private interface Bus
 
@@ -39,8 +42,7 @@ object ChoiceSuite : Suite() {
         single<Kind> { kind } +
             choice<Kind, Bus> { chosen ->
                 when (chosen) {
-                    Kind.InProcess ->
-                        closingOf { -> Hub(closed) } + single { hub: Hub -> LocalBus(hub) }.boundTo<Bus>()
+                    Kind.InProcess -> closingOf { -> Hub(closed) } + single { hub: Hub -> LocalBus(hub) }.boundTo<Bus>()
 
                     Kind.Remote ->
                         closingOf { -> Producer(closed) } +
@@ -72,8 +74,10 @@ object ChoiceSuite : Suite() {
 
         test("a branch that does not provide the key refuses the start, naming it") {
             val closed = CopyOnWriteArrayList<String>()
-            val app = single<Kind> { Kind.InProcess } + choice<Kind, Bus> { _ -> single<String> { "no bus" } } +
-                single { bus: Bus -> Uses(bus, closed) }
+            val app =
+                single<Kind> { Kind.InProcess } +
+                    choice<Kind, Bus> { _ -> single<String> { "no bus" } } +
+                    single { bus: Bus -> Uses(bus, closed) }
 
             val refused = app.use { _: Uses -> }.leftOrNull()
 
@@ -82,9 +86,10 @@ object ChoiceSuite : Suite() {
 
         test("a branch that needs what nothing builds refuses the start") {
             val closed = CopyOnWriteArrayList<String>()
-            val app = single<Kind> { Kind.InProcess } +
-                choice<Kind, Bus> { _ -> single { hub: Hub -> LocalBus(hub) }.boundTo<Bus>() } +
-                single { bus: Bus -> Uses(bus, closed) }
+            val app =
+                single<Kind> { Kind.InProcess } +
+                    choice<Kind, Bus> { _ -> single { hub: Hub -> LocalBus(hub) }.boundTo<Bus>() } +
+                    single { bus: Bus -> Uses(bus, closed) }
 
             val refused = app.use { _: Uses -> }.leftOrNull()
 
@@ -117,12 +122,17 @@ object ChoiceSuite : Suite() {
 
         test("a probe in the branch is asked like any other") {
             val closed = CopyOnWriteArrayList<String>()
-            val app = single<Kind> { Kind.InProcess } +
-                choice<Kind, Bus> { _ ->
-                    (closingOf { -> Hub(closed) } + single { hub: Hub -> LocalBus(hub) }.boundTo<Bus>())
-                        .probe("bus", timeout = 1.seconds) { _: Bus -> false }
-                } +
-                single { bus: Bus -> Uses(bus, closed) }
+            val app =
+                single<Kind> { Kind.InProcess } +
+                    choice<Kind, Bus> { _ ->
+                        (closingOf { -> Hub(closed) } + single { hub: Hub -> LocalBus(hub) }.boundTo<Bus>()).probe(
+                            "bus",
+                            timeout = 1.seconds,
+                        ) { _: Bus ->
+                            false
+                        }
+                    } +
+                    single { bus: Bus -> Uses(bus, closed) }
 
             val refused = app.use { _: Uses -> }.leftOrNull()
 

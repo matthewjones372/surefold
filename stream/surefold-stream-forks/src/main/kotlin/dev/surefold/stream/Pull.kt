@@ -9,8 +9,8 @@ import java.util.concurrent.CompletionStage
 import java.util.concurrent.ExecutionException
 
 /**
- * One element at a time, on the thread that asks. `null` is the end, which no element can be, because
- * every element is `Any`. A stage only runs when the one after it asks, so a `take` stops its source.
+ * One element at a time, on the thread that asks. `null` is the end, which no element can be, because every element is
+ * `Any`. A stage only runs when the one after it asks, so a `take` stops its source.
  */
 @StreamSpi
 fun interface Pull {
@@ -19,8 +19,8 @@ fun interface Pull {
 
 /**
  * Where a backend built on the pull loop runs the operators Forks forks for, its own way: handed to [Pulling], and
- * asked for each node as its pull is built. [pull] answers null for a node it leaves to
- * Forks, and builds the pull of any node under it with [pulled].
+ * asked for each node as its pull is built. [pull] answers null for a node it leaves to Forks, and builds the pull of
+ * any node under it with [pulled].
  */
 @StreamSpi
 fun interface Boundaries {
@@ -28,8 +28,8 @@ fun interface Boundaries {
 }
 
 /**
- * What a pull is built under, handed to it rather than read from its thread (spec 0152): the run's time, its forks
- * and blocking sources, and the backend that runs some operators its own way. A pull built later, by a `concat`, a
+ * What a pull is built under, handed to it rather than read from its thread (spec 0152): the run's time, its forks and
+ * blocking sources, and the backend that runs some operators its own way. A pull built later, by a `concat`, a
  * `catchAll` or a fork, is built under the one it was handed.
  */
 internal class PullContext(
@@ -39,10 +39,12 @@ internal class PullContext(
     val resources: Resources?,
     val boundaries: Boundaries?,
 ) {
-    val onClock: Boolean get() = turns != null
+    val onClock: Boolean
+        get() = turns != null
 
     /** The turns of a run on a test's clock, for a node that only pulls on one. */
-    val clockTurns: Turns get() = checkNotNull(turns) { "a node with time in it was pulled off a test's clock" }
+    val clockTurns: Turns
+        get() = checkNotNull(turns) { "a node with time in it was pulled off a test's clock" }
 
     /** The same run, with [scope] for the blocking sources the pulls built under it open: one restart's attempt. */
     fun within(scope: Resources): PullContext = PullContext(turns, releases, scope, boundaries)
@@ -55,122 +57,157 @@ internal class PullContext(
 /** The operators a pull runs: every one with no backend of its own in it, since spec 0052. */
 internal fun Node.pulls(): Boolean =
     when (this) {
-        is Node.Elements, is Node.Single, Node.Empty, is Node.Fail, is Node.FromStage, is Node.Blocking,
-        is Node.Map, is Node.MapOrFail, is Node.Filter, is Node.FilterNot, is Node.Take, is Node.Drop,
-        is Node.TakeWhile, is Node.DropWhile, is Node.Grouped, is Node.Scan, is Node.StatefulMap,
-        is Node.MapConcat, is Node.Either, is Node.Absolve, is Node.CatchAll, is Node.MapError,
-        is Node.OrFailIfEmpty, is Node.Concat, is Node.Prepend, is Node.ZipWith, is Node.Fused, is Node.Probed,
-        is Node.MapPar, is Node.Buffer, is Node.Sliding, is Node.Interleave, is Node.MapAsync, is Node.FlatMap,
-        is Node.Merge, is Node.Conflate, is Node.Tick, is Node.GroupedWithin, is Node.RestartOnDefect,
-        -> true
+        is Node.Elements,
+        is Node.Single,
+        Node.Empty,
+        is Node.Fail,
+        is Node.FromStage,
+        is Node.Blocking,
+        is Node.Map,
+        is Node.MapOrFail,
+        is Node.Filter,
+        is Node.FilterNot,
+        is Node.Take,
+        is Node.Drop,
+        is Node.TakeWhile,
+        is Node.DropWhile,
+        is Node.Grouped,
+        is Node.Scan,
+        is Node.StatefulMap,
+        is Node.MapConcat,
+        is Node.Either,
+        is Node.Absolve,
+        is Node.CatchAll,
+        is Node.MapError,
+        is Node.OrFailIfEmpty,
+        is Node.Concat,
+        is Node.Prepend,
+        is Node.ZipWith,
+        is Node.Fused,
+        is Node.Probed,
+        is Node.MapPar,
+        is Node.Buffer,
+        is Node.Sliding,
+        is Node.Interleave,
+        is Node.MapAsync,
+        is Node.FlatMap,
+        is Node.Merge,
+        is Node.Conflate,
+        is Node.Tick,
+        is Node.GroupedWithin,
+        is Node.RestartOnDefect -> true
 
-        is Node.Native, is Node.Stage, Node.Hole,
-        -> false
+        is Node.Native,
+        is Node.Stage,
+        Node.Hole -> false
     }
 
 /**
- * The pull a node describes. `start` has refused every node its backend cannot run before this is reached.
- * A node with time in it waits on the run's [Timeline]: a test's clock, or the run's own on Forks.
+ * The pull a node describes. `start` has refused every node its backend cannot run before this is reached. A node with
+ * time in it waits on the run's [Timeline]: a test's clock, or the run's own on Forks.
  */
 context(ctx: PullContext)
 internal fun Node.pull(): Pull =
-    ctx.boundaries?.takeUnless { ctx.onClock }?.pull(this) { it.pull() } ?: when (this) {
-        is Node.Elements -> elements.iterator().let { items -> Pull { items.takeIf { it.hasNext() }?.next() } }
+    ctx.boundaries?.takeUnless { ctx.onClock }?.pull(this) { it.pull() }
+        ?: when (this) {
+            is Node.Elements -> elements.iterator().let { items -> Pull { items.takeIf { it.hasNext() }?.next() } }
 
-        is Node.Single -> once { element }
+            is Node.Single -> once { element }
 
-        Node.Empty -> Pull { null }
+            Node.Empty -> Pull { null }
 
-        is Node.Fail -> Pull { throw DeclaredFailure(error) }
+            is Node.Fail -> Pull { throw DeclaredFailure(error) }
 
-        is Node.FromStage -> once { awaited(this) }
+            is Node.FromStage -> once { awaited(this) }
 
-        is Node.Blocking -> blocking(ctx.resources)
+            is Node.Blocking -> blocking(ctx.resources)
 
-        is Node.Map -> map()
+            is Node.Map -> map()
 
-        is Node.MapOrFail -> mapOrFail()
+            is Node.MapOrFail -> mapOrFail()
 
-        is Node.Filter -> kept("filter", at) { a -> predicate(a) }
+            is Node.Filter -> kept("filter", at) { a -> predicate(a) }
 
-        is Node.FilterNot -> kept("filterNot", at) { a -> !predicate(a) }
+            is Node.FilterNot -> kept("filterNot", at) { a -> !predicate(a) }
 
-        is Node.Take -> take()
+            is Node.Take -> take()
 
-        is Node.Drop -> drop()
+            is Node.Drop -> drop()
 
-        is Node.TakeWhile -> takeWhile()
+            is Node.TakeWhile -> takeWhile()
 
-        is Node.DropWhile -> dropWhile()
+            is Node.DropWhile -> dropWhile()
 
-        is Node.Grouped -> grouped()
+            is Node.Grouped -> grouped()
 
-        is Node.Scan -> scan()
+            is Node.Scan -> scan()
 
-        is Node.StatefulMap -> statefulMap()
+            is Node.StatefulMap -> statefulMap()
 
-        is Node.MapConcat -> mapConcat()
+            is Node.MapConcat -> mapConcat()
 
-        is Node.Either -> either()
+            is Node.Either -> either()
 
-        is Node.Absolve -> absolve()
+            is Node.Absolve -> absolve()
 
-        is Node.CatchAll -> catchAll()
+            is Node.CatchAll -> catchAll()
 
-        is Node.MapError -> mapError()
+            is Node.MapError -> mapError()
 
-        is Node.OrFailIfEmpty -> orFailIfEmpty()
+            is Node.OrFailIfEmpty -> orFailIfEmpty()
 
-        is Node.FlatMap -> flatMapped(breadth)
+            is Node.FlatMap -> flatMapped(breadth)
 
-        is Node.Concat -> upstream.then(next)
+            is Node.Concat -> upstream.then(next)
 
-        is Node.Prepend -> first.then(upstream)
+            is Node.Prepend -> first.then(upstream)
 
-        is Node.ZipWith -> zipWith()
+            is Node.ZipWith -> zipWith()
 
-        is Node.Fused -> fusedLoop()
+            is Node.Fused -> fusedLoop()
 
-        is Node.Probed -> probed()
+            is Node.Probed -> probed()
 
-        is Node.Tick -> tick(ctx.timeline())
+            is Node.Tick -> tick(ctx.timeline())
 
-        is Node.GroupedWithin -> groupedWithin(ctx.timeline())
+            is Node.GroupedWithin -> groupedWithin(ctx.timeline())
 
-        is Node.RestartOnDefect -> restarting(ctx.timeline())
+            is Node.RestartOnDefect -> restarting(ctx.timeline())
 
-        // On a test's clock one element at a time, in the order they came, which is the answer a test of
-        // timing wants, and keeps every key's order too; on Forks, a window of bodies in flight.
-        is Node.MapPar -> {
-            val keyed = key
-            when {
-                ctx.onClock -> inOrder()
-                keyed != null -> keyedWindow(keyed)
-                ordered -> window()
-                else -> unorderedWindow()
+            // On a test's clock one element at a time, in the order they came, which is the answer a test of
+            // timing wants, and keeps every key's order too; on Forks, a window of bodies in flight.
+            is Node.MapPar -> {
+                val keyed = key
+                when {
+                    ctx.onClock -> inOrder()
+                    keyed != null -> keyedWindow(keyed)
+                    ordered -> window()
+                    else -> unorderedWindow()
+                }
             }
+
+            is Node.Buffer -> if (ctx.onClock) bufferedOnClock(ctx.clockTurns) else buffered()
+
+            is Node.Sliding -> sliding()
+
+            is Node.Interleave -> interleave()
+
+            // On a test's clock one stage at a time, as mapPar is; on Forks, a window of them fed by a fork.
+            is Node.MapAsync ->
+                when {
+                    ctx.onClock -> awaiting(1)
+                    ordered -> fed(parallelism)
+                    else -> fedUnordered()
+                }
+
+            is Node.Merge -> if (ctx.onClock) mergedOnClock(ctx.clockTurns) else merged()
+
+            is Node.Conflate -> if (ctx.onClock) conflatedOnClock(ctx.clockTurns) else conflated()
+
+            is Node.Native,
+            is Node.Stage,
+            Node.Hole -> error("$operator reached the Forks runner, which start refuses it before")
         }
-
-        is Node.Buffer -> if (ctx.onClock) bufferedOnClock(ctx.clockTurns) else buffered()
-
-        is Node.Sliding -> sliding()
-
-        is Node.Interleave -> interleave()
-
-        // On a test's clock one stage at a time, as mapPar is; on Forks, a window of them fed by a fork.
-        is Node.MapAsync -> when {
-            ctx.onClock -> awaiting(1)
-            ordered -> fed(parallelism)
-            else -> fedUnordered()
-        }
-
-        is Node.Merge -> if (ctx.onClock) mergedOnClock(ctx.clockTurns) else merged()
-
-        is Node.Conflate -> if (ctx.onClock) conflatedOnClock(ctx.clockTurns) else conflated()
-
-        is Node.Native, is Node.Stage, Node.Hole,
-        -> error("$operator reached the Forks runner, which start refuses it before")
-    }
 
 private fun once(element: () -> Any): Pull {
     var given = false
@@ -185,8 +222,8 @@ private fun once(element: () -> Any): Pull {
 }
 
 /**
- * Opened on the first pull rather than when the loop is built, so a stream nobody pulls opens nothing, and
- * closed as soon as it runs out; the run closes it otherwise, once its loop has ended.
+ * Opened on the first pull rather than when the loop is built, so a stream nobody pulls opens nothing, and closed as
+ * soon as it runs out; the run closes it otherwise, once its loop has ended.
  */
 @Suppress("TooGenericExceptionCaught") // Only to close before the failure goes on, unchanged.
 context(ctx: PullContext)
@@ -195,20 +232,27 @@ private fun Node.Blocking.blocking(resources: Resources?): Pull {
     var done = false
     return Pull {
         if (done) return@Pull null
-        val resource = opened ?: Opened(this).also { opened = it; resources?.add(it) }
+        val resource =
+            opened
+                ?: Opened(this).also {
+                    opened = it
+                    resources?.add(it)
+                }
         // A read that failed closes its resource at once: a restart opens a new one, and must not find the
         // old one still holding what it held, a consumer's place in its group among them.
-        val next = try {
-            resource.next()
-        } catch (failed: Throwable) {
-            done = true
-            resource.close()
-            throw failed
-        }
-        next ?: null.also {
-            done = true
-            resource.close()
-        }
+        val next =
+            try {
+                resource.next()
+            } catch (failed: Throwable) {
+                done = true
+                resource.close()
+                throw failed
+            }
+        next
+            ?: null.also {
+                done = true
+                resource.close()
+            }
     }
 }
 
@@ -313,7 +357,8 @@ private fun Node.Grouped.grouped(): Pull {
     return Pull {
         buildList {
             while (size < n) add(up.next() ?: break)
-        }.ifEmpty { null }
+        }
+            .ifEmpty { null }
     }
 }
 
@@ -382,9 +427,10 @@ private fun Node.Either.either(): Pull {
 @Suppress("UNCHECKED_CAST")
 context(ctx: PullContext)
 private fun Node.Absolve.absolve(): Pull {
-    val decided = guarded("absolve", at) { either: Any ->
-        (either as Either<Any?, Any>).fold({ left -> throw DeclaredFailure(left) }, { right -> right })
-    }
+    val decided =
+        guarded("absolve", at) { either: Any ->
+            (either as Either<Any?, Any>).fold({ left -> throw DeclaredFailure(left) }, { right -> right })
+        }
     val up = upstream.pull()
     return Pull { up.next()?.let(decided) }
 }
@@ -499,9 +545,9 @@ private fun Node.Fused.fusedLoop(): Pull {
 }
 
 /**
- * A fused step as the loop calls it: the next value, or `null` where a filter dropped the element. Each kind is a
- * class of its own and calls the caller's body from its own line, where [guarded] would call every body the library
- * runs from one: there the JIT sees too many bodies to inline any of them, and here it sees the bodies of one kind.
+ * A fused step as the loop calls it: the next value, or `null` where a filter dropped the element. Each kind is a class
+ * of its own and calls the caller's body from its own line, where [guarded] would call every body the library runs from
+ * one: there the JIT sees too many bodies to inline any of them, and here it sees the bodies of one kind.
  */
 private sealed class Link {
     abstract fun apply(a: Any): Any?
@@ -555,9 +601,9 @@ private fun Node.Probed.probed(): Pull {
 }
 
 /**
- * Windows of [Node.Sliding.n], each [Node.Sliding.step] on from the last, as Pekko's `sliding` answers
- * them: a step longer than the window skips what falls between, and the stream's end emits what is left
- * only where it holds elements no window has emitted yet.
+ * Windows of [Node.Sliding.n], each [Node.Sliding.step] on from the last, as Pekko's `sliding` answers them: a step
+ * longer than the window skips what falls between, and the stream's end emits what is left only where it holds elements
+ * no window has emitted yet.
  */
 context(ctx: PullContext)
 private fun Node.Sliding.sliding(): Pull = Windowing(upstream.pull(), n, step)
@@ -605,8 +651,8 @@ private class Windowing(private val up: Pull, private val n: Int, private val st
 }
 
 /**
- * [Node.Interleave.segmentSize] elements from the first stream, then as many from the other, in turn;
- * once either ends, the rest of the other, as Pekko's `interleave` does by default.
+ * [Node.Interleave.segmentSize] elements from the first stream, then as many from the other, in turn; once either ends,
+ * the rest of the other, as Pekko's `interleave` does by default.
  */
 context(ctx: PullContext)
 private fun Node.Interleave.interleave(): Pull {
@@ -634,9 +680,9 @@ private fun Node.Interleave.interleave(): Pull {
 }
 
 /**
- * On a test's clock: up to [window] of the caller's stages at once, each started on the pulling thread,
- * answered in the order the elements came. A stage that fails is the defect `mapAsync` names, and one that completes
- * with `null` is too, as on Pekko. The wait is interruptible, so a stop wakes it.
+ * On a test's clock: up to [window] of the caller's stages at once, each started on the pulling thread, answered in the
+ * order the elements came. A stage that fails is the defect `mapAsync` names, and one that completes with `null` is
+ * too, as on Pekko. The wait is interruptible, so a stop wakes it.
  */
 context(ctx: PullContext)
 private fun Node.MapAsync.awaiting(window: Int): Pull {
@@ -648,16 +694,16 @@ private fun Node.MapAsync.awaiting(window: Int): Pull {
         while (!drained && started.size < window) {
             val a = up.next()
             @Suppress("UNCHECKED_CAST")
-            if (a ==
-                null
-            ) drained = true else started.addLast(a to (start(a) as CompletionStage<Any?>).toCompletableFuture())
+            if (a == null) drained = true
+            else started.addLast(a to (start(a) as CompletionStage<Any?>).toCompletableFuture())
         }
         started.removeFirstOrNull()?.let { (a, stage) ->
-            val b = try {
-                stage.get()
-            } catch (failed: ExecutionException) {
-                throw (failed.cause ?: failed).unwrapped().describedBy("mapAsync", a, at)
-            }
+            val b =
+                try {
+                    stage.get()
+                } catch (failed: ExecutionException) {
+                    throw (failed.cause ?: failed).unwrapped().describedBy("mapAsync", a, at)
+                }
             b ?: throw NullPointerException("${facts("mapAsync", a, at)}: the stage completed with null")
         }
     }

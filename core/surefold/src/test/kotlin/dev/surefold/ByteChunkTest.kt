@@ -3,10 +3,10 @@ package dev.surefold
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldNotBe
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayOutputStream
 import java.nio.ByteBuffer
 import java.nio.ReadOnlyBufferException
+import org.junit.jupiter.api.Test
 
 /** Bytes nobody can change: every way in and out copies, and only a slice shares. */
 class ByteChunkTest {

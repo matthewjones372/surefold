@@ -1,8 +1,8 @@
 package dev.surefold.app
 
 /**
- * What a process was started with. A node takes one rather than calling `System.getenv`, so a test of
- * what a service does with its configuration touches no environment at all.
+ * What a process was started with. A node takes one rather than calling `System.getenv`, so a test of what a service
+ * does with its configuration touches no environment at all.
  */
 interface Sys {
 

@@ -12,8 +12,7 @@ import dev.surefold.junit.withClue
 
 private fun up(n: Int, status: Status = Status.Up) = Member(Node("n$n", "10.0.0.$n", 25520), n.toLong(), status, n)
 
-private fun owners(members: List<Member>, shards: Int = 256) =
-    List(shards) { Placement.owner("order", it, members) }
+private fun owners(members: List<Member>, shards: Int = 256) = List(shards) { Placement.owner("order", it, members) }
 
 object PlacementSuite : Suite() {
     init {

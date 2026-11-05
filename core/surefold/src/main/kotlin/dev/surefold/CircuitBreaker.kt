@@ -37,7 +37,8 @@ class CircuitBreaker(
 
     private val held = AtomicReference(Held(State.Closed(0), resetAfter.step, ZERO))
 
-    val state: State get() = held.get().state
+    val state: State
+        get() = held.get().state
 
     internal sealed interface Admission {
         data class Admitted(val trial: Boolean) : Admission
@@ -45,7 +46,11 @@ class CircuitBreaker(
         data class Refused(val retryAt: Instant) : Admission
     }
 
-    internal enum class Result { SUCCESS, FAILURE, UNCOUNTED }
+    internal enum class Result {
+        SUCCESS,
+        FAILURE,
+        UNCOUNTED,
+    }
 
     internal fun admit(): Admission {
         while (true) {
@@ -85,25 +90,28 @@ class CircuitBreaker(
     private fun count(outcome: String) =
         counter("surefold.breaker.calls", "name" to name, "outcome" to outcome).increment()
 
-    private fun publish(state: State) = gauge("surefold.breaker.state", "name" to name).set(
-        when (state) {
-            is State.Closed -> 0.0
-            is State.HalfOpen -> 1.0
-            is State.Open -> 2.0
-        },
-    )
+    private fun publish(state: State) =
+        gauge("surefold.breaker.state", "name" to name)
+            .set(
+                when (state) {
+                    is State.Closed -> 0.0
+                    is State.HalfOpen -> 1.0
+                    is State.Open -> 2.0
+                },
+            )
 
     private fun after(seen: Held, trial: Boolean, result: Result): Held {
         val state = seen.state
         return when {
-            trial -> when (result) {
-                Result.SUCCESS -> Held(State.Closed(0), resetAfter.step, ZERO)
+            trial ->
+                when (result) {
+                    Result.SUCCESS -> Held(State.Closed(0), resetAfter.step, ZERO)
 
-                Result.FAILURE -> opened(seen)
+                    Result.FAILURE -> opened(seen)
 
-                // A trial that proved nothing hands the trial on to the next caller.
-                Result.UNCOUNTED -> seen.copy(state = State.Open(clock.get().now()))
-            }
+                    // A trial that proved nothing hands the trial on to the next caller.
+                    Result.UNCOUNTED -> seen.copy(state = State.Open(clock.get().now()))
+                }
 
             // A call let through before the breaker opened, answering after it did.
             state !is State.Closed -> seen
@@ -119,10 +127,11 @@ class CircuitBreaker(
     }
 
     private fun opened(seen: Held): Held {
-        val (delay, reset) = when (val decision = seen.reset(Unit)) {
-            is Continue -> decision.delay to decision.step
-            is Done -> seen.lastDelay to seen.reset
-        }
+        val (delay, reset) =
+            when (val decision = seen.reset(Unit)) {
+                is Continue -> decision.delay to decision.step
+                is Done -> seen.lastDelay to seen.reset
+            }
         return Held(State.Open(clock.get().now().plusNanos(delay.inWholeNanoseconds)), reset, delay)
     }
 }

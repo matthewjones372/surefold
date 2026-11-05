@@ -41,18 +41,20 @@ class RateLimiter(
     /** A token now, or false. It never waits. */
     fun tryAcquire(): Boolean = reserve(cost = 1, maxWait = ZERO) is Reservation.Granted
 
-    internal fun reserve(cost: Int, maxWait: Duration): Reservation = taken(cost, maxWait).also { reservation ->
-        val outcome = when (reservation) {
-            is Reservation.Granted -> {
-                histogram("surefold.ratelimiter.wait", "name" to name)
-                    .record(reservation.wait.toDouble(DurationUnit.SECONDS))
-                if (reservation.wait > ZERO) "waited" else "immediate"
-            }
+    internal fun reserve(cost: Int, maxWait: Duration): Reservation =
+        taken(cost, maxWait).also { reservation ->
+            val outcome =
+                when (reservation) {
+                    is Reservation.Granted -> {
+                        histogram("surefold.ratelimiter.wait", "name" to name)
+                            .record(reservation.wait.toDouble(DurationUnit.SECONDS))
+                        if (reservation.wait > ZERO) "waited" else "immediate"
+                    }
 
-            is Reservation.Refused -> "rejected"
+                    is Reservation.Refused -> "rejected"
+                }
+            counter("surefold.ratelimiter.calls", "name" to name, "outcome" to outcome).increment()
         }
-        counter("surefold.ratelimiter.calls", "name" to name, "outcome" to outcome).increment()
-    }
 
     private fun taken(cost: Int, maxWait: Duration): Reservation {
         while (true) {
@@ -72,7 +74,8 @@ class RateLimiter(
         }
     }
 
-    private fun refilled(seen: Bucket?, now: Instant): Double = seen?.let {
-        minOf(burst.toDouble(), it.tokens + java.time.Duration.between(it.at, now).toKotlinDuration() / interval)
-    } ?: burst.toDouble()
+    private fun refilled(seen: Bucket?, now: Instant): Double =
+        seen?.let {
+            minOf(burst.toDouble(), it.tokens + java.time.Duration.between(it.at, now).toKotlinDuration() / interval)
+        } ?: burst.toDouble()
 }

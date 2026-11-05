@@ -3,18 +3,19 @@ package dev.surefold.junit
 import dev.surefold.Schedule
 import dev.surefold.retry
 import dev.surefold.retryOrElse
-import org.junit.platform.engine.TestTag
 import kotlin.time.Duration
+import org.junit.platform.engine.TestTag
 
 /** Runs the test it is handed, and may publish a key and value to the test's report. */
 internal typealias Around = (report: (key: String, value: String) -> Unit, test: () -> Unit) -> Unit
 
 /**
- * Something said about how a test runs, given beside its name or to a [Suite] for each of its tests. In `a + b`,
- * `a` wraps `b`, and a suite's aspects wrap each of its tests'. Aspects are known when a test is registered, so
- * discovery reads its tags without running anything.
+ * Something said about how a test runs, given beside its name or to a [Suite] for each of its tests. In `a + b`, `a`
+ * wraps `b`, and a suite's aspects wrap each of its tests'. Aspects are known when a test is registered, so discovery
+ * reads its tags without running anything.
  */
-class Aspect internal constructor(
+class Aspect
+internal constructor(
     internal val tags: Set<TestTag> = emptySet(),
     internal val ignored: String? = null,
     internal val alone: Boolean = false,
@@ -23,13 +24,14 @@ class Aspect internal constructor(
 ) {
 
     /** Both sides' tags, `alone` if either is, and ignored for the outer side's reason before the inner's. */
-    operator fun plus(inner: Aspect): Aspect = Aspect(
-        tags + inner.tags,
-        ignored ?: inner.ignored,
-        alone || inner.alone,
-        arounds + inner.arounds,
-        timed || inner.timed,
-    )
+    operator fun plus(inner: Aspect): Aspect =
+        Aspect(
+            tags + inner.tags,
+            ignored ?: inner.ignored,
+            alone || inner.alone,
+            arounds + inner.arounds,
+            timed || inner.timed,
+        )
 
     /** These aspects as they are if they give a timeout or there is no [fallback], else inside [fallback]'s. */
     internal fun timedOrWithin(fallback: Duration?): Aspect =
@@ -90,9 +92,9 @@ fun nonFlaky(runs: Int): Aspect {
 
 /**
  * Fails the test if it runs longer than [duration], interrupting it; the failure names [duration]. Before the
- * interrupt, every thread's stack goes to stderr, while the test's threads are still where they hung (spec 0308).
- * The watchdog is a platform thread, so a test that never yields its carrier still times out (spec 0310).
- * A test or suite that gives its own timeout is not also held to the build's default, `surefold.junit.timeout.default`.
+ * interrupt, every thread's stack goes to stderr, while the test's threads are still where they hung (spec 0308). The
+ * watchdog is a platform thread, so a test that never yields its carrier still times out (spec 0310). A test or suite
+ * that gives its own timeout is not also held to the build's default, `surefold.junit.timeout.default`.
  */
 fun timeout(duration: Duration): Aspect =
     Aspect(arounds = listOf { _, test -> withinTimeout(duration, test) }, timed = true)

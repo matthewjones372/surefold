@@ -22,13 +22,14 @@ dependencies {
 
 // The pages the suites compile, declared so that editing one re-runs them rather than leaving a stale answer behind.
 val repoRoot = rootProject.projectDir.absolutePath
-val guides = files(
-    rootProject.layout.projectDirectory.file("docs/core.md"),
-    rootProject.layout.projectDirectory.file("docs/stream.md"),
-    rootProject.layout.projectDirectory.file("docs/testing.md"),
-    rootProject.layout.projectDirectory.file("docs/cookbook.md"),
-    rootProject.layout.projectDirectory.file("README.md"),
-)
+val guides =
+    files(
+        rootProject.layout.projectDirectory.file("docs/core.md"),
+        rootProject.layout.projectDirectory.file("docs/stream.md"),
+        rootProject.layout.projectDirectory.file("docs/testing.md"),
+        rootProject.layout.projectDirectory.file("docs/cookbook.md"),
+        rootProject.layout.projectDirectory.file("README.md"),
+    )
 
 tasks.test {
     inputs.files(guides).withPropertyName("guides")

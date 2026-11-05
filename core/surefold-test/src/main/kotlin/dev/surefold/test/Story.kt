@@ -8,13 +8,13 @@ import kotlin.time.Duration.Companion.nanoseconds
 import kotlin.time.Duration.Companion.seconds
 
 /**
- * Runs [block] as a story named [title], by default the calling test's name, and prints its steps when it ends.
- * A step that throws ends it with a [StoryFailed] whose message is the story up to that step, never coloured.
+ * Runs [block] as a story named [title], by default the calling test's name, and prints its steps when it ends. A step
+ * that throws ends it with a [StoryFailed] whose message is the story up to that step, never coloured.
  *
- * The printed copy is coloured under `-Dsurefold.test.colour=always`, `FORCE_COLOR` or IntelliJ, and not under
- * `never` or `NO_COLOR`. A Gradle test worker does not see the shell's environment; the
- * `dev.surefold.wiring` plugin hands these on to every test task, `-Psurefold.test.colour`
- * included. In a `surefold-junit` suite only the console copy is coloured.
+ * The printed copy is coloured under `-Dsurefold.test.colour=always`, `FORCE_COLOR` or IntelliJ, and not under `never`
+ * or `NO_COLOR`. A Gradle test worker does not see the shell's environment; the `dev.surefold.wiring` plugin hands
+ * these on to every test task, `-Psurefold.test.colour` included. In a `surefold-junit` suite only the console copy is
+ * coloured.
  */
 @OptIn(StorySeam::class)
 fun story(title: String = storyTitle.get() ?: callingTest(), block: Story.() -> Unit) {
@@ -22,22 +22,24 @@ fun story(title: String = storyTitle.get() ?: callingTest(), block: Story.() -> 
 }
 
 /**
- * [story], for checks that are values: a step whose value [failed] finds a failure in is marked failed, and the
- * story goes on.
+ * [story], for checks that are values: a step whose value [failed] finds a failure in is marked failed, and the story
+ * goes on.
  */
 @StorySeam
 fun <A> tellStory(title: String, failed: (Any?) -> Throwable?, block: Story.() -> A): A =
     Story(failed).telling(title, block)
 
 private fun <A> Story.telling(title: String, block: Story.() -> A): A {
-    val answer = try {
-        block()
-    } catch (failure: Throwable) {
-        tell(title)
-        // Led by the failing step's own frame, so the first line a test runner links to is the assertion.
-        throw StoryFailed(told(title, colour = false), failure)
-            .apply { stackTrace = failure.fromTheTest().toTypedArray().ifEmpty { stackTrace } }
-    }
+    val answer =
+        try {
+            block()
+        } catch (failure: Throwable) {
+            tell(title)
+            // Led by the failing step's own frame, so the first line a test runner links to is the assertion.
+            throw StoryFailed(told(title, colour = false), failure).apply {
+                stackTrace = failure.fromTheTest().toTypedArray().ifEmpty { stackTrace }
+            }
+        }
     tell(title)
     return answer
 }
@@ -49,19 +51,16 @@ private fun <A> Story.telling(title: String, block: Story.() -> A): A {
 annotation class StorySeam
 
 /** The title of a story told without one; unbound, the calling test's name. */
-@StorySeam
-val storyTitle: SurefoldLocal<String?> = surefoldLocal { null }
+@StorySeam val storyTitle: SurefoldLocal<String?> = surefoldLocal { null }
 
 /** Where a story's transcript goes when it ends; unbound, stdout, coloured as [story] says. */
-@StorySeam
-val storyTranscript: SurefoldLocal<((Transcript) -> Unit)?> = surefoldLocal { null }
+@StorySeam val storyTranscript: SurefoldLocal<((Transcript) -> Unit)?> = surefoldLocal { null }
 
 /**
- * A story's transcript twice: [plain] for anything kept, such as a report, and [coloured] for a console, coloured
- * as [story] says and so the same as [plain] when colour is off (spec 0296).
+ * A story's transcript twice: [plain] for anything kept, such as a report, and [coloured] for a console, coloured as
+ * [story] says and so the same as [plain] when colour is off (spec 0296).
  */
-@StorySeam
-class Transcript internal constructor(val plain: String, val coloured: String)
+@StorySeam class Transcript internal constructor(val plain: String, val coloured: String)
 
 @OptIn(StorySeam::class)
 private fun Story.tell(title: String) {
@@ -113,7 +112,10 @@ class Story internal constructor(private val failedBy: (Any?) -> Throwable? = { 
             val tries = Tries()
             // Named in full: inside this class, `eventually` is this member, and the step would call itself.
             return step(keyword, text, tries) {
-                dev.surefold.test.eventually(within, every) { tries.count++; block() }
+                dev.surefold.test.eventually(within, every) {
+                    tries.count++
+                    block()
+                }
             }
         }
     }
@@ -173,12 +175,13 @@ class Story internal constructor(private val failedBy: (Any?) -> Throwable? = { 
         var outcome: Outcome? = null
         var took: Duration = Duration.ZERO
 
-        val mark: String get() = if (outcome is Outcome.Failed) "✗" else "✓"
+        val mark: String
+            get() = if (outcome is Outcome.Failed) "✗" else "✓"
 
         fun timing(): String {
-            val time = if (took <
-                1.seconds
-            ) "${took.inWholeMilliseconds} ms" else "%.1f s".format(took.inWholeMilliseconds / MILLIS)
+            val time =
+                if (took < 1.seconds) "${took.inWholeMilliseconds} ms"
+                else "%.1f s".format(took.inWholeMilliseconds / MILLIS)
             val count = tries?.count ?: 0
             return if (count > 1) "$time, $count tries" else time
         }
@@ -205,16 +208,16 @@ class Story internal constructor(private val failedBy: (Any?) -> Throwable? = { 
 /** The first frame outside this file, which for a JUnit test is the test method and its backticked name. */
 private fun callingTest(): String =
     StackWalker.getInstance().walk { frames ->
-        frames.filter { it.className != "dev.surefold.test.StoryKt" }
+        frames
+            .filter { it.className != "dev.surefold.test.StoryKt" }
             .findFirst()
             .map { it.methodName }
             .orElse("a story")
     }
 
 /**
- * Where [this] was thrown in the test's own code: its frames from the first that is not the story's or
- * `eventually`'s, surefold's core, an assertion library's, Kotlin's, Arrow's or the JDK's. A [GaveUp] answers for
- * its last failure.
+ * Where [this] was thrown in the test's own code: its frames from the first that is not the story's or `eventually`'s,
+ * surefold's core, an assertion library's, Kotlin's, Arrow's or the JDK's. A [GaveUp] answers for its last failure.
  */
 internal fun Throwable.fromTheTest(): List<StackTraceElement> {
     val thrown = if (this is GaveUp) cause ?: this else this

@@ -13,12 +13,11 @@ private val path: ScopedValue<String> = ScopedValue.newInstance()
 private val stack: StackWalker = StackWalker.getInstance()
 
 // The frames of this module's own plumbing, skipped to find the function that asked for the scope.
-private val plumbing = listOf("Tasks", "StructuredKt", "OutcomeKt")
-    .map { "dev.surefold.structured.$it" }
+private val plumbing = listOf("Tasks", "StructuredKt", "OutcomeKt").map { "dev.surefold.structured.$it" }
 
 /**
- * One JDK scope for one combinator call. A thread dump shows it named after the function that called the
- * combinator, or, inside a branch, after that branch; its threads are that name with `/1`, `/2`, ….
+ * One JDK scope for one combinator call. A thread dump shows it named after the function that called the combinator,
+ * or, inside a branch, after that branch; its threads are that name with `/1`, `/2`, ….
  */
 internal class Tasks<E, R>(
     joiner: StructuredTaskScope.Joiner<Outcome<E, Any?>, R, RuntimeException>,
@@ -39,9 +38,10 @@ internal class Tasks<E, R>(
         val branch = "$name/$forked"
         return scope.fork<Outcome<E, T>>(
             Callable {
-                ScopedValue.where(path, branch).call(
-                    ScopedValue.CallableOp<Outcome<E, T>, RuntimeException> { capture(body) },
-                )
+                ScopedValue.where(path, branch)
+                    .call(
+                        ScopedValue.CallableOp<Outcome<E, T>, RuntimeException> { capture(body) },
+                    )
             },
         )
     }
@@ -55,14 +55,16 @@ private fun callerName(): String = stack.walk { frames ->
     val outside = frames.filter { frame -> plumbing.none { frame.className.startsWith(it) } }.toList()
     // The block given to `attempt` runs as a lambda of its own, called by `attempt`: the function that
     // opened the attempt, beneath both, is the one that asked for the scope.
-    outside.filterIndexed { i, frame ->
-        !frame.inAttempt() &&
-            !(frame.methodName.contains("\$lambda\$") && outside.getOrNull(i + 1)?.inAttempt() == true)
-    }.firstOrNull()?.let(::describe) ?: "surefold"
+    outside
+        .filterIndexed { i, frame ->
+            !frame.inAttempt() &&
+                !(frame.methodName.contains("\$lambda\$") && outside.getOrNull(i + 1)?.inAttempt() == true)
+        }
+        .firstOrNull()
+        ?.let(::describe) ?: "surefold"
 }
 
-private fun StackWalker.StackFrame.inAttempt(): Boolean =
-    className.startsWith("dev.surefold.fail.")
+private fun StackWalker.StackFrame.inAttempt(): Boolean = className.startsWith("dev.surefold.fail.")
 
 // A Kotlin lambda's frame is `invoke` on a class named after the function that wrote it.
 private fun describe(frame: StackWalker.StackFrame): String {

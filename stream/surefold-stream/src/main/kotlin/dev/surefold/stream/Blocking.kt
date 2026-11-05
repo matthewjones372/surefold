@@ -11,24 +11,23 @@ import kotlin.time.Duration.Companion.seconds
 /**
  * A resource opened once per run and read by blocking: a consumer's `poll`, a cursor, a queue's `take`.
  *
- * [next] is called by one thread at a time and `null` ends the stream. [wake] is how a run's `stop()`
- * reaches a [next] that is blocked, from any thread; a [next] it interrupts may return `null` or throw,
- * and either ends the stream. [close] runs exactly once, after the last [next], however the run ended.
+ * [next] is called by one thread at a time and `null` ends the stream. [wake] is how a run's `stop()` reaches a [next]
+ * that is blocked, from any thread; a [next] it interrupts may return `null` or throw, and either ends the stream.
+ * [close] runs exactly once, after the last [next], however the run ended.
  */
 fun <R : Any, A : Any> Stream.Companion.blocking(
     open: () -> R,
     next: (R) -> A?,
     wake: (R) -> Unit,
     close: (R) -> Unit,
-): Stream<Nothing, A> =
-    Stream(Node.Blocking(open, next.erased(), wake.erased(), close.erased(), buildSite()))
+): Stream<Nothing, A> = Stream(Node.Blocking(open, next.erased(), wake.erased(), close.erased(), buildSite()))
 
 /**
- * [blocking], with [ready] saying when the next [next] returns without blocking: a consumer's last poll still
- * holding records, a cursor's fetched rows. A backend that hands each element to the stream across threads reads
- * the ready ones along with the read before them and hands them over together, as Pekko does (spec 0154); one that
- * reads on the stream's own thread has nothing to save and never asks. [ready] is asked between reads, by the
- * thread that reads, so it sees what [next] left.
+ * [blocking], with [ready] saying when the next [next] returns without blocking: a consumer's last poll still holding
+ * records, a cursor's fetched rows. A backend that hands each element to the stream across threads reads the ready ones
+ * along with the read before them and hands them over together, as Pekko does (spec 0154); one that reads on the
+ * stream's own thread has nothing to save and never asks. [ready] is asked between reads, by the thread that reads, so
+ * it sees what [next] left.
  */
 fun <R : Any, A : Any> Stream.Companion.blocking(
     open: () -> R,
@@ -40,8 +39,8 @@ fun <R : Any, A : Any> Stream.Companion.blocking(
     Stream(Node.Blocking(open, next.erased(), wake.erased(), close.erased(), buildSite(), ready.erased()))
 
 /**
- * One run's resource, for a backend: the rules [Stream.Companion.blocking] promises, kept in one place so
- * every backend keeps them the same way.
+ * One run's resource, for a backend: the rules [Stream.Companion.blocking] promises, kept in one place so every backend
+ * keeps them the same way.
  */
 @StreamSpi
 class Opened internal constructor(private val node: Node.Blocking, private val readEndsWithin: Duration) {
@@ -79,17 +78,19 @@ class Opened internal constructor(private val node: Node.Blocking, private val r
     }
 
     /**
-     * Closed once, after the last read. A read still running on another thread, a feed's fork given up by a
-     * restart, is woken first: a Kafka consumer closed under its own `poll` throws and stays in its group.
+     * Closed once, after the last read. A read still running on another thread, a feed's fork given up by a restart, is
+     * woken first: a Kafka consumer closed under its own `poll` throws and stays in its group.
      *
-     * A read that has not returned [readEndsWithin] after its wake has a `wake` that does not reach it. It is
-     * closed under all the same, with a warning, since a close that waited for it would never come back.
+     * A read that has not returned [readEndsWithin] after its wake has a `wake` that does not reach it. It is closed
+     * under all the same, with a warning, since a close that waited for it would never come back.
      */
     fun close() {
-        val held = reading.tryLock() || run {
-            wake()
-            waitForRead()
-        }
+        val held =
+            reading.tryLock() ||
+                run {
+                    wake()
+                    waitForRead()
+                }
         if (!held) {
             logWarn(
                 "a blocking source at ${node.at} was closed while still reading: its wake did not end the read " +

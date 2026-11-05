@@ -17,14 +17,12 @@ data class Checked(val report: String, val failed: Boolean)
 /**
  * Every [SurefoldApp] in [classes], checked against the root it declares.
  *
- * [failOn] is the severity a finding has to reach to stop a build, so a codebase that wants its
- * warnings fatal passes `WARN`. A diagram of each graph is written into [diagrams] where one is
- * given, which is the drawing the IDE renders.
+ * [failOn] is the severity a finding has to reach to stop a build, so a codebase that wants its warnings fatal passes
+ * `WARN`. A diagram of each graph is written into [diagrams] where one is given, which is the drawing the IDE renders.
  *
- * [sources] are the source directories a finding's site is resolved against. Given them, the report
- * is the compiler's own `e: file://...` diagnostic, which the IDE turns into a clickable entry in
- * the Build window; without them it is the prose report, which a person reads and then goes
- * looking. Pass them.
+ * [sources] are the source directories a finding's site is resolved against. Given them, the report is the compiler's
+ * own `e: file://...` diagnostic, which the IDE turns into a clickable entry in the Build window; without them it is
+ * the prose report, which a person reads and then goes looking. Pass them.
  */
 fun checkWiring(
     classes: List<File>,
@@ -32,21 +30,23 @@ fun checkWiring(
     failOn: Severity = Severity.FAIL,
     sources: List<File> = emptyList(),
 ): Checked {
-    val checked = apps(classes).map { app ->
-        diagrams?.let { into ->
-            into.mkdirs()
-            File(into, "${nameOf(app)}.mmd").writeText(app.module.render())
+    val checked =
+        apps(classes).map { app ->
+            diagrams?.let { into ->
+                into.mkdirs()
+                File(into, "${nameOf(app)}.mmd").writeText(app.module.render())
+            }
+            Wired(nameOf(app), app.module.findings(app.root), app.module.nodes.keys)
         }
-        Wired(nameOf(app), app.module.findings(app.root), app.module.nodes.keys)
-    }
 
     val failed = checked.any { wired -> wired.findings.any { it.severity >= failOn } }
     val found = checked.filter { it.findings.isNotEmpty() }
 
-    val said = when {
-        sources.isEmpty() -> found.map { "${it.name}\n\n${it.findings.report()}" }
-        else -> found.map { it.findings.diagnostics(sources, it.provided) }
-    }
+    val said =
+        when {
+            sources.isEmpty() -> found.map { "${it.name}\n\n${it.findings.report()}" }
+            else -> found.map { it.findings.diagnostics(sources, it.provided) }
+        }
 
     return Checked(said.joinToString("\n"), failed)
 }
@@ -54,12 +54,13 @@ fun checkWiring(
 /**
  * The applications declared in [classes], found by their supertype.
  *
- * Loaded without initialising, so scanning a directory of unrelated classes runs none of their
- * static state; only a match is initialised, and initialising one runs the expression that
- * assembles its graph but none of the recipes in it.
+ * Loaded without initialising, so scanning a directory of unrelated classes runs none of their static state; only a
+ * match is initialised, and initialising one runs the expression that assembles its graph but none of the recipes in
+ * it.
  */
 internal fun apps(classes: List<File>): List<SurefoldApp<*>> =
-    classes.filter { it.isDirectory }
+    classes
+        .filter { it.isDirectory }
         .flatMap { root -> root.walkTopDown().filter { it.extension == "class" }.map { classNameOf(root, it) } }
         .sorted()
         .mapNotNull { name -> loaded(name) }
@@ -106,17 +107,17 @@ private fun nameOf(app: SurefoldApp<*>): String = app::class.simpleName ?: app::
 /**
  * Standard error as UTF-8 rather than whatever the platform defaults to.
  *
- * From JDK 19 `System.err` follows `stderr.encoding`, which is the native encoding when the stream is
- * redirected — so on a runner that is not UTF-8 the report's own bullet arrives as a question mark,
- * and `-Dfile.encoding` does not fix it.
+ * From JDK 19 `System.err` follows `stderr.encoding`, which is the native encoding when the stream is redirected — so
+ * on a runner that is not UTF-8 the report's own bullet arrives as a question mark, and `-Dfile.encoding` does not fix
+ * it.
  */
 private fun said(): PrintStream = PrintStream(FileOutputStream(FileDescriptor.err), true, Charsets.UTF_8)
 
 /**
  * The check as a process, for a build to run against a project's own class output.
  *
- * `classes` and `sources` are separated by the platform's path separator; `diagrams` is a directory
- * or empty for none; `failOn` is a [Severity] name.
+ * `classes` and `sources` are separated by the platform's path separator; `diagrams` is a directory or empty for none;
+ * `failOn` is a [Severity] name.
  */
 fun main(args: Array<String>) {
     val classes = paths(args.getOrElse(0) { "" })
@@ -129,5 +130,4 @@ fun main(args: Array<String>) {
     exitProcess(if (checked.failed) 1 else 0)
 }
 
-private fun paths(arg: String): List<File> =
-    arg.split(File.pathSeparator).filter { it.isNotBlank() }.map(::File)
+private fun paths(arg: String): List<File> = arg.split(File.pathSeparator).filter { it.isNotBlank() }.map(::File)

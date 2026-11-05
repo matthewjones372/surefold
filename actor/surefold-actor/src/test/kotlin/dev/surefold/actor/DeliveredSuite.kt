@@ -8,39 +8,37 @@ import java.util.concurrent.ConcurrentLinkedQueue
 private sealed interface TillCommand
 
 /** Adds [pence], sent reliably. */
-private data class TillSale(val pence: Int, override val delivery: Delivery) :
-    TillCommand,
-    Delivered
+private data class TillSale(val pence: Int, override val delivery: Delivery) : TillCommand, Delivered
 
 /** Adds [pence], sent plainly. */
 private data class TillCash(val pence: Int) : TillCommand
 
 /** Fails the step, sent reliably. */
-private data class TillStuck(override val delivery: Delivery) :
-    TillCommand,
-    Delivered
+private data class TillStuck(override val delivery: Delivery) : TillCommand, Delivered
 
-private fun register() = delivered(
-    behaviour<TillCommand, Int, String>(0) { _, total, command ->
-        when (command) {
-            is TillSale -> become(total + command.pence)
-            is TillCash -> become(total + command.pence)
-            is TillStuck -> fail("stuck")
-        }
-    },
-)
+private fun register() =
+    delivered(
+        behaviour<TillCommand, Int, String>(0) { _, total, command ->
+            when (command) {
+                is TillSale -> become(total + command.pence)
+                is TillCash -> become(total + command.pence)
+                is TillStuck -> fail("stuck")
+            }
+        },
+    )
 
 /** A till that is shut until the first cash opens it, keeping each sale until then. */
-private fun shutTill() = delivered(
-    behaviour<TillCommand, Int?, String>(null) { ctx, total, command ->
-        when {
-            total != null && command is TillSale -> become(total + command.pence)
-            command is TillSale -> stay().also { ctx.stash(command) }
-            command is TillCash -> become((total ?: 0) + command.pence).also { ctx.unstashAll() }
-            else -> fail("stuck")
-        }
-    },
-)
+private fun shutTill() =
+    delivered(
+        behaviour<TillCommand, Int?, String>(null) { ctx, total, command ->
+            when {
+                total != null && command is TillSale -> become(total + command.pence)
+                command is TillSale -> stay().also { ctx.stash(command) }
+                command is TillCash -> become((total ?: 0) + command.pence).also { ctx.unstashAll() }
+                else -> fail("stuck")
+            }
+        },
+    )
 
 object DeliveredSuite : Suite() {
     init {

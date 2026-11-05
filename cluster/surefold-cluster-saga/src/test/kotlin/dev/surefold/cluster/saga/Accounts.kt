@@ -52,7 +52,10 @@ internal sealed interface Move {
 }
 
 /** Why an account says no: a debit past nothing, or a credit past [CAP]. */
-internal enum class Refusal { Overdrawn, Full }
+internal enum class Refusal {
+    Overdrawn,
+    Full,
+}
 
 /** The most an account holds, so a credit can be refused too and a saga has a debit to undo. */
 internal const val CAP = 1_000L
@@ -76,10 +79,11 @@ private object RefusalWire : MessageCodec<Refusal> {
 }
 
 private object Moves : EventCodec<Move> {
-    override fun encode(event: Move): ByteArray = when (event) {
-        is Move.Debit -> "D:${event.pence}"
-        is Move.Credit -> "C:${event.pence}"
-    }.toByteArray()
+    override fun encode(event: Move): ByteArray =
+        when (event) {
+            is Move.Debit -> "D:${event.pence}"
+            is Move.Credit -> "C:${event.pence}"
+        }.toByteArray()
 
     override fun decode(bytes: ByteArray): Move {
         val (kind, pence) = String(bytes).split(":")
@@ -99,26 +103,28 @@ internal object Says : StateCodec<String> {
     override fun decode(bytes: ByteArray): String = String(bytes)
 }
 
-private fun Long.moved(move: Move) = when (move) {
-    is Move.Debit -> this - move.pence
-    is Move.Credit -> this + move.pence
-}
+private fun Long.moved(move: Move) =
+    when (move) {
+        is Move.Debit -> this - move.pence
+        is Move.Credit -> this + move.pence
+    }
 
 /** A keyed account that holds from nothing to [CAP]. */
-private fun keyedAccount(id: String) = keyed<Move, Move, Long, Refusal>(
-    id = PersistenceId("account", id),
-    empty = 0L,
-    codec = Moves,
-    refusals = Refusals,
-    decide = { balance, move ->
-        when {
-            move is Move.Debit && balance < move.pence -> refuse(Refusal.Overdrawn)
-            move is Move.Credit && balance + move.pence > CAP -> refuse(Refusal.Full)
-            else -> accept(move)
-        }
-    },
-    event = Long::moved,
-)
+private fun keyedAccount(id: String) =
+    keyed<Move, Move, Long, Refusal>(
+        id = PersistenceId("account", id),
+        empty = 0L,
+        codec = Moves,
+        refusals = Refusals,
+        decide = { balance, move ->
+            when {
+                move is Move.Debit && balance < move.pence -> refuse(Refusal.Overdrawn)
+                move is Move.Credit && balance + move.pence > CAP -> refuse(Refusal.Full)
+                else -> accept(move)
+            }
+        },
+        event = Long::moved,
+    )
 
 /** An answer nobody hears, as one lost on its way back. */
 private object Lost : Reply<KeyAnswer<Refusal>> {
@@ -148,26 +154,27 @@ internal class Seen {
     val faults = Shared<Faults?>(null)
 
     /** The account [id], in front of which every message is counted and faults are made. */
-    fun account(id: String) = behaviour<Account, ActorRef<Account>?>(null) { ctx, child, message ->
-        val inner = child ?: ctx.spawn("keyed", keyedAccount(id))
-        when (message) {
-            is Keyed.Apply -> {
-                applied.update { it + (id to it[id].orEmpty() + message.key) }
-                val counted = toLose.modify { left -> (left - 1).coerceAtLeast(0) to (left > 0) }
-                val run = faults.peek()
-                val passed = if (counted || run?.loses() == true) message.copy(reply = Lost) else message
-                inner.tell(passed)
-                // A duplicate is a second delivery with a reply of its own, which nobody is waiting on any more.
-                if (run?.doubles() == true) inner.tell(message.copy(reply = Lost))
-            }
+    fun account(id: String) =
+        behaviour<Account, ActorRef<Account>?>(null) { ctx, child, message ->
+            val inner = child ?: ctx.spawn("keyed", keyedAccount(id))
+            when (message) {
+                is Keyed.Apply -> {
+                    applied.update { it + (id to it[id].orEmpty() + message.key) }
+                    val counted = toLose.modify { left -> (left - 1).coerceAtLeast(0) to (left > 0) }
+                    val run = faults.peek()
+                    val passed = if (counted || run?.loses() == true) message.copy(reply = Lost) else message
+                    inner.tell(passed)
+                    // A duplicate is a second delivery with a reply of its own, which nobody is waiting on any more.
+                    if (run?.doubles() == true) inner.tell(message.copy(reply = Lost))
+                }
 
-            is Keyed.Applied -> {
-                asked.update { count -> count + 1 }
-                inner.tell(message)
+                is Keyed.Applied -> {
+                    asked.update { count -> count + 1 }
+                    inner.tell(message)
+                }
             }
+            become(inner)
         }
-        become(inner)
-    }
 }
 
 /** A one-node cluster with the accounts sharded on it, on a scope of its own, until [close]. */
@@ -191,16 +198,19 @@ internal class Branch(seen: Seen) : AutoCloseable {
             opened.succeed(accounts)
             done.await()
         }
-    }.whenComplete { _, thrown -> thrown?.let(opened::fail) }
+    }
+        .whenComplete { _, thrown -> thrown?.let(opened::fail) }
 
     val accounts: Sharded<Account>
         get() = opened.await().fold({ throw IllegalStateException("the bank did not open", it) }, { it })
 
     /** What [id] holds, folded from its own journal rather than asked of it. */
-    fun balance(id: String): Long = journal.read(PersistenceId("account", id))
-        .map { keyedEvents(Moves, Refusals).decode(it.bytes) }
-        .filterIsInstance<KeyedEvent.Decided<Move>>()
-        .fold(0L) { balance, decided -> balance.moved(decided.event) }
+    fun balance(id: String): Long =
+        journal
+            .read(PersistenceId("account", id))
+            .map { keyedEvents(Moves, Refusals).decode(it.bytes) }
+            .filterIsInstance<KeyedEvent.Decided<Move>>()
+            .fold(0L) { balance, decided -> balance.moved(decided.event) }
 
     override fun close() {
         done.succeed(Unit)

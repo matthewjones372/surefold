@@ -137,11 +137,12 @@ object RouterSuite : Suite() {
                 pool.tell(Stall(began, open))
                 began.await()
                 // Round robin: routee-2, then routee-1, whose mailbox this fills, then routee-2, then routee-1 again.
-                val turns = listOf(
-                    pool.ask(1.minutes) { Whose(it) },
-                    pool.tell(Fetch("fills routee-1")),
-                    pool.ask(1.minutes) { Whose(it) },
-                )
+                val turns =
+                    listOf(
+                        pool.ask(1.minutes) { Whose(it) },
+                        pool.tell(Fetch("fills routee-1")),
+                        pool.ask(1.minutes) { Whose(it) },
+                    )
                 val passedOver = pool.ask(1.minutes) { Whose(it) }
                 open.countDown()
                 awaitIdle()

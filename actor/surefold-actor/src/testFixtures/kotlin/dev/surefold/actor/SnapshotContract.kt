@@ -3,13 +3,13 @@ package dev.surefold.actor
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeNull
 import dev.surefold.assert.shouldNotBeNull
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import org.junit.jupiter.api.Test
 
 /**
- * What every [SnapshotStore] does, as tests a store's own test class inherits: it answers [store], a store with
- * nothing in it, and runs these unchanged. A service with a store of its own runs them the same way.
+ * What every [SnapshotStore] does, as tests a store's own test class inherits: it answers [store], a store with nothing
+ * in it, and runs these unchanged. A service with a store of its own runs them the same way.
  */
 abstract class SnapshotContract {
 
@@ -69,17 +69,17 @@ abstract class SnapshotContract {
         val sequences = (1L..64L).shuffled()
         val start = CountDownLatch(1)
 
-        Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("snapshot-contract-saver-", 0).factory())
-            .use { savers ->
-                val saves = sequences.map { sequence ->
-                    savers.submit {
-                        start.await()
-                        store.save(sam, sequence, "at $sequence".toByteArray())
-                    }
+        Executors.newThreadPerTaskExecutor(Thread.ofVirtual().name("snapshot-contract-saver-", 0).factory()).use {
+            savers ->
+            val saves = sequences.map { sequence ->
+                savers.submit {
+                    start.await()
+                    store.save(sam, sequence, "at $sequence".toByteArray())
                 }
-                start.countDown()
-                saves.forEach { it.get() }
             }
+            start.countDown()
+            saves.forEach { it.get() }
+        }
 
         store.held(sam) shouldBe (64L to "at 64")
     }

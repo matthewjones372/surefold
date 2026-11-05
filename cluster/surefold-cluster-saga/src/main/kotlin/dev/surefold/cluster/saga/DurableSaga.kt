@@ -22,7 +22,8 @@ import java.time.Instant
 import java.util.UUID
 
 /** A saga whose steps are journalled, so a run that dies resumes from the last step it recorded (spec 0299). */
-class Durable<I, E, A> internal constructor(
+class Durable<I, E, A>
+internal constructor(
     val kind: String,
     internal val input: StateCodec<I>,
     internal val error: StateCodec<E>,
@@ -49,8 +50,8 @@ class Durable<I, E, A> internal constructor(
 
 /**
  * A durable saga of [kind]: [body] is plain blocking code whose steps are journalled as they begin and end. Run again
- * with the same id after a crash, the body runs from the top, and each step already ended answers what it answered
- * then without calling anything.
+ * with the same id after a crash, the body runs from the top, and each step already ended answers what it answered then
+ * without calling anything.
  */
 fun <I, E, A> durableSaga(
     kind: String,
@@ -67,10 +68,10 @@ interface DurableScope<E> : Fail<E> {
     val id: String
 
     /**
-     * Runs [action] with the key `"$id/$name"` and journals what it returned through [codec]. A step that began but
-     * has no recorded end is unknown when the saga resumes: [check] settles it, and without one the saga stops
-     * [Unsettled] before calling anything. Should the saga fail with a declared error, [undo] is handed the key
-     * `"$id/$name/undo"`, what [action] returned and why, and its end is journalled too.
+     * Runs [action] with the key `"$id/$name"` and journals what it returned through [codec]. A step that began but has
+     * no recorded end is unknown when the saga resumes: [check] settles it, and without one the saga stops [Unsettled]
+     * before calling anything. Should the saga fail with a declared error, [undo] is handed the key `"$id/$name/undo"`,
+     * what [action] returned and why, and its end is journalled too.
      */
     fun <B> step(
         name: String,
@@ -109,8 +110,8 @@ class Stuck(val saga: String, val step: String, cause: Throwable) :
 class Overtaken(val saga: String) : IllegalStateException("saga $saga was written by another runner")
 
 /**
- * Runs the saga [id] on [journal], or resumes it: an ended saga answers as it ended without running anything, a
- * started one replays its journal, and a new one is started with [input]. A declared fail ends it on the left.
+ * Runs the saga [id] on [journal], or resumes it: an ended saga answers as it ended without running anything, a started
+ * one replays its journal, and a new one is started with [input]. A declared fail ends it on the left.
  */
 fun <I, E, A> Durable<I, E, A>.run(journal: Journal, id: String, input: I): Either<E, A> =
     checkNotNull(drive(journal, id, this.input.encode(input)))
@@ -133,7 +134,9 @@ internal fun <I, E, A> Durable<I, E, A>.drive(
     val log = Log(journal, PersistenceId(kind, id))
     val begun = log.started() ?: input?.also { starting() }?.let(log::start) ?: return null
     started()
-    log.ending()?.let { return it.decoded(this) }
+    log.ending()?.let {
+        return it.decoded(this)
+    }
     return ran(log, id, begun)
 }
 
@@ -147,17 +150,18 @@ internal fun <I, E, A> Durable<I, E, A>.ending(
     input: ByteArray?,
     starting: () -> Unit,
     started: () -> Unit,
-): Ending? = try {
-    when (val ended = drive(journal, id, input, starting, started)) {
-        null -> Ending.Forgotten
-        is Either.Left -> Ending.Refused(error.encode(ended.value))
-        is Either.Right -> Ending.Done(answer.encode(ended.value))
+): Ending? =
+    try {
+        when (val ended = drive(journal, id, input, starting, started)) {
+            null -> Ending.Forgotten
+            is Either.Left -> Ending.Refused(error.encode(ended.value))
+            is Either.Right -> Ending.Done(answer.encode(ended.value))
+        }
+    } catch (_: Overtaken) {
+        null
+    } catch (stopped: Exception) {
+        Ending.Stuck(stopped.nonFatalOrThrow().message ?: stopped.toString())
     }
-} catch (_: Overtaken) {
-    null
-} catch (stopped: Exception) {
-    Ending.Stuck(stopped.nonFatalOrThrow().message ?: stopped.toString())
-}
 
 private fun <I, E, A> Durable<I, E, A>.ran(log: Log, id: String, begun: ByteArray): Either<E, A> {
     val replay = Replay(this, id, log)
@@ -170,14 +174,17 @@ private fun <I, E, A> Durable<I, E, A>.ran(log: Log, id: String, begun: ByteArra
 private fun <I, E, A> Durable<I, E, A>.undoAll(log: Log, replay: Replay<E>, refused: E) {
     if (!log.undoing()) log.append(Record.Undoing(error.encode(refused)))
     val why = Undo.Failed(refused)
-    replay.done.asReversed().filterNot { it.name in log.undone() }.forEach { step ->
-        try {
-            undo?.invoke { step.undo(why) } ?: step.undo(why)
-        } catch (failed: Exception) {
-            stuck(step.name, failed)
+    replay.done
+        .asReversed()
+        .filterNot { it.name in log.undone() }
+        .forEach { step ->
+            try {
+                undo?.invoke { step.undo(why) } ?: step.undo(why)
+            } catch (failed: Exception) {
+                stuck(step.name, failed)
+            }
+            log.append(Record.Undone(step.name))
         }
-        log.append(Record.Undone(step.name))
-    }
     log.append(Record.Refused(error.encode(refused)))
 }
 
@@ -186,11 +193,12 @@ private fun <I, E, A> Durable<I, E, A>.stuck(step: String, failed: Throwable): N
     throw Stuck(kind, step, failed)
 }
 
-private fun <I, E, A> Record.decoded(saga: Durable<I, E, A>): Either<E, A> = when (this) {
-    is Record.Finished -> Either.Right(saga.answer.decode(bytes))
-    is Record.Refused -> Either.Left(saga.error.decode(bytes))
-    else -> error("$this does not end a saga")
-}
+private fun <I, E, A> Record.decoded(saga: Durable<I, E, A>): Either<E, A> =
+    when (this) {
+        is Record.Finished -> Either.Right(saga.answer.decode(bytes))
+        is Record.Refused -> Either.Left(saga.error.decode(bytes))
+        else -> error("$this does not end a saga")
+    }
 
 /** A step that ended, with what its undo needs. */
 private class Done<E>(val name: String, val undo: (Undo<E>) -> Unit)
@@ -215,27 +223,29 @@ private class Replay<E>(private val saga: Durable<*, E, *>, override val id: Str
     ): B {
         require(names.add(name)) { "saga $id already has a step named $name" }
         val key = "$id/$name"
-        val value = when (val kept = log.next()) {
-            null -> fresh(name, codec) { action(key) }
+        val value =
+            when (val kept = log.next()) {
+                null -> fresh(name, codec) { action(key) }
 
-            is Record.Ended -> codec.decode(kept.named(name).bytes)
+                is Record.Ended -> codec.decode(kept.named(name).bytes)
 
-            is Record.Begun -> {
-                kept.named(name)
-                when (val ended = log.next()) {
-                    is Record.Ended -> codec.decode(ended.named(name).bytes)
+                is Record.Begun -> {
+                    kept.named(name)
+                    when (val ended = log.next()) {
+                        is Record.Ended -> codec.decode(ended.named(name).bytes)
 
-                    // The step failed with this declared error the first time: it did not happen, so it fails again.
-                    is Record.Undoing -> fail(saga.error.decode(ended.bytes))
+                        // The step failed with this declared error the first time: it did not happen, so it fails
+                        // again.
+                        is Record.Undoing -> fail(saga.error.decode(ended.bytes))
 
-                    null -> settle(name, key, codec, action, check)
+                        null -> settle(name, key, codec, action, check)
 
-                    else -> throw Diverged(id, "$ended", name)
+                        else -> throw Diverged(id, "$ended", name)
+                    }
                 }
-            }
 
-            else -> throw Diverged(id, "$kept", name)
-        }
+                else -> throw Diverged(id, "$kept", name)
+            }
         undo?.let { done += Done(name) { why -> it("$key/undo", value, why) } }
         return value
     }
@@ -248,10 +258,11 @@ private class Replay<E>(private val saga: Durable<*, E, *>, override val id: Str
         check: ((String) -> Settled<B>)?,
     ): B {
         val settled = check?.invoke(key) ?: throw Unsettled(id, name)
-        val value = when (settled) {
-            is Settled.Happened -> settled.value
-            Settled.DidNot -> action(key)
-        }
+        val value =
+            when (settled) {
+                is Settled.Happened -> settled.value
+                Settled.DidNot -> action(key)
+            }
         log.append(Record.Ended(name, codec.encode(value)))
         return value
     }
@@ -267,14 +278,16 @@ private class Replay<E>(private val saga: Durable<*, E, *>, override val id: Str
     override fun uuid(): String = taken("uuid#${tick++}") { uuidV7(clock.get().now().toEpochMilli()).toString() }
 
     // A time or an id can't be unknown, so it is journalled once, as an end with no beginning.
-    private fun taken(name: String, make: () -> String): String = when (val kept = log.next()) {
-        null -> make().also { log.append(Record.Ended(name, it.toByteArray())) }
-        is Record.Ended -> String(kept.named(name).bytes)
-        else -> throw Diverged(id, "$kept", name)
-    }
+    private fun taken(name: String, make: () -> String): String =
+        when (val kept = log.next()) {
+            null -> make().also { log.append(Record.Ended(name, it.toByteArray())) }
+            is Record.Ended -> String(kept.named(name).bytes)
+            else -> throw Diverged(id, "$kept", name)
+        }
 
-    private fun <R : Record.Named> R.named(name: String): R =
-        also { if (this.name != name) throw Diverged(id, this.name, name) }
+    private fun <R : Record.Named> R.named(name: String): R = also {
+        if (this.name != name) throw Diverged(id, this.name, name)
+    }
 }
 
 /** The saga's journal, read once and then followed by each append, with a cursor replay walks along. */

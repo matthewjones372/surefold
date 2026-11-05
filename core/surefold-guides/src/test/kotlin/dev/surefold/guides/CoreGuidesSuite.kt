@@ -6,15 +6,15 @@ import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldNotBeEmpty
 import dev.surefold.assert.shouldNotBeNull
 import dev.surefold.assert.withClue
+import java.io.File
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 /**
  * The complete examples in `docs/core.md`, `docs/testing.md` and the README's suite, each compiled on its own against
- * this module's test classpath: the core, surefold-cache, surefold-junit and surefold-test, and kotlinx-coroutines
- * for the core guide's interop. Nothing that wraps an outside library is on it, so an example that needs one fails.
+ * this module's test classpath: the core, surefold-cache, surefold-junit and surefold-test, and kotlinx-coroutines for
+ * the core guide's interop. Nothing that wraps an outside library is on it, so an example that needs one fails.
  */
 class CoreGuidesSuite {
 
@@ -25,8 +25,7 @@ class CoreGuidesSuite {
             "README.md" to "readme",
         )
 
-    @TempDir
-    lateinit var workspace: File
+    @TempDir lateinit var workspace: File
 
     private fun page(path: String): String {
         val root = System.getProperty("surefold.guides.repoRoot")
@@ -39,7 +38,8 @@ class CoreGuidesSuite {
     /** Every fence marked `<!-- prefix-name -->` on the page, by its marker. */
     private fun fences(path: String, prefix: String): Map<String, String> =
         Regex("""<!-- ($prefix-[a-z-]+) -->\s*```kotlin\n(.*?)\n```""", RegexOption.DOT_MATCHES_ALL)
-            .findAll(page(path)).associate { it.groupValues[1] to it.groupValues[2] }
+            .findAll(page(path))
+            .associate { it.groupValues[1] to it.groupValues[2] }
 
     private fun errors(source: String): List<String> {
         val (exit, errors) = EmbeddedKotlin(File(workspace, "${source.hashCode()}").apply { mkdirs() }).compile(source)

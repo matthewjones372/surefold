@@ -83,16 +83,17 @@ internal class Order(seed: Long) : Turns {
     }
 
     /**
-     * Ends determinism when the thread holding the turn has waited outside surefold, in `Thread.sleep`, a monitor or
-     * a blocking call, for longer than [STUCK_NANOS]: nothing surefold sees would ever hand the turn on.
+     * Ends determinism when the thread holding the turn has waited outside surefold, in `Thread.sleep`, a monitor or a
+     * blocking call, for longer than [STUCK_NANOS]: nothing surefold sees would ever hand the turn on.
      */
     private fun watch() = lock.withLock {
         while (watching) {
             turned.await(WATCH_MILLIS, TimeUnit.MILLISECONDS)
             val held = holder?.thread ?: continue
             if (!free && held.state in waitingOutside && System.nanoTime() - passedAt > STUCK_NANOS) {
-                stuck = "${held.name.ifEmpty { "a fork" }} held the turn waiting outside surefold, at:\n" +
-                    held.stackTrace.joinToString("\n") { "\tat $it" }
+                stuck =
+                    "${held.name.ifEmpty { "a fork" }} held the turn waiting outside surefold, at:\n" +
+                        held.stackTrace.joinToString("\n") { "\tat $it" }
                 free = true
                 turned.signalAll()
             }

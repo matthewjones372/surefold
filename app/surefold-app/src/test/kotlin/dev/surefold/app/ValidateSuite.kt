@@ -12,35 +12,39 @@ import dev.surefold.junit.withClue
 import kotlin.reflect.typeOf
 
 private class Settings
+
 private class Pipe
+
 private class Store
+
 private class Buffer
 
 object ValidateSuite : Suite() {
     init {
         test("a graph with no edges plans as one layer") {
-            (single<Settings> { Settings() } + single<Buffer> { Buffer() })
-                .validate().getOrNull().shouldNotBeNull { plan -> plan.layers.size shouldBe 1 }
+            (single<Settings> { Settings() } + single<Buffer> { Buffer() }).validate().getOrNull().shouldNotBeNull {
+                plan ->
+                plan.layers.size shouldBe 1
+            }
         }
 
         test("a dependency is planned before what needs it") {
-            val module = single<Settings> { Settings() } +
-                single { _: Settings -> Pipe() } +
-                single { _: Pipe -> Store() }
+            val module =
+                single<Settings> { Settings() } + single { _: Settings -> Pipe() } + single { _: Pipe -> Store() }
 
             module.validate().getOrNull().shouldNotBeNull { plan ->
-                plan.layers shouldContainExactly listOf(
-                    listOf(typeOf<Settings>()),
-                    listOf(typeOf<Pipe>()),
-                    listOf(typeOf<Store>()),
-                )
+                plan.layers shouldContainExactly
+                    listOf(
+                        listOf(typeOf<Settings>()),
+                        listOf(typeOf<Pipe>()),
+                        listOf(typeOf<Store>()),
+                    )
             }
         }
 
         test("independent nodes share a layer") {
-            val module = single<Settings> { Settings() } +
-                single { _: Settings -> Pipe() } +
-                single { _: Settings -> Buffer() }
+            val module =
+                single<Settings> { Settings() } + single { _: Settings -> Pipe() } + single { _: Settings -> Buffer() }
 
             module.validate().getOrNull().shouldNotBeNull { plan ->
                 withClue("Pipe and Buffer each need only Settings, so neither waits for the other") {
@@ -50,19 +54,23 @@ object ValidateSuite : Suite() {
         }
 
         test("validate runs no recipe body") {
-            val module = single<Settings> { Settings() } +
-                single<Pipe, Settings> { error("a recipe must not run to be validated") }
+            val module =
+                single<Settings> { Settings() } +
+                    single<Pipe, Settings> { error("a recipe must not run to be validated") }
 
             module.validate().getOrNull().shouldNotBeNull()
         }
 
         test("a missing dependency is named with what needed it") {
-            single { _: Settings -> Pipe() }.validate().leftOrNull().shouldNotBeNull { errors ->
-                errors.head.shouldBeInstanceOf<WiringError.Missing> { missing ->
-                    missing.copy(site = null) shouldBe
-                        WiringError.Missing(key = typeOf<Settings>(), neededBy = typeOf<Pipe>())
+            single { _: Settings -> Pipe() }
+                .validate()
+                .leftOrNull()
+                .shouldNotBeNull { errors ->
+                    errors.head.shouldBeInstanceOf<WiringError.Missing> { missing ->
+                        missing.copy(site = null) shouldBe
+                            WiringError.Missing(key = typeOf<Settings>(), neededBy = typeOf<Pipe>())
+                    }
                 }
-            }
         }
 
         test("a cycle names the path around it") {
@@ -95,9 +103,9 @@ object ValidateSuite : Suite() {
 private class Sdk
 
 /**
- * A Java factory hands back a platform type, so the key is `Thing!` and nothing asking for a `Thing`
- * matches it. "missing Thing" with a Thing in the graph is the least helpful true sentence a build
- * can print, so the report names the one that reads the same.
+ * A Java factory hands back a platform type, so the key is `Thing!` and nothing asking for a `Thing` matches it.
+ * "missing Thing" with a Thing in the graph is the least helpful true sentence a build can print, so the report names
+ * the one that reads the same.
  */
 object AlikeKeySuite : Suite() {
     init {

@@ -7,9 +7,9 @@ import dev.surefold.assert.shouldThrow
 import dev.surefold.fail.NonEmptyList
 import dev.surefold.fail.attempt
 import dev.surefold.fail.nonEmptyListOf
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicBoolean
+import org.junit.jupiter.api.Test
 
 // Long enough that an interrupt sent by a sibling's fail would have landed inside the pause below.
 private const val SETTLE_MILLIS = 250L
@@ -39,7 +39,9 @@ class FailAccumulateTest {
             parZipOrAccumulate(
                 { fail(Bad("first")) },
                 { fail(Bad("second")) },
-            ) { _: Int, _: Int -> 0 }
+            ) { _: Int, _: Int ->
+                0
+            }
         } shouldBeLeft nonEmptyListOf(Bad("first"), Bad("second"))
     }
 
@@ -48,15 +50,18 @@ class FailAccumulateTest {
         val failed = CountDownLatch(1)
         val bystander = Bystander()
 
-        val accumulated = attempt<NonEmptyList<Bad>, String> {
-            parZipOrAccumulate(
-                {
-                    failed.countDown()
-                    fail(Bad("failed"))
-                },
-                { bystander.waitOutAFail(failed) },
-            ) { _: Int, sibling: String -> sibling }
-        }
+        val accumulated =
+            attempt<NonEmptyList<Bad>, String> {
+                parZipOrAccumulate(
+                    {
+                        failed.countDown()
+                        fail(Bad("failed"))
+                    },
+                    { bystander.waitOutAFail(failed) },
+                ) { _: Int, sibling: String ->
+                    sibling
+                }
+            }
 
         accumulated shouldBeLeft nonEmptyListOf(Bad("failed"))
         // Every branch runs to completion, so a fail cannot end a sibling.
@@ -70,7 +75,9 @@ class FailAccumulateTest {
                 { left, right -> Bad(left.why + right.why) },
                 { fail(Bad("a")) },
                 { fail(Bad("b")) },
-            ) { _: Int, _: Int -> 0 }
+            ) { _: Int, _: Int ->
+                0
+            }
         } shouldBeLeft Bad("ab")
     }
 
@@ -79,18 +86,21 @@ class FailAccumulateTest {
         val boom = Boom()
         val sleeper = Sleeper()
 
-        val thrown = shouldThrow<Boom> {
-            attempt<NonEmptyList<Bad>, Int> {
-                parZipOrAccumulate(
-                    { fail(Bad("failed")) },
-                    { sleeper.body() },
-                    {
-                        sleeper.awaitStart()
-                        throw boom
-                    },
-                ) { _: Int, _: String, _: Int -> 0 }
+        val thrown =
+            shouldThrow<Boom> {
+                attempt<NonEmptyList<Bad>, Int> {
+                    parZipOrAccumulate(
+                        { fail(Bad("failed")) },
+                        { sleeper.body() },
+                        {
+                            sleeper.awaitStart()
+                            throw boom
+                        },
+                    ) { _: Int, _: String, _: Int ->
+                        0
+                    }
+                }
             }
-        }
 
         (thrown === boom) shouldBe true
         // A throw is not accumulated: it ends the others as parZip's does.
@@ -176,8 +186,17 @@ class FailAccumulateTest {
 
         attempt<NonEmptyList<Bad>, String> {
             parZipOrAccumulate(
-                { "a" }, { "b" }, { "c" }, { "d" }, { "e" }, { "f" }, { "g" }, { "h" },
-            ) { a, b, c, d, e, f, g, h -> a + b + c + d + e + f + g + h }
+                { "a" },
+                { "b" },
+                { "c" },
+                { "d" },
+                { "e" },
+                { "f" },
+                { "g" },
+                { "h" },
+            ) { a, b, c, d, e, f, g, h ->
+                a + b + c + d + e + f + g + h
+            }
         } shouldBeRight "abcdefgh"
     }
 
@@ -185,27 +204,36 @@ class FailAccumulateTest {
     fun `a nine-branch parZipOrAccumulate answers, and keeps all nine failures`() {
         attempt<NonEmptyList<Bad>, String> {
             parZipOrAccumulate(
-                { "a" }, { "b" }, { "c" }, { "d" }, { "e" }, { "f" }, { "g" }, { "h" }, { "i" },
-            ) { a, b, c, d, e, f, g, h, i -> a + b + c + d + e + f + g + h + i }
+                { "a" },
+                { "b" },
+                { "c" },
+                { "d" },
+                { "e" },
+                { "f" },
+                { "g" },
+                { "h" },
+                { "i" },
+            ) { a, b, c, d, e, f, g, h, i ->
+                a + b + c + d + e + f + g + h + i
+            }
         } shouldBeRight "abcdefghi"
 
-        val allNine = attempt<NonEmptyList<Bad>, String> {
-            parZipOrAccumulate(
-                { fail(Bad("1")) },
-                { fail(Bad("2")) },
-                { fail(Bad("3")) },
-                { fail(Bad("4")) },
-                { fail(Bad("5")) },
-                { fail(Bad("6")) },
-                { fail(Bad("7")) },
-                { fail(Bad("8")) },
-                { fail(Bad("9")) },
-            ) { _: String, _: String, _: String, _: String, _: String,
-                _: String, _: String, _: String, _: String,
-                ->
-                ""
+        val allNine =
+            attempt<NonEmptyList<Bad>, String> {
+                parZipOrAccumulate(
+                    { fail(Bad("1")) },
+                    { fail(Bad("2")) },
+                    { fail(Bad("3")) },
+                    { fail(Bad("4")) },
+                    { fail(Bad("5")) },
+                    { fail(Bad("6")) },
+                    { fail(Bad("7")) },
+                    { fail(Bad("8")) },
+                    { fail(Bad("9")) },
+                ) { _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String, _: String ->
+                    ""
+                }
             }
-        }
 
         allNine shouldBeLeft nonEmptyListOf(Bad("1"), *(2..9).map { Bad("$it") }.toTypedArray())
     }
@@ -222,20 +250,50 @@ class FailAccumulateTest {
 
         attempt<Bad, String> {
             parZipOrAccumulate(
-                worst, { "a" }, { "b" }, { "c" }, { "d" }, { "e" }, { "f" }, { "g" },
-            ) { a, b, c, d, e, f, g -> a + b + c + d + e + f + g }
+                worst,
+                { "a" },
+                { "b" },
+                { "c" },
+                { "d" },
+                { "e" },
+                { "f" },
+                { "g" },
+            ) { a, b, c, d, e, f, g ->
+                a + b + c + d + e + f + g
+            }
         } shouldBeRight "abcdefg"
 
         attempt<Bad, String> {
             parZipOrAccumulate(
-                worst, { "a" }, { "b" }, { "c" }, { "d" }, { "e" }, { "f" }, { "g" }, { "h" },
-            ) { a, b, c, d, e, f, g, h -> a + b + c + d + e + f + g + h }
+                worst,
+                { "a" },
+                { "b" },
+                { "c" },
+                { "d" },
+                { "e" },
+                { "f" },
+                { "g" },
+                { "h" },
+            ) { a, b, c, d, e, f, g, h ->
+                a + b + c + d + e + f + g + h
+            }
         } shouldBeRight "abcdefgh"
 
         attempt<Bad, String> {
             parZipOrAccumulate(
-                worst, { "a" }, { "b" }, { "c" }, { "d" }, { "e" }, { "f" }, { "g" }, { "h" }, { "i" },
-            ) { a, b, c, d, e, f, g, h, i -> a + b + c + d + e + f + g + h + i }
+                worst,
+                { "a" },
+                { "b" },
+                { "c" },
+                { "d" },
+                { "e" },
+                { "f" },
+                { "g" },
+                { "h" },
+                { "i" },
+            ) { a, b, c, d, e, f, g, h, i ->
+                a + b + c + d + e + f + g + h + i
+            }
         } shouldBeRight "abcdefghi"
     }
 }

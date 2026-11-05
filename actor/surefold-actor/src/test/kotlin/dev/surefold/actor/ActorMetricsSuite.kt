@@ -19,18 +19,18 @@ object ActorMetricsSuite : Suite() {
                     stop(quiet).await()
                     quiet.tell(MeteredTrip)
 
-                    val tripping = spawn(
-                        "tripping",
-                        behaviour<MeteredTrip, Unit>(Unit) { _, _, _ -> error("tripped") },
-                        restart = Schedule.recurs(1),
-                    )
+                    val tripping =
+                        spawn(
+                            "tripping",
+                            behaviour<MeteredTrip, Unit>(Unit) { _, _, _ -> error("tripped") },
+                            restart = Schedule.recurs(1),
+                        )
                     tripping.tell(MeteredTrip)
                     awaitIdle()
                 }
 
                 captured.counter("surefold.actor.dead_letters") shouldBe 1.0
-                captured.tags("surefold.actor.dead_letters") shouldBe
-                    mapOf("node" to "shop-1", "reason" to "stopped")
+                captured.tags("surefold.actor.dead_letters") shouldBe mapOf("node" to "shop-1", "reason" to "stopped")
                 captured.counter("surefold.actor.restarts") shouldBe 1.0
                 captured.tags("surefold.actor.restarts") shouldBe mapOf("node" to "shop-1")
             }

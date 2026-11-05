@@ -16,10 +16,11 @@ object JournalMetadataSuite : Suite() {
         logAnnotated("request_id" to "r-1", "quote" to "a \"quoted\" \\ value") { journal.append(order, 0, placed) }
         journal.append(PersistenceId("order", "o-2"), 0, listOf("placed".toByteArray()))
 
-        val expected = mapOf(
-            "surefold.annotation.request_id" to "r-1",
-            "surefold.annotation.quote" to "a \"quoted\" \\ value",
-        )
+        val expected =
+            mapOf(
+                "surefold.annotation.request_id" to "r-1",
+                "surefold.annotation.quote" to "a \"quoted\" \\ value",
+            )
         journal.read(order).forAll { it.metadata shouldBe expected }
         journal.read(PersistenceId("order", "o-2")).single().metadata.entries.shouldBeEmpty()
 

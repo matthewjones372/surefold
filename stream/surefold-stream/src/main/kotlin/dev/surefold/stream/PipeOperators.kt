@@ -6,9 +6,8 @@ import java.util.concurrent.CompletionStage
 /**
  * Up to [parallelism] stages run at once and their results keep the input's order.
  *
- * A stage that completes with `null` dies here. Pekko's own `mapAsync` documents that such an
- * element "is not passed downstream", and a lookup lifted into a future is the easiest thing in
- * Kotlin to write and the hardest to notice.
+ * A stage that completes with `null` dies here. Pekko's own `mapAsync` documents that such an element "is not passed
+ * downstream", and a lookup lifted into a future is the easiest thing in Kotlin to write and the hardest to notice.
  */
 fun <A : Any, B : Any> Pipe.Companion.mapAsync(parallelism: Int, f: (A) -> CompletionStage<B>): Pipe<Nothing, A, B> =
     Pipe(Node.MapAsync(Node.Hole, parallelism, f.erased(), buildSite()))
@@ -30,11 +29,11 @@ fun <E, In, Out : Any, Out2 : Any> Pipe<E, In, Out>.mapAsyncUnordered(
 ): Pipe<E, In, Out2> = via(Pipe.mapAsyncUnordered(parallelism, f))
 
 /**
- * A backlog collapsed into one element: [seed] starts an aggregate from the element downstream was
- * not ready for, and [aggregate] folds each later one into it until downstream asks again.
+ * A backlog collapsed into one element: [seed] starts an aggregate from the element downstream was not ready for, and
+ * [aggregate] folds each later one into it until downstream asks again.
  *
- * Both halves run caller code, so both are guarded, and the element a defect names is the one being
- * folded in. Nothing is dropped: what an aggregate leaves out is what the caller left out of it.
+ * Both halves run caller code, so both are guarded, and the element a defect names is the one being folded in. Nothing
+ * is dropped: what an aggregate leaves out is what the caller left out of it.
  */
 fun <A : Any, S : Any> Pipe.Companion.conflateWithSeed(seed: (A) -> S, aggregate: (S, A) -> S): Pipe<Nothing, A, S> =
     Pipe(Node.Conflate(Node.Hole, seed.erased(), aggregate.erased(), buildSite()))
@@ -71,18 +70,15 @@ fun <E, E2, In, Out : Any> Pipe<E, In, Out>.catchAll(f: (E) -> Stream<E2, Out>):
     replacing(Pipe.catchAll(f))
 
 /**
- * The declared failure as another one. `catchAll` says this too, and says recovery while it does: a
- * reader of `catchAll { Stream.failed(it.toIngestError()) }` reaches the end before learning that
- * nothing was recovered.
+ * The declared failure as another one. `catchAll` says this too, and says recovery while it does: a reader of `catchAll
+ * { Stream.failed(it.toIngestError()) }` reaches the end before learning that nothing was recovered.
  */
 fun <E, E2, A : Any> Pipe.Companion.mapError(f: (E) -> E2): Pipe<E2, A, A> =
     Pipe(Node.MapError(Node.Hole, f.erased(), buildSite()))
 
-fun <E, E2, In, Out : Any> Pipe<E, In, Out>.mapError(f: (E) -> E2): Pipe<E2, In, Out> =
-    replacing(Pipe.mapError(f))
+fun <E, E2, In, Out : Any> Pipe<E, In, Out>.mapError(f: (E) -> E2): Pipe<E2, In, Out> = replacing(Pipe.mapError(f))
 
 /** ZIO's `orElse` rather than Pekko's: [other] takes over on a failure, not on an empty stream. */
 fun <E, A : Any> Pipe.Companion.orElse(other: Stream<E, A>): Pipe<E, A, A> = catchAll<E, E, A> { other }
 
-fun <E, In, Out : Any> Pipe<E, In, Out>.orElse(other: Stream<E, Out>): Pipe<E, In, Out> =
-    replacing(Pipe.orElse(other))
+fun <E, In, Out : Any> Pipe<E, In, Out>.orElse(other: Stream<E, Out>): Pipe<E, In, Out> = replacing(Pipe.orElse(other))

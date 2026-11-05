@@ -140,9 +140,10 @@ object MembershipSuite : Suite() {
             net.nodes.getValue(at(4)).leave()
 
             // Well short of the 20 s keepMajority waits before it downs an unreachable member.
-            val removed = net.until(steps = 50) {
-                listOf(1, 3, 5).all { v -> net.view(v).members.none { it.node == at(2) || it.node == at(4) } }
-            }
+            val removed =
+                net.until(steps = 50) {
+                    listOf(1, 3, 5).all { v -> net.view(v).members.none { it.node == at(2) || it.node == at(4) } }
+                }
             removed shouldBe true
         }
 

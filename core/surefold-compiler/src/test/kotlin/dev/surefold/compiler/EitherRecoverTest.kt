@@ -8,8 +8,9 @@ import org.junit.jupiter.api.Test
 class EitherRecoverTest {
     @Test
     fun `recovery infers selected handlers and permits a different total error type`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             import dev.surefold.fail.Either
             import dev.surefold.fail.recover
             import dev.surefold.fail.bind
@@ -34,14 +35,15 @@ class EitherRecoverTest {
 
             fun boxed(value: Either<Any?, String?>): Either<Any?, String?> = value.recover(Int::class) { null }
             """,
-        )
+            )
         withClue(compiled.messages.joinToString("\n")) { compiled.exit shouldBe ExitCode.OK }
     }
 
     @Test
     fun `selective recovery cannot widen an inferred error type through fail`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             import dev.surefold.fail.Either
             import java.io.IOException
 
@@ -50,7 +52,7 @@ class EitherRecoverTest {
                 println(recovered)
             }
             """,
-        )
+            )
         withClue(compiled.messages.joinToString("\n")) {
             compiled.exit shouldBe ExitCode.COMPILATION_ERROR
             compiled.messages.any { "Unresolved reference" in it } shouldBe false
@@ -60,8 +62,9 @@ class EitherRecoverTest {
 
     @Test
     fun `selective recovery cannot change an inferred success type`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             import dev.surefold.fail.Either
             import java.io.IOException
 
@@ -70,7 +73,7 @@ class EitherRecoverTest {
                 println(recovered)
             }
             """,
-        )
+            )
         withClue(compiled.messages.joinToString("\n")) {
             compiled.exit shouldBe ExitCode.COMPILATION_ERROR
             compiled.messages.any { "Unresolved reference" in it } shouldBe false

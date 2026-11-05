@@ -22,13 +22,13 @@ import dev.surefold.stream.mapOrFail
 import dev.surefold.stream.run
 import dev.surefold.stream.runCollect
 import dev.surefold.stream.runFold
-import org.jetbrains.kotlin.cli.common.ExitCode
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import java.util.concurrent.TimeUnit
+import org.jetbrains.kotlin.cli.common.ExitCode
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 
 /**
  * The examples in `docs/stream.md` and the README's quick start, each compiled on its own against the core's stream
@@ -38,12 +38,16 @@ class StreamGuidesSuite {
 
     private val document =
         listOf(
-            "backend-example", "mappar-example", "unordered-example", "limit-example", "bytes-example",
-            "missing-example", "readme-example",
+            "backend-example",
+            "mappar-example",
+            "unordered-example",
+            "limit-example",
+            "bytes-example",
+            "missing-example",
+            "readme-example",
         )
 
-    @TempDir
-    lateinit var workspace: File
+    @TempDir lateinit var workspace: File
 
     private fun page(path: String): String {
         val root = System.getProperty("surefold.guides.repoRoot")
@@ -55,7 +59,9 @@ class StreamGuidesSuite {
 
     private fun marked(path: String, marker: String): List<String> =
         Regex("""<!-- $marker -->\s*```kotlin\n(.*?)\n```""", RegexOption.DOT_MATCHES_ALL)
-            .findAll(page(path)).map { it.groupValues[1] }.toList()
+            .findAll(page(path))
+            .map { it.groupValues[1] }
+            .toList()
 
     private fun errors(source: String): List<String> {
         val (exit, errors) = EmbeddedKotlin(File(workspace, "${source.hashCode()}").apply { mkdirs() }).compile(source)
@@ -119,17 +125,19 @@ class StreamGuidesSuite {
 
     private data class Declined(val id: Int) : IngestError
 
-    private fun settled(rows: List<Row>, declining: Set<Int> = emptySet()) = Stream.from(rows)
-        .mapOrFail { row -> Customer(row.id, row.customer ?: fail(NoCustomer(row.id))) }
-        .mapAsync(4) { customer ->
-            val settled: Either<Declined, Receipt> =
-                if (customer.id in declining) Either.Left(Declined(customer.id)) else Either.Right(Receipt(customer.id))
-            CompletableFuture.completedFuture(settled)
-        }
-        .absolve()
-        .runCollect()
-        .run(Forks())
-        .exit()
+    private fun settled(rows: List<Row>, declining: Set<Int> = emptySet()) =
+        Stream.from(rows)
+            .mapOrFail { row -> Customer(row.id, row.customer ?: fail(NoCustomer(row.id))) }
+            .mapAsync(4) { customer ->
+                val settled: Either<Declined, Receipt> =
+                    if (customer.id in declining) Either.Left(Declined(customer.id))
+                    else Either.Right(Receipt(customer.id))
+                CompletableFuture.completedFuture(settled)
+            }
+            .absolve()
+            .runCollect()
+            .run(Forks())
+            .exit()
 
     // The pipeline the page shows, run: a missing customer and a decline each stop it with their own name.
     @Test

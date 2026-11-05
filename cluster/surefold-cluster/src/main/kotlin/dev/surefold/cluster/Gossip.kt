@@ -30,9 +30,9 @@ internal data class Moves(val version: Long, val to: Map<Int, Incarnation>) {
 }
 
 /**
- * What nodes tell each other. Every part merges by a rule that ignores order and repeats: a member's status moves
- * only forward, and an observation or a digest is its writer's latest. [origin] is the node that formed the cluster,
- * so two clusters never merge.
+ * What nodes tell each other. Every part merges by a rule that ignores order and repeats: a member's status moves only
+ * forward, and an observation or a digest is its writer's latest. [origin] is the node that formed the cluster, so two
+ * clusters never merge.
  */
 internal data class Gossip(
     val origin: Incarnation?,
@@ -44,22 +44,26 @@ internal data class Gossip(
     /** The lives that have said they are ready to be `Up` (spec 0129): a life is never unready again. */
     val admitted: Set<Incarnation> = emptySet(),
 ) {
-    fun merge(other: Gossip): Gossip = copy(
-        members = union(members, other.members) { a, b ->
-            Entry(maxOf(a.status, b.status), maxOf(a.upNumber, b.upNumber))
-        },
-        observed = union(observed, other.observed) { a, b -> if (b.version > a.version) b else a },
-        digests = union(digests, other.digests) { a, b -> if (b.version > a.version) b else a },
-        loads = union(loads, other.loads) { a, b -> if (b.version > a.version) b else a },
-        moves = union(moves, other.moves, Moves::latest),
-        admitted = admitted + other.admitted,
-    )
+    fun merge(other: Gossip): Gossip =
+        copy(
+            members =
+                union(members, other.members) { a, b ->
+                    Entry(maxOf(a.status, b.status), maxOf(a.upNumber, b.upNumber))
+                },
+            observed = union(observed, other.observed) { a, b -> if (b.version > a.version) b else a },
+            digests = union(digests, other.digests) { a, b -> if (b.version > a.version) b else a },
+            loads = union(loads, other.loads) { a, b -> if (b.version > a.version) b else a },
+            moves = union(moves, other.moves, Moves::latest),
+            admitted = admitted + other.admitted,
+        )
 
     /** The live members that a live member other than themselves last observed as unreachable. */
     fun unreachable(): Set<Incarnation> {
         val live = live()
-        return observed.filter { (seen, record) -> !record.reachable && seen.by in live && seen.of in live }
-            .keys.mapTo(mutableSetOf()) { it.of }
+        return observed
+            .filter { (seen, record) -> !record.reachable && seen.by in live && seen.of in live }
+            .keys
+            .mapTo(mutableSetOf()) { it.of }
     }
 
     fun live(): Set<Incarnation> = members.filterValues { it.status.isLive }.keys
@@ -69,11 +73,17 @@ internal data class Gossip(
      * load, which changes too often to agree on, and adds nothing for a kind with no moves. It leaves out [admitted]
      * too: only the leader reads it, the whole gossip rides every probe, and a member it lets in changes [members].
      */
-    fun hash(): Long = CRC32().apply {
-        val moved = moves.flatMap { (kind, m) -> m.to.map { (shard, to) -> "$kind/$shard>${to.node}#${to.uid};" } }
-        (members.entries.map { (m, e) -> "${m.node}#${m.uid}=${e.status.name}/${e.upNumber};" } + moved).sorted()
-            .forEach { update(it.toByteArray(Charsets.UTF_8)) }
-    }.value
+    fun hash(): Long =
+        CRC32()
+            .apply {
+                val moved = moves.flatMap { (kind, m) ->
+                    m.to.map { (shard, to) -> "$kind/$shard>${to.node}#${to.uid};" }
+                }
+                (members.entries.map { (m, e) -> "${m.node}#${m.uid}=${e.status.name}/${e.upNumber};" } + moved)
+                    .sorted()
+                    .forEach { update(it.toByteArray(Charsets.UTF_8)) }
+            }
+            .value
 
     companion object {
         val None = Gossip(null, emptyMap(), emptyMap(), emptyMap())

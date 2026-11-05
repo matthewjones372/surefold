@@ -32,10 +32,11 @@ import java.util.concurrent.FutureTask
 
 /**
  * A scope held open for the application's life, for its actors to live in. It is opened on a thread of its own that
- * waits until the node is released, and releasing it closes the scope: its close hooks run first, and then every
- * actor stops after its running step. Everything here is the scope's own call.
+ * waits until the node is released, and releasing it closes the scope: its close hooks run first, and then every actor
+ * stops after its running step. Everything here is the scope's own call.
  */
-class Actors internal constructor(
+class Actors
+internal constructor(
     private val scope: Scope<Nothing>,
     private val tasks: Tasks,
     // The thread holding the scope open.
@@ -102,23 +103,23 @@ internal class Tasks {
     fun close() = held.update { (queue, _) -> queue + Close to true }
 
     /** The oldest task, parking until there is one. */
-    fun take(): Runnable = transact(held.name) {
-        val (queue, closed) = held.get()
-        if (queue.isEmpty()) waitForChange()
-        held.set(queue.drop(1) to closed)
-        queue.first()
-    }
+    fun take(): Runnable =
+        transact(held.name) {
+            val (queue, closed) = held.get()
+            if (queue.isEmpty()) waitForChange()
+            held.set(queue.drop(1) to closed)
+            queue.first()
+        }
 }
 
 /** What the scope's thread takes to stop running tasks and let the scope close. */
-private val Close = Runnable { }
+private val Close = Runnable {}
 
-/**
- * The [Actors] node. [onDeadLetter] is handed every dead letter of its actors; by default each is logged at debug.
- */
-fun actors(onDeadLetter: (DeadLetter) -> Unit = { logDebug("dead letter: $it") }): Module = single<Actors> {
-    install({ open(onDeadLetter) }) { actors, _ -> actors.close() }
-}
+/** The [Actors] node. [onDeadLetter] is handed every dead letter of its actors; by default each is logged at debug. */
+fun actors(onDeadLetter: (DeadLetter) -> Unit = { logDebug("dead letter: $it") }): Module =
+    single<Actors> {
+        install({ open(onDeadLetter) }) { actors, _ -> actors.close() }
+    }
 
 /**
  * Opens a scope on a virtual thread of its own, with every binding of the thread that asked, as a fork has them, and
@@ -135,12 +136,14 @@ private fun open(onDeadLetter: (DeadLetter) -> Unit): Actors {
             // The scope's thread runs what `within` hands it until the node is released.
             generateSequence { tasks.take() }.takeWhile { it !== Close }.forEach(Runnable::run)
         }
-    }.whenComplete { _, thrown ->
-        thrown?.let {
-            // Before it stood, the failure is the opener's to throw; after, there is no one left to tell but the log.
-            if (!opened.fail(it)) logError("the actors' scope failed as it closed: $it")
-        }
     }
+        .whenComplete { _, thrown ->
+            thrown?.let {
+                // Before it stood, the failure is the opener's to throw; after, there is no one left to tell but the
+                // log.
+                if (!opened.fail(it)) logError("the actors' scope failed as it closed: $it")
+            }
+        }
     val actors = opened.await().fold({ throw IllegalStateException("the actors' scope did not open", it) }, { it })
     return actors.also { it.holding = holding }
 }
@@ -151,11 +154,13 @@ fun <M : Any> Wiring.spawn(actors: Actors, name: String, behaviour: Behaviour<M,
 
 /**
  * An actor as a node, keyed by the `ActorRef<M>` of its protocol: two actors are two keys wherever they answer to two
- * protocols, and a node depending on one names the protocol it sends. It has stopped before anything it depends on
- * is released.
+ * protocols, and a node depending on one names the protocol it sends. It has stopped before anything it depends on is
+ * released.
  */
 inline fun <reified M : Any> actor(name: String, noinline behaviour: () -> Behaviour<M, *, *>): Module =
-    single { actors: Actors -> spawn(actors, name, behaviour()) }
+    single { actors: Actors ->
+        spawn(actors, name, behaviour())
+    }
 
 inline fun <reified M : Any, reified D1 : Any> actor(
     name: String,

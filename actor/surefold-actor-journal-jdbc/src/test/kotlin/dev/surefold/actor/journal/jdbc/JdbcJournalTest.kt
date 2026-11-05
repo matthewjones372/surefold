@@ -5,8 +5,8 @@ import dev.surefold.actor.JournalContract
 import dev.surefold.actor.PersistenceId
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
 import java.sql.SQLException
+import org.junit.jupiter.api.Test
 
 class JdbcJournalTest : JournalContract() {
     override fun journal(): Journal = JdbcJournal(Postgres.fresh())

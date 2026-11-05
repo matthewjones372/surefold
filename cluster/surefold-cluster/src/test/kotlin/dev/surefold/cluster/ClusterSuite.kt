@@ -45,15 +45,16 @@ private class Running(
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val joined = AtomicReference<Cluster>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val node = node(name, port)
-            setup(node)
-            joined.set(cluster(node, seeds, quick, leaveWithin = leaveWithin, ready = admitted))
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val node = node(name, port)
+                setup(node)
+                joined.set(cluster(node, seeds, quick, leaveWithin = leaveWithin, ready = admitted))
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     val cluster: Cluster
         get() {
@@ -110,9 +111,10 @@ object ClusterSuite : Suite() {
             val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val second = Running("n2", ports[1], seeds)
-            val third = Running("n3", ports[2], seeds) { node ->
-                node.expose(spawn("ward", behaviour<String, Unit>(Unit) { _, _, _ -> stay() }), Codecs.string)
-            }
+            val third =
+                Running("n3", ports[2], seeds) { node ->
+                    node.expose(spawn("ward", behaviour<String, Unit>(Unit) { _, _, _ -> stay() }), Codecs.string)
+                }
             try {
                 scope {
                     val heard = LinkedBlockingQueue<MemberEvent>()
@@ -121,8 +123,11 @@ object ClusterSuite : Suite() {
                     val listener =
                         behaviour<MemberEvent, Unit>(Unit) { _, _, event -> stay().also { heard.put(event) } }
                     cluster.subscribe(spawn("listener", listener))
-                    fun <E : MemberEvent> next(type: Class<E>): E =
-                        generateSequence { heard.poll(1, TimeUnit.MINUTES) }.filterIsInstance(type).first()
+                    fun <E : MemberEvent> next(type: Class<E>): E = generateSequence {
+                        heard.poll(1, TimeUnit.MINUTES)
+                    }
+                        .filterIsInstance(type)
+                        .first()
                     List(3) { next(MemberEvent.Up::class.java).member.node.name }.toSet() shouldBe
                         setOf("n1", "n2", "n3")
 
@@ -152,10 +157,11 @@ object ClusterSuite : Suite() {
                     val busy = CountDownLatch(1)
                     val cluster = cluster(node("n1", ports[0]), seeds, quick)
                     // One slot, and stuck on its first event: every event after the next finds its mailbox full.
-                    val slow = behaviour<MemberEvent, Unit>(Unit) { _, _, event ->
-                        busy.await()
-                        stay().also { heard.put(event) }
-                    }
+                    val slow =
+                        behaviour<MemberEvent, Unit>(Unit) { _, _, event ->
+                            busy.await()
+                            stay().also { heard.put(event) }
+                        }
                     cluster.subscribe(spawn("slow", slow, capacity = 1))
 
                     withClue("the cluster's view, with its subscriber full") {
@@ -264,8 +270,11 @@ object ClusterSuite : Suite() {
                         behaviour<MemberEvent, Unit>(Unit) { _, _, event -> stay().also { heard.put(event) } }
                     cluster.subscribe(spawn("listener", listener))
 
-                    val downed = generateSequence { heard.poll(1, TimeUnit.MINUTES) }
-                        .filterIsInstance<MemberEvent.Downed>().first { it.member.node == cluster.self }
+                    val downed = generateSequence {
+                        heard.poll(1, TimeUnit.MINUTES)
+                    }
+                        .filterIsInstance<MemberEvent.Downed>()
+                        .first { it.member.node == cluster.self }
                     withClue("the earlier life's downing names this address, and is not this life's") {
                         cluster.isSelf(downed.member) shouldBe false
                     }

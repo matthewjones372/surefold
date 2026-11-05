@@ -44,8 +44,7 @@ internal sealed interface Registry {
         val kind: String,
         val owner: Life,
         override val delivery: Delivery,
-    ) : Registry,
-        Delivered
+    ) : Registry, Delivered
 
     /** The singleton's own timer: resume what no live life runs, and retire what has drained. */
     data object Check : Registry
@@ -127,43 +126,46 @@ internal class Producers(private val cluster: Cluster) {
  * runner has left the view, or that an earlier run of the singleton resumed, is resumed here, as a child, so it stops
  * with the singleton and the next one resumes it again.
  */
-private fun registry(resuming: Resuming, listed: (Registered) -> Unit) = delivered(
-    persistent<Registry, Change, Registered>(
-        id = PersistenceId(REGISTRY, REGISTRY),
-        empty = emptyMap(),
-        codec = ChangeCodec,
-        command = { ctx, registered, message ->
-            when (message) {
-                is Registry.Register -> {
-                    val listing = Listed(message.kind, message.owner, message.owner)
-                    if (message.producer in registered) {
-                        none()
-                    } else {
-                        persist(Change.Enlisted(message.producer, listing)).then(listed)
-                    }
-                }
+private fun registry(resuming: Resuming, listed: (Registered) -> Unit) =
+    delivered(
+            persistent<Registry, Change, Registered>(
+                id = PersistenceId(REGISTRY, REGISTRY),
+                empty = emptyMap(),
+                codec = ChangeCodec,
+                command = { ctx, registered, message ->
+                    when (message) {
+                        is Registry.Register -> {
+                            val listing = Listed(message.kind, message.owner, message.owner)
+                            if (message.producer in registered) {
+                                none()
+                            } else {
+                                persist(Change.Enlisted(message.producer, listing)).then(listed)
+                            }
+                        }
 
-                // One change a step, and the next check at once, while there is more to resume or retire.
-                Registry.Check -> resuming.next(ctx, registered)?.let { change ->
-                    persist(change).then { after ->
-                        listed(after)
-                        ctx.self.tell(Registry.Check)
+                        // One change a step, and the next check at once, while there is more to resume or retire.
+                        Registry.Check ->
+                            resuming.next(ctx, registered)?.let { change ->
+                                persist(change).then { after ->
+                                    listed(after)
+                                    ctx.self.tell(Registry.Check)
+                                }
+                            } ?: none().then(listed)
                     }
-                } ?: none().then(listed)
-            }
-        },
-        event = { registered, change ->
-            when (change) {
-                is Change.Enlisted -> registered + (change.producer to change.listed)
-                is Change.Retired -> registered - change.producer
-            }
-        },
-    ),
-).onStart { ctx ->
-    resuming.started()
-    ctx.timers.every(Registry.Check, CHECK_EVERY, Registry.Check)
-    ctx.timers.after(FirstCheck, Duration.ZERO, Registry.Check)
-}
+                },
+                event = { registered, change ->
+                    when (change) {
+                        is Change.Enlisted -> registered + (change.producer to change.listed)
+                        is Change.Retired -> registered - change.producer
+                    }
+                },
+            ),
+        )
+        .onStart { ctx ->
+            resuming.started()
+            ctx.timers.every(Registry.Check, CHECK_EVERY, Registry.Check)
+            ctx.timers.after(FirstCheck, Duration.ZERO, Registry.Check)
+        }
 
 /** The producers the registry has resumed on this node, each with the child that runs it. */
 private class Resuming(private val cluster: Cluster, private val kinds: Map<String, Sharded<*>>) {
@@ -175,10 +177,11 @@ private class Resuming(private val cluster: Cluster, private val kinds: Map<Stri
     /** Resumes a producer that needs a runner, or else retires a resumed one that has drained, and says which. */
     fun next(ctx: Ctx<Registry>, registered: Registered): Change? {
         val live = cluster.view.members.mapTo(HashSet()) { Life(it.node, it.uid) }
-        val orphan = registered.entries.firstOrNull { (producer, listed) ->
-            val orphaned = listed.runner !in live || listed.runner != listed.owner
-            producer !in running && orphaned && listed.kind in kinds
-        }
+        val orphan =
+            registered.entries.firstOrNull { (producer, listed) ->
+                val orphaned = listed.runner !in live || listed.runner != listed.owner
+                producer !in running && orphaned && listed.kind in kinds
+            }
         if (orphan != null) {
             val (producer, listed) = orphan
             running[producer] = kinds.getValue(listed.kind).resume(ctx, producer)
@@ -200,49 +203,54 @@ private fun WireOut.life(life: Life) {
 private fun WireIn.life() = Life(Node.parse(string()), long())
 
 private object RegistryCodec : MessageCodec<Registry> {
-    override fun write(message: Registry, out: WireOut) = when (message) {
-        is Registry.Register -> {
-            out.string(message.producer)
-            out.string(message.kind)
-            out.life(message.owner)
-            out.delivery(message.delivery)
-        }
+    override fun write(message: Registry, out: WireOut) =
+        when (message) {
+            is Registry.Register -> {
+                out.string(message.producer)
+                out.string(message.kind)
+                out.life(message.owner)
+                out.delivery(message.delivery)
+            }
 
-        Registry.Check -> error("$message never leaves its node")
-    }
+            Registry.Check -> error("$message never leaves its node")
+        }
 
     override fun read(input: WireIn): Registry =
         Registry.Register(input.string(), input.string(), input.life(), input.delivery())
 }
 
 private object ChangeCodec : EventCodec<Change> {
-    override fun encode(event: Change): ByteArray = ByteArrayOutputStream().also { bytes ->
-        DataOutputStream(bytes).use { data ->
-            when (event) {
-                is Change.Enlisted -> {
-                    data.writeInt(ENLISTED)
-                    data.writeUTF(event.producer)
-                    data.writeUTF(event.listed.kind)
-                    listOf(event.listed.owner, event.listed.runner).forEach { life ->
-                        data.writeUTF(life.node.toString())
-                        data.writeLong(life.uid)
+    override fun encode(event: Change): ByteArray =
+        ByteArrayOutputStream()
+            .also { bytes ->
+                DataOutputStream(bytes).use { data ->
+                    when (event) {
+                        is Change.Enlisted -> {
+                            data.writeInt(ENLISTED)
+                            data.writeUTF(event.producer)
+                            data.writeUTF(event.listed.kind)
+                            listOf(event.listed.owner, event.listed.runner).forEach { life ->
+                                data.writeUTF(life.node.toString())
+                                data.writeLong(life.uid)
+                            }
+                        }
+
+                        is Change.Retired -> {
+                            data.writeInt(RETIRED)
+                            data.writeUTF(event.producer)
+                        }
                     }
                 }
+            }
+            .toByteArray()
 
-                is Change.Retired -> {
-                    data.writeInt(RETIRED)
-                    data.writeUTF(event.producer)
-                }
+    override fun decode(bytes: ByteArray): Change =
+        DataInputStream(ByteArrayInputStream(bytes)).use { data ->
+            fun life() = Life(Node.parse(data.readUTF()), data.readLong())
+            when (val tag = data.readInt()) {
+                ENLISTED -> Change.Enlisted(data.readUTF(), Listed(data.readUTF(), life(), life()))
+                RETIRED -> Change.Retired(data.readUTF())
+                else -> error("no registry event has the tag $tag")
             }
         }
-    }.toByteArray()
-
-    override fun decode(bytes: ByteArray): Change = DataInputStream(ByteArrayInputStream(bytes)).use { data ->
-        fun life() = Life(Node.parse(data.readUTF()), data.readLong())
-        when (val tag = data.readInt()) {
-            ENLISTED -> Change.Enlisted(data.readUTF(), Listed(data.readUTF(), life(), life()))
-            RETIRED -> Change.Retired(data.readUTF())
-            else -> error("no registry event has the tag $tag")
-        }
-    }
 }

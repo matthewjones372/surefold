@@ -16,11 +16,12 @@ import kotlin.time.Duration.Companion.seconds
  * owner as it does its own members'. The two never gossip, down or watch each other. Each envelope says it is [from]
  * this cluster, and the other takes it only once it has `acceptFederated` that name.
  *
- * Nodes are tried in [nodes]' order. One a frame could not be sent to is skipped for [retryAfter], or until it
- * connects again; with every one failing, the first is tried anyway, so a tell is a dead letter and an ask fails at
- * once with `Unreachable`, and either goes through again as soon as a node is back.
+ * Nodes are tried in [nodes]' order. One a frame could not be sent to is skipped for [retryAfter], or until it connects
+ * again; with every one failing, the first is tried anyway, so a tell is a dead letter and an ask fails at once with
+ * `Unreachable`, and either goes through again as soon as a node is back.
  */
-class Federated internal constructor(
+class Federated
+internal constructor(
     val name: String,
     private val cluster: Cluster,
     private val nodes: Discovery,
@@ -37,8 +38,9 @@ class Federated internal constructor(
     /** [envelope] sent to [path]'s region on the first node that is not failing, or a dead letter with none known. */
     internal fun <M : Any> send(path: String, wire: RegionCodec<M>, envelope: Region.Envelope<M>) {
         val known = nodes.seeds()
-        val node = known.firstOrNull { !cluster.remote.failing(it, retryAfter) }
-            ?: known.firstOrNull().also { unreachable.increment() }
+        val node =
+            known.firstOrNull { !cluster.remote.failing(it, retryAfter) }
+                ?: known.firstOrNull().also { unreachable.increment() }
         if (node == null) {
             val nowhere = Address("$name@", "$path/${envelope.id}", 0)
             return cluster.scope.deadLetter(DeadLetter(nowhere, envelope.message, DeadLetter.Why.Unreachable))
@@ -49,7 +51,8 @@ class Federated internal constructor(
 }
 
 /** One kind of another cluster's entities, reached through [Federated]. */
-class FederatedKind<M : Any> internal constructor(
+class FederatedKind<M : Any>
+internal constructor(
     val kind: String,
     private val federated: Federated,
     private val wire: RegionCodec<M>,

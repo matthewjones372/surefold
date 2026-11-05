@@ -54,12 +54,13 @@ object RingSuite : Suite() {
             listOf(3, 4, 5).forAll { capacity ->
                 val ring = Ring(capacity)
                 val put = AtomicInteger()
-                val producer = Thread.ofVirtual().start {
-                    repeat(10) {
-                        ring.put(it)
-                        put.incrementAndGet()
+                val producer =
+                    Thread.ofVirtual().start {
+                        repeat(10) {
+                            ring.put(it)
+                            put.incrementAndGet()
+                        }
                     }
-                }
                 waitUntilParked(producer)
 
                 withClue("capacity $capacity") { put.get() shouldBe capacity }
@@ -112,14 +113,15 @@ object RingSuite : Suite() {
         test("an interrupt reaches a producer parked on a full ring") {
             val ring = Ring(2)
             val outcome = CompletableFuture<Throwable?>()
-            val producer = Thread.ofVirtual().start {
-                try {
-                    repeat(3) { ring.put(it) }
-                    outcome.complete(null)
-                } catch (thrown: InterruptedException) {
-                    outcome.complete(thrown)
+            val producer =
+                Thread.ofVirtual().start {
+                    try {
+                        repeat(3) { ring.put(it) }
+                        outcome.complete(null)
+                    } catch (thrown: InterruptedException) {
+                        outcome.complete(thrown)
+                    }
                 }
-            }
             waitUntilParked(producer)
 
             producer.interrupt()
@@ -131,13 +133,14 @@ object RingSuite : Suite() {
             val ring = Ring(2)
             // A bare thread, so it can be interrupted; it hands back what it threw, and the test checks it.
             val threw = CompletableFuture<Throwable>()
-            val consumer = Thread.ofVirtual().start {
-                try {
-                    val _ = ring.take()
-                } catch (interrupted: InterruptedException) {
-                    threw.complete(interrupted)
+            val consumer =
+                Thread.ofVirtual().start {
+                    try {
+                        val _ = ring.take()
+                    } catch (interrupted: InterruptedException) {
+                        threw.complete(interrupted)
+                    }
                 }
-            }
             waitUntilParked(consumer)
 
             consumer.interrupt()

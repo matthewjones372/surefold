@@ -6,8 +6,8 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 /**
- * What no thread caught, in the application's log rather than on stderr, where an operator's log shipping never sees
- * it (spec 0102). An actor that throws with no supervision stops, and its throw reaches here. When a database goes,
+ * What no thread caught, in the application's log rather than on stderr, where an operator's log shipping never sees it
+ * (spec 0102). An actor that throws with no supervision stops, and its throw reaches here. When a database goes,
  * thousands of actors throw the same thing at once, so the first of each kind in a [window] is logged with its stack,
  * and the rest are counted and said with the next of that kind after the window.
  */

@@ -35,8 +35,8 @@ class StoredEvent(val sequence: Long, val bytes: ByteArray, val metadata: Map<St
 data class JournalConflict(val id: PersistenceId, val expected: Long, val actual: Long)
 
 /**
- * Where persistent actors' events are kept, as bytes. An append names the sequence number its writer expects to
- * follow, so that of two writers for one id only one succeeds; a journal that cannot write throws.
+ * Where persistent actors' events are kept, as bytes. An append names the sequence number its writer expects to follow,
+ * so that of two writers for one id only one succeeds; a journal that cannot write throws.
  */
 interface Journal {
     /** Appends [events] after [expected], 0 for none yet, and answers the new last sequence number. */
@@ -56,22 +56,19 @@ fun <E> Journal.events(id: PersistenceId, codec: EventCodec<E>): List<E> =
  */
 interface JournalPruning {
     /**
-     * Deletes [id]'s events up to and including [sequence], and only those at or before [readTo] in the feed, but
-     * never its newest: the next append is checked against it. What is left reads as before, from the first event
-     * kept. An id's offsets grow with its sequence numbers, so what goes is always a prefix (spec 0077).
+     * Deletes [id]'s events up to and including [sequence], and only those at or before [readTo] in the feed, but never
+     * its newest: the next append is checked against it. What is left reads as before, from the first event kept. An
+     * id's offsets grow with its sequence numbers, so what goes is always a prefix (spec 0077).
      */
     fun deleteTo(id: PersistenceId, sequence: Long, readTo: Long = Long.MAX_VALUE)
 }
 
 /**
  * A journal in memory, for tests and for a service that can lose its events. It keeps copies of the bytes, is a
- * [SlicedFeed] whose offsets count appended events (appends take turns, so no offset is seen before a smaller one),
- * and prunes.
+ * [SlicedFeed] whose offsets count appended events (appends take turns, so no offset is seen before a smaller one), and
+ * prunes.
  */
-class InMemoryJournal :
-    Journal,
-    SlicedFeed,
-    JournalPruning {
+class InMemoryJournal : Journal, SlicedFeed, JournalPruning {
     private val kept = ConcurrentHashMap<PersistenceId, List<StoredEvent>>()
     private val feed = ConcurrentSkipListMap<Long, FeedEvent>()
     private val appending = ReentrantLock()
@@ -93,7 +90,9 @@ class InMemoryJournal :
         }
 
     override fun read(id: PersistenceId, from: Long): List<StoredEvent> =
-        kept[id].orEmpty().filter { it.sequence >= from }
+        kept[id]
+            .orEmpty()
+            .filter { it.sequence >= from }
             .map { StoredEvent(it.sequence, it.bytes.copyOf(), it.metadata) }
 
     override fun deleteTo(id: PersistenceId, sequence: Long, readTo: Long) {
@@ -109,7 +108,10 @@ class InMemoryJournal :
     override fun after(kind: String, offset: Long, limit: Int): List<FeedEvent> = after(kind, ALL, offset, limit)
 
     override fun after(kind: String, slices: IntRange, offset: Long, limit: Int): List<FeedEvent> =
-        feed.tailMap(offset, false).values.asSequence()
+        feed
+            .tailMap(offset, false)
+            .values
+            .asSequence()
             .filter { it.id.kind == kind && (slices == ALL || Slices.of(it.id) in slices) }
             .take(limit)
             .map { FeedEvent(it.offset, it.id, it.sequence, it.bytes.copyOf(), it.metadata) }

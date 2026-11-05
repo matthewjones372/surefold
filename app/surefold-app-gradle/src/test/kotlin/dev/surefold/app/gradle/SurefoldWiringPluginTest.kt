@@ -5,18 +5,18 @@ import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldNotBeNull
 import dev.surefold.assert.shouldNotContain
 import dev.surefold.assert.withClue
+import java.io.File
 import org.gradle.testkit.runner.GradleRunner
 import org.gradle.testkit.runner.TaskOutcome
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
-import java.io.File
 
 /**
- * A build that runs, because what the plugin does is register a task and fail a build. The surefold-app
- * under test is this repository's own, handed over as a file dependency.
+ * A build that runs, because what the plugin does is register a task and fail a build. The surefold-app under test is
+ * this repository's own, handed over as a file dependency.
  *
- * The generated project declares no toolchain: it has no resolver to provision one with, and the
- * matrix runner holds only the JDK it was set up with.
+ * The generated project declares no toolchain: it has no resolver to provision one with, and the matrix runner holds
+ * only the JDK it was set up with.
  */
 class SurefoldWiringPluginTest {
 
@@ -32,8 +32,9 @@ class SurefoldWiringPluginTest {
         }
         val jars = underTest!!.split(File.pathSeparator).joinToString(", ") { "\"$it\"" }
 
-        File(dir, "settings.gradle.kts").writeText(
-            """
+        File(dir, "settings.gradle.kts")
+            .writeText(
+                """
             pluginManagement {
                 repositories {
                     maven { url = uri("$checker") }
@@ -42,10 +43,12 @@ class SurefoldWiringPluginTest {
             }
 
             rootProject.name = "under-test"
-            """.trimIndent(),
-        )
-        File(dir, "build.gradle.kts").writeText(
             """
+                    .trimIndent(),
+            )
+        File(dir, "build.gradle.kts")
+            .writeText(
+                """
             plugins {
                 kotlin("jvm") version "2.4.10"
                 id("dev.surefold.wiring") version "$version"
@@ -60,8 +63,9 @@ class SurefoldWiringPluginTest {
             dependencies { implementation(files($jars)) }
 
             $wiring
-            """.trimIndent(),
-        )
+            """
+                    .trimIndent(),
+            )
         val source = File(dir, "src/main/kotlin/Under.kt")
         source.parentFile.mkdirs()
         source.writeText(graph)
@@ -70,9 +74,7 @@ class SurefoldWiringPluginTest {
     private fun run(dir: File, vararg args: String) = runner(dir, *args).buildAndFail()
 
     private fun runner(dir: File, vararg args: String) =
-        GradleRunner.create()
-            .withProjectDir(dir)
-            .withArguments(*args, "--stacktrace")
+        GradleRunner.create().withProjectDir(dir).withArguments(*args, "--stacktrace")
 
     @Test
     fun `a graph the compiler could not judge is still caught by the task that runs it`(@TempDir dir: File) {
@@ -108,7 +110,8 @@ class SurefoldWiringPluginTest {
     }
 
     /** Prints what the plugin gave the test task: the colour settings, and whether each is one of its inputs. */
-    private val showsTestSettings = """
+    private val showsTestSettings =
+        """
         tasks.register("testSettings") {
             val test = tasks.test.get()
             doLast {
@@ -118,7 +121,8 @@ class SurefoldWiringPluginTest {
                 println("property surefold.test.colour=" + test.systemProperties["surefold.test.colour"])
             }
         }
-    """.trimIndent()
+        """
+            .trimIndent()
 
     /** This JVM's environment, with [extra] on top: TestKit replaces the environment whole. */
     private fun environment(vararg extra: Pair<String, String>): Map<String, String> =
@@ -128,9 +132,11 @@ class SurefoldWiringPluginTest {
     fun `FORCE_COLOR and NO_COLOR in Gradle's environment reach every test task, as inputs`(@TempDir dir: File) {
         project(dir, showsTestSettings, SOUND)
 
-        val out = runner(dir, "testSettings")
-            .withEnvironment(environment("FORCE_COLOR" to "1", "NO_COLOR" to "1"))
-            .build().output
+        val out =
+            runner(dir, "testSettings")
+                .withEnvironment(environment("FORCE_COLOR" to "1", "NO_COLOR" to "1"))
+                .build()
+                .output
 
         out shouldContain "env FORCE_COLOR=1 input=1"
         out shouldContain "env NO_COLOR=1 input=1"
@@ -140,9 +146,8 @@ class SurefoldWiringPluginTest {
     fun `-Psurefold test colour reaches the test worker as a system property`(@TempDir dir: File) {
         project(dir, showsTestSettings, SOUND)
 
-        val out = runner(dir, "testSettings", "-Psurefold.test.colour=always")
-            .withEnvironment(environment())
-            .build().output
+        val out =
+            runner(dir, "testSettings", "-Psurefold.test.colour=always").withEnvironment(environment()).build().output
 
         out shouldContain "property surefold.test.colour=always"
     }
@@ -458,24 +463,25 @@ class SurefoldWiringPluginTest {
         val result = runner(dir, "compileKotlin").buildAndFail()
 
         listOf(
-            "FileInputStream(..)",
-            "Socket(..)",
-            "DriverManager.getConnection",
-            "Thread.sleep",
-            "TimeUnit.sleep",
-            "Future.get",
-            "Deferred.await",
-            "Lock.lock",
-            "synchronized",
-            "parMap",
-            "parZip",
-            "raceN",
-            "scope",
-            "Scope.async",
-            "readText",
-            "writeText",
-            "readln",
-        ).forEach { call -> result.output shouldContain "$call runs again each time the step does" }
+                "FileInputStream(..)",
+                "Socket(..)",
+                "DriverManager.getConnection",
+                "Thread.sleep",
+                "TimeUnit.sleep",
+                "Future.get",
+                "Deferred.await",
+                "Lock.lock",
+                "synchronized",
+                "parMap",
+                "parZip",
+                "raceN",
+                "scope",
+                "Scope.async",
+                "readText",
+                "writeText",
+                "readln",
+            )
+            .forEach { call -> result.output shouldContain "$call runs again each time the step does" }
         withClue("kotlin.io.encoding only computes, so Base64 is left alone") {
             result.output shouldNotContain "Base64"
         }
@@ -512,20 +518,22 @@ class SurefoldWiringPluginTest {
         val result = runner(dir, "compileKotlin").buildAndFail()
 
         listOf(
-            "logInfo",
-            "Logger.log",
-            "Counter.increment",
-            "Gauge.set",
-            "Histogram.record",
-            "Hub.publish",
-            "println",
-            "print",
-        ).forEach { call ->
-            result.output shouldContain "$call runs again each time the step does; once the step commits, run " +
-                "it in afterCommit { }"
-        }
-        result.output shouldContain "ActorRef.tell runs again each time the step does; once the step commits, " +
-            "tell it with tellAfterCommit(ref, message)"
+                "logInfo",
+                "Logger.log",
+                "Counter.increment",
+                "Gauge.set",
+                "Histogram.record",
+                "Hub.publish",
+                "println",
+                "print",
+            )
+            .forEach { call ->
+                result.output shouldContain
+                    "$call runs again each time the step does; once the step commits, run " + "it in afterCommit { }"
+            }
+        result.output shouldContain
+            "ActorRef.tell runs again each time the step does; once the step commits, " +
+                "tell it with tellAfterCommit(ref, message)"
     }
 
     @Test
@@ -550,7 +558,8 @@ class SurefoldWiringPluginTest {
     }
 }
 
-private const val IMPORTS = """
+private const val IMPORTS =
+    """
 import dev.surefold.app.AppScope
 import dev.surefold.app.SurefoldApp
 import dev.surefold.app.Module
@@ -561,14 +570,16 @@ class Pump
 class DataSource
 """
 
-private const val FAULTY = """$IMPORTS
+private const val FAULTY =
+    """$IMPORTS
 object Under : SurefoldApp<Pump>() {
     override val module: Module = single { _: DataSource -> Pump() }
     override fun AppScope.run(root: Pump) = Unit
 }
 """
 
-private const val SOUND = """$IMPORTS
+private const val SOUND =
+    """$IMPORTS
 object Under : SurefoldApp<Pump>() {
     override val module: Module = single<Pump> { Pump() }
     override fun AppScope.run(root: Pump) = Unit
@@ -576,7 +587,8 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /** A chain, a name it is reached through, and a choice whose branches are unioned. */
-private const val COMPOSED = """$IMPORTS
+private const val COMPOSED =
+    """$IMPORTS
 class Valve
 
 private val chosen: Module =
@@ -595,7 +607,8 @@ object Under : SurefoldApp<Pump>() {
  * and this is the only build that would notice that copy going stale. surefold-integrations does the same for the
  * factories its modules ship.
  */
-private const val LIBRARY_ACTORS = """
+private const val LIBRARY_ACTORS =
+    """
 import dev.surefold.actor.ActorRef
 import dev.surefold.actor.behaviour
 import dev.surefold.actor.stay
@@ -619,7 +632,8 @@ object Under : SurefoldApp<ActorRef<Ping>>() {
 """
 
 /** Unreadable and short of a key: what only a task that runs the graph can catch. */
-private const val UNREADABLE_AND_FAULTY = """$IMPORTS
+private const val UNREADABLE_AND_FAULTY =
+    """$IMPORTS
 object Under : SurefoldApp<Pump>() {
     override val module: Module = listOf(single { _: DataSource -> Pump() }).reduce { a, b -> a + b }
     override fun AppScope.run(root: Pump) = Unit
@@ -627,7 +641,8 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /** A module out of a collection: legal, sound, and nothing a reader can follow. */
-private const val UNREADABLE = """$IMPORTS
+private const val UNREADABLE =
+    """$IMPORTS
 object Under : SurefoldApp<Pump>() {
     override val module: Module =
         listOf(single<DataSource> { DataSource() }, single { _: DataSource -> Pump() }).reduce { a, b -> a + b }
@@ -635,7 +650,8 @@ object Under : SurefoldApp<Pump>() {
 }
 """
 
-private const val WARNED = """$IMPORTS
+private const val WARNED =
+    """$IMPORTS
 object Under : SurefoldApp<Pump>() {
     override val module: Module = single<Pump> { Pump() } + single<Pump> { Pump() }
     override fun AppScope.run(root: Pump) = Unit
@@ -643,7 +659,8 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /** A node nothing takes, and a node only that one takes: one edit, and so one thing to say. */
-private const val FORGOTTEN = """$IMPORTS
+private const val FORGOTTEN =
+    """$IMPORTS
 class Ledger
 class Audit(val ledger: Ledger)
 
@@ -655,7 +672,8 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /** A graph that builds no root: sound to read, and unanswerable about what reaches what. */
-private const val ROOTLESS = """$IMPORTS
+private const val ROOTLESS =
+    """$IMPORTS
 object Under : SurefoldApp<Pump>() {
     override val module: Module = single<DataSource> { DataSource() }
     override fun AppScope.run(root: Pump) = Unit
@@ -663,7 +681,8 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /** Two recipes for one key, on two lines, so the report has a line to name that is not its own. */
-private const val TWICE = """$IMPORTS
+private const val TWICE =
+    """$IMPORTS
 object Under : SurefoldApp<Pump>() {
     override val module: Module =
         single<Pump> { Pump() } +
@@ -673,7 +692,8 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /** The same collision, said out loud. */
-private const val OVERRIDDEN = """
+private const val OVERRIDDEN =
+    """
 import dev.surefold.app.AppScope
 import dev.surefold.app.SurefoldApp
 import dev.surefold.app.Module
@@ -690,7 +710,8 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /** Each of two recipes needing the other: legal to write, impossible to assemble. */
-private const val RING = """$IMPORTS
+private const val RING =
+    """$IMPORTS
 object Under : SurefoldApp<Pump>() {
     override val module: Module =
         single { _: DataSource -> Pump() } + single { _: Pump -> DataSource() }
@@ -699,7 +720,8 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /** Both sleeps the JDK has, the way a test reaches for them. */
-private const val SLEEPS = """
+private const val SLEEPS =
+    """
 import java.util.concurrent.TimeUnit
 
 fun waits() {
@@ -709,7 +731,8 @@ fun waits() {
 """
 
 /** Every way the JDK builds a scheduler, and one executor that is not one. */
-private const val SCHEDULERS = """
+private const val SCHEDULERS =
+    """
 import java.util.Timer
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledThreadPoolExecutor
@@ -724,7 +747,8 @@ fun schedulers() = listOf(
 """
 
 /** A root whose own wait ends only when it is stopped, which is the release, after run returns. */
-private const val PARKED = """
+private const val PARKED =
+    """
 import dev.surefold.app.AppScope
 import dev.surefold.app.SurefoldApp
 import dev.surefold.app.Module
@@ -739,7 +763,8 @@ object Under : SurefoldApp<Server>() {
 """
 
 /** The same root, with run parked where surefold can end it. */
-private const val AWAITED = """
+private const val AWAITED =
+    """
 import dev.surefold.app.AppScope
 import dev.surefold.app.SurefoldApp
 import dev.surefold.app.Module
@@ -754,7 +779,8 @@ object Under : SurefoldApp<Server>() {
 """
 
 /** A setting that picks the module providing the root, made inside the graph (spec 0136). */
-private const val CHOSEN = """
+private const val CHOSEN =
+    """
 import dev.surefold.app.AppScope
 import dev.surefold.app.SurefoldApp
 import dev.surefold.app.Module
@@ -772,7 +798,8 @@ object Under : SurefoldApp<Pump>() {
 """
 
 /** Every kind of call the step checker refuses, inside transact, a firstOf branch and a Transaction helper. */
-private const val EFFECTS_IN_A_STEP = """
+private const val EFFECTS_IN_A_STEP =
+    """
 import dev.surefold.Deferred
 import dev.surefold.Shared
 import dev.surefold.Transaction
@@ -823,7 +850,8 @@ fun effects(future: Future<Int>, deferred: Deferred<Int>) = transact {
 """
 
 /** The same calls, in a function that is not a step. */
-private const val EFFECTS_OUTSIDE_A_STEP = """
+private const val EFFECTS_OUTSIDE_A_STEP =
+    """
 import dev.surefold.Deferred
 import dev.surefold.Shared
 import dev.surefold.parMap
@@ -861,7 +889,8 @@ fun effects(future: Future<Int>, deferred: Deferred<Int>) {
 """
 
 /** Writes to state from outside a step, a peek, and the writes a step owns or cannot judge. */
-private const val CAPTURES = """
+private const val CAPTURES =
+    """
 import dev.surefold.Shared
 import dev.surefold.Transaction
 import dev.surefold.transact
@@ -897,7 +926,8 @@ fun Transaction.counted(free: Shared<Int>): Int {
 """
 
 /** Surefold's own effects, and printing, each the kind a step wants to happen once it has committed. */
-private const val SUREFOLD_EFFECTS = """
+private const val SUREFOLD_EFFECTS =
+    """
 import dev.surefold.Counter
 import dev.surefold.Gauge
 import dev.surefold.Histogram
@@ -911,7 +941,15 @@ import dev.surefold.transact
 
 val free = Shared(10)
 
-fun hold(log: Logger, line: LogLine, sold: Counter, left: Gauge, sizes: Histogram, orders: ActorRef<String>, events: Hub<String>) =
+fun hold(
+    log: Logger,
+    line: LogLine,
+    sold: Counter,
+    left: Gauge,
+    sizes: Histogram,
+    orders: ActorRef<String>,
+    events: Hub<String>,
+) =
     transact {
         free.update { it - 1 }
         logInfo("held one")
@@ -927,7 +965,8 @@ fun hold(log: Logger, line: LogLine, sold: Counter, left: Gauge, sizes: Histogra
 """
 
 /** Every kind of effect, each inside an afterCommit block in a step. */
-private const val AFTER_COMMIT = """
+private const val AFTER_COMMIT =
+    """
 import dev.surefold.Counter
 import dev.surefold.Shared
 import dev.surefold.actor.ActorRef

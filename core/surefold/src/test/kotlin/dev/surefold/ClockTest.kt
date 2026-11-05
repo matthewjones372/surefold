@@ -6,12 +6,12 @@ import dev.surefold.assert.shouldBeLessThan
 import dev.surefold.assert.shouldContainExactly
 import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
+import org.junit.jupiter.api.Test
 
 class ClockTest {
 

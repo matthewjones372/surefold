@@ -28,11 +28,12 @@ import kotlin.time.Duration.Companion.minutes
 /** Asks which node answers. */
 private data class WhoAnswers(val reply: Reply<String>)
 
-private val whoCodec = object : MessageCodec<WhoAnswers> {
-    override fun write(message: WhoAnswers, out: WireOut) = out.reply(message.reply, Codecs.string)
+private val whoCodec =
+    object : MessageCodec<WhoAnswers> {
+        override fun write(message: WhoAnswers, out: WireOut) = out.reply(message.reply, Codecs.string)
 
-    override fun read(input: WireIn): WhoAnswers = WhoAnswers(input.reply(Codecs.string))
-}
+        override fun read(input: WireIn): WhoAnswers = WhoAnswers(input.reply(Codecs.string))
+    }
 
 private val prompt =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
@@ -49,18 +50,19 @@ private class LateNode(val name: String, port: Int, seeds: Discovery, roles: Set
     private val opened = CountDownLatch(1)
     private val member = AtomicReference<Cluster>()
     private val ledgers = AtomicReference<Sharded<WhoAnswers>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            onDeadLetter(letters::add)
-            member.set(cluster(node(name, port), seeds, prompt, roles = roles))
-            joined.countDown()
-            open.await()
-            val answering = behaviour<WhoAnswers, Unit>(Unit) { _, _, asked -> stay().also { asked.reply(name) } }
-            ledgers.set(member.get().sharding("ledger", whoCodec, 1.minutes, role = "ledger") { answering })
-            opened.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                onDeadLetter(letters::add)
+                member.set(cluster(node(name, port), seeds, prompt, roles = roles))
+                joined.countDown()
+                open.await()
+                val answering = behaviour<WhoAnswers, Unit>(Unit) { _, _, asked -> stay().also { asked.reply(name) } }
+                ledgers.set(member.get().sharding("ledger", whoCodec, 1.minutes, role = "ledger") { answering })
+                opened.countDown()
+                done.await()
+            }
         }
-    }
 
     fun cluster(): Cluster {
         joined.await()

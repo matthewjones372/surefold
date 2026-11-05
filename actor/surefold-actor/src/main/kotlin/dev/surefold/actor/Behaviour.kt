@@ -32,11 +32,12 @@ interface Ctx<M : Any> {
     val journal: Journal
 
     /** Where this actor's scope keeps snapshots, or null when it has been given none and none are taken. */
-    val snapshots: SnapshotStore? get() = null
+    val snapshots: SnapshotStore?
+        get() = null
 
     /**
-     * Tells this actor [message] once nothing has arrived for [after], and again only after the next message: once
-     * per silence. Any message resets it, a timer's included; a restart turns it off.
+     * Tells this actor [message] once nothing has arrived for [after], and again only after the next message: once per
+     * silence. Any message resets it, a timer's included; a restart turns it off.
      */
     fun receiveTimeout(after: Duration, message: M)
 
@@ -63,8 +64,8 @@ interface Ctx<M : Any> {
     fun register(key: ServiceKey<M>)
 
     /**
-     * Tells this actor [listing] of the actors under [key] now, and again whenever it changes, as a message of its
-     * own type, until it stops or restarts.
+     * Tells this actor [listing] of the actors under [key] now, and again whenever it changes, as a message of its own
+     * type, until it stops or restarts.
      */
     fun <K : Any> subscribe(key: ServiceKey<K>, listing: (Set<ActorRef<K>>) -> M)
 
@@ -90,16 +91,16 @@ interface Ctx<M : Any> {
 
 /**
  * An actor's own timers. A timer's message arrives through the mailbox and is handled by the turn like any other.
- * Starting a key that is running replaces it, and a message from a cancelled or replaced timer never arrives, even
- * one already in the mailbox.
+ * Starting a key that is running replaces it, and a message from a cancelled or replaced timer never arrives, even one
+ * already in the mailbox.
  */
 interface Timers<in M : Any> {
     /** Tells this actor [message] once [delay] has passed on its scope's clock; at once when it is not positive. */
     fun after(key: Any, delay: Duration, message: M)
 
     /**
-     * Tells this actor [message] every [interval] until [key] is cancelled or started again. Each is measured from
-     * when the last was handled, so an actor that falls behind is never sent a burst to catch up.
+     * Tells this actor [message] every [interval] until [key] is cancelled or started again. Each is measured from when
+     * the last was handled, so an actor that falls behind is never sent a burst to catch up.
      */
     fun every(key: Any, interval: Duration, message: M)
 
@@ -143,10 +144,11 @@ fun stop(): Next<Nothing> = Next.Stop
 fun unhandled(): Next<Nothing> = Next.Unhandled
 
 /**
- * An actor described: where it starts, and what one message does. Nothing runs until something runs it. A turn
- * leaves with a declared failure by raising [E]; one that never does is `Behaviour<M, S, Nothing>`.
+ * An actor described: where it starts, and what one message does. Nothing runs until something runs it. A turn leaves
+ * with a declared failure by raising [E]; one that never does is `Behaviour<M, S, Nothing>`.
  */
-class Behaviour<M : Any, S, out E> internal constructor(
+class Behaviour<M : Any, S, out E>
+internal constructor(
     val initial: S,
     /** What one message does: the actor's turn. */
     val turn: Fail<E>.(ctx: Ctx<M>, state: S, message: M) -> Next<S>,
@@ -155,8 +157,8 @@ class Behaviour<M : Any, S, out E> internal constructor(
     /** What it does before its first message, and again after each restart: a turn with no message. */
     val start: (Fail<E>.(ctx: Ctx<M>, state: S) -> Next<S>)?,
     /**
-     * A turn over a run of the plain messages already waiting, up to [batch] of them (spec 0086). With none, or a
-     * batch of 1, each message has a [turn] of its own. Signals, timers and replayed messages always do.
+     * A turn over a run of the plain messages already waiting, up to [batch] of them (spec 0086). With none, or a batch
+     * of 1, each message has a [turn] of its own. Signals, timers and replayed messages always do.
      */
     internal val turns: (Fail<E>.(ctx: Ctx<M>, state: S, messages: Run<M>) -> Batched<S>)?,
     internal val batch: Int,
@@ -170,7 +172,8 @@ class Behaviour<M : Any, S, out E> internal constructor(
 
     /** The [turn], under the name it had before spec 0222. */
     @Deprecated("Named turn, as the actors guide calls it", ReplaceWith("turn"))
-    val step: Fail<E>.(ctx: Ctx<M>, state: S, message: M) -> Next<S> get() = turn
+    val step: Fail<E>.(ctx: Ctx<M>, state: S, message: M) -> Next<S>
+        get() = turn
 }
 
 /**
@@ -193,7 +196,8 @@ internal class Carrying<out M : Any>(
     private val messages: List<M>,
     private val carried: List<Map<String, String>>?,
 ) : AbstractList<M>(), Run<M> {
-    override val size: Int get() = messages.size
+    override val size: Int
+        get() = messages.size
 
     override fun get(index: Int): M = messages[index]
 
@@ -204,10 +208,10 @@ internal class Carrying<out M : Any>(
 }
 
 /**
- * A behaviour whose [turns] takes the plain messages already waiting, up to [batch] of them, as one [Run] (spec
- * 0223). A message handled alone, such as a timer's, a stashed one put back, or any with a batch of 1, is a run of
- * one, inside its own sender's context. A run answered `unhandled()` sends every message of it to dead letters. Name
- * all three types, `batching<M, S, E>(…)`: left to inference, a call resolves to the overload that never raises.
+ * A behaviour whose [turns] takes the plain messages already waiting, up to [batch] of them, as one [Run] (spec 0223).
+ * A message handled alone, such as a timer's, a stashed one put back, or any with a batch of 1, is a run of one, inside
+ * its own sender's context. A run answered `unhandled()` sends every message of it to dead letters. Name all three
+ * types, `batching<M, S, E>(…)`: left to inference, a call resolves to the overload that never raises.
  */
 @JvmName("raisingBatching")
 fun <M : Any, S, E> batching(
@@ -242,9 +246,9 @@ fun <M : Any, S, E> Behaviour<M, S, E>.onSignal(
 ): Behaviour<M, S, E> = Behaviour(initial, turn, handler, start, turns, batch)
 
 /**
- * This behaviour, running [handler] before its first message and again after each restart, since a restart loses
- * what the actor had: its registrations, its subscriptions and its timers. A throw from it fails the actor as a
- * turn's would. It runs after any start the behaviour already has, such as a persistent one's recovery.
+ * This behaviour, running [handler] before its first message and again after each restart, since a restart loses what
+ * the actor had: its registrations, its subscriptions and its timers. A throw from it fails the actor as a turn's
+ * would. It runs after any start the behaviour already has, such as a persistent one's recovery.
  */
 fun <M : Any, S, E> Behaviour<M, S, E>.onStart(handler: (ctx: Ctx<M>) -> Unit): Behaviour<M, S, E> {
     val before = start
@@ -298,8 +302,7 @@ internal class StepFail<E> : Fail<E> {
             step(this)
         } catch (failure: Raised) {
             if (failure.by !== this) throw failure
-            @Suppress("UNCHECKED_CAST")
-            raised(failure.error as E)
+            @Suppress("UNCHECKED_CAST") raised(failure.error as E)
         }
 }
 
@@ -356,9 +359,9 @@ sealed interface AskFailure {
 }
 
 /**
- * A reply an ask in this process waits on, which whatever carries the asking message can end unanswered (spec 0103):
- * a transport that could not send the message ends the ask with [AskFailure.Unreachable] rather than letting it wait
- * out its time. An ending after the answer, or a second one, is ignored.
+ * A reply an ask in this process waits on, which whatever carries the asking message can end unanswered (spec 0103): a
+ * transport that could not send the message ends the ask with [AskFailure.Unreachable] rather than letting it wait out
+ * its time. An ending after the answer, or a second one, is ignored.
  */
 interface Unanswerable {
     fun unanswered(why: AskFailure)

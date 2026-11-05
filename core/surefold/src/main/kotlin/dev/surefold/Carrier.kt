@@ -4,12 +4,12 @@ import java.util.ServiceConfigurationError
 import java.util.ServiceLoader
 
 /**
- * What rides a message from the thread that sent it to the one that handles it (spec 0122): a fork's
- * locals cross a fork, and a carrier is how the ones that matter cross a `tell` too.
+ * What rides a message from the thread that sent it to the one that handles it (spec 0122): a fork's locals cross a
+ * fork, and a carrier is how the ones that matter cross a `tell` too.
  *
- * Registered through `META-INF/services`, as the logger is, so a module on the classpath carries its
- * own: `surefold` carries `logAnnotated`'s annotations, `surefold-otel` the trace. A map of strings, because
- * that is what crosses a node as it is, and what every propagator already reads and writes.
+ * Registered through `META-INF/services`, as the logger is, so a module on the classpath carries its own: `surefold`
+ * carries `logAnnotated`'s annotations, `surefold-otel` the trace. A map of strings, because that is what crosses a
+ * node as it is, and what every propagator already reads and writes.
  */
 interface Carrier {
     /** What to carry from the sending thread, empty when there is nothing. */

@@ -54,7 +54,6 @@ class RecordedTest {
 
     @Test
     fun `a check made on a thread surefold does not carry throws there, and is not lost silently`() {
-        events shouldHaveSucceeded
-            listOf("throws a check made on a thread surefold does not carry, there")
+        events shouldHaveSucceeded listOf("throws a check made on a thread surefold does not carry, there")
     }
 }

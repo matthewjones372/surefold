@@ -8,7 +8,6 @@ import dev.surefold.assert.shouldThrow
 import dev.surefold.fail.Fail
 import dev.surefold.fail.attempt
 import dev.surefold.fail.left
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeoutException
@@ -17,6 +16,7 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 /**
  * Time moves only when the thread that built it sleeps. A timeout's sleeper is a fork, so with [forksWait] it never
@@ -47,12 +47,13 @@ class PolicyTest {
 
     @Test
     fun `a policy built in the wrong order throws naming the expected order`() {
-        val wrong = shouldThrow<IllegalArgumentException> {
-            policy("partner") {
-                attemptTimeout(1.seconds)
-                retry(Schedule.recurs(3))
+        val wrong =
+            shouldThrow<IllegalArgumentException> {
+                policy("partner") {
+                    attemptTimeout(1.seconds)
+                    retry(Schedule.recurs(3))
+                }
             }
-        }
 
         wrong.message shouldContain "retry comes after attemptTimeout"
         wrong.message shouldContain "deadline → retry → breaker → limiter → bulkhead → attemptTimeout"
@@ -61,28 +62,31 @@ class PolicyTest {
     @Test
     fun `a repeated step and an attempt timeout past the deadline are refused`() {
         shouldThrow<IllegalArgumentException> {
-            policy("partner") {
-                retry(Schedule.recurs(1))
-                retry(Schedule.recurs(1))
+                policy("partner") {
+                    retry(Schedule.recurs(1))
+                    retry(Schedule.recurs(1))
+                }
             }
-        }.message shouldContain "retry appears twice"
+            .message shouldContain "retry appears twice"
 
         shouldThrow<IllegalArgumentException> {
-            policy("partner") {
-                deadline(1.seconds)
-                attemptTimeout(2.seconds)
+                policy("partner") {
+                    deadline(1.seconds)
+                    attemptTimeout(2.seconds)
+                }
             }
-        }.message shouldContain "longer than its deadline"
+            .message shouldContain "longer than its deadline"
     }
 
     @Test
     fun `a custom guard goes anywhere and wraps what follows it`() {
         val trace = CopyOnWriteArrayList<String>()
-        val partner = policy("partner") {
-            guard(Tracing("outer", trace))
-            retry(Schedule.recurs(1))
-            guard(Tracing("inner", trace))
-        }
+        val partner =
+            policy("partner") {
+                guard(Tracing("outer", trace))
+                retry(Schedule.recurs(1))
+                guard(Tracing("inner", trace))
+            }
 
         shouldThrow<Boom> { partner { throw Boom() } }
 
@@ -94,10 +98,11 @@ class PolicyTest {
     fun `retry stops before a delay that would overrun the deadline`() {
         val time = JumpingClock(forksWait = true)
         val attempts = AtomicInteger()
-        val partner = policy("partner") {
-            deadline(1.seconds)
-            retry(Schedule.spaced(400.milliseconds))
-        }
+        val partner =
+            policy("partner") {
+                deadline(1.seconds)
+                retry(Schedule.spaced(400.milliseconds))
+            }
 
         shouldThrow<Boom> {
             clock.locally(time) {
@@ -116,11 +121,12 @@ class PolicyTest {
     fun `each attempt is cut to the remaining budget`() {
         val time = JumpingClock(forksWait = false)
         val attempts = AtomicInteger()
-        val partner = policy("partner") {
-            deadline(1.seconds)
-            retry(Schedule.spaced(100.milliseconds))
-            attemptTimeout(300.milliseconds)
-        }
+        val partner =
+            policy("partner") {
+                deadline(1.seconds)
+                retry(Schedule.spaced(100.milliseconds))
+                attemptTimeout(300.milliseconds)
+            }
 
         shouldThrow<TimeoutException> {
             clock.locally(time) {
@@ -138,11 +144,12 @@ class PolicyTest {
     @Test
     fun `a fail under attempt passes through every step uncounted`() {
         val attempts = AtomicInteger()
-        val partner = policy("partner") {
-            deadline(1.seconds)
-            retry(Schedule.recurs(3))
-            attemptTimeout(1.seconds)
-        }
+        val partner =
+            policy("partner") {
+                deadline(1.seconds)
+                retry(Schedule.recurs(3))
+                attemptTimeout(1.seconds)
+            }
 
         attempt<Bad, Int> {
             guarded(partner, ifRejected = { Bad("rejected") }) {
@@ -157,11 +164,12 @@ class PolicyTest {
     @Test
     fun `a fail in a scope passes through every step uncounted`() {
         val attempts = AtomicInteger()
-        val partner = policy("partner") {
-            deadline(1.seconds)
-            retry(Schedule.recurs(3))
-            attemptTimeout(1.seconds)
-        }
+        val partner =
+            policy("partner") {
+                deadline(1.seconds)
+                retry(Schedule.recurs(3))
+                attemptTimeout(1.seconds)
+            }
 
         attempt<Bad, Int> {
             scope {
@@ -177,10 +185,11 @@ class PolicyTest {
 
     @Test
     fun `guarded turns a rejection into the declared error`() {
-        val refusing = object : Guard {
-            override fun <E, A> Fail<E>.guard(block: Fail<E>.() -> A): A =
-                throw Rejected.RateLimited("partner", 2.seconds)
-        }
+        val refusing =
+            object : Guard {
+                override fun <E, A> Fail<E>.guard(block: Fail<E>.() -> A): A =
+                    throw Rejected.RateLimited("partner", 2.seconds)
+            }
         val partner = policy("partner") { guard(refusing) }
 
         attempt<Bad, Int> {
@@ -208,20 +217,22 @@ class PolicyTest {
 
     @Test
     fun `a refusal is counted by the guard that refused`() {
-        val refusals = mapOf(
-            "breaker" to Rejected.CircuitOpen("partner", Instant.EPOCH),
-            "limiter" to Rejected.RateLimited("partner", 1.seconds),
-            "bulkhead" to Rejected.BulkheadFull("partner"),
-        )
+        val refusals =
+            mapOf(
+                "breaker" to Rejected.CircuitOpen("partner", Instant.EPOCH),
+                "limiter" to Rejected.RateLimited("partner", 1.seconds),
+                "bulkhead" to Rejected.BulkheadFull("partner"),
+            )
 
         refusals.forEach { (by, refusal) ->
-            val partner = policy("partner") {
-                guard(
-                    object : Guard {
-                        override fun <E, A> Fail<E>.guard(block: Fail<E>.() -> A): A = throw refusal
-                    },
-                )
-            }
+            val partner =
+                policy("partner") {
+                    guard(
+                        object : Guard {
+                            override fun <E, A> Fail<E>.guard(block: Fail<E>.() -> A): A = throw refusal
+                        },
+                    )
+                }
 
             capturingMetrics { measured ->
                 shouldThrow<Rejected> { partner { 42 } }
@@ -245,10 +256,11 @@ class PolicyTest {
     @Test
     fun `an attempt timeout inside the deadline is a failure, not the deadline`() {
         val time = JumpingClock(forksWait = false)
-        val partner = policy("partner") {
-            deadline(1.seconds)
-            attemptTimeout(100.milliseconds)
-        }
+        val partner =
+            policy("partner") {
+                deadline(1.seconds)
+                attemptTimeout(100.milliseconds)
+            }
 
         capturingMetrics { measured ->
             shouldThrow<TimeoutException> { clock.locally(time) { partner { Sleeper().body() } } }

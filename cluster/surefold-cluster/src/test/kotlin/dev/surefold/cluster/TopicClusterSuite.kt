@@ -28,16 +28,19 @@ private class Exchange(val name: String, port: Int, seeds: Discovery) : AutoClos
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Pair<Cluster, Topic<Int>>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val cluster = cluster(node(name, port), seeds, swift)
-            val prices = cluster.topic("prices", Codecs.int)
-            prices.subscribe(spawn("listener", behaviour<Int, Unit>(Unit) { _, _, n -> stay().also { heard += n } }))
-            opened.set(cluster to prices)
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val cluster = cluster(node(name, port), seeds, swift)
+                val prices = cluster.topic("prices", Codecs.int)
+                prices.subscribe(
+                    spawn("listener", behaviour<Int, Unit>(Unit) { _, _, n -> stay().also { heard += n } }),
+                )
+                opened.set(cluster to prices)
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     val cluster: Cluster
         get() {
@@ -67,11 +70,12 @@ object TopicClusterSuite : Suite() {
         ) {
             val ports = List(4) { freePort() }
             val seeds = Discovery.static(*ports.take(3).map { Node("", "127.0.0.1", it) }.toTypedArray())
-            val nodes = mutableListOf(
-                Exchange("x1", ports[0], seeds),
-                Exchange("x2", ports[1], seeds),
-                Exchange("x3", ports[2], seeds),
-            )
+            val nodes =
+                mutableListOf(
+                    Exchange("x1", ports[0], seeds),
+                    Exchange("x2", ports[1], seeds),
+                    Exchange("x3", ports[2], seeds),
+                )
             try {
                 val up = { count: Int -> { view: View -> view.members.count { it.status == Status.Up } == count } }
                 nodes.forAll { it.cluster.await(1.minutes, up(3)) shouldBe true }

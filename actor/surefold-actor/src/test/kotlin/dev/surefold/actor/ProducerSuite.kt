@@ -14,18 +14,17 @@ import kotlin.time.Duration.Companion.seconds
 
 private data class Credited(val pence: Int)
 
-private val creditedCodec = object : EventCodec<Credited> {
-    override fun encode(event: Credited): ByteArray = "${event.pence}".toByteArray()
+private val creditedCodec =
+    object : EventCodec<Credited> {
+        override fun encode(event: Credited): ByteArray = "${event.pence}".toByteArray()
 
-    override fun decode(bytes: ByteArray): Credited = Credited(String(bytes).toInt())
-}
+        override fun decode(bytes: ByteArray): Credited = Credited(String(bytes).toInt())
+    }
 
 private sealed interface LedgerCommand
 
 /** Credits [pence], sent reliably. */
-private data class CreditLedger(val pence: Int, override val delivery: Delivery) :
-    LedgerCommand,
-    Delivered
+private data class CreditLedger(val pence: Int, override val delivery: Delivery) : LedgerCommand, Delivered
 
 /** Stops the ledger, sent plainly. */
 private data object CloseLedger : LedgerCommand
@@ -35,28 +34,30 @@ private data class LedgerBalance(val reply: Reply<Int>) : LedgerCommand
 
 private fun ledgerOf(id: String) = PersistenceId("ledger", id)
 
-private fun ledger(id: String) = delivered(
-    persistent<LedgerCommand, Credited, Int>(
-        id = ledgerOf(id),
-        empty = 0,
-        codec = creditedCodec,
-        command = { _, balance, command ->
-            when (command) {
-                is CreditLedger -> persist(Credited(command.pence))
-                CloseLedger -> stop()
-                is LedgerBalance -> none().then { command.reply(balance) }
-            }
-        },
-        event = { balance, credited -> balance + credited.pence },
-    ),
-)
+private fun ledger(id: String) =
+    delivered(
+        persistent<LedgerCommand, Credited, Int>(
+            id = ledgerOf(id),
+            empty = 0,
+            codec = creditedCodec,
+            command = { _, balance, command ->
+                when (command) {
+                    is CreditLedger -> persist(Credited(command.pence))
+                    CloseLedger -> stop()
+                    is LedgerBalance -> none().then { command.reply(balance) }
+                }
+            },
+            event = { balance, credited -> balance + credited.pence },
+        ),
+    )
 
 /** Tells nobody: an entity whose node has gone. */
-private fun <M : Any> void(): ActorRef<M> = object : ActorRef<M> {
-    override val address = Address("test", "/void", 0)
+private fun <M : Any> void(): ActorRef<M> =
+    object : ActorRef<M> {
+        override val address = Address("test", "/void", 0)
 
-    override fun tell(message: M) = Unit
-}
+        override fun tell(message: M) = Unit
+    }
 
 object ProducerSuite : Suite() {
     init {
@@ -82,18 +83,20 @@ object ProducerSuite : Suite() {
             testActors {
                 val ledger = spawn("ledger", ledger("l-1"))
                 var lose = true
-                val lossy = object : ActorRef<LedgerCommand> {
-                    override val address = ledger.address
+                val lossy =
+                    object : ActorRef<LedgerCommand> {
+                        override val address = ledger.address
 
-                    override fun tell(message: LedgerCommand) = ledger.tell(
-                        if (lose && message is CreditLedger) {
-                            lose = false
-                            message.copy(delivery = message.delivery.copy(confirmTo = void()))
-                        } else {
-                            message
-                        },
-                    )
-                }
+                        override fun tell(message: LedgerCommand) =
+                            ledger.tell(
+                                if (lose && message is CreditLedger) {
+                                    lose = false
+                                    message.copy(delivery = message.delivery.copy(confirmTo = void()))
+                                } else {
+                                    message
+                                },
+                            )
+                    }
                 val producer = producer("till", resendAfter = 2.seconds) { lossy }
 
                 val _ = producer.send("l-1") { CreditLedger(10, it) }
@@ -110,11 +113,10 @@ object ProducerSuite : Suite() {
         test("a producer keeping as many as it may answers Full, and has room again once one is confirmed") {
             testActors {
                 var to: ActorRef<LedgerCommand> = void()
-                val producer = producer("till", keep = 2, within = Duration.ZERO) { id ->
-                    if (id ==
-                        "l-1"
-                    ) to else void()
-                }
+                val producer =
+                    producer("till", keep = 2, within = Duration.ZERO) { id ->
+                        if (id == "l-1") to else void()
+                    }
 
                 producer.send("l-1") { CreditLedger(1, it) } shouldBe Unit.right()
                 producer.send("l-2") { CreditLedger(2, it) } shouldBe Unit.right()

@@ -30,11 +30,12 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.time.Duration.Companion.seconds
 
-private val text = object : EventCodec<String> {
-    override fun encode(event: String): ByteArray = event.toByteArray()
+private val text =
+    object : EventCodec<String> {
+        override fun encode(event: String): ByteArray = event.toByteArray()
 
-    override fun decode(bytes: ByteArray): String = String(bytes)
-}
+        override fun decode(bytes: ByteArray): String = String(bytes)
+    }
 
 private fun InMemoryJournal.place(n: Int) {
     val id = PersistenceId("order", "o-$n")
@@ -45,15 +46,16 @@ private fun InMemoryJournal.place(n: Int) {
 private data class Place(val n: Int, override val delivery: Delivery) : Delivered
 
 /** Places orders sent reliably, so each append carries its delivery's mark after the event. */
-private fun placing(n: Int) = delivered(
-    persistent<Place, String, Unit>(
-        id = PersistenceId("order", "o-$n"),
-        empty = Unit,
-        codec = text,
-        command = { _, _, place -> persist("placed ${place.n}") },
-        event = { _, _ -> },
-    ),
-)
+private fun placing(n: Int) =
+    delivered(
+        persistent<Place, String, Unit>(
+            id = PersistenceId("order", "o-$n"),
+            empty = Unit,
+            codec = text,
+            command = { _, _, place -> persist("placed ${place.n}") },
+            event = { _, _ -> },
+        ),
+    )
 
 private fun <E, R> CompletionStage<Exit<E, R>>.settled(): Exit<E, R> = toCompletableFuture().get(1, TimeUnit.MINUTES)
 
@@ -64,8 +66,10 @@ private class Orders {
     val handled = ConcurrentLinkedQueue<String>()
 
     fun totals(): Stream<Nothing, Followed<String>> =
-        Projection.follow(journal, kind = "order", codec = text, offsets = offsets, name = "totals")
-            .mapFollowed { event -> event.value.also { handled += "${event.id.id}: $it" } }
+        Projection.follow(journal, kind = "order", codec = text, offsets = offsets, name = "totals").mapFollowed { event
+            ->
+            event.value.also { handled += "${event.id.id}: $it" }
+        }
 }
 
 object ProjectionSuite : Suite() {
@@ -79,10 +83,11 @@ object ProjectionSuite : Suite() {
 
                 handled.clear()
                 val caughtUp = CountDownLatch(20)
-                val again = totals()
-                    .mapFollowed { event -> event.value.also { caughtUp.countDown() } }
-                    .runProjecting()
-                    .start(Forks())
+                val again =
+                    totals()
+                        .mapFollowed { event -> event.value.also { caughtUp.countDown() } }
+                        .runProjecting()
+                        .start(Forks())
                 caughtUp.await(1, TimeUnit.MINUTES) shouldBe true
                 again.stop()
 
@@ -98,10 +103,11 @@ object ProjectionSuite : Suite() {
                 val reached = CountDownLatch(1)
                 clock.locally(moving) {
                     journal.place(1)
-                    val running = Projection.follow(journal, "order", text, offsets, "totals", every = 5.seconds)
-                        .mapFollowed { event -> event.value.also { if (event.id.id == "o-2") reached.countDown() } }
-                        .runProjecting()
-                        .start(Forks())
+                    val running =
+                        Projection.follow(journal, "order", text, offsets, "totals", every = 5.seconds)
+                            .mapFollowed { event -> event.value.also { if (event.id.id == "o-2") reached.countDown() } }
+                            .runProjecting()
+                            .start(Forks())
 
                     // Caught up after the first event, the projection sleeps until the next poll; the second is
                     // appended meanwhile and is read when the clock reaches it.
@@ -133,13 +139,14 @@ object ProjectionSuite : Suite() {
             "an event read as two is followed as two, and a run stopped between them reads it again from the first",
         ) {
             with(Orders()) {
-                val split = object : EventCodec<String> {
-                    override fun encode(event: String): ByteArray = event.toByteArray()
+                val split =
+                    object : EventCodec<String> {
+                        override fun encode(event: String): ByteArray = event.toByteArray()
 
-                    override fun decode(bytes: ByteArray): String = String(bytes)
+                        override fun decode(bytes: ByteArray): String = String(bytes)
 
-                    override fun decodeAll(bytes: ByteArray): List<String> = String(bytes).split("+")
-                }
+                        override fun decodeAll(bytes: ByteArray): List<String> = String(bytes).split("+")
+                    }
                 journal.append(PersistenceId("order", "o-1"), 0, listOf(split.encode("placed+paid")))
                 journal.append(PersistenceId("order", "o-2"), 0, listOf(split.encode("placed")))
                 fun follow() =
@@ -148,8 +155,7 @@ object ProjectionSuite : Suite() {
 
                 follow().take(1).runProjecting().run(Forks()).settled() shouldBe Exit.Done(1L)
                 follow().take(3).runProjecting().run(Forks()).settled() shouldBe Exit.Done(3L)
-                handled.toList() shouldContainExactly
-                    listOf("o-1: placed", "o-1: placed", "o-1: paid", "o-2: placed")
+                handled.toList() shouldContainExactly listOf("o-1: placed", "o-1: placed", "o-1: paid", "o-2: placed")
             }
         }
 
@@ -161,7 +167,10 @@ object ProjectionSuite : Suite() {
 
                 Projection.follow(journal, kind = "order", codec = text, offsets = offsets, name = "carried")
                     .mapFollowed { event -> event.value.also { seen += event.metadata } }
-                    .take(2).runProjecting().run(Forks()).settled() shouldBe Exit.Done(2L)
+                    .take(2)
+                    .runProjecting()
+                    .run(Forks())
+                    .settled() shouldBe Exit.Done(2L)
 
                 seen.toList() shouldBe listOf(mapOf("surefold.annotation.request_id" to "r-4"), emptyMap())
             }

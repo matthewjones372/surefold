@@ -33,8 +33,8 @@ internal object Placement {
 
     /**
      * Where each of [count] workers of [name] runs (spec 0106): worker by worker, the `Up` member that scores highest
-     * for it among those still short of their share. Each member's share is `count / members`, and `count % members`
-     * of them, whichever fill first, one more: so the workers are as even as they can be, and a member that joins or
+     * for it among those still short of their share. Each member's share is `count / members`, and `count % members` of
+     * them, whichever fill first, one more: so the workers are as even as they can be, and a member that joins or
      * leaves moves the workers it gains or held, and few others.
      */
     fun spread(name: String, count: Int, members: Collection<Member>): List<Node?> {
@@ -55,15 +55,17 @@ internal object Placement {
     }
 
     /** The oldest `Up` member, where a singleton runs: the lowest up-number, then the lowest address. */
-    fun oldest(members: Collection<Member>): Node? = members.filter { it.status == Status.Up }
-        .minWithOrNull(compareBy({ it.upNumber }, { it.node.toString() }))?.node
+    fun oldest(members: Collection<Member>): Node? =
+        members
+            .filter { it.status == Status.Up }
+            .minWithOrNull(compareBy({ it.upNumber }, { it.node.toString() }))
+            ?.node
 
     private fun score(kind: String, shard: Int, node: Node): Long = mix(fnv("$kind\u0000$shard\u0000$node"))
 
     private fun fnv(key: String): Long =
         key.toByteArray(Charsets.UTF_8).fold(FNV_OFFSET) { hash, byte ->
-            (hash xor (byte.toLong() and BYTE.toLong())) *
-                FNV_PRIME
+            (hash xor (byte.toLong() and BYTE.toLong())) * FNV_PRIME
         }
 
     /** SplitMix64's finaliser, so that keys differing in one character score far apart. */

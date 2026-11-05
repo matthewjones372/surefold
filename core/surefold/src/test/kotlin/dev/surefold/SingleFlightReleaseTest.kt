@@ -21,23 +21,24 @@ class SingleFlightReleaseTest {
         val cleaning = listOf(Promise<Nothing, Unit>(), Promise<Nothing, Unit>())
         val finish = Promise<Nothing, Unit>()
         val workers = Shared<List<Thread>>(emptyList())
-        val callers = (0..1).map { key ->
-            surefoldFuture {
-                shouldThrow<InterruptedException> {
-                    flights.run("$key") {
-                        workers.update { it + Thread.currentThread() }
-                        entered[key].succeed(Unit)
-                        try {
-                            Promise<Nothing, Unit>().awaitValue()
-                            Either.Right(key)
-                        } finally {
-                            cleaning[key].succeed(Unit)
-                            finish.awaitIgnoringInterrupts()
+        val callers =
+            (0..1).map { key ->
+                surefoldFuture {
+                    shouldThrow<InterruptedException> {
+                        flights.run("$key") {
+                            workers.update { it + Thread.currentThread() }
+                            entered[key].succeed(Unit)
+                            try {
+                                Promise<Nothing, Unit>().awaitValue()
+                                Either.Right(key)
+                            } finally {
+                                cleaning[key].succeed(Unit)
+                                finish.awaitIgnoringInterrupts()
+                            }
                         }
                     }
                 }
             }
-        }
         entered.forEach { it.awaitValue() }
         val waiter = surefoldFuture {
             shouldThrow<InterruptedException> { flights.run("0") { Either.Right(99) } }
@@ -89,7 +90,10 @@ class SingleFlightReleaseTest {
         }
         val worker = entered.awaitValue()
         val closer = Promise<Nothing, Thread>()
-        val close = surefoldFuture { closer.succeed(Thread.currentThread()); flights.closeAndJoin() }
+        val close = surefoldFuture {
+            closer.succeed(Thread.currentThread())
+            flights.closeAndJoin()
+        }
         try {
             cancelled.awaitValue()
             closer.awaitValue().awaitParkedOrTerminated()
@@ -125,10 +129,16 @@ class SingleFlightReleaseTest {
         }
         entered.awaitValue()
         val firstCloser = Promise<Nothing, Thread>()
-        val first = surefoldFuture { firstCloser.succeed(Thread.currentThread()); flights.closeAndJoin() }
+        val first = surefoldFuture {
+            firstCloser.succeed(Thread.currentThread())
+            flights.closeAndJoin()
+        }
         cleaning.awaitValue()
         val secondCloser = Promise<Nothing, Thread>()
-        val second = surefoldFuture { secondCloser.succeed(Thread.currentThread()); flights.closeAndJoin() }
+        val second = surefoldFuture {
+            secondCloser.succeed(Thread.currentThread())
+            flights.closeAndJoin()
+        }
         try {
             firstCloser.awaitValue().awaitParkedOrTerminated()
             secondCloser.awaitValue().awaitParkedOrTerminated()
@@ -245,7 +255,8 @@ class SingleFlightReleaseTest {
                     while (flights.inFlight() == 0) Thread.onSpinWait()
                     flights.cancelAll()
                 },
-            ) { _, _ -> }
+            ) { _, _ ->
+            }
             flights.run("k") { Either.Right(2) } shouldBe Either.Right(2)
             flights.closeAndJoin()
         }
@@ -271,7 +282,8 @@ class SingleFlightReleaseTest {
                     }
                 },
                 { flights.closeAndJoin() },
-            ) { _, _ -> }
+            ) { _, _ ->
+            }
             (worker.peek()?.isAlive ?: false) shouldBe false
             flights.inFlight() shouldBe 0
         }
@@ -283,17 +295,18 @@ class SingleFlightReleaseTest {
         val workers = Shared<List<Thread>>(emptyList())
         val publishing = Shared<List<Thread>>(emptyList())
         val finish = Promise<Nothing, Unit>()
-        val publicationMetrics = object : Metrics by NoMetrics {
-            override fun counter(name: String, tags: Map<String, String>): Counter = Counter {
-                if (tags["transact"] == "publication-flight" && Thread.currentThread() in workers.peek()) {
-                    metrics.locally(NoMetrics) {
-                        shouldThrow<IllegalStateException> { flights.closeAndJoin() }
-                        publishing.update { it + Thread.currentThread() }
-                        finish.awaitIgnoringInterrupts()
+        val publicationMetrics =
+            object : Metrics by NoMetrics {
+                override fun counter(name: String, tags: Map<String, String>): Counter = Counter {
+                    if (tags["transact"] == "publication-flight" && Thread.currentThread() in workers.peek()) {
+                        metrics.locally(NoMetrics) {
+                            shouldThrow<IllegalStateException> { flights.closeAndJoin() }
+                            publishing.update { it + Thread.currentThread() }
+                            finish.awaitIgnoringInterrupts()
+                        }
                     }
                 }
             }
-        }
         metrics.locally(publicationMetrics) {
             repeat(2) {
                 flights.run("k") {
@@ -305,7 +318,10 @@ class SingleFlightReleaseTest {
         publishing.awaitUntil { it.size == 2 }
         flights.inFlight() shouldBe 0
         val closer = Promise<Nothing, Thread>()
-        val close = surefoldFuture { closer.succeed(Thread.currentThread()); flights.closeAndJoin() }
+        val close = surefoldFuture {
+            closer.succeed(Thread.currentThread())
+            flights.closeAndJoin()
+        }
         try {
             closer.awaitValue().awaitParkedOrTerminated()
             close.isDone shouldBe false
@@ -324,7 +340,11 @@ class SingleFlightReleaseTest {
         val finish = Promise<Nothing, Unit>()
         val first = surefoldFuture {
             binding.locally("first") {
-                flights.run("k") { entered.succeed(Unit); finish.awaitValue(); Either.Right(binding.get()) }
+                flights.run("k") {
+                    entered.succeed(Unit)
+                    finish.awaitValue()
+                    Either.Right(binding.get())
+                }
             }
         }
         entered.awaitValue()

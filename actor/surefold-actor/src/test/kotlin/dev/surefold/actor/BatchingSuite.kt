@@ -23,10 +23,12 @@ object BatchingSuite : Suite() {
         test("the messages already waiting are handed over as one run, in order") {
             val seen = CopyOnWriteArrayList<List<Int>>()
             val opened = CountDownLatch(1)
-            val runs = batching<Int, Unit>(Unit, batch = 64) { _, _, run ->
-                seen += run.toList()
-                stay()
-            }.onStart { opened.await() }
+            val runs =
+                batching<Int, Unit>(Unit, batch = 64) { _, _, run ->
+                        seen += run.toList()
+                        stay()
+                    }
+                    .onStart { opened.await() }
             val _ = scope {
                 val actor = spawn("runs", runs)
                 (1..3).forEach(actor::tell)
@@ -40,11 +42,13 @@ object BatchingSuite : Suite() {
             val inside = CopyOnWriteArrayList<String>()
             val outside = CopyOnWriteArrayList<String>()
             val opened = CountDownLatch(1)
-            val runs = batching<Int, Unit>(Unit, batch = 64) { _, _, run ->
-                outside += requestHere()
-                run.indices.forEach { i -> inside += run.within(i) { requestHere() } }
-                stay()
-            }.onStart { opened.await() }
+            val runs =
+                batching<Int, Unit>(Unit, batch = 64) { _, _, run ->
+                        outside += requestHere()
+                        run.indices.forEach { i -> inside += run.within(i) { requestHere() } }
+                        stay()
+                    }
+                    .onStart { opened.await() }
             val _ = scope {
                 val actor = spawn("runs", runs)
                 logAnnotated("request_id" to "r-1") { actor.tell(1) }
@@ -59,10 +63,11 @@ object BatchingSuite : Suite() {
 
         test("a message handled alone is a run of one, in its own sender's context") {
             val seen = CopyOnWriteArrayList<Pair<List<Int>, String>>()
-            val runs = batching<Int, Unit>(Unit, batch = 1) { _, _, run ->
-                seen += run.toList() to requestHere()
-                stay()
-            }
+            val runs =
+                batching<Int, Unit>(Unit, batch = 1) { _, _, run ->
+                    seen += run.toList() to requestHere()
+                    stay()
+                }
             val _ = scope {
                 val actor = spawn("runs", runs)
                 (1..3).forEach { n -> logAnnotated("request_id" to "r-$n") { actor.tell(n) } }
@@ -73,10 +78,12 @@ object BatchingSuite : Suite() {
 
         test("a timer's message reaches the same step as a run of one") {
             val seen = CopyOnWriteArrayList<List<Int>>()
-            val runs = batching<Int, Unit>(Unit, batch = 64) { _, _, run ->
-                seen += run.toList()
-                stop()
-            }.onStart { ctx -> ctx.timers.after("soon", Duration.ZERO, 7) }
+            val runs =
+                batching<Int, Unit>(Unit, batch = 64) { _, _, run ->
+                        seen += run.toList()
+                        stop()
+                    }
+                    .onStart { ctx -> ctx.timers.after("soon", Duration.ZERO, 7) }
             val _ = scope {
                 watch(spawn("runs", runs)).await()
             }
@@ -85,8 +92,9 @@ object BatchingSuite : Suite() {
 
         test("a run that stops is heard as a stop by its signal handler") {
             val heard = CopyOnWriteArrayList<Signal>()
-            val runs = batching<Int, Unit>(Unit, batch = 64) { _, _, _ -> stop() }
-                .onSignal { _, _, signal -> stay().also { heard += signal } }
+            val runs =
+                batching<Int, Unit>(Unit, batch = 64) { _, _, _ -> stop() }
+                    .onSignal { _, _, signal -> stay().also { heard += signal } }
             val _ = scope {
                 val actor = spawn("runs", runs)
                 actor.tell(1)

@@ -7,41 +7,47 @@ import dev.surefold.junit.shouldThrow
 /** A till's takings: version 1 kept the pence alone; version 2 keeps the currency too. */
 private data class Takings(val pence: Long, val currency: String)
 
-private val takingsV1 = object : StateCodec<Long> {
-    override fun encode(state: Long) = "$state".toByteArray()
+private val takingsV1 =
+    object : StateCodec<Long> {
+        override fun encode(state: Long) = "$state".toByteArray()
 
-    override fun decode(bytes: ByteArray) = String(bytes).toLong()
-}
-
-private val takingsV2 = object : StateCodec<Takings> {
-    override fun encode(state: Takings) = "${state.pence},${state.currency}".toByteArray()
-
-    override fun decode(bytes: ByteArray) = String(bytes).split(",").let { (pence, currency) ->
-        Takings(pence.toLong(), currency)
+        override fun decode(bytes: ByteArray) = String(bytes).toLong()
     }
-}
+
+private val takingsV2 =
+    object : StateCodec<Takings> {
+        override fun encode(state: Takings) = "${state.pence},${state.currency}".toByteArray()
+
+        override fun decode(bytes: ByteArray) =
+            String(bytes).split(",").let { (pence, currency) ->
+                Takings(pence.toLong(), currency)
+            }
+    }
 
 /** Every till took pounds until the currency was kept. */
-private val takings = versionedState(
-    current = 2,
-    codec = takingsV2,
-    upgrades = mapOf(1 to StateUpgrade { bytes -> takingsV2.encode(Takings(takingsV1.decode(bytes), "GBP")) }),
-)
+private val takings =
+    versionedState(
+        current = 2,
+        codec = takingsV2,
+        upgrades = mapOf(1 to StateUpgrade { bytes -> takingsV2.encode(Takings(takingsV1.decode(bytes), "GBP")) }),
+    )
 
-private val rung = object : EventCodec<Long> {
-    override fun encode(event: Long) = "$event".toByteArray()
+private val rung =
+    object : EventCodec<Long> {
+        override fun encode(event: Long) = "$event".toByteArray()
 
-    override fun decode(bytes: ByteArray) = String(bytes).toLong()
-}
+        override fun decode(bytes: ByteArray) = String(bytes).toLong()
+    }
 
-private fun till(id: PersistenceId) = persistent<Long, Long, Takings>(
-    id = id,
-    empty = Takings(0, "GBP"),
-    codec = rung,
-    command = { _, _, pence -> persist(pence) },
-    event = { takings, pence -> takings.copy(pence = takings.pence + pence) },
-    snapshots = every(1_000, takings),
-)
+private fun till(id: PersistenceId) =
+    persistent<Long, Long, Takings>(
+        id = id,
+        empty = Takings(0, "GBP"),
+        codec = rung,
+        command = { _, _, pence -> persist(pence) },
+        event = { takings, pence -> takings.copy(pence = takings.pence + pence) },
+        snapshots = every(1_000, takings),
+    )
 
 object VersionedStateSuite : Suite() {
     init {

@@ -29,18 +29,23 @@ private class TillNode(name: String, port: Int, seeds: Discovery, roles: Set<Str
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Pair<Cluster, Sharded<Int>>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val cluster = cluster(node(name, port), seeds, unhurried, roles = roles, leaveWithin = Duration.ZERO)
-            // Each entity's first message holds its step until the burst is all sent, so its mailbox fills behind it.
-            val tills = cluster.sharding("till", Codecs.int, 10.minutes, role = "till") { _ ->
-                behaviour<Int, Unit>(Unit) { _, _, n -> stay().also { if (n == 0) open.await() else heard += n } }
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val cluster = cluster(node(name, port), seeds, unhurried, roles = roles, leaveWithin = Duration.ZERO)
+                // Each entity's first message holds its step until the burst is all sent, so its mailbox fills behind
+                // it.
+                val tills =
+                    cluster.sharding("till", Codecs.int, 10.minutes, role = "till") { _ ->
+                        behaviour<Int, Unit>(Unit) { _, _, n ->
+                            stay().also { if (n == 0) open.await() else heard += n }
+                        }
+                    }
+                opened.set(cluster to tills)
+                ready.countDown()
+                done.await()
             }
-            opened.set(cluster to tills)
-            ready.countDown()
-            done.await()
         }
-    }
 
     val cluster: Cluster
         get() {
@@ -66,11 +71,12 @@ object BusyEntitySuite : Suite() {
             val ports = List(3) { freePort() }
             val seeds = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
             val open = CountDownLatch(1)
-            val nodes = listOf(
-                TillNode("t1", ports[0], seeds, setOf("till"), open),
-                TillNode("t2", ports[1], seeds, emptySet(), open),
-                TillNode("t3", ports[2], seeds, emptySet(), open),
-            )
+            val nodes =
+                listOf(
+                    TillNode("t1", ports[0], seeds, setOf("till"), open),
+                    TillNode("t2", ports[1], seeds, emptySet(), open),
+                    TillNode("t3", ports[2], seeds, emptySet(), open),
+                )
             try {
                 nodes.forAll { n ->
                     n.cluster.await(1.minutes) { v -> v.members.count { it.status == Status.Up } == 3 } shouldBe true

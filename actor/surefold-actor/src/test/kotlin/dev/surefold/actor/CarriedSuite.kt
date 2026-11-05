@@ -30,20 +30,24 @@ private fun annotationsHere(): Map<String, String> = capturingLogs { logs ->
     logs.all().single().annotations
 }
 
-private fun listener() = behaviour<Listened, Boolean>(false) { ctx, released, message ->
-    when (message) {
-        is AnnotationsAsked -> stay().also { message.reply(annotationsHere()) }
+private fun listener() =
+    behaviour<Listened, Boolean>(false) { ctx, released, message ->
+        when (message) {
+            is AnnotationsAsked -> stay().also { message.reply(annotationsHere()) }
 
-        is KeptUntilLetThrough -> if (released) stay().also {
-            message.reply(annotationsHere())
-        } else stay().also { ctx.stash(message) }
+            is KeptUntilLetThrough ->
+                if (released)
+                    stay().also {
+                        message.reply(annotationsHere())
+                    }
+                else stay().also { ctx.stash(message) }
 
-        LetThrough -> {
-            ctx.unstashAll()
-            become(true)
+            LetThrough -> {
+                ctx.unstashAll()
+                become(true)
+            }
         }
     }
-}
 
 /** Spec 0122: what a sender had bound rides its message to the handler. */
 object CarriedSuite : Suite() {
@@ -67,13 +71,14 @@ object CarriedSuite : Suite() {
 
         test("a stashed message is replayed with what it carried, not with what released it") {
             val answered = CompletableFuture<Map<String, String>>()
-            val reply = object : Reply<Map<String, String>> {
-                override val address = Address("test", "/reply", 0)
+            val reply =
+                object : Reply<Map<String, String>> {
+                    override val address = Address("test", "/reply", 0)
 
-                override fun invoke(answer: Map<String, String>) {
-                    answered.complete(answer)
+                    override fun invoke(answer: Map<String, String>) {
+                        answered.complete(answer)
+                    }
                 }
-            }
             scope {
                 val listener = spawn("listener", listener())
                 // Told from one thread, so in this order: kept, then released by a message that carries nothing.
@@ -90,9 +95,12 @@ object CarriedSuite : Suite() {
             val open = CountDownLatch(1)
             scope {
                 // The first message holds the entity's step until the burst is sent, so its manager keeps most of it.
-                val held = behaviour<Int, Unit>(Unit) { _, _, n ->
-                    stay().also { if (n == 0) open.await() else heard[n] = annotationsHere()["request_id"].orEmpty() }
-                }
+                val held =
+                    behaviour<Int, Unit>(Unit) { _, _, n ->
+                        stay().also {
+                            if (n == 0) open.await() else heard[n] = annotationsHere()["request_id"].orEmpty()
+                        }
+                    }
                 val rex = spawn("kennel", entities(passivateAfter = 10.minutes) { _ -> held }).entity("rex")
                 rex.tell(0)
                 (1..5_000).forEach { n -> logAnnotated("request_id" to "r-$n") { rex.tell(n) } }

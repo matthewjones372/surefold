@@ -23,20 +23,21 @@ object LaneSuite : Suite() {
             val done = CountDownLatch(1)
             val release = CountDownLatch(1)
             val pinged = LinkedBlockingQueue<Int>()
-            val receiver = Thread.ofPlatform().start {
-                scope {
-                    val node = node("receiver", port)
-                    // One slot, stuck on its first message: every frame after it waits in the socket, then in the
-                    // sender's queue.
-                    val stuck = behaviour<Int, Unit>(Unit) { _, _, _ -> stay().also { release.await() } }
-                    val counting = behaviour<Int, Unit>(Unit) { _, _, n -> stay().also { pinged.put(n) } }
-                    node.expose(spawn("slow", stuck, capacity = 1), Codecs.int)
-                    node.expose(spawn("ping", counting), Codecs.int, Lane.Control)
-                    ready.countDown()
-                    done.await()
-                    release.countDown()
+            val receiver =
+                Thread.ofPlatform().start {
+                    scope {
+                        val node = node("receiver", port)
+                        // One slot, stuck on its first message: every frame after it waits in the socket, then in the
+                        // sender's queue.
+                        val stuck = behaviour<Int, Unit>(Unit) { _, _, _ -> stay().also { release.await() } }
+                        val counting = behaviour<Int, Unit>(Unit) { _, _, n -> stay().also { pinged.put(n) } }
+                        node.expose(spawn("slow", stuck, capacity = 1), Codecs.int)
+                        node.expose(spawn("ping", counting), Codecs.int, Lane.Control)
+                        ready.countDown()
+                        done.await()
+                        release.countDown()
+                    }
                 }
-            }
             try {
                 ready.await()
                 scope {

@@ -22,14 +22,13 @@ sealed interface HubRefused {
 /**
  * One publisher's elements, read by every subscriber in the same process, on any backend.
  *
- * Each subscriber has a queue of its own, holding at most [capacity]. [publish] never waits: an element
- * goes to every subscriber or, when one of them is full, to none, and the caller is told which. What is
- * published before anyone has subscribed is held, up to [capacity], for the first subscriber; once there
- * has been one, an element published while there is none is accepted and goes nowhere, as a broadcast to
- * nobody does.
+ * Each subscriber has a queue of its own, holding at most [capacity]. [publish] never waits: an element goes to every
+ * subscriber or, when one of them is full, to none, and the caller is told which. What is published before anyone has
+ * subscribed is held, up to [capacity], for the first subscriber; once there has been one, an element published while
+ * there is none is accepted and goes nowhere, as a broadcast to nobody does.
  *
- * A subscriber is a run of [subscribe], from the moment it starts until it ends however it ends, so a
- * subscriber that stops no longer holds the hub back.
+ * A subscriber is a run of [subscribe], from the moment it starts until it ends however it ends, so a subscriber that
+ * stops no longer holds the hub back.
  */
 class Hub<A : Any>(val capacity: Int = DEFAULT_CAPACITY) : AutoCloseable {
 
@@ -38,8 +37,8 @@ class Hub<A : Any>(val capacity: Int = DEFAULT_CAPACITY) : AutoCloseable {
     }
 
     /**
-     * What the hub holds, as one value: replaced whole, and only under [lock], so that two publishers
-     * cannot interleave and every subscriber sees elements in the same order.
+     * What the hub holds, as one value: replaced whole, and only under [lock], so that two publishers cannot interleave
+     * and every subscriber sees elements in the same order.
      */
     private data class Held<A : Any>(
         val early: List<A> = emptyList(),
@@ -52,24 +51,28 @@ class Hub<A : Any>(val capacity: Int = DEFAULT_CAPACITY) : AutoCloseable {
     private val held = AtomicReference(Held<A>())
 
     /** How many subscriptions are running now. */
-    val subscribers: Int get() = held.get().queues.size
+    val subscribers: Int
+        get() = held.get().queues.size
 
     /** [element] to every subscriber, or to none of them with the reason. Never waits for room. */
-    fun publish(element: A): Either<HubRefused, A> = lock.withLock {
-        val now = held.get()
-        when {
-            now.closed -> HubRefused.Closed.left()
-            !now.subscribedOnce && now.early.size >= capacity -> HubRefused.Full.left()
-            !now.subscribedOnce -> element.right().also { held.set(now.copy(early = now.early + element)) }
-            now.queues.any { it.size >= capacity } -> HubRefused.Full.left()
-            else -> element.right().also { now.queues.forEach { queue -> queue.put(element) } }
-        }
-    }.also { if (it.isRight()) held.get().queues.forEach { queue -> queue.waiting?.changed() } }
+    fun publish(element: A): Either<HubRefused, A> =
+        lock
+            .withLock {
+                val now = held.get()
+                when {
+                    now.closed -> HubRefused.Closed.left()
+                    !now.subscribedOnce && now.early.size >= capacity -> HubRefused.Full.left()
+                    !now.subscribedOnce -> element.right().also { held.set(now.copy(early = now.early + element)) }
+                    now.queues.any { it.size >= capacity } -> HubRefused.Full.left()
+                    else -> element.right().also { now.queues.forEach { queue -> queue.put(element) } }
+                }
+            }
+            .also { if (it.isRight()) held.get().queues.forEach { queue -> queue.waiting?.changed() } }
 
     /**
-     * Everything published from the moment a run of this starts, in order; the first run ever also gets
-     * what was held for it. A description, so each run is a subscriber of its own. It ends `Done` once the
-     * hub has closed and it has read what it was sent.
+     * Everything published from the moment a run of this starts, in order; the first run ever also gets what was held
+     * for it. A description, so each run is a subscriber of its own. It ends `Done` once the hub has closed and it has
+     * read what it was sent.
      */
     fun subscribe(): Stream<Nothing, A> =
         Stream.blocking(open = { register() }, next = { it.take() }, wake = { it.end() }, close = { unregister(it) })
@@ -89,8 +92,9 @@ class Hub<A : Any>(val capacity: Int = DEFAULT_CAPACITY) : AutoCloseable {
         }
     }
 
-    private fun unregister(queue: Subscriber) =
-        lock.withLock { held.updateAndGet { it.copy(queues = it.queues - queue) } }
+    private fun unregister(queue: Subscriber) = lock.withLock {
+        held.updateAndGet { it.copy(queues = it.queues - queue) }
+    }
 
     /** One subscriber's queue: the elements sent to it, then [End] once the hub closes or the run stops. */
     private inner class Subscriber {
@@ -99,7 +103,8 @@ class Hub<A : Any>(val capacity: Int = DEFAULT_CAPACITY) : AutoCloseable {
         /** How the run that opened this waits, when its backend must know: see [Waiting]. */
         val waiting: Waiting? = Waiting.here()
 
-        val size: Int get() = queue.size
+        val size: Int
+            get() = queue.size
 
         fun put(element: A) = queue.put(element)
 
@@ -111,12 +116,13 @@ class Hub<A : Any>(val capacity: Int = DEFAULT_CAPACITY) : AutoCloseable {
         /** The next element, waiting for one; `null` once the subscription has ended or its run stopped. */
         @Suppress("UNCHECKED_CAST")
         fun take(): A? {
-            val next = if (waiting == null) {
-                queue.take()
-            } else {
-                waiting.until { queue.isNotEmpty() }
-                queue.poll() ?: return null
-            }
+            val next =
+                if (waiting == null) {
+                    queue.take()
+                } else {
+                    waiting.until { queue.isNotEmpty() }
+                    queue.poll() ?: return null
+                }
             return if (next === End) null.also { queue.put(End) } else next as A
         }
     }
@@ -131,8 +137,9 @@ class Hub<A : Any>(val capacity: Int = DEFAULT_CAPACITY) : AutoCloseable {
 }
 
 /**
- * Publishes each element to [hub] in turn, as it passes. An element the hub refuses ends the stream with
- * the refusal in its failure type, where the publisher decides whether to wait and try again.
+ * Publishes each element to [hub] in turn, as it passes. An element the hub refuses ends the stream with the refusal in
+ * its failure type, where the publisher decides whether to wait and try again.
  */
-fun <A : Any> Stream<Nothing, A>.publishTo(hub: Hub<A>): Stream<HubRefused, A> =
-    mapOrFail { element -> hub.publish(element).bind() }
+fun <A : Any> Stream<Nothing, A>.publishTo(hub: Hub<A>): Stream<HubRefused, A> = mapOrFail { element ->
+    hub.publish(element).bind()
+}

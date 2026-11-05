@@ -6,10 +6,10 @@ import dev.surefold.assert.withClue
 import dev.surefold.fail.attempt
 import dev.surefold.fail.left
 import dev.surefold.fail.right
-import org.junit.jupiter.api.Test
 import java.util.concurrent.TimeoutException
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 // Long enough that a timeout waiting its sleeper out instead of interrupting it would blow the bound below.
 private val NEVER_ARRIVES = NEVER_FINISHES_MILLIS.milliseconds

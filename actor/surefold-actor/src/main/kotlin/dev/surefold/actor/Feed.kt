@@ -25,8 +25,8 @@ interface JournalFeed {
 }
 
 /**
- * A feed that answers a range of slices on its own (spec 0106), so that a read model can be split into partitions,
- * each following its own slices, in the one order the whole feed has.
+ * A feed that answers a range of slices on its own (spec 0106), so that a read model can be split into partitions, each
+ * following its own slices, in the one order the whole feed has.
  */
 interface SlicedFeed : JournalFeed {
     /** Up to [limit] events of [kind] whose ids are in [slices] and whose offsets are greater than [offset]. */
@@ -34,8 +34,8 @@ interface SlicedFeed : JournalFeed {
 }
 
 /**
- * Where a read model's progress is kept (spec 0075): the offset of the last event it handled, by the read model's
- * name. A store that cannot write throws.
+ * Where a read model's progress is kept (spec 0075): the offset of the last event it handled, by the read model's name.
+ * A store that cannot write throws.
  */
 interface OffsetStore {
     /** The last offset saved for [name], or null when none was. */

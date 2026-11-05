@@ -4,11 +4,11 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * A cache's entries in this process, at most [capacity] of them, in two segments as W-TinyLFU keeps them
- * (Einziger, Friedman and Manes, 2017). A new entry starts on probation; read again, it moves to the protected
- * segment, which holds up to four fifths of [capacity]. Past [capacity], a new entry must have been asked for more
- * often lately than the least recently read entry on probation, by [Sketch], or it is answered and not kept. So a scan
- * of keys read once only ever competes with itself, and cannot flush the keys read all day.
+ * A cache's entries in this process, at most [capacity] of them, in two segments as W-TinyLFU keeps them (Einziger,
+ * Friedman and Manes, 2017). A new entry starts on probation; read again, it moves to the protected segment, which
+ * holds up to four fifths of [capacity]. Past [capacity], a new entry must have been asked for more often lately than
+ * the least recently read entry on probation, by [Sketch], or it is answered and not kept. So a scan of keys read once
+ * only ever competes with itself, and cannot flush the keys read all day.
  *
  * Mutations return the entries they remove, so the caller can notify their owners outside its own reservations.
  */
@@ -35,8 +35,8 @@ internal class Memory<K : Any, T>(private val capacity: Int) {
     fun peek(key: K): T? = lock.withLock { protected[key] ?: probation[key] }
 
     /**
-     * Keeps [value] for [key], pushing out the least recently read entry on probation if [key] has been asked for
-     * more often, and answers both the replacement and the capacity victim, if any.
+     * Keeps [value] for [key], pushing out the least recently read entry on probation if [key] has been asked for more
+     * often, and answers both the replacement and the capacity victim, if any.
      */
     fun write(key: K, value: T): Written<K, T> {
         var pushedOut: Pair<K, T>? = null
@@ -68,7 +68,8 @@ internal class Memory<K : Any, T>(private val capacity: Int) {
         }
     }
 
-    val size: Int get() = lock.withLock { probation.size + protected.size }
+    val size: Int
+        get() = lock.withLock { probation.size + protected.size }
 
     // Read twice: protected, and the protected segment's least recent goes back on probation if it is over its share.
     private fun promote(key: K, value: T) {

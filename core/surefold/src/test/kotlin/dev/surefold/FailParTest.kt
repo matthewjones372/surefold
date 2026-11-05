@@ -9,8 +9,8 @@ import dev.surefold.fail.attempt
 import dev.surefold.fail.bind
 import dev.surefold.fail.left
 import dev.surefold.fail.right
-import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicReference
+import org.junit.jupiter.api.Test
 
 private data class User(val name: String)
 
@@ -43,16 +43,19 @@ class FailParTest {
         val enclosing = AtomicReference<Fail<Bad>?>(null)
         val branch = AtomicReference<Fail<Bad>?>(null)
 
-        val zipped = attempt<Bad, Int> {
-            enclosing.set(this)
-            parZip(
-                {
-                    branch.set(this)
-                    20
-                },
-                { 22 },
-            ) { a, b -> a + b }
-        }
+        val zipped =
+            attempt<Bad, Int> {
+                enclosing.set(this)
+                parZip(
+                    {
+                        branch.set(this)
+                        20
+                    },
+                    { 22 },
+                ) { a, b ->
+                    a + b
+                }
+            }
 
         zipped shouldBeRight 42
         // A scope never crosses a thread, so a fork gets a boundary of its own.
@@ -81,8 +84,18 @@ class FailParTest {
         } shouldBeRight "abcdefgh"
         attempt<Bad, String> {
             parZip(
-                { "a" }, { "b" }, { "c" }, { "d" }, { "e" }, { "f" }, { "g" }, { "h" }, { "i" },
-            ) { a, b, c, d, e, f, g, h, i -> a + b + c + d + e + f + g + h + i }
+                { "a" },
+                { "b" },
+                { "c" },
+                { "d" },
+                { "e" },
+                { "f" },
+                { "g" },
+                { "h" },
+                { "i" },
+            ) { a, b, c, d, e, f, g, h, i ->
+                a + b + c + d + e + f + g + h + i
+            }
         } shouldBeRight "abcdefghi"
     }
 
@@ -94,21 +107,22 @@ class FailParTest {
 
     @Test
     fun `a failure is what surfaces, not what a sibling threw once the failure cut it short`() {
-        val started = attempt<Bad, List<Int>> {
-            parMap(listOf(0, 1)) { n ->
-                if (n == 1) {
-                    Thread.sleep(50)
-                    fail(Bad("refused"))
-                }
-                // A pool that turns the interrupt into an exception of its own, as a JDBC pool starting up does.
-                try {
-                    Thread.sleep(60_000)
-                    n
-                } catch (interrupted: InterruptedException) {
-                    throw IllegalStateException("pool closed by interrupt", interrupted)
+        val started =
+            attempt<Bad, List<Int>> {
+                parMap(listOf(0, 1)) { n ->
+                    if (n == 1) {
+                        Thread.sleep(50)
+                        fail(Bad("refused"))
+                    }
+                    // A pool that turns the interrupt into an exception of its own, as a JDBC pool starting up does.
+                    try {
+                        Thread.sleep(60_000)
+                        n
+                    } catch (interrupted: InterruptedException) {
+                        throw IllegalStateException("pool closed by interrupt", interrupted)
+                    }
                 }
             }
-        }
 
         started shouldBeLeft Bad("refused")
     }

@@ -5,20 +5,22 @@ import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldContainExactly
 import dev.surefold.assert.shouldHaveSize
 import dev.surefold.assert.shouldNotBeNull
-import org.junit.jupiter.api.Test
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.time.Instant
 import java.util.Collections
+import org.junit.jupiter.api.Test
 
 private class Kennel {
     fun open() = logInfo("open")
 
     fun eachDog() = listOf("rex").forEach { logInfo("walking $it") }
 
-    fun throughAnObject() = object {
-        fun run() = logInfo("anonymous")
-    }.run()
+    fun throughAnObject() =
+        object {
+                fun run() = logInfo("anonymous")
+            }
+            .run()
 
     class Gate {
         fun shut() = logInfo("nested")

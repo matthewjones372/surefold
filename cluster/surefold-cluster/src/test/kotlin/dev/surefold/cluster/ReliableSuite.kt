@@ -43,33 +43,36 @@ internal data class PayInto(val pence: Int, override val delivery: Delivery) : D
     override fun redeliver(delivery: Delivery) = copy(delivery = delivery)
 }
 
-internal val payIntoCodec = object : MessageCodec<PayInto> {
-    override fun write(message: PayInto, out: WireOut) {
-        out.int(message.pence)
-        out.delivery(message.delivery)
+internal val payIntoCodec =
+    object : MessageCodec<PayInto> {
+        override fun write(message: PayInto, out: WireOut) {
+            out.int(message.pence)
+            out.delivery(message.delivery)
+        }
+
+        override fun read(input: WireIn): PayInto = PayInto(input.int(), input.delivery())
     }
 
-    override fun read(input: WireIn): PayInto = PayInto(input.int(), input.delivery())
-}
+internal val paidPence =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = event.toString().toByteArray()
 
-internal val paidPence = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = event.toString().toByteArray()
-
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
 internal fun accountOf(id: String) = PersistenceId("account", id)
 
 /** An account remembered by what was paid into it, which confirms each payment and drops those it has had. */
-internal fun account(id: String) = delivered(
-    persistent<PayInto, Int, Int>(
-        id = accountOf(id),
-        empty = 0,
-        codec = paidPence,
-        command = { _, _, pay -> persist(pay.pence) },
-        event = { total, paid -> total + paid },
-    ),
-)
+internal fun account(id: String) =
+    delivered(
+        persistent<PayInto, Int, Int>(
+            id = accountOf(id),
+            empty = 0,
+            codec = paidPence,
+            command = { _, _, pay -> persist(pay.pence) },
+            event = { total, paid -> total + paid },
+        ),
+    )
 
 /** Probes calm enough that 200 entities writing to one database never make two live nodes miss each other. */
 internal val calm =
@@ -98,12 +101,13 @@ internal class Bank(
     private val opened = AtomicReference<Pair<Cluster, Sharded<PayInto>>>()
     private val failed = AtomicReference<Throwable>()
     val measured = NodeMetrics()
-    private val thread = Thread.ofPlatform()
-        .uncaughtExceptionHandler { _, thrown ->
-            failed.set(thrown)
-            ready.countDown()
-        }
-        .start { metrics.locally(measured) { open(port, seeds, journal, leaveWithin) } }
+    private val thread =
+        Thread.ofPlatform()
+            .uncaughtExceptionHandler { _, thrown ->
+                failed.set(thrown)
+                ready.countDown()
+            }
+            .start { metrics.locally(measured) { open(port, seeds, journal, leaveWithin) } }
 
     private fun open(port: Int, seeds: Discovery, journal: Journal, leaveWithin: Duration) {
         scope {
@@ -117,9 +121,11 @@ internal class Bank(
         }
     }
 
-    val cluster: Cluster get() = opened().first
+    val cluster: Cluster
+        get() = opened().first
 
-    val accounts: Sharded<PayInto> get() = opened().second
+    val accounts: Sharded<PayInto>
+        get() = opened().second
 
     private fun opened(): Pair<Cluster, Sharded<PayInto>> {
         ready.await()
@@ -154,8 +160,7 @@ object ReliableSuite : Suite() {
                 val accounts = List(200) { "a-$it" }
 
                 fun pay(pence: Int) = accounts.forAll { id ->
-                    payments.send(id) { PayInto(pence, it) } shouldBe
-                        Unit.right()
+                    payments.send(id) { PayInto(pence, it) } shouldBe Unit.right()
                 }
 
                 (1..2).forAll { pay(it) }
@@ -179,8 +184,9 @@ object ReliableSuite : Suite() {
                 // What the survivors gauge (spec 0081): every shard and every account between them, nothing kept for a
                 // shard without an owner, nothing unconfirmed, and the crash made the producer send again.
                 val survivors = listOf(sender, stays)
-                fun sum(name: String) =
-                    survivors.sumOf { it.measured.gauge(name, "node" to it.name, "kind" to "account") ?: 0.0 }
+                fun sum(name: String) = survivors.sumOf {
+                    it.measured.gauge(name, "node" to it.name, "kind" to "account") ?: 0.0
+                }
                 val producer = arrayOf("node" to sender.name, "producer" to "account-checkout")
                 sum("surefold.sharding.shards") shouldBe 256.0
                 sum("surefold.sharding.entities") shouldBe 200.0

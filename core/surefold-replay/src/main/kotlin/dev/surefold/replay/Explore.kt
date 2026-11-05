@@ -13,8 +13,8 @@ private const val FIRST_ORDERS = 0x0042L
  * Runs [body] [runs] times, its forks in a different order each time, chosen from [seed] (spec 0042). An order that
  * makes [body] throw fails the test with an [AssertionError] naming it, and [replay] runs exactly that order again.
  *
- * Forks run on their own threads, but take turns: one runs between the places a fork waits through surefold
- * (`await`, a fork starting or ending, `cancel`, a channel, `select`). A body that waits anywhere else holds the turn.
+ * Forks run on their own threads, but take turns: one runs between the places a fork waits through surefold (`await`, a
+ * fork starting or ending, `cancel`, a channel, `select`). A body that waits anywhere else holds the turn.
  */
 fun explore(runs: Int = 1_000, seed: Long = FIRST_ORDERS, body: () -> Unit) {
     require(runs > 0) { "explore needs a run, and was asked for $runs" }
@@ -41,12 +41,13 @@ private fun inOrder(order: Long, body: () -> Unit): Throwable? {
     val turns = Order(order)
     return takingTurns(turns) {
         turns.enter()
-        val thrown = try {
-            // Anything fatal, an interrupt among them, goes on up rather than being named as an order's failure.
-            Either.catch(body).fold({ it }, { null })
-        } finally {
-            turns.leave()
-        }
+        val thrown =
+            try {
+                // Anything fatal, an interrupt among them, goes on up rather than being named as an order's failure.
+                Either.catch(body).fold({ it }, { null })
+            } finally {
+                turns.leave()
+            }
         // A run that left determinism cannot promise its order replays, whatever it ended with (spec 0042).
         turns.stuck?.let { AssertionError("the run left determinism: $it", thrown) } ?: thrown
     }

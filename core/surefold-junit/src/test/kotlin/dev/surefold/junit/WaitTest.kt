@@ -20,11 +20,12 @@ class WaitTest {
 
     @Test
     fun `a check that holds on a later try passes, at the top level, as a step, and after a throw`() {
-        events shouldHaveSucceeded listOf(
-            "holds once its check does, on the third try",
-            "tries again after a throw",
-            "waits as a story's step",
-        )
+        events shouldHaveSucceeded
+            listOf(
+                "holds once its check does, on the third try",
+                "tries again after a throw",
+                "waits as a story's step",
+            )
     }
 
     @Test

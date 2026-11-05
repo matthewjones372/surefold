@@ -7,13 +7,13 @@ import dev.surefold.junit.withClue
 import java.io.File
 
 private class Widget
+
 private class Cog
 
 /**
- * The line numbers below are load-bearing: `single` is inline, so the line the JVM reports for the
- * frame is a synthetic one past the end of this file, and the whole point of reading the SMAP is
- * that a site names a line somebody can open. Adding a line above one of these breaks the test,
- * which is the test working.
+ * The line numbers below are load-bearing: `single` is inline, so the line the JVM reports for the frame is a synthetic
+ * one past the end of this file, and the whole point of reading the SMAP is that a site names a line somebody can open.
+ * Adding a line above one of these breaks the test, which is the test working.
  */
 object CallSiteLineSuite : Suite() {
     private const val DECLARED_ON_LINE = 21

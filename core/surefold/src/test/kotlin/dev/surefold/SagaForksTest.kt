@@ -4,9 +4,9 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeLeft
 import dev.surefold.assert.shouldContainExactlyInAnyOrder
 import dev.surefold.fail.attempt
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
+import org.junit.jupiter.api.Test
 
 private data class NoRooms(val hotel: String)
 
@@ -16,17 +16,20 @@ class SagaForksTest {
     fun `a step taken in one parZip branch is undone when the other branch fails`() {
         val held = CountDownLatch(1)
         val undone = Shared(emptyList<String>())
-        val answer = attempt<NoRooms, Pair<Int, Int>> {
-            saga("t-1") {
-                parZip(
-                    { step("car", { 1 }) { _, _, _ -> undone.update { it + "car" } }.also { held.countDown() } },
-                    {
-                        held.await(5, TimeUnit.SECONDS)
-                        step<Int>("room", { fail(NoRooms("plaza")) }) { _, _, _ -> undone.update { it + "room" } }
-                    },
-                ) { car, room -> car to room }
+        val answer =
+            attempt<NoRooms, Pair<Int, Int>> {
+                saga("t-1") {
+                    parZip(
+                        { step("car", { 1 }) { _, _, _ -> undone.update { it + "car" } }.also { held.countDown() } },
+                        {
+                            held.await(5, TimeUnit.SECONDS)
+                            step<Int>("room", { fail(NoRooms("plaza")) }) { _, _, _ -> undone.update { it + "room" } }
+                        },
+                    ) { car, room ->
+                        car to room
+                    }
+                }
             }
-        }
         answer shouldBeLeft NoRooms("plaza")
         undone.peek() shouldBe listOf("car")
     }
@@ -51,7 +54,8 @@ class SagaForksTest {
                         first.countDown()
                         second.countDown()
                     },
-                ) { _, _ -> }
+                ) { _, _ ->
+                }
                 first.await(5, TimeUnit.SECONDS)
                 fail(NoRooms("after"))
             }

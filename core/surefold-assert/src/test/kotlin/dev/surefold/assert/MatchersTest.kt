@@ -31,17 +31,20 @@ class MatchersTest {
 
     @Test
     fun `shouldThrow fails when the block throws nothing`() {
-        val failed = try {
-            shouldThrow<IllegalStateException> { 42 }
-            null
-        } catch (expected: AssertionFailedError) {
-            expected
-        }
+        val failed =
+            try {
+                shouldThrow<IllegalStateException> { 42 }
+                null
+            } catch (expected: AssertionFailedError) {
+                expected
+            }
 
-        if (failed?.message?.lines()?.take(2) != listOf(
-                "expected: a java.lang.IllegalStateException thrown",
-                "but was:  nothing thrown",
-            )
+        if (
+            failed?.message?.lines()?.take(2) !=
+                listOf(
+                    "expected: a java.lang.IllegalStateException thrown",
+                    "but was:  nothing thrown",
+                )
         ) {
             throw AssertionError("shouldThrow did not fail as it should: ${failed?.message}")
         }
@@ -50,12 +53,13 @@ class MatchersTest {
     @Test
     fun `shouldThrow fails on another type, and keeps it as the cause`() {
         val other = IllegalArgumentException("other")
-        val failed = try {
-            shouldThrow<IllegalStateException> { throw other }
-            null
-        } catch (expected: AssertionFailedError) {
-            expected
-        }
+        val failed =
+            try {
+                shouldThrow<IllegalStateException> { throw other }
+                null
+            } catch (expected: AssertionFailedError) {
+                expected
+            }
 
         if (failed?.cause !== other) throw AssertionError("shouldThrow did not fail with the other throwable as cause")
     }

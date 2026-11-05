@@ -6,13 +6,13 @@ import dev.surefold.assert.shouldContain
 import dev.surefold.assert.shouldContainExactly
 import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.CountDownLatch
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 private const val CALLERS = 10
 
@@ -71,14 +71,15 @@ class RateLimiterTest {
 
         clock.locally(TestClock(start)) {
             limiter.tryAcquire() shouldBe true
-            val callers = (1..CALLERS).map {
-                Thread.ofVirtual().start {
-                    clock.locally(TestClock(start)) {
-                        go.await()
-                        waits += limiter.reserve(cost = 1, maxWait = 1.seconds * CALLERS).waits()
+            val callers =
+                (1..CALLERS).map {
+                    Thread.ofVirtual().start {
+                        clock.locally(TestClock(start)) {
+                            go.await()
+                            waits += limiter.reserve(cost = 1, maxWait = 1.seconds * CALLERS).waits()
+                        }
                     }
                 }
-            }
             go.countDown()
             callers.forEach { it.join() }
         }
@@ -92,10 +93,11 @@ class RateLimiterTest {
     fun `a policy refuses at once when the wait would outrun its deadline`() {
         val time = JumpingClock(forksWait = true)
         val limiter = RateLimiter("partner", rate = 1, per = 1.seconds, burst = 1, maxWait = 10.seconds)
-        val partner = policy("partner") {
-            deadline(500.milliseconds)
-            guard(limiter)
-        }
+        val partner =
+            policy("partner") {
+                deadline(500.milliseconds)
+                guard(limiter)
+            }
 
         clock.locally(time) {
             partner { 42 } shouldBe 42
@@ -109,10 +111,11 @@ class RateLimiterTest {
     fun `a weighted call takes its cost, and a bulkhead's refusal gives it back`() {
         val limiter = RateLimiter("partner", rate = 10, per = 1.seconds, burst = 3)
         val bulkhead = Bulkhead("pool", maxConcurrent = 1)
-        val search = policy("search") {
-            guard(limiter, cost = 3)
-            guard(bulkhead)
-        }
+        val search =
+            policy("search") {
+                guard(limiter, cost = 3)
+                guard(bulkhead)
+            }
         val holder = policy("holder") { guard(bulkhead) }
 
         clock.locally(TestClock(start)) {
@@ -131,11 +134,12 @@ class RateLimiterTest {
         val limiter = RateLimiter("partner", rate = 1, per = 1.seconds)
 
         shouldThrow<IllegalArgumentException> {
-            policy("partner") {
-                guard(Bulkhead("pool", maxConcurrent = 1))
-                guard(limiter)
+                policy("partner") {
+                    guard(Bulkhead("pool", maxConcurrent = 1))
+                    guard(limiter)
+                }
             }
-        }.message shouldContain "deadline → retry → breaker → limiter → bulkhead → attemptTimeout"
+            .message shouldContain "deadline → retry → breaker → limiter → bulkhead → attemptTimeout"
     }
 
     @Test

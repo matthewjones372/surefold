@@ -6,8 +6,8 @@ import dev.surefold.fail.toNonEmptyListOrNull
 import java.util.concurrent.Executor
 
 /**
- * Runs both branches on forks of their own and keeps every failure: a fail does not end a sibling, so
- * both branches run to completion and their errors answer together, in branch order.
+ * Runs both branches on forks of their own and keeps every failure: a fail does not end a sibling, so both branches run
+ * to completion and their errors answer together, in branch order.
  */
 fun <E, A, B, C> Fail<NonEmptyList<E>>.parZipOrAccumulate(
     fa: Fail<E>.() -> A,

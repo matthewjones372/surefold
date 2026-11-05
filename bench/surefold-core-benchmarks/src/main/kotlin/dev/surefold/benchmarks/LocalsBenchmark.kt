@@ -9,6 +9,9 @@ import dev.surefold.logger
 import dev.surefold.scope
 import dev.surefold.surefoldLocal
 import dev.surefold.transact
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 import org.openjdk.jmh.annotations.Benchmark
 import org.openjdk.jmh.annotations.BenchmarkMode
 import org.openjdk.jmh.annotations.Fork
@@ -21,15 +24,12 @@ import org.openjdk.jmh.annotations.Setup
 import org.openjdk.jmh.annotations.State
 import org.openjdk.jmh.annotations.TearDown
 import org.openjdk.jmh.annotations.Warmup
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
 
 private const val READS = 100
 private const val LINES = 10
 
 /** A logger that keeps nothing, so a line costs what surefold does to build it and no more. */
-private val quiet = Logger { }
+private val quiet = Logger {}
 
 /**
  * The quiet logger bound once for the whole trial, as a service binds its logger at start (spec 0280). Bound by the
@@ -44,13 +44,12 @@ open class BoundLogger {
         detach = logger.attach(quiet)
     }
 
-    @TearDown(Level.Trial)
-    fun unbind() = detach.detach()
+    @TearDown(Level.Trial) fun unbind() = detach.detach()
 }
 
 /**
- * What spec 0274 and 0275 change: a `SurefoldLocal` read, a binding, a log line with annotations, a fork that
- * inherits, and a `transact`, each on whatever backs them at the time it runs. Run it on both sides of a change.
+ * What spec 0274 and 0275 change: a `SurefoldLocal` read, a binding, a log line with annotations, a fork that inherits,
+ * and a `transact`, each on whatever backs them at the time it runs. Run it on both sides of a change.
  */
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.AverageTime)
@@ -74,28 +73,27 @@ open class LocalsBenchmark {
         pool.shutdownNow()
     }
 
-    @Benchmark
-    fun readUnbound(): Int = local.get()
+    @Benchmark fun readUnbound(): Int = local.get()
 
-    @Benchmark
-    fun bindAndRead(): Int = local.locally(1) { local.get() }
+    @Benchmark fun bindAndRead(): Int = local.locally(1) { local.get() }
 
     /** [READS] reads inside one binding: the read's own cost, once the binding's is spread over them. */
     @Benchmark
-    fun readsInsideABinding(): Int = local.locally(1) {
-        var sum = 0
-        repeat(READS) { sum += local.get() }
-        sum
-    }
+    fun readsInsideABinding(): Int =
+        local.locally(1) {
+            var sum = 0
+            repeat(READS) { sum += local.get() }
+            sum
+        }
 
     @Benchmark
-    fun annotatedLogLine() = logger.locally(quiet) {
-        logAnnotated("request_id" to "r-1", "tenant" to "acme") { logInfo("handled") }
-    }
+    fun annotatedLogLine() =
+        logger.locally(quiet) {
+            logAnnotated("request_id" to "r-1", "tenant" to "acme") { logInfo("handled") }
+        }
 
     /** A line under a logger bound once, with nothing annotated: what each line of a service costs (spec 0280). */
-    @Benchmark
-    fun logLine(@Suppress("UNUSED_PARAMETER") bound: BoundLogger) = logInfo("handled")
+    @Benchmark fun logLine(@Suppress("UNUSED_PARAMETER") bound: BoundLogger) = logInfo("handled")
 
     /** The same line with two annotations bound around it, the logger still bound once. */
     @Benchmark
@@ -112,16 +110,12 @@ open class LocalsBenchmark {
     fun manyLinesUnderOneAnnotation(@Suppress("UNUSED_PARAMETER") bound: BoundLogger) =
         logAnnotated("request_id" to "r-1", "tenant" to "acme") { repeat(LINES) { logInfo("handled") } }
 
-    @Benchmark
-    fun forkInheritsABinding(): Int = local.locally(1) { scope { async { local.get() }.await() } }
+    @Benchmark fun forkInheritsABinding(): Int = local.locally(1) { scope { async { local.get() }.await() } }
 
     /** A fork on a pool, awaited from outside it: the executor's own thread runs the body. */
-    @Benchmark
-    fun forkOnAPool(): Int = scope(on = pool) { async { local.get() }.await() }
+    @Benchmark fun forkOnAPool(): Int = scope(on = pool) { async { local.get() }.await() }
 
-    @Benchmark
-    fun transactOnce() = shared.update { it + 1 }
+    @Benchmark fun transactOnce() = shared.update { it + 1 }
 
-    @Benchmark
-    fun transactNested() = transact { shared.update { it + 1 } }
+    @Benchmark fun transactNested() = transact { shared.update { it + 1 } }
 }

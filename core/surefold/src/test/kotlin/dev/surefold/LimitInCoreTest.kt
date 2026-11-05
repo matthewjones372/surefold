@@ -6,7 +6,6 @@ import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
 import dev.surefold.fail.attempt
 import dev.surefold.fail.left
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executor
@@ -14,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 /** A [Limit] in plain code (spec 0171): `parMap` and a policy draw on it as a stream's `mapPar` does. */
 class LimitInCoreTest {
@@ -24,12 +24,13 @@ class LimitInCoreTest {
         val now = AtomicInteger()
         val most = AtomicInteger()
 
-        val answers = parMap(1..50, limit) { n ->
-            most.accumulateAndGet(now.incrementAndGet(), ::maxOf)
-            Thread.sleep(1)
-            now.decrementAndGet()
-            n * 2
-        }
+        val answers =
+            parMap(1..50, limit) { n ->
+                most.accumulateAndGet(now.incrementAndGet(), ::maxOf)
+                Thread.sleep(1)
+                now.decrementAndGet()
+                n * 2
+            }
 
         answers shouldBe (1..50).map { it * 2 }
         withClue("the most calls ever inside at once") { (most.get() <= 3) shouldBe true }
@@ -65,12 +66,13 @@ class LimitInCoreTest {
     fun `parMap under a limit starts nothing after a call has failed`() {
         val calls = AtomicInteger()
 
-        val thrown = shouldThrow<IllegalStateException> {
-            parMap(1..100, Limit.fixed(1)) { n ->
-                calls.incrementAndGet()
-                check(n != 2) { "row $n is corrupt" }
+        val thrown =
+            shouldThrow<IllegalStateException> {
+                parMap(1..100, Limit.fixed(1)) { n ->
+                    calls.incrementAndGet()
+                    check(n != 2) { "row $n is corrupt" }
+                }
             }
-        }
 
         thrown.message shouldBe "row 2 is corrupt"
         withClue("one call at a time: the first, then the one that failed") { calls.get() shouldBe 2 }
@@ -80,9 +82,10 @@ class LimitInCoreTest {
     fun `a fail inside parMap under a limit is the answer, and the limit is left empty`() {
         val limit = Limit.fixed(2)
 
-        val answered = attempt<String, List<Int>> {
-            parMap(listOf(1, 2, 3), limit) { n -> if (n == 2) fail("missing $n") else n }
-        }
+        val answered =
+            attempt<String, List<Int>> {
+                parMap(listOf(1, 2, 3), limit) { n -> if (n == 2) fail("missing $n") else n }
+            }
 
         answered shouldBe "missing 2".left()
         limit.inFlight shouldBe 0
@@ -104,17 +107,24 @@ class LimitInCoreTest {
         val partner = policy("partner") { guard(limit) }
         val inside = CountDownLatch(1)
         val leave = CountDownLatch(1)
-        val holder = Thread.ofVirtual().start { partner { inside.countDown(); leave.await() } }
+        val holder =
+            Thread.ofVirtual().start {
+                partner {
+                    inside.countDown()
+                    leave.await()
+                }
+            }
         inside.await()
 
         val refused = AtomicReference<Throwable>()
-        val second = Thread.ofVirtual().start {
-            try {
-                partner { "ran" }
-            } catch (full: Rejected.BulkheadFull) {
-                refused.set(full)
+        val second =
+            Thread.ofVirtual().start {
+                try {
+                    partner { "ran" }
+                } catch (full: Rejected.BulkheadFull) {
+                    refused.set(full)
+                }
             }
-        }
         withClue("a limit with no wait answers without waiting") {
             second.join(Duration.ofMillis(PROMPT_MILLIS)) shouldBe true
         }
@@ -130,7 +140,13 @@ class LimitInCoreTest {
         val limit = Limit.fixed(1)
         val partner = policy("partner") { guard(limit, maxWait = 5.seconds) }
         val inside = CountDownLatch(1)
-        val holder = Thread.ofVirtual().start { partner { inside.countDown(); Thread.sleep(HOLD_MILLIS) } }
+        val holder =
+            Thread.ofVirtual().start {
+                partner {
+                    inside.countDown()
+                    Thread.sleep(HOLD_MILLIS)
+                }
+            }
         inside.await()
 
         partner { "ran" } shouldBe "ran"
@@ -150,12 +166,13 @@ class LimitInCoreTest {
 
     @Test
     fun `a limit takes a bulkhead's place in a policy, so the two together are refused`() {
-        val thrown = shouldThrow<IllegalArgumentException> {
-            policy("partner") {
-                guard(Bulkhead("partner", 2))
-                guard(Limit.fixed(2))
+        val thrown =
+            shouldThrow<IllegalArgumentException> {
+                policy("partner") {
+                    guard(Bulkhead("partner", 2))
+                    guard(Limit.fixed(2))
+                }
             }
-        }
 
         thrown.message shouldContain "bulkhead appears twice"
     }

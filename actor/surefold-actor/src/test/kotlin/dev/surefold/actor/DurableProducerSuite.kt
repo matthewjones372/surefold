@@ -37,42 +37,46 @@ private data class TopUp(val pence: Long, override val delivery: Delivery) : Del
 private data class OneOff(override val delivery: Delivery) : Delivered
 
 /** A top-up as a durable producer keeps it: the pence and whose it is, with nowhere to confirm to. */
-private val topUpCodec = object : EventCodec<TopUp> {
-    override fun encode(event: TopUp): ByteArray {
-        require(event.pence >= 0) { "a top-up of ${event.pence} is refused" }
-        return with(event.delivery) { "${event.pence}|$producer|$to|$sequence" }.toByteArray()
+private val topUpCodec =
+    object : EventCodec<TopUp> {
+        override fun encode(event: TopUp): ByteArray {
+            require(event.pence >= 0) { "a top-up of ${event.pence} is refused" }
+            return with(event.delivery) { "${event.pence}|$producer|$to|$sequence" }.toByteArray()
+        }
+
+        override fun decode(bytes: ByteArray): TopUp {
+            val (pence, producer, to, sequence) = String(bytes).split("|")
+            return TopUp(pence.toLong(), Delivery(producer, to, sequence.toLong(), Delivery.NoOne))
+        }
     }
 
-    override fun decode(bytes: ByteArray): TopUp {
-        val (pence, producer, to, sequence) = String(bytes).split("|")
-        return TopUp(pence.toLong(), Delivery(producer, to, sequence.toLong(), Delivery.NoOne))
+private val pence =
+    object : EventCodec<Long> {
+        override fun encode(event: Long): ByteArray = ByteBuffer.allocate(Long.SIZE_BYTES).putLong(event).array()
+
+        override fun decode(bytes: ByteArray): Long = ByteBuffer.wrap(bytes).long
     }
-}
-
-private val pence = object : EventCodec<Long> {
-    override fun encode(event: Long): ByteArray = ByteBuffer.allocate(Long.SIZE_BYTES).putLong(event).array()
-
-    override fun decode(bytes: ByteArray): Long = ByteBuffer.wrap(bytes).long
-}
 
 private fun walletOf(id: String) = PersistenceId("wallet", id)
 
-private fun wallet(id: String) = delivered(
-    persistent<TopUp, Long, Long>(
-        id = walletOf(id),
-        empty = 0,
-        codec = pence,
-        command = { _, _, topUp -> persist(topUp.pence) },
-        event = { balance, paid -> balance + paid },
-    ),
-)
+private fun wallet(id: String) =
+    delivered(
+        persistent<TopUp, Long, Long>(
+            id = walletOf(id),
+            empty = 0,
+            codec = pence,
+            command = { _, _, topUp -> persist(topUp.pence) },
+            event = { balance, paid -> balance + paid },
+        ),
+    )
 
 /** Never answers: a node that has gone. */
-private val nowhere = object : ActorRef<TopUp> {
-    override val address = Address("test", "/nowhere", 0)
+private val nowhere =
+    object : ActorRef<TopUp> {
+        override val address = Address("test", "/nowhere", 0)
 
-    override fun tell(message: TopUp) = Unit
-}
+        override fun tell(message: TopUp) = Unit
+    }
 
 /** A journal whose producers' appends throw for the first [failures], as a database that is down does. */
 private class Flaky(failures: Int, private val kept: Journal = InMemoryJournal()) : Journal {
@@ -139,8 +143,7 @@ object DurableProducerSuite : Suite() {
 
                 val outbox = PersistenceId("surefold-producer", "till")
                 databases.forEach { (name, kept) ->
-                    kept.read(outbox).isNotEmpty() shouldBe
-                        (name == sharded.database(outbox))
+                    kept.read(outbox).isNotEmpty() shouldBe (name == sharded.database(outbox))
                 }
 
                 val again = durableProducer("till", topUpCodec) { id -> wallets.getValue(id) }
@@ -184,9 +187,13 @@ object DurableProducerSuite : Suite() {
                 val crashed = durableProducer("till", topUpCodec, keep = 10) { nowhere }
                 for (n in 0 until 10) crashed.send(ids[n % 5]) { TopUp(n.toLong(), it) }
                 val resumed = AtomicReference<Producer<TopUp>>()
-                val resumer = behaviour<Unit, Unit>(Unit) { _, _, _ -> stay() }.onStart { ctx ->
-                    resumed.set(ctx.resumedProducer("till", topUpCodec, 2.seconds) { id -> wallets.getValue(id) }.first)
-                }
+                val resumer =
+                    behaviour<Unit, Unit>(Unit) { _, _, _ -> stay() }
+                        .onStart { ctx ->
+                            resumed.set(
+                                ctx.resumedProducer("till", topUpCodec, 2.seconds) { id -> wallets.getValue(id) }.first,
+                            )
+                        }
 
                 spawn("resumer", resumer)
 
@@ -204,9 +211,13 @@ object DurableProducerSuite : Suite() {
             testActors(journal = Flaky(failures = 1, kept)) {
                 val wallets = ids.associateWith { spawn(it, wallet(it)) }
                 val resumed = AtomicReference<Pair<Producer<TopUp>, ActorRef<*>>>()
-                val resumer = behaviour<Unit, Unit>(Unit) { _, _, _ -> stay() }.onStart { ctx ->
-                    resumed.set(ctx.resumedProducer("till", topUpCodec, 2.seconds) { id -> wallets.getValue(id) })
-                }
+                val resumer =
+                    behaviour<Unit, Unit>(Unit) { _, _, _ -> stay() }
+                        .onStart { ctx ->
+                            resumed.set(
+                                ctx.resumedProducer("till", topUpCodec, 2.seconds) { id -> wallets.getValue(id) },
+                            )
+                        }
 
                 spawn("resumer", resumer)
 
@@ -241,9 +252,10 @@ object DurableProducerSuite : Suite() {
                 scope {
                     journal(database)
                     val wallet = spawn("w-0", wallet("w-0"))
-                    val producer = durableProducer("till", topUpCodec, within = within, drainWithin = Duration.ZERO) {
-                        wallet
-                    }
+                    val producer =
+                        durableProducer("till", topUpCodec, within = within, drainWithin = Duration.ZERO) {
+                            wallet
+                        }
 
                     // Past the first, each would wait out a backoff, 100 ms doubling, if it were told to the actor.
                     (1..6L).forEach { pence ->
@@ -274,11 +286,13 @@ object DurableProducerSuite : Suite() {
                     producer.send("w-0") { TopUp(2, it) } shouldBe Unit.right()
                 }
             }
-            lines.map { it.level to it.message } shouldContainExactly listOf(
-                LogLevel.Warn to "producer till cannot write to its journal, and answers Unwritten until it can: " +
-                    "java.sql.SQLException: the database is down",
-                LogLevel.Info to "producer till writes to its journal again",
-            )
+            lines.map { it.level to it.message } shouldContainExactly
+                listOf(
+                    LogLevel.Warn to
+                        "producer till cannot write to its journal, and answers Unwritten until it can: " +
+                            "java.sql.SQLException: the database is down",
+                    LogLevel.Info to "producer till writes to its journal again",
+                )
         }
 
         test("a command the codec refuses, or that cannot be sent again, throws to its sender and holds no room") {
@@ -286,11 +300,13 @@ object DurableProducerSuite : Suite() {
                 val wallets = ids.associateWith { spawn(it, wallet(it)) }
                 val producer =
                     durableProducer("till", topUpCodec, keep = 1, within = Duration.ZERO) { wallets.getValue(it) }
-                val oneOffs = object : EventCodec<OneOff> {
-                    override fun encode(event: OneOff) = event.delivery.to.toByteArray()
+                val oneOffs =
+                    object : EventCodec<OneOff> {
+                        override fun encode(event: OneOff) = event.delivery.to.toByteArray()
 
-                    override fun decode(bytes: ByteArray) = OneOff(Delivery("till", String(bytes), 0, Delivery.NoOne))
-                }
+                        override fun decode(bytes: ByteArray) =
+                            OneOff(Delivery("till", String(bytes), 0, Delivery.NoOne))
+                    }
 
                 shouldThrow<IllegalArgumentException> { producer.send("w-0") { TopUp(-1, it) } }
                 shouldThrow<UnsupportedOperationException> {
@@ -342,11 +358,12 @@ object DurableProducerSuite : Suite() {
 }
 
 /** Tells nobody: an entity whose node has gone. */
-private fun <M : Any> void(): ActorRef<M> = object : ActorRef<M> {
-    override val address = Address("test", "/void", 0)
+private fun <M : Any> void(): ActorRef<M> =
+    object : ActorRef<M> {
+        override val address = Address("test", "/void", 0)
 
-    override fun tell(message: M) = Unit
-}
+        override fun tell(message: M) = Unit
+    }
 
 private val OLD_OUTBOX = PersistenceId("surefold-producer", "till")
 
@@ -376,33 +393,35 @@ private fun doneEvent(to: String, sequence: Long) = bytes {
  * The till's journal, written byte for byte as a durable producer wrote it before spec 0146. w-0 kept 10 and 20, and
  * confirmed 10; w-1 kept 5 and 7, and confirmed 5. Each still owes its second, and numbers its next 3.
  */
-private val oldEvents = listOf(
-    keptEvent("w-0", 1, 10),
-    keptEvent("w-1", 1, 5),
-    doneEvent("w-1", 1),
-    keptEvent("w-0", 2, 20),
-    keptEvent("w-1", 2, 7),
-    doneEvent("w-0", 1),
-)
+private val oldEvents =
+    listOf(
+        keptEvent("w-0", 1, 10),
+        keptEvent("w-1", 1, 5),
+        doneEvent("w-1", 1),
+        keptEvent("w-0", 2, 20),
+        keptEvent("w-1", 2, 7),
+        doneEvent("w-0", 1),
+    )
 
 /** A snapshot of the first three of [oldEvents], as one was written before spec 0146. */
-private fun oldSnapshot() = InMemorySnapshots().apply {
-    save(
-        OLD_OUTBOX,
-        3,
-        bytes {
-            writeInt(2)
-            writeUTF("w-0")
-            writeLong(2)
-            writeInt(1)
-            writeLong(1)
-            kept(10, "w-0").let {
-                writeInt(it.size)
-                write(it)
-            }
-            writeUTF("w-1")
-            writeLong(2)
-            writeInt(0)
-        },
-    )
-}
+private fun oldSnapshot() =
+    InMemorySnapshots().apply {
+        save(
+            OLD_OUTBOX,
+            3,
+            bytes {
+                writeInt(2)
+                writeUTF("w-0")
+                writeLong(2)
+                writeInt(1)
+                writeLong(1)
+                kept(10, "w-0").let {
+                    writeInt(it.size)
+                    write(it)
+                }
+                writeUTF("w-1")
+                writeLong(2)
+                writeInt(0)
+            },
+        )
+    }

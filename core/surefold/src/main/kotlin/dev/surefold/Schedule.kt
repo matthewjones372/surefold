@@ -16,14 +16,15 @@ import kotlin.time.toKotlinDuration
 typealias ScheduleStep<Input, Output> = (Input) -> Schedule.Decision<Input, Output>
 
 /**
- * How something should be repeated or retried: a step that answers each [Input] with a [Decision] to carry
- * on after a delay, or to stop with an [Output].
+ * How something should be repeated or retried: a step that answers each [Input] with a [Decision] to carry on after a
+ * delay, or to stop with an [Output].
  */
 fun interface Schedule<in Input, out Output> {
 
     operator fun invoke(input: Input): Decision<Input, Output>
 
-    val step: ScheduleStep<Input, Output> get() = this::invoke
+    val step: ScheduleStep<Input, Output>
+        get() = this::invoke
 
     /** Runs [action] again for as long as this schedule continues, and answers with its last output. */
     fun repeat(action: () -> Input): Output {
@@ -44,8 +45,9 @@ fun interface Schedule<in Input, out Output> {
     fun <A> map(transform: (Output) -> A): Schedule<Input, A> = Schedule { step(it).map(transform) }
 
     /** Replaces each delay with [transform] of the output and the delay it would have been. */
-    fun delayed(transform: (Output, Duration) -> Duration): Schedule<Input, Output> =
-        Schedule { step(it).delayed(transform) }
+    fun delayed(transform: (Output, Duration) -> Duration): Schedule<Input, Output> = Schedule {
+        step(it).delayed(transform)
+    }
 
     /** Scales each delay by a random factor between [min] and [max], so retries do not arrive in step. */
     fun jittered(
@@ -58,9 +60,10 @@ fun interface Schedule<in Input, out Output> {
     fun <B> fold(initial: B, combine: (B, Output) -> B): Schedule<Input, B> {
         fun loop(input: Input, carried: B, self: ScheduleStep<Input, Output>): Decision<Input, B> =
             when (val decision = self(input)) {
-                is Continue -> combine(carried, decision.output).let { folded ->
-                    Continue(folded, decision.delay) { loop(it, folded, decision.step) }
-                }
+                is Continue ->
+                    combine(carried, decision.output).let { folded ->
+                        Continue(folded, decision.delay) { loop(it, folded, decision.step) }
+                    }
 
                 is Done -> Done(carried)
             }
@@ -90,7 +93,9 @@ fun interface Schedule<in Input, out Output> {
 
     /** Continues until [predicate] holds of the input and the output decided for it. */
     fun doUntil(predicate: (@UnsafeVariance Input, Output) -> Boolean): Schedule<Input, Output> =
-        doWhile { input, output -> !predicate(input, output) }
+        doWhile { input, output ->
+            !predicate(input, output)
+        }
 
     /** Runs this schedule to its end and then [other], each output on the side it came from. */
     infix fun <A> andThen(other: Schedule<@UnsafeVariance Input, A>): Schedule<Input, Either<Output, A>> =
@@ -104,8 +109,7 @@ fun interface Schedule<in Input, out Output> {
     ): Schedule<Input, B> = Schedule { step(it).andThen(other.step, ifFirst, ifSecond) }
 
     /** Continues while both schedules do, taking the longer delay and pairing the outputs. */
-    infix fun <B> and(other: Schedule<@UnsafeVariance Input, B>): Schedule<Input, Pair<Output, B>> =
-        and(other, ::Pair)
+    infix fun <B> and(other: Schedule<@UnsafeVariance Input, B>): Schedule<Input, Pair<Output, B>> = and(other, ::Pair)
 
     /** The same, with the outputs combined by [transform]. */
     fun <B, C> and(
@@ -167,8 +171,8 @@ fun interface Schedule<in Input, out Output> {
         }
 
         /**
-         * Continues with no delay of its own until [duration] has passed on the inherited clock, answering the
-         * time elapsed. It counts from its first step, which in a retry is the first failure, not the first try.
+         * Continues with no delay of its own until [duration] has passed on the inherited clock, answering the time
+         * elapsed. It counts from its first step, which in a retry is the first failure, not the first try.
          */
         fun <Input> upTo(duration: Duration): Schedule<Input, Duration> = Schedule {
             val time = clock.get()
@@ -233,24 +237,27 @@ fun interface Schedule<in Input, out Output> {
             val step: ScheduleStep<Input, Output>,
         ) : Decision<Input, Output>
 
-        fun <A> map(transform: (Output) -> A): Decision<Input, A> = when (this) {
-            is Done -> Done(transform(output))
-            is Continue -> Continue(transform(output), delay) { step(it).map(transform) }
-        }
+        fun <A> map(transform: (Output) -> A): Decision<Input, A> =
+            when (this) {
+                is Done -> Done(transform(output))
+                is Continue -> Continue(transform(output), delay) { step(it).map(transform) }
+            }
 
         // Carried into the continuation, as `map` is: arrow-fx leaves it out, so its `jittered` scales the
         // first delay and none after it, which is not a jitter.
-        fun delayed(transform: (Output, Duration) -> Duration): Decision<Input, Output> = when (this) {
-            is Done -> this
-            is Continue -> Continue(output, transform(output, delay)) { step(it).delayed(transform) }
-        }
+        fun delayed(transform: (Output, Duration) -> Duration): Decision<Input, Output> =
+            when (this) {
+                is Done -> this
+                is Continue -> Continue(output, transform(output, delay)) { step(it).delayed(transform) }
+            }
 
         fun andThen(
             other: ScheduleStep<@UnsafeVariance Input, @UnsafeVariance Output>,
-        ): Decision<Input, Output> = when (this) {
-            is Done -> Continue(output, ZERO, other)
-            is Continue -> Continue(output, delay) { step(it).andThen(other) }
-        }
+        ): Decision<Input, Output> =
+            when (this) {
+                is Done -> Continue(output, ZERO, other)
+                is Continue -> Continue(output, delay) { step(it).andThen(other) }
+            }
 
         fun <A, B> andThen(
             other: ScheduleStep<@UnsafeVariance Input, A>,
@@ -275,18 +282,19 @@ fun interface Schedule<in Input, out Output> {
             other: Decision<@UnsafeVariance Input, B>,
             transform: (Output?, B?) -> C,
             combineDelay: (Duration?, Duration?) -> Duration,
-        ): Decision<Input, C> = when {
-            this is Continue && other is Continue ->
-                Continue(transform(output, other.output), combineDelay(delay, other.delay)) {
-                    step(it).or(other.step(it), transform, combineDelay)
-                }
+        ): Decision<Input, C> =
+            when {
+                this is Continue && other is Continue ->
+                    Continue(transform(output, other.output), combineDelay(delay, other.delay)) {
+                        step(it).or(other.step(it), transform, combineDelay)
+                    }
 
-            this is Continue -> map { transform(it, null) }
+                this is Continue -> map { transform(it, null) }
 
-            other is Continue -> other.map { transform(null, it) }
+                other is Continue -> other.map { transform(null, it) }
 
-            else -> Done(transform(output, other.output))
-        }
+                else -> Done(transform(output, other.output))
+            }
     }
 }
 

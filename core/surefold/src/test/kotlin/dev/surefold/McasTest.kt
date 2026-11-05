@@ -56,18 +56,19 @@ class McasTest {
     fun `transfers on a thousand virtual threads leave the total unchanged`() {
         val accounts = List(ACCOUNTS) { Word(Box(100)) }
 
-        val threads = List(THREADS) { t ->
-            Thread.ofVirtual().start {
-                repeat(TRANSFERS) { i ->
-                    val from = accounts[(t + i) % ACCOUNTS]
-                    val to = accounts[(t + i + 1 + t % (ACCOUNTS - 1)) % ACCOUNTS]
-                    do {
-                        val f = from.read()
-                        val o = to.read()
-                    } while (!swapAll(listOf(Change(from, f, Box(f.n - 1)), Change(to, o, Box(o.n + 1)))))
+        val threads =
+            List(THREADS) { t ->
+                Thread.ofVirtual().start {
+                    repeat(TRANSFERS) { i ->
+                        val from = accounts[(t + i) % ACCOUNTS]
+                        val to = accounts[(t + i + 1 + t % (ACCOUNTS - 1)) % ACCOUNTS]
+                        do {
+                            val f = from.read()
+                            val o = to.read()
+                        } while (!swapAll(listOf(Change(from, f, Box(f.n - 1)), Change(to, o, Box(o.n + 1)))))
+                    }
                 }
             }
-        }
         threads.forEach { it.join() }
 
         accounts.sumOf { it.read().n } shouldBe ACCOUNTS * 100

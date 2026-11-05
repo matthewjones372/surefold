@@ -10,15 +10,14 @@ class SurefoldLocal<A> internal constructor(private val initial: () -> A) {
     fun get(): A = from(Bindings.snapshot())
 
     /**
-     * What [get] answers, read from a chain already in hand: `logAt` reads several locals from one snapshot rather
-     * than looking the thread's chain up once for each (spec 0284).
+     * What [get] answers, read from a chain already in hand: `logAt` reads several locals from one snapshot rather than
+     * looking the thread's chain up once for each (spec 0284).
      */
     internal fun from(head: Bound?): A {
         var link = head
         while (link != null) {
             // Only `locally` and `attach` make a link for this local, and each holds an A.
-            @Suppress("UNCHECKED_CAST")
-            if (link.local === this) return link.value as A
+            @Suppress("UNCHECKED_CAST") if (link.local === this) return link.value as A
             link = link.next
         }
         return unbound()
@@ -31,8 +30,8 @@ class SurefoldLocal<A> internal constructor(private val initial: () -> A) {
     fun <B> locally(value: A, block: () -> B): B = Bindings.under(Bound(this, value, Bindings.snapshot()), block)
 
     /**
-     * [locally] as a pair, for an integration whose own API attaches and detaches rather than taking a
-     * block — OpenTelemetry's `ContextStorage` is written that way. Detach in the order attached.
+     * [locally] as a pair, for an integration whose own API attaches and detaches rather than taking a block —
+     * OpenTelemetry's `ContextStorage` is written that way. Detach in the order attached.
      */
     fun attach(value: A): Detach {
         val before = Bindings.snapshot()
@@ -58,16 +57,17 @@ fun <A> surefoldLocal(initial: () -> A): SurefoldLocal<A> = SurefoldLocal(initia
 internal class Bound(val local: SurefoldLocal<*>, val value: Any?, val next: Bound?)
 
 /** This chain with every link for [local] left out: what an `attach` replaces. */
-private fun Bound?.without(local: SurefoldLocal<*>): Bound? = when {
-    this == null -> null
+private fun Bound?.without(local: SurefoldLocal<*>): Bound? =
+    when {
+        this == null -> null
 
-    this.local === local -> next.without(local)
+        this.local === local -> next.without(local)
 
-    else -> {
-        val rest = next.without(local)
-        if (rest === next) this else Bound(this.local, value, rest)
+        else -> {
+            val rest = next.without(local)
+            if (rest === next) this else Bound(this.local, value, rest)
+        }
     }
-}
 
 internal object Bindings {
 

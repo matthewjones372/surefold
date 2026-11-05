@@ -22,17 +22,19 @@ import dev.surefold.junit.shouldContainExactly
 import dev.surefold.junit.shouldContainExactlyInAnyOrder
 import dev.surefold.scope
 
-private val shardedCents = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = "$event".toByteArray()
+private val shardedCents =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = "$event".toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
-private val shardedSum = object : StateCodec<Int> {
-    override fun encode(state: Int): ByteArray = "$state".toByteArray()
+private val shardedSum =
+    object : StateCodec<Int> {
+        override fun encode(state: Int): ByteArray = "$state".toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
 /** Two fresh databases, and one journal over both, for one test. */
 private class TwoDatabases {
@@ -41,15 +43,16 @@ private class TwoDatabases {
     val journal = ShardedJournal(listOf("db-a" to JdbcJournal(a), "db-b" to JdbcJournal(b)))
 }
 
-private fun till(id: PersistenceId, prune: Prune = Prune.never, batch: Int = 64) = persistent<Int, Int, Int>(
-    id = id,
-    empty = 0,
-    codec = shardedCents,
-    command = { _, _, paid -> persist(paid) },
-    event = { sum, paid -> sum + paid },
-    snapshots = every(10, shardedSum, prune),
-    batch = batch,
-)
+private fun till(id: PersistenceId, prune: Prune = Prune.never, batch: Int = 64) =
+    persistent<Int, Int, Int>(
+        id = id,
+        empty = 0,
+        codec = shardedCents,
+        command = { _, _, paid -> persist(paid) },
+        event = { sum, paid -> sum + paid },
+        snapshots = every(10, shardedSum, prune),
+        batch = batch,
+    )
 
 /** Spec 0088 on Postgres: two databases, each with its own `ordering`, behind one journal. */
 object ShardedPostgresSuite : Suite() {

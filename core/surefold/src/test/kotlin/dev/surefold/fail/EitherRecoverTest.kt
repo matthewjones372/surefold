@@ -2,9 +2,9 @@ package dev.surefold.fail
 
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
 import java.io.IOException
 import java.util.concurrent.CancellationException
+import org.junit.jupiter.api.Test
 
 class EitherRecoverTest {
     @Test
@@ -73,11 +73,12 @@ class EitherRecoverTest {
 
     @Test
     fun `recovery belongs to its own Fail scope`() {
-        val outside = attempt<String, Int> {
-            val parent = this
-            val failed: Either<Throwable, Int> = IOException().left()
-            failed.recover(IOException::class) { parent.fail("outer") }.getOrNull() ?: 0
-        }
+        val outside =
+            attempt<String, Int> {
+                val parent = this
+                val failed: Either<Throwable, Int> = IOException().left()
+                failed.recover(IOException::class) { parent.fail("outer") }.getOrNull() ?: 0
+            }
         outside shouldBe "outer".left()
     }
 
@@ -91,23 +92,25 @@ class EitherRecoverTest {
 
     @Test
     fun `total recovery does not intercept an enclosing Fail`() {
-        val outside = attempt<String, Int> {
-            val parent = this
-            val original: Either<Int, Int> = 1.left()
-            val result: Either<Int, Int> = original.recover { parent.fail("outer") }
-            result.getOrNull() ?: 0
-        }
+        val outside =
+            attempt<String, Int> {
+                val parent = this
+                val original: Either<Int, Int> = 1.left()
+                val result: Either<Int, Int> = original.recover { parent.fail("outer") }
+                result.getOrNull() ?: 0
+            }
         outside shouldBe "outer".left()
     }
 
     @Test
     fun `handler exceptions and runtime control signals are not implicitly captured`() {
-        val failures = listOf(
-            IllegalStateException("handler"),
-            InterruptedException("interrupt"),
-            CancellationException("cancel"),
-            LinkageError("fatal"),
-        )
+        val failures =
+            listOf(
+                IllegalStateException("handler"),
+                InterruptedException("interrupt"),
+                CancellationException("cancel"),
+                LinkageError("fatal"),
+            )
         val original: Either<Throwable, Int> = IOException().left()
         failures.forEach { thrown ->
             val selected = shouldThrow<Throwable> { original.recover(IOException::class) { throw thrown } }

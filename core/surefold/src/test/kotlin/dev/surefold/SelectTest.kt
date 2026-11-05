@@ -3,8 +3,8 @@ package dev.surefold
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldThrow
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
+import org.junit.jupiter.api.Test
 
 private const val ROWS = 2_000
 
@@ -81,7 +81,12 @@ class SelectTest {
             val rows = channel<Int>(0)
             val idle = channel<Int>(0)
             val alsoIdle = channel<Int>(0)
-            async { select { rows.onSend(5) { }; idle.onReceive { } } }
+            async {
+                select {
+                    rows.onSend(5) {}
+                    idle.onReceive {}
+                }
+            }
             select {
                 alsoIdle.onSend(0) { -1 }
                 rows.onReceive { it }
@@ -119,17 +124,18 @@ class SelectTest {
                 (1 until ROWS step 2).forEach { odds.send(it) }
                 odds.close()
             }
-            val consumers = List(2) {
-                async {
-                    val open = mutableListOf(evens, odds)
-                    var sum = 0L
-                    while (open.isNotEmpty()) {
-                        val (from, value) = select { open.forEach { rows -> rows.onReceive { rows to it } } }
-                        if (value == null) open -= from else sum += value
+            val consumers =
+                List(2) {
+                    async {
+                        val open = mutableListOf(evens, odds)
+                        var sum = 0L
+                        while (open.isNotEmpty()) {
+                            val (from, value) = select { open.forEach { rows -> rows.onReceive { rows to it } } }
+                            if (value == null) open -= from else sum += value
+                        }
+                        sum
                     }
-                    sum
                 }
-            }
             consumers.sumOf { it.await() }
         }
 
@@ -138,11 +144,12 @@ class SelectTest {
 
     @Test
     fun `only a fork async opened can be selected on`() {
-        val elsewhere = object : Deferred<Int> {
-            override fun await() = 1
+        val elsewhere =
+            object : Deferred<Int> {
+                override fun await() = 1
 
-            override fun cancel() = Unit
-        }
+                override fun cancel() = Unit
+            }
         shouldThrow<IllegalArgumentException> { select { elsewhere.onAwait { it } } }
     }
 }

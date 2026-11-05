@@ -9,6 +9,7 @@ import java.io.File
 import kotlin.reflect.typeOf
 
 private class Hammer
+
 private class Nail
 
 /** Where this file's own sources are, which is what a build hands the checker. */

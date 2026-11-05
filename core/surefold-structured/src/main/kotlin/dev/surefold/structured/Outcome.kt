@@ -16,8 +16,8 @@ internal class Raised<E>(val error: E) : Failure<E>
 internal class Thrown(val throwable: Throwable) : Failure<Nothing>
 
 /**
- * A branch runs under a `Fail` of its own, since a `Fail` never crosses a thread, and whatever it does is
- * kept as a value: a throw left to end the subtask would reach the JDK as a failure nobody asked for.
+ * A branch runs under a `Fail` of its own, since a `Fail` never crosses a thread, and whatever it does is kept as a
+ * value: a throw left to end the subtask would reach the JDK as a failure nobody asked for.
  */
 internal fun <E, T> capture(body: Fail<E>.() -> T): Outcome<E, T> =
     try {
@@ -26,10 +26,11 @@ internal fun <E, T> capture(body: Fail<E>.() -> T): Outcome<E, T> =
         Thrown(t)
     }
 
-internal fun <E> Fail<E>.surface(failure: Failure<E>): Nothing = when (failure) {
-    is Raised -> fail(failure.error)
-    is Thrown -> throw failure.throwable
-}
+internal fun <E> Fail<E>.surface(failure: Failure<E>): Nothing =
+    when (failure) {
+        is Raised -> fail(failure.error)
+        is Thrown -> throw failure.throwable
+    }
 
 /** A joined branch's value, or its failure surfaced on the caller's thread. */
 internal fun <E, T> Fail<E>.valueOf(subtask: StructuredTaskScope.Subtask<Outcome<E, T>>): T =

@@ -60,13 +60,15 @@ class MetricTagsTest {
 
     @Test
     fun `timed records how long the block took and answers what it returned`() {
-        val (took, answered) = capturingMetrics { measured ->
-            val answer = timed("adopt") {
-                Thread.sleep(5)
-                "Nibbles"
+        val (took, answered) =
+            capturingMetrics { measured ->
+                val answer =
+                    timed("adopt") {
+                        Thread.sleep(5)
+                        "Nibbles"
+                    }
+                measured.histogram("adopt") to answer
             }
-            measured.histogram("adopt") to answer
-        }
 
         answered shouldBe "Nibbles"
         took.size shouldBe 1

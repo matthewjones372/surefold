@@ -103,7 +103,7 @@ object UnacquirableSuite : SharedSuite<String>() {
 /** Its tests pass, and closing what they shared throws. */
 object UnreleasableSuite : SharedSuite<Unit>() {
     override val shared: Resource<Unit> = resource {
-        install({ }) { _, _ -> error("could not close") }
+        install({}) { _, _ -> error("could not close") }
     }
 
     init {
@@ -117,8 +117,7 @@ object CountedSuite : SharedSuite<Unit>(limit = Limit.fixed(8)) {
     val acquired = AtomicInteger()
     val finished = AtomicInteger()
 
-    @Volatile
-    var finishedAtRelease: Int = -1
+    @Volatile var finishedAtRelease: Int = -1
 
     override val shared: Resource<Unit> = resource {
         install({ acquired.incrementAndGet() }) { _, _ -> finishedAtRelease = finished.get() }
@@ -165,16 +164,16 @@ object AloneSuite : Suite(limit = Limit.fixed(8)) {
     private val running = AtomicInteger()
     val seen: MutableList<String> = CopyOnWriteArrayList()
 
-    @Volatile
-    var runningWhileAlone: Int = 0
+    @Volatile var runningWhileAlone: Int = 0
 
-    private fun together(name: String, gate: CountDownLatch) = test(name) {
-        running.incrementAndGet()
-        gate.countDown()
-        check(gate.await(10, TimeUnit.SECONDS)) { "$name ran without its partner" }
-        seen += name
-        expect(running.decrementAndGet() >= 0)
-    }
+    private fun together(name: String, gate: CountDownLatch) =
+        test(name) {
+            running.incrementAndGet()
+            gate.countDown()
+            check(gate.await(10, TimeUnit.SECONDS)) { "$name ran without its partner" }
+            seen += name
+            expect(running.decrementAndGet() >= 0)
+        }
 
     init {
         val before = CountDownLatch(2)
@@ -215,13 +214,14 @@ object FailingSiblingSuite : SharedSuite<CountDownLatch>(limit = Limit.fixed(3))
 object LoggingSuite : SharedSuite<CountDownLatch>(limit = Limit.fixed(4)) {
     override val shared: Resource<CountDownLatch> = resource { CountDownLatch(2) }
 
-    private fun failsTogether(name: String) = test(name) { gate ->
-        logInfo("$name started")
-        gate.countDown()
-        check(gate.await(10, TimeUnit.SECONDS)) { "$name ran without its partner" }
-        logWarn("$name is about to fail")
-        throw AssertionError("$name failed")
-    }
+    private fun failsTogether(name: String) =
+        test(name) { gate ->
+            logInfo("$name started")
+            gate.countDown()
+            check(gate.await(10, TimeUnit.SECONDS)) { "$name ran without its partner" }
+            logWarn("$name is about to fail")
+            throw AssertionError("$name failed")
+        }
 
     init {
         failsTogether("fails first")
@@ -243,13 +243,14 @@ object MeteredSuite : SharedSuite<CountDownLatch>(limit = Limit.fixed(2)) {
 
     override val shared: Resource<CountDownLatch> = resource { CountDownLatch(2) }
 
-    private fun counts(name: String, times: Int) = test(name) { gate ->
-        repeat(times) { counter("hits").increment() }
-        gate.countDown()
-        check(gate.await(10, TimeUnit.SECONDS)) { "$name ran without its partner" }
-        totals[name] = readings("hits").filterIsInstance<Reading.Total>().sumOf { it.total }
-        expect(true)
-    }
+    private fun counts(name: String, times: Int) =
+        test(name) { gate ->
+            repeat(times) { counter("hits").increment() }
+            gate.countDown()
+            check(gate.await(10, TimeUnit.SECONDS)) { "$name ran without its partner" }
+            totals[name] = readings("hits").filterIsInstance<Reading.Total>().sumOf { it.total }
+            expect(true)
+        }
 
     init {
         counts("counts one", 1)
@@ -397,10 +398,14 @@ object CluedSuite : SharedSuite<Any>() {
         }
         test("fails a narrowed check") { two -> two.shouldBeInstanceOf<String> { it shouldBe "three" } }
         test("passes under a lazy clue") { two ->
-            withClue({
-                lazyClueBuilt.incrementAndGet()
-                "never built"
-            }) { two shouldBe "two" }
+            withClue(
+                {
+                    lazyClueBuilt.incrementAndGet()
+                    "never built"
+                },
+            ) {
+                two shouldBe "two"
+            }
         }
         test("fails under a lazy clue") { two -> withClue({ "built from $two" }) { two shouldBe 3 } }
     }
@@ -456,10 +461,11 @@ object GappedSuite : SharedSuite<List<Int>>() {
         test("fails shouldBeEmpty") { xs -> xs.shouldBeEmpty() }
         test("fails shouldNotBeEmpty on a map") { _ -> emptyMap<String, Int>().shouldNotBeEmpty() }
         test("fails shouldNotBeNull") { xs ->
-            xs.firstOrNull { it > 3 }.shouldNotBeNull {
-                thenRan.incrementAndGet()
-                expect(true)
-            }
+            xs.firstOrNull { it > 3 }
+                .shouldNotBeNull {
+                    thenRan.incrementAndGet()
+                    expect(true)
+                }
         }
         test("fails shouldBeLessThan") { _ -> 3 shouldBeLessThan 2 }
         test("fails shouldBeGreaterThanOrEqual") { _ -> 1 shouldBeGreaterThanOrEqual 2 }

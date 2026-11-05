@@ -9,7 +9,10 @@ import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
 /** Whether `async` forks where it is written, or waits until something asks for the value. */
-enum class Start { Eager, Lazy }
+enum class Start {
+    Eager,
+    Lazy,
+}
 
 /** A [Fail] scope that owns every thread forked in it: no fork outlives the block that opened it. */
 interface Scope<E> : Fail<E> {
@@ -17,24 +20,24 @@ interface Scope<E> : Fail<E> {
     val on: Executor
 
     /**
-     * Forks [block] onto [on] under a nested scope of its own. A [Start.Lazy] fork waits for `await`, and
-     * one nobody awaits never runs at all, so its raise is never the scope's `Left`.
+     * Forks [block] onto [on] under a nested scope of its own. A [Start.Lazy] fork waits for `await`, and one nobody
+     * awaits never runs at all, so its raise is never the scope's `Left`.
      */
     fun <T> async(on: Executor = this.on, start: Start = Start.Eager, block: Scope<E>.() -> T): Deferred<T>
 
     /**
-     * Runs [hook] on the closing thread when this scope starts to close, before any fork is interrupted, so the
-     * scope's forks are still running for it: to leave a cluster, or to wait for work in flight to land. Hooks run
-     * in reverse order of registration, as a `resourceScope` releases. A hook that throws is logged and the scope
-     * closes all the same; one interrupted waiting ends, the rest still run, and the interrupt is kept for after.
+     * Runs [hook] on the closing thread when this scope starts to close, before any fork is interrupted, so the scope's
+     * forks are still running for it: to leave a cluster, or to wait for work in flight to land. Hooks run in reverse
+     * order of registration, as a `resourceScope` releases. A hook that throws is logged and the scope closes all the
+     * same; one interrupted waiting ends, the rest still run, and the interrupt is kept for after.
      */
     fun onClose(hook: () -> Unit)
 }
 
 /**
- * Opens a scope nothing in [block] can raise in, on the calling thread, and closes it when [block] leaves — by
- * return or throw — interrupting every fork still running and joining all of them before this returns. It answers
- * [block]'s value: a scope with an error to raise is opened inside `attempt { }`, by the [Fail] form below.
+ * Opens a scope nothing in [block] can raise in, on the calling thread, and closes it when [block] leaves — by return
+ * or throw — interrupting every fork still running and joining all of them before this returns. It answers [block]'s
+ * value: a scope with an error to raise is opened inside `attempt { }`, by the [Fail] form below.
  */
 fun <A> scope(on: Executor = VirtualThreads, block: Scope<Nothing>.() -> A): A = Unraisable.scope(on, block)
 
@@ -44,19 +47,20 @@ fun <A> scope(on: Executor = VirtualThreads, block: Scope<Nothing>.() -> A): A =
  */
 fun <E, A> Fail<E>.scope(on: Executor = VirtualThreads, block: Scope<E>.() -> A): A {
     val nest = Nest(this, on)
-    val value = try {
-        nest.block()
-    } finally {
-        nest.close()
-    }
+    val value =
+        try {
+            nest.block()
+        } finally {
+            nest.close()
+        }
     // Only reached on a return, so a fork nobody awaited still gets to fail its parent.
     nest.unnoticedFailure()?.let { nest.surface(it) }
     return value
 }
 
 /**
- * A fork's body opens its own boundary and its outcome is held until `await`; a throw has to be caught
- * here, or it would end the fork's thread with nobody left to answer for it.
+ * A fork's body opens its own boundary and its outcome is held until `await`; a throw has to be caught here, or it
+ * would end the fork's thread with nobody left to answer for it.
  */
 private fun <E, T> capture(on: Executor, block: Scope<E>.() -> T): Outcome<E, T> =
     try {
@@ -66,38 +70,43 @@ private fun <E, T> capture(on: Executor, block: Scope<E>.() -> T): Outcome<E, T>
     }
 
 /**
- * The owner the top-level combinators fork under: `Nothing` has no value, so nothing running inside one
- * can hand it an error to raise.
+ * The owner the top-level combinators fork under: `Nothing` has no value, so nothing running inside one can hand it an
+ * error to raise.
  */
 internal object Unraisable : Fail<Nothing> {
     override fun fail(error: Nothing): Nothing = error
 }
 
 /**
- * The owner an accumulating combinator forks under: it keeps its branches' errors and answers with all of
- * them at once, so no fork ever hands one back to be surfaced on its own.
+ * The owner an accumulating combinator forks under: it keeps its branches' errors and answers with all of them at once,
+ * so no fork ever hands one back to be surfaced on its own.
  */
 internal object Uncollected : Fail<Any?> {
     override fun fail(error: Any?): Nothing = error("an accumulated error is answered by its combinator")
 }
 
-private fun <E> Fail<E>.surface(failure: Failure<E>): Nothing = when (failure) {
-    is Raised -> fail(failure.error)
-    is Thrown -> throw failure.throwable
-}
+private fun <E> Fail<E>.surface(failure: Failure<E>): Nothing =
+    when (failure) {
+        is Raised -> fail(failure.error)
+        is Thrown -> throw failure.throwable
+    }
 
 /** What a fork interrupted by a combinator answers with, as against a failure the caller's work ran into. */
 
 /**
- * An interrupt landing on the closing thread must not leave a fork running, so the join is retried
- * and the flag handed back to the caller afterwards.
+ * An interrupt landing on the closing thread must not leave a fork running, so the join is retried and the flag handed
+ * back to the caller afterwards.
  */
 
 /** Waits for this thread to end whatever interrupts the caller, and passes on any interrupt once it has. */
 internal fun Thread.joinFully() {
     var interrupted = false
     while (isAlive) {
-        try { join() } catch (stop: InterruptedException) { interrupted = true }
+        try {
+            join()
+        } catch (stop: InterruptedException) {
+            interrupted = true
+        }
     }
     if (interrupted) Thread.currentThread().interrupt()
 }
@@ -131,8 +140,8 @@ private class Nest<E>(override val owner: Fail<E>, override val on: Executor) : 
     }
 
     /**
-     * Interrupt is the only cancellation the JDK has, so every fork gets one before any of them is joined;
-     * a fork whose turn on the executor has not come yet starts its body interrupted instead.
+     * Interrupt is the only cancellation the JDK has, so every fork gets one before any of them is joined; a fork whose
+     * turn on the executor has not come yet starts its body interrupted instead.
      */
     fun close() {
         // A hook that throws an Error still leaves no fork running: it is thrown once every one has ended.
@@ -149,30 +158,30 @@ private class Nest<E>(override val owner: Fail<E>, override val on: Executor) : 
     private fun runHooks() {
         var interrupted = false
         // Last registered first, and one registered while closing runs too: it is the last now.
-        generateSequence { hooks.removeLastOrNull() }.forEach { hook ->
-            try {
-                hook()
-            } catch (stop: InterruptedException) {
-                interrupted = true
-            } catch (thrown: Exception) {
-                logError("a close hook failed; the scope closes all the same", thrown)
+        generateSequence { hooks.removeLastOrNull() }
+            .forEach { hook ->
+                try {
+                    hook()
+                } catch (stop: InterruptedException) {
+                    interrupted = true
+                } catch (thrown: Exception) {
+                    logError("a close hook failed; the scope closes all the same", thrown)
+                }
             }
-        }
         if (interrupted) Thread.currentThread().interrupt()
     }
 }
 
 /**
- * The forks a combinator owns rather than the scope: it opens them, waits on the calling thread, and does
- * not return until every one has ended, so none of them is left for the scope to notice at close.
+ * The forks a combinator owns rather than the scope: it opens them, waits on the calling thread, and does not return
+ * until every one has ended, so none of them is left for the scope to notice at close.
  */
 internal class Flight<E>(private val owner: Fail<E>, private val on: Executor) {
 
     private val forks = mutableListOf<Fork<E, *>>()
 
     // The thread settling the forks, woken as each one ends; set before it first looks, so no end goes unseen.
-    @Volatile
-    private var settler: Thread? = null
+    @Volatile private var settler: Thread? = null
 
     fun <T> fork(block: Scope<E>.() -> T): Fork<E, T> =
         Fork(owner, on, block, { Waiting.unpark(settler) }).also { forks += it }
@@ -190,8 +199,8 @@ internal class Flight<E>(private val owner: Fail<E>, private val on: Executor) {
     }
 
     /**
-     * Waits for every fork to answer, or for the first of them to throw; a raise does not end a sibling here,
-     * so the errors come back in start order for the caller to answer with together.
+     * Waits for every fork to answer, or for the first of them to throw; a raise does not end a sibling here, so the
+     * errors come back in start order for the caller to answer with together.
      */
     fun settleEvery(): List<E> {
         settle { forks.none { fork -> fork.hasThrown() } }
@@ -248,13 +257,11 @@ internal class Fork<E, T>(
 
     private val state = AtomicReference<ForkState<E, T>>(ForkState.Unstarted(null))
 
-    @Volatile
-    private var noticed = false
+    @Volatile private var noticed = false
 
     // An interrupt sent to a fork that had not answered yet: what comes back is that interrupt rather than
     // anything the caller asked for, so a combinator drops it.
-    @Volatile
-    private var cutShort = false
+    @Volatile private var cutShort = false
 
     // Close interrupts a fork `cancel` already stopped, and by then it has answered: only the first interrupt says
     // whether the fork was cut short.
@@ -262,8 +269,7 @@ internal class Fork<E, T>(
 
     // A fork on the default executor has a thread of its own, which `join` waits out as well, so a scope
     // that has returned has left nothing alive. A borrowed thread outlives the fork and cannot be joined.
-    @Volatile
-    private var ownThread: Thread? = null
+    @Volatile private var ownThread: Thread? = null
 
     // Read on the opening thread rather than inside the task, which runs on a thread that bound none of it.
     private val inherited = Bindings.snapshot()
@@ -306,18 +312,19 @@ internal class Fork<E, T>(
 
     /**
      * Moves a [ForkState.Submitted] fork to [thread], which then runs the body: whether it did. Cancelled before its
-     * turn came, the body starts interrupted rather than running on as though its scope were still open. Only a
-     * thread the fork has to itself is [own], for `join` to wait out.
+     * turn came, the body starts interrupted rather than running on as though its scope were still open. Only a thread
+     * the fork has to itself is [own], for `join` to wait out.
      */
     private fun claim(thread: Thread, own: Boolean): Boolean {
         while (true) {
             val now = state.get() as? ForkState.Submitted ?: return false
             if (own) ownThread = thread
-            val claimed = if (now.cancelled) {
-                ForkState.Interrupted(thread, now.waiters)
-            } else {
-                ForkState.Running(thread, now.waiters)
-            }
+            val claimed =
+                if (now.cancelled) {
+                    ForkState.Interrupted(thread, now.waiters)
+                } else {
+                    ForkState.Running(thread, now.waiters)
+                }
             if (state.compareAndSet(now, claimed)) {
                 if (now.cancelled) thread.interrupt()
                 return true
@@ -330,8 +337,8 @@ internal class Fork<E, T>(
 
     /**
      * The body's own thread, and only it, moves a running fork to `Done`. Not while an interrupt is on its way: that
-     * interrupt would land on whatever the executor runs next. An interrupt that came is cleared once it is `Done`,
-     * and whether one had is answered.
+     * interrupt would land on whatever the executor runs next. An interrupt that came is cleared once it is `Done`, and
+     * whether one had is answered.
      */
     private fun finish(outcome: Outcome<E, T>): Boolean {
         while (true) {
@@ -361,12 +368,12 @@ internal class Fork<E, T>(
     }
 
     /**
-     * A fork still waiting its turn on the executor runs here, on the thread that awaits it, when that thread is
-     * itself one of the executor's (spec 0037): a bounded pool whose every thread awaits a fork still in its queue
-     * would otherwise wait for ever. The fork still runs on its executor, as it was asked to, and its ticket, when
-     * the executor comes to it, finds the fork claimed and does nothing. Virtual threads are never short, and give
-     * each fork a thread of its own, so a fork on them is never helped. A thread already interrupted waits instead,
-     * and an interrupt meant for this thread rather than for the fork is handed back once the body has ended.
+     * A fork still waiting its turn on the executor runs here, on the thread that awaits it, when that thread is itself
+     * one of the executor's (spec 0037): a bounded pool whose every thread awaits a fork still in its queue would
+     * otherwise wait for ever. The fork still runs on its executor, as it was asked to, and its ticket, when the
+     * executor comes to it, finds the fork claimed and does nothing. Virtual threads are never short, and give each
+     * fork a thread of its own, so a fork on them is never helped. A thread already interrupted waits instead, and an
+     * interrupt meant for this thread rather than for the fork is handed back once the body has ended.
      */
     private fun help() {
         val me = Thread.currentThread()
@@ -390,28 +397,33 @@ internal class Fork<E, T>(
         while (true) {
             val now = state.get()
             when (now) {
-                is ForkState.Done, is ForkState.Interrupting, is ForkState.Interrupted -> return
+                is ForkState.Done,
+                is ForkState.Interrupting,
+                is ForkState.Interrupted -> return
 
                 // Nothing is running to notice an interrupt, and nothing will end the fork, so it answers here as
                 // though it had been stopped at its first interruptible call.
-                is ForkState.Unstarted -> if (state.compareAndSet(now, ForkState.Done(beforeStart(), false))) {
-                    if (first) cutShort = true
-                    wake(now.waiters)
-                    return
-                }
+                is ForkState.Unstarted ->
+                    if (state.compareAndSet(now, ForkState.Done(beforeStart(), false))) {
+                        if (first) cutShort = true
+                        wake(now.waiters)
+                        return
+                    }
 
                 // Its turn on the executor has not come: its claim starts the body interrupted.
-                is ForkState.Submitted -> if (now.cancelled || state.compareAndSet(now, now.cancelledFirst())) {
-                    if (first) cutShort = true
-                    return
-                }
+                is ForkState.Submitted ->
+                    if (now.cancelled || state.compareAndSet(now, now.cancelledFirst())) {
+                        if (first) cutShort = true
+                        return
+                    }
 
-                is ForkState.Running -> if (state.compareAndSet(now, ForkState.Interrupting(now.thread, now.waiters))) {
-                    if (first) cutShort = true
-                    Waiting.interrupt(now.thread)
-                    sent()
-                    return
-                }
+                is ForkState.Running ->
+                    if (state.compareAndSet(now, ForkState.Interrupting(now.thread, now.waiters))) {
+                        if (first) cutShort = true
+                        Waiting.interrupt(now.thread)
+                        sent()
+                        return
+                    }
             }
         }
     }
@@ -425,8 +437,8 @@ internal class Fork<E, T>(
     }
 
     /**
-     * Waits for the fork to end, however often the waiting thread is interrupted meanwhile: an interrupt on the
-     * closing thread must not leave a fork running, so it is handed back to the caller afterwards.
+     * Waits for the fork to end, however often the waiting thread is interrupted meanwhile: an interrupt on the closing
+     * thread must not leave a fork running, so it is handed back to the caller afterwards.
      */
     fun join() {
         if (waitsOn()) parkUntilDone()
@@ -462,11 +474,12 @@ internal class Fork<E, T>(
     /** How many threads wait for the fork to end, for a test that says a select left none behind. */
     fun waiting(): Int = generateSequence(state.get().waiters) { it.next }.count()
 
-    private fun without(waiters: Waiter?, thread: Thread): Waiter? = when {
-        waiters == null -> null
-        waiters.thread === thread -> waiters.next
-        else -> Waiter(waiters.thread, without(waiters.next, thread))
-    }
+    private fun without(waiters: Waiter?, thread: Thread): Waiter? =
+        when {
+            waiters == null -> null
+            waiters.thread === thread -> waiters.next
+            else -> Waiter(waiters.thread, without(waiters.next, thread))
+        }
 
     private fun parkUntilDone() {
         var interrupted = false
@@ -498,25 +511,26 @@ internal class Fork<E, T>(
     fun ownThrow(): Thrown? = ownFailure() as? Thrown
 
     /** The error this fork raised of its own accord, for the combinator that accumulates rather than surfaces. */
-    fun raisedError(): E? = when (val failure = ownFailure()) {
-        is Raised -> failure.error
-        is Thrown -> null
-        null -> null
-    }
+    fun raisedError(): E? =
+        when (val failure = ownFailure()) {
+            is Raised -> failure.error
+            is Thrown -> null
+            null -> null
+        }
 
     /** The failure of a fork whose outcome nobody asked for; one that never ran has none to answer with. */
-    fun unnoticedFailure(): Failure<E>? = when (val now = state.get()) {
-        is ForkState.Unstarted -> null
-        is ForkState.Done -> if (now.started) now.outcome.takeUnless { noticed } as? Failure<E> else null
-        else -> settled().takeUnless { noticed } as? Failure<E>
-    }
+    fun unnoticedFailure(): Failure<E>? =
+        when (val now = state.get()) {
+            is ForkState.Unstarted -> null
+            is ForkState.Done -> if (now.started) now.outcome.takeUnless { noticed } as? Failure<E> else null
+            else -> settled().takeUnless { noticed } as? Failure<E>
+        }
 
     private fun outcome(): Outcome<E, T>? = (state.get() as? ForkState.Done)?.outcome
 
     private fun settled(): Outcome<E, T> = checkNotNull(outcome()) { "a joined fork always has an outcome" }
 
-    private fun wake(waiters: Waiter?) =
-        generateSequence(waiters) { it.next }.forEach { Waiting.unpark(it.thread) }
+    private fun wake(waiters: Waiter?) = generateSequence(waiters) { it.next }.forEach { Waiting.unpark(it.thread) }
 
     private fun beforeStart() = Thrown(InterruptedException("cancelled before it was started"))
 }
@@ -560,7 +574,8 @@ private sealed interface ForkState<out E, out T> {
 
     /** Ended, with [outcome]; [started] is false for a lazy fork cancelled before anyone asked for it. */
     class Done<E, T>(val outcome: Outcome<E, T>, val started: Boolean) : ForkState<E, T> {
-        override val waiters: Waiter? get() = null
+        override val waiters: Waiter?
+            get() = null
 
         override fun waitedBy(waiters: Waiter?) = this
     }

@@ -1,17 +1,17 @@
 package dev.surefold.app.gradle
 
+import java.util.Properties
 import org.gradle.api.Project
 import org.gradle.api.provider.Provider
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilation
 import org.jetbrains.kotlin.gradle.plugin.KotlinCompilerPluginSupportPlugin
 import org.jetbrains.kotlin.gradle.plugin.SubpluginArtifact
 import org.jetbrains.kotlin.gradle.plugin.SubpluginOption
-import java.util.Properties
 
 /**
- * `dev.surefold.compiler`: surefold-compiler's checkers in every Kotlin compilation (spec 0041),
- * so a `Deferred` that outlives its scope fails to compile. A plugin of its own, apart from the wiring plugin, so a
- * service without surefold-app takes it alone; it lives in this jar beside that one, which already publishes plugins.
+ * `dev.surefold.compiler`: surefold-compiler's checkers in every Kotlin compilation (spec 0041), so a `Deferred` that
+ * outlives its scope fails to compile. A plugin of its own, apart from the wiring plugin, so a service without
+ * surefold-app takes it alone; it lives in this jar beside that one, which already publishes plugins.
  */
 class SurefoldForksPlugin : KotlinCompilerPluginSupportPlugin {
 
@@ -33,8 +33,7 @@ class SurefoldForksPlugin : KotlinCompilerPluginSupportPlugin {
         /** Written into this jar by its own build, so the coordinates cannot drift from the release. */
         private val coordinates: Properties by lazy {
             Properties().apply {
-                SurefoldForksPlugin::class.java.getResourceAsStream("/checker.properties")
-                    ?.use { load(it) }
+                SurefoldForksPlugin::class.java.getResourceAsStream("/checker.properties")?.use { load(it) }
                     ?: error("surefold-app-gradle was built without checker.properties; see its build script")
             }
         }

@@ -6,8 +6,8 @@ import java.util.Arrays
 import java.util.Objects
 
 /**
- * Bytes nobody can change (spec 0249). Every way in and every way out copies; only [slice] shares the array, which
- * is safe because nothing can write to it once it is inside.
+ * Bytes nobody can change (spec 0249). Every way in and every way out copies; only [slice] shares the array, which is
+ * safe because nothing can write to it once it is inside.
  */
 class ByteChunk private constructor(private val array: ByteArray, private val offset: Int, val size: Int) {
 
@@ -20,18 +20,19 @@ class ByteChunk private constructor(private val array: ByteArray, private val of
         return ByteChunk(array, offset + from, until - from)
     }
 
-    operator fun plus(other: ByteChunk): ByteChunk = when {
-        other.isEmpty() -> this
+    operator fun plus(other: ByteChunk): ByteChunk =
+        when {
+            other.isEmpty() -> this
 
-        isEmpty() -> other
+            isEmpty() -> other
 
-        else -> {
-            val joined = ByteArray(size + other.size)
-            array.copyInto(joined, 0, offset, offset + size)
-            other.array.copyInto(joined, size, other.offset, other.offset + other.size)
-            ByteChunk(joined, 0, joined.size)
+            else -> {
+                val joined = ByteArray(size + other.size)
+                array.copyInto(joined, 0, offset, offset + size)
+                other.array.copyInto(joined, size, other.offset, other.offset + other.size)
+                ByteChunk(joined, 0, joined.size)
+            }
         }
-    }
 
     fun toByteArray(): ByteArray = array.copyOfRange(offset, offset + size)
 

@@ -42,9 +42,9 @@ internal class Gave {
 /**
  * The file being checked, and the last reference in it that a read passed through.
  *
- * A diagnostic is reported into one file, so a source element from another lands at that offset in
- * this one — which is how a fault in `Arrivals.kt` came out underlined in an import. A read that
- * leaves the file keeps the reference that took it there and anchors everything it finds on that.
+ * A diagnostic is reported into one file, so a source element from another lands at that offset in this one — which is
+ * how a fault in `Arrivals.kt` came out underlined in an import. A read that leaves the file keeps the reference that
+ * took it there and anchors everything it finds on that.
  */
 internal class Here(
     private val session: FirSession,
@@ -59,16 +59,18 @@ internal class Here(
     fun inside(symbol: FirCallableSymbol<*>): Here = if (pathOf(symbol) == path) Here(session, path) else this
 
     /** What was read beyond this file, reported where this file mentions it. */
-    fun anchor(graph: Graph): Graph = when (at) {
-        null -> graph
+    fun anchor(graph: Graph): Graph =
+        when (at) {
+            null -> graph
 
-        else -> Graph(
-            graph.provides.mapValues { at },
-            graph.needs.map { Need(it.key, it.by, at) },
-            graph.shadows.map { Shadow(it.key, at, at) },
-            graph.alternatives,
-        )
-    }
+            else ->
+                Graph(
+                    graph.provides.mapValues { at },
+                    graph.needs.map { Need(it.key, it.by, at) },
+                    graph.shadows.map { Shadow(it.key, at, at) },
+                    graph.alternatives,
+                )
+        }
 
     private fun pathOf(symbol: FirCallableSymbol<*>): String? =
         session.firProvider.getFirCallableContainerFile(symbol)?.sourceFile?.path
@@ -87,9 +89,9 @@ internal class Shadow(val key: String, val shadowed: KtSourceElement?, val wins:
 /**
  * What an expression builds: each key and the call that built it, and what those recipes ask for.
  *
- * [alternatives] are the keys a choice merged. Every branch of an `if` is read into one graph,
- * because a key is missing only where all of them miss it — but only one branch is ever assembled,
- * so a key two branches provide is one recipe and not a collision.
+ * [alternatives] are the keys a choice merged. Every branch of an `if` is read into one graph, because a key is missing
+ * only where all of them miss it — but only one branch is ever assembled, so a key two branches provide is one recipe
+ * and not a collision.
  */
 internal class Graph(
     val provides: Map<String, KtSourceElement?>,
@@ -99,42 +101,44 @@ internal class Graph(
 ) {
 
     // A key provided twice keeps the later site, which is the one `Module.plus` keeps the node of.
-    operator fun plus(other: Graph): Graph = Graph(
-        provides + other.provides,
-        needs + other.needs,
-        // Kept rather than discarded, as `Module.plus` keeps them: a merge cannot tell a deliberate
-        // override from a typo, and only `overriding` knows which it was.
-        shadows + other.shadows + collisions(other),
-        alternatives + other.alternatives,
-    )
+    operator fun plus(other: Graph): Graph =
+        Graph(
+            provides + other.provides,
+            needs + other.needs,
+            // Kept rather than discarded, as `Module.plus` keeps them: a merge cannot tell a deliberate
+            // override from a typo, and only `overriding` knows which it was.
+            shadows + other.shadows + collisions(other),
+            alternatives + other.alternatives,
+        )
 
     /** [plus] with this merge's own collisions forgiven, which is what `Module.shadowing` does. */
     fun overriding(other: Graph): Graph =
         Graph(provides + other.provides, needs + other.needs, shadows + other.shadows, alternatives)
 
     /** One branch of a choice merged with the others: the keys they share are the same recipe. */
-    fun or(other: Graph): Graph = Graph(
-        provides + other.provides,
-        needs + other.needs,
-        shadows + other.shadows,
-        alternatives + other.alternatives + provides.keys.intersect(other.provides.keys),
-    )
+    fun or(other: Graph): Graph =
+        Graph(
+            provides + other.provides,
+            needs + other.needs,
+            shadows + other.shadows,
+            alternatives + other.alternatives + provides.keys.intersect(other.provides.keys),
+        )
 
     private fun collisions(other: Graph): List<Shadow> =
         other.provides.keys.filter { it in provides }.map { Shadow(it, provides[it], other.provides[it]) }
 
     /** The keys this and [other] would collide on where one of them came out of a choice. */
     fun ambiguous(other: Graph): String? =
-        provides.keys.intersect(other.provides.keys)
-            .firstOrNull { it in alternatives || it in other.alternatives }
+        provides.keys.intersect(other.provides.keys).firstOrNull { it in alternatives || it in other.alternatives }
 
     /** The same graph under one key instead of the one it had, which is what `boundTo` does. */
-    fun keyedAs(key: String): Graph = Graph(
-        mapOf(key to provides.values.singleOrNull()),
-        needs.map { Need(it.key, key, it.at) },
-        shadows,
-        if (alternatives.isEmpty()) emptySet() else setOf(key),
-    )
+    fun keyedAs(key: String): Graph =
+        Graph(
+            mapOf(key to provides.values.singleOrNull()),
+            needs.map { Need(it.key, key, it.at) },
+            shadows,
+            if (alternatives.isEmpty()) emptySet() else setOf(key),
+        )
 
     /** What nothing here builds. A key is missing only where every branch of a choice misses it. */
     fun missing(): List<Need> = needs.filterNot { it.key in provides || it.key in RUNTIME_PROVIDED }
@@ -142,9 +146,8 @@ internal class Graph(
     /**
      * The nodes [root] does not reach, each the top of what it took with it.
      *
-     * `Findings.forgotten` names the same set for the same graph at runtime, subtree tops included:
-     * a module left out takes everything under it, and naming all of them is one edit reported as
-     * nine.
+     * `Findings.forgotten` names the same set for the same graph at runtime, subtree tops included: a module left out
+     * takes everything under it, and naming all of them is one edit reported as nine.
      */
     fun unreached(root: String): List<String> {
         val edges = needs.groupBy({ it.by }, { it.key })
@@ -155,9 +158,9 @@ internal class Graph(
     /**
      * One ring among the keys this builds, or null where there is none to be sure of.
      *
-     * Kahn's algorithm, as `Plan.kt` runs it, over the same edges and taking the same first key: a
-     * ring reported here and a ring reported there are the same list in the same order. A ring
-     * through a key a choice merged is one the union may have closed itself, and is not reported.
+     * Kahn's algorithm, as `Plan.kt` runs it, over the same edges and taking the same first key: a ring reported here
+     * and a ring reported there are the same list in the same order. A ring through a key a choice merged is one the
+     * union may have closed itself, and is not reported.
      */
     fun cycle(): List<String>? {
         val edges = needs.groupBy({ it.by }, { it.key })
@@ -196,9 +199,9 @@ private tailrec fun reached(edges: Map<String, List<String>>, found: Set<String>
 /**
  * The graph an expression builds, or null where it cannot be read.
  *
- * Null is the whole design. A reader that guessed would put a red line under working code, and a
- * reader that gives up costs nothing, because `surefoldWiring` still runs the graph and fails the build.
- * So every shape not listed here abandons the application rather than assuming it provides nothing.
+ * Null is the whole design. A reader that guessed would put a red line under working code, and a reader that gives up
+ * costs nothing, because `surefoldWiring` still runs the graph and fails the build. So every shape not listed here
+ * abandons the application rather than assuming it provides nothing.
  */
 internal fun read(
     expression: FirExpression,
@@ -214,11 +217,10 @@ internal fun read(
         // `if` is a `when` in FIR. A branch that cannot be read makes the choice unreadable, since
         // the key it would have provided is exactly what decides whether another is missing.
         is FirWhenExpression ->
-            expression.branches
-                .fold(Graph.nothing as Graph?) { all, branch ->
-                    val result = branch.result.singleExpression() ?: return gave.up("a branch of several statements")
-                    all?.let { read(result, gave, here, seen)?.or(it) }
-                }
+            expression.branches.fold(Graph.nothing as Graph?) { all, branch ->
+                val result = branch.result.singleExpression() ?: return gave.up("a branch of several statements")
+                all?.let { read(result, gave, here, seen)?.or(it) }
+            }
 
         // `single { ... } as Module` and its like: the cast says nothing the operand did not.
         is FirTypeOperatorCall -> expression.arguments.singleOrNull()?.let { read(it, gave, here, seen) }
@@ -235,11 +237,12 @@ private fun through(symbol: FirCallableSymbol<*>?, gave: Gave, here: Here, seen:
     if (symbol == null) return gave.up("a reference that did not resolve")
     if (symbol in seen) return gave.up("${symbol.callableId}, which refers to itself")
     symbol.lazyResolveToPhase(FirResolvePhase.BODY_RESOLVE)
-    val written = when (symbol) {
-        is FirPropertySymbol -> symbol.fir.initializer
-        is FirNamedFunctionSymbol -> symbol.fir.body?.singleExpression()
-        else -> null
-    } ?: return gave.up("${symbol.callableId}, which has no source here")
+    val written =
+        when (symbol) {
+            is FirPropertySymbol -> symbol.fir.initializer
+            is FirNamedFunctionSymbol -> symbol.fir.body?.singleExpression()
+            else -> null
+        } ?: return gave.up("${symbol.callableId}, which has no source here")
     // The place the reading moves to, which is also the place its findings are reported: within the
     // file being checked there is no anchor and every recipe keeps its own line; beyond it, the
     // reference that led here is the only source this file can be told about.
@@ -254,16 +257,17 @@ private fun FirBlock.singleExpression(): FirExpression? =
 /**
  * A call, which is either a factory that builds a node or a combinator over modules already read.
  *
- * Split that way because only the second kind needs the expressions around it: a factory is decided
- * by its name and its type arguments alone.
+ * Split that way because only the second kind needs the expressions around it: a factory is decided by its name and its
+ * type arguments alone.
  */
 private fun call(call: FirFunctionCall, gave: Gave, here: Here, seen: Set<FirCallableSymbol<*>>): Graph? {
-    val called = call.calleeReference.toResolvedCallableSymbol()?.callableId
-        ?: return gave.up("a call that did not resolve")
-    val arguments = call.typeArguments.map { projection ->
-        (projection as? FirTypeProjectionWithVariance)?.typeRef?.coneType?.let(::keyOf)
-            ?: return gave.up("a type argument of $called")
-    }
+    val called =
+        call.calleeReference.toResolvedCallableSymbol()?.callableId ?: return gave.up("a call that did not resolve")
+    val arguments =
+        call.typeArguments.map { projection ->
+            (projection as? FirTypeProjectionWithVariance)?.typeRef?.coneType?.let(::keyOf)
+                ?: return gave.up("a type argument of $called")
+        }
 
     return factory(called, arguments, call.source)
         ?: combinator(call, called, arguments, gave, here, seen)
@@ -278,9 +282,10 @@ private fun factory(called: CallableId, arguments: List<String>, at: KtSourceEle
         called == SINGLE || called == SINGLE_OF || called == CLOSING_OF -> key?.let { node(it, rest, at) }
 
         // choice<S, P>: a node providing P that needs S; which branch is built is a start's business (spec 0136).
-        called == CHOICE -> rest.singleOrNull()?.let { provided ->
-            key?.let { setting -> node(provided, listOf(setting), at) }
-        }
+        called == CHOICE ->
+            rest.singleOrNull()?.let { provided ->
+                key?.let { setting -> node(provided, listOf(setting), at) }
+            }
 
         called in CONFIGS -> key?.let { node(it, listOf(TYPESAFE_CONFIG), at) }
 
@@ -333,12 +338,11 @@ private fun combinator(
 /**
  * Two modules merged, unless one of them came out of a choice.
  *
- * A key provided both inside a choice and outside one collides in some assemblies and not in
- * others, and the reader cannot say which it is looking at. Neither answer is worth a warning.
+ * A key provided both inside a choice and outside one collides in some assemblies and not in others, and the reader
+ * cannot say which it is looking at. Neither answer is worth a warning.
  */
 private fun merged(base: Graph, other: Graph, gave: Gave): Graph? =
-    base.ambiguous(other)
-        ?.let { gave.up<Graph>("$it, provided both inside a choice and outside one") }
+    base.ambiguous(other)?.let { gave.up<Graph>("$it, provided both inside a choice and outside one") }
         ?: (base + other)
 
 private fun node(key: String, dependencies: List<String>, at: KtSourceElement?): Graph =
@@ -365,11 +369,12 @@ private val ACTORS = extension("actor", "actors")
 private val SUREFOLD_ACTOR = extension("actor", "actor")
 
 /** Every `config`, the block form and the class form alike: each is a node built from a `Config`. */
-private val CONFIGS = setOf(
-    extension("typesafe", "config"),
-    extension("typesafe", "configured"),
-    extension("kotlinx", "config"),
-)
+private val CONFIGS =
+    setOf(
+        extension("typesafe", "config"),
+        extension("typesafe", "configured"),
+        extension("kotlinx", "config"),
+    )
 
 private val OVERRIDING_CONFIG = extension("typesafe", "overridingConfig")
 private val MIGRATIONS = extension("liquibase", "migrations")
@@ -381,16 +386,17 @@ private val JOB_WORKER = extension("jobs", "jobWorker")
 /**
  * The factories surefold ships whose bodies are not in the source being compiled.
  *
- * A library function is a symbol with no initialiser to read, so the reader would give up on a graph
- * for using one — and every graph that reads configuration at all starts with one of these. They are
- * listed rather than read because what each builds is part of surefold's own API.
+ * A library function is a symbol with no initialiser to read, so the reader would give up on a graph for using one —
+ * and every graph that reads configuration at all starts with one of these. They are listed rather than read because
+ * what each builds is part of surefold's own API.
  */
-private val SOURCES = setOf(
-    extension("typesafe", "loadedConfig"),
-    extension("typesafe", "configOf"),
-    extension("typesafe", "configFromResource"),
-    extension("typesafe", "configFromFile"),
-)
+private val SOURCES =
+    setOf(
+        extension("typesafe", "loadedConfig"),
+        extension("typesafe", "configOf"),
+        extension("typesafe", "configFromResource"),
+        extension("typesafe", "configFromFile"),
+    )
 
 /** What a started graph hands its nodes without any module providing it; `surefold-app` says the same. */
 private val RUNTIME_PROVIDED = setOf("$APP.HealthRegistry")

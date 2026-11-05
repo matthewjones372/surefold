@@ -21,17 +21,18 @@ object OpenedSuite : Suite() {
         val release = CountDownLatch(1)
         val closed = AtomicBoolean(false)
 
-        fun node() = Node.Blocking(
-            open = { this },
-            next = {
-                reading.countDown()
-                release.await()
-                null
-            },
-            wake = { },
-            close = { closed.set(true) },
-            at = "OpenedTest",
-        )
+        fun node() =
+            Node.Blocking(
+                open = { this },
+                next = {
+                    reading.countDown()
+                    release.await()
+                    null
+                },
+                wake = {},
+                close = { closed.set(true) },
+                at = "OpenedTest",
+            )
     }
 
     init {

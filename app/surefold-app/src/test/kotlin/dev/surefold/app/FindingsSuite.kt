@@ -11,8 +11,11 @@ import dev.surefold.junit.withClue
 import kotlin.reflect.typeOf
 
 private class Kettle
+
 private class Cup
+
 private class Saucer
+
 private class Teapot
 
 object FindingsSuite : Suite() {
@@ -49,9 +52,7 @@ object FindingsSuite : Suite() {
         }
 
         test("a node no root reaches is a warning") {
-            val module = single<Kettle> { Kettle() } +
-                single { _: Kettle -> Cup() } +
-                single<Saucer> { Saucer() }
+            val module = single<Kettle> { Kettle() } + single { _: Kettle -> Cup() } + single<Saucer> { Saucer() }
 
             val finding = module.findings(root = typeOf<Cup>()).single()
 
@@ -63,15 +64,18 @@ object FindingsSuite : Suite() {
         }
 
         test("an unreachable module is named once rather than under everything it reaches") {
-            val module = single<Kettle> { Kettle() } +
-                single { _: Kettle -> Cup() } +
-                single<Saucer> { Saucer() } +
-                single { _: Saucer -> Teapot() }
+            val module =
+                single<Kettle> { Kettle() } +
+                    single { _: Kettle -> Cup() } +
+                    single<Saucer> { Saucer() } +
+                    single { _: Saucer -> Teapot() }
 
-            val unreached = module.findings(root = typeOf<Cup>())
-                .map { it.error }
-                .filterIsInstance<WiringError.Unreachable>()
-                .map { it.key }
+            val unreached =
+                module
+                    .findings(root = typeOf<Cup>())
+                    .map { it.error }
+                    .filterIsInstance<WiringError.Unreachable>()
+                    .map { it.key }
 
             withClue("Saucer is what the graph forgot; Teapot is only unreached because Saucer is") {
                 unreached shouldContainExactly listOf(typeOf<Teapot>())

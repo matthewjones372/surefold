@@ -32,8 +32,14 @@ object TestStreamsSuite : Suite() {
         test("a run with no time in it is over when run returns, having run one stage at a time") {
             val threads = ConcurrentLinkedQueue<Thread>()
 
-            val exit = Stream.of(1, 2, 3).map { threads += Thread.currentThread(); it * 2 }.runCollect()
-                .run(TestStreams())
+            val exit =
+                Stream.of(1, 2, 3)
+                    .map {
+                        threads += Thread.currentThread()
+                        it * 2
+                    }
+                    .runCollect()
+                    .run(TestStreams())
 
             exit.toCompletableFuture().isDone shouldBe true
             exit.toCompletableFuture().join() shouldBe Exit.Done(listOf(2, 4, 6))
@@ -41,8 +47,8 @@ object TestStreamsSuite : Suite() {
         }
 
         test("a declared failure ends the run Failed, as on any backend") {
-            val exit = Stream.of(1, 2, 3).mapOrFail { if (it == 2) fail(Odd(it)) else it }.runCollect()
-                .run(TestStreams())
+            val exit =
+                Stream.of(1, 2, 3).mapOrFail { if (it == 2) fail(Odd(it)) else it }.runCollect().run(TestStreams())
 
             exit.toCompletableFuture().join() shouldBe Exit.Failed(Odd(2))
         }
@@ -60,7 +66,11 @@ object TestStreamsSuite : Suite() {
 
         test("merge on a test's clock answers in the same order every time, the first stream then the other") {
             (1..20).forAll { _ ->
-                Stream.of(1, 2).merge(Stream.of(3)).runCollect().run(TestStreams()).toCompletableFuture()
+                Stream.of(1, 2)
+                    .merge(Stream.of(3))
+                    .runCollect()
+                    .run(TestStreams())
+                    .toCompletableFuture()
                     .join() shouldBe Exit.Done(listOf(1, 2, 3))
             }
         }
@@ -69,13 +79,15 @@ object TestStreamsSuite : Suite() {
             val inFlight = java.util.concurrent.atomic.AtomicInteger()
             val most = java.util.concurrent.atomic.AtomicInteger()
 
-            val running = Stream.from(1..5)
-                .mapPar<Odd, Int, Int>(4) { n ->
-                    most.accumulateAndGet(inFlight.incrementAndGet(), ::maxOf)
-                    inFlight.decrementAndGet()
-                    if (n == 4) fail(Odd(n)) else n * 10
-                }
-                .runCollect().start(TestStreams())
+            val running =
+                Stream.from(1..5)
+                    .mapPar<Odd, Int, Int>(4) { n ->
+                        most.accumulateAndGet(inFlight.incrementAndGet(), ::maxOf)
+                        inFlight.decrementAndGet()
+                        if (n == 4) fail(Odd(n)) else n * 10
+                    }
+                    .runCollect()
+                    .start(TestStreams())
 
             running.done shouldBe Exit.Failed(Odd(4))
             running.emitted() shouldBe listOf(10, 20, 30)
@@ -99,8 +111,12 @@ object TestStreamsSuite : Suite() {
 
         test("each move of the clock returns with what fell due by then, and a take ends the run") {
             val clock = TestClock()
-            val running = Stream.tick(10.seconds, 1, after = 5.seconds).scan(0) { total, n -> total + n }.take(4)
-                .runCollect().start(TestStreams(clock))
+            val running =
+                Stream.tick(10.seconds, 1, after = 5.seconds)
+                    .scan(0) { total, n -> total + n }
+                    .take(4)
+                    .runCollect()
+                    .start(TestStreams(clock))
 
             running.emitted() shouldBe listOf(0)
             clock.adjust(4.seconds)
@@ -114,22 +130,29 @@ object TestStreamsSuite : Suite() {
 
         test("a stage body reads the test's clock as surefold's clock") {
             val clock = TestClock(Instant.parse("2026-09-25T12:00:00Z"))
-            val running = Stream.tick(1.minutes, Unit)
-                .map { dev.surefold.clock.get().now() }
-                .take(2)
-                .runCollect().start(TestStreams(clock))
+            val running =
+                Stream.tick(1.minutes, Unit)
+                    .map { dev.surefold.clock.get().now() }
+                    .take(2)
+                    .runCollect()
+                    .start(TestStreams(clock))
 
             clock.adjust(2.minutes)
 
-            running.done shouldBe Exit.Done(
-                listOf(Instant.parse("2026-09-25T12:01:00Z"), Instant.parse("2026-09-25T12:02:00Z")),
-            )
+            running.done shouldBe
+                Exit.Done(
+                    listOf(Instant.parse("2026-09-25T12:01:00Z"), Instant.parse("2026-09-25T12:02:00Z")),
+                )
         }
 
         test("groupedWithin closes a window when its time is up, and a full group starts the next") {
             val clock = TestClock()
-            val running = Stream.tick(2.seconds, 1).groupedWithin(3, 5.seconds).map { it.size }
-                .runCollect().start(TestStreams(clock))
+            val running =
+                Stream.tick(2.seconds, 1)
+                    .groupedWithin(3, 5.seconds)
+                    .map { it.size }
+                    .runCollect()
+                    .start(TestStreams(clock))
 
             clock.adjust(5.seconds)
             withClue("the window closing at 5s held the ticks at 2s and 4s") {
@@ -150,13 +173,12 @@ object TestStreamsSuite : Suite() {
 
         test("groupedWithin emits what a window held when it closes before the group is full") {
             val clock = TestClock()
-            val running = Stream.tick(2.seconds, 1).take(3).groupedWithin(10, 5.seconds)
-                .runCollect().start(TestStreams(clock))
+            val running =
+                Stream.tick(2.seconds, 1).take(3).groupedWithin(10, 5.seconds).runCollect().start(TestStreams(clock))
 
             clock.adjust(5.seconds)
             withClue("the ticks at 2s and 4s, when the window closes at 5s") {
-                running.emitted() shouldBe
-                    listOf(listOf(1, 1))
+                running.emitted() shouldBe listOf(listOf(1, 1))
             }
             clock.adjust(1.seconds)
             withClue("the tick at 6s is the last, and the end emits what the next window held") {
@@ -168,16 +190,17 @@ object TestStreamsSuite : Suite() {
             val clock = TestClock()
             val lines = ConcurrentLinkedQueue<LogLine>()
             val attempts = ConcurrentLinkedQueue<Int>()
-            val flaky = logger.locally(Logger { lines += it }) {
-                Stream.of(1, 2)
-                    .map { n ->
-                        attempts += n
-                        check(!(n == 2 && attempts.size < 6)) { "not yet" }
-                        n
-                    }
-                    .restartOnDefect(Schedule.spaced(30.seconds))
-                    .runCollect()
-            }
+            val flaky =
+                logger.locally(Logger { lines += it }) {
+                    Stream.of(1, 2)
+                        .map { n ->
+                            attempts += n
+                            check(!(n == 2 && attempts.size < 6)) { "not yet" }
+                            n
+                        }
+                        .restartOnDefect(Schedule.spaced(30.seconds))
+                        .runCollect()
+                }
 
             val running = flaky.start(TestStreams(clock))
 
@@ -188,10 +211,11 @@ object TestStreamsSuite : Suite() {
             running.emitted() shouldBe listOf(1, 1)
             clock.adjust(30.seconds)
             running.done shouldBe Exit.Done(listOf(1, 1, 1, 2))
-            lines.map { it.level to it.at } shouldBe listOf(
-                LogLevel.Warn to Instant.EPOCH,
-                LogLevel.Warn to Instant.EPOCH.plusSeconds(30),
-            )
+            lines.map { it.level to it.at } shouldBe
+                listOf(
+                    LogLevel.Warn to Instant.EPOCH,
+                    LogLevel.Warn to Instant.EPOCH.plusSeconds(30),
+                )
             lines.map { it.origin }.distinct() shouldBe listOf("dev.surefold.stream.TimedKt")
         }
 

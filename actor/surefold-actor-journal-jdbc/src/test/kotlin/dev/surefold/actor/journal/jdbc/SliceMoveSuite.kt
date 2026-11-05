@@ -32,10 +32,11 @@ private class ThreeDatabases {
     val primary = databases.first().second
 
     // A journal made on two databases, before spec 0105: the table is written from them. db-2 joins later.
-    fun journal(refreshEvery: Duration = 1.seconds) = ShardedJournal(
-        databases.map { (name, source) -> name to JdbcJournal(source) },
-        JdbcSliceTable(primary, listOf("db-0", "db-1"), refreshEvery),
-    )
+    fun journal(refreshEvery: Duration = 1.seconds) =
+        ShardedJournal(
+            databases.map { (name, source) -> name to JdbcJournal(source) },
+            JdbcSliceTable(primary, listOf("db-0", "db-1"), refreshEvery),
+        )
 }
 
 /** Spec 0105 on Postgres: a range of slices moved from one database to another while appends go on. */
@@ -58,22 +59,24 @@ object SliceMoveSuite : Suite() {
                 val appended = ConcurrentHashMap<PersistenceId, Long>()
                 val refusedElsewhere = AtomicInteger()
                 val stop = AtomicBoolean()
-                val writers = (0 until 8).map { w ->
-                    Thread.ofPlatform().start {
-                        val mine = ids.filterIndexed { i, _ -> i % 8 == w }
-                        while (!stop.get()) {
-                            mine.forEach { id ->
-                                val last = appended[id] ?: 0
-                                try {
-                                    journal.append(id, last, listOf("${last + 1}".toByteArray()))
-                                        .onRight { appended[id] = it }
-                                } catch (unavailable: JournalUnavailable) {
-                                    if (Slices.of(id) !in moving) refusedElsewhere.incrementAndGet()
+                val writers =
+                    (0 until 8).map { w ->
+                        Thread.ofPlatform().start {
+                            val mine = ids.filterIndexed { i, _ -> i % 8 == w }
+                            while (!stop.get()) {
+                                mine.forEach { id ->
+                                    val last = appended[id] ?: 0
+                                    try {
+                                        journal.append(id, last, listOf("${last + 1}".toByteArray())).onRight {
+                                            appended[id] = it
+                                        }
+                                    } catch (unavailable: JournalUnavailable) {
+                                        if (Slices.of(id) !in moving) refusedElsewhere.incrementAndGet()
+                                    }
                                 }
                             }
                         }
                     }
-                }
                 // Every id has events before the move, however long a round trip to the database takes.
                 eventually(30.seconds, every = 50.milliseconds) { appended.size shouldBe ids.size }
                 val move = SliceMover(databases).move(moving, "db-2")
@@ -109,8 +112,7 @@ object SliceMoveSuite : Suite() {
                     JdbcJournal(databases[0].second).append(id, 1, listOf("2".toByteArray()))
                 }
                 stale.append(id, 1, listOf("2".toByteArray())).isRight() shouldBe true
-                JdbcJournal(databases[2].second).read(id).map { it.sequence } shouldContainExactly
-                    listOf(1L, 2L)
+                JdbcJournal(databases[2].second).read(id).map { it.sequence } shouldContainExactly listOf(1L, 2L)
             }
         }
 
@@ -127,12 +129,12 @@ object SliceMoveSuite : Suite() {
                 moved.forAll { id -> JdbcSnapshots(databases[2].second).latest(id)?.sequence shouldBe 1 }
 
                 offsets.save(ShardedJournal.progress("totals", "db-0"), move.copiedTo - 1)
-                SliceMover(databases).cleanUp(offsets, listOf("totals"), after = Duration.ZERO)
-                    .shouldBeEmpty()
+                SliceMover(databases).cleanUp(offsets, listOf("totals"), after = Duration.ZERO).shouldBeEmpty()
                 source.read(moved.first()).size shouldBe 1
 
                 offsets.save(ShardedJournal.progress("totals", "db-0"), move.copiedTo)
-                SliceMover(databases).cleanUp(offsets, listOf("totals"), after = Duration.ZERO)
+                SliceMover(databases)
+                    .cleanUp(offsets, listOf("totals"), after = Duration.ZERO)
                     .shouldContainExactly(listOf(move))
                 moved.forAll { id ->
                     source.read(id).shouldBeEmpty()

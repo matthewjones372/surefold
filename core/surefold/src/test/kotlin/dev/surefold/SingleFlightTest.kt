@@ -3,8 +3,8 @@ package dev.surefold
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldThrow
 import dev.surefold.fail.Either
-import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicInteger
+import org.junit.jupiter.api.Test
 
 private const val CALLERS = 20
 
@@ -19,22 +19,25 @@ class SingleFlightTest {
         val flights = SingleFlight<String, String, Int>()
         val runs = AtomicInteger()
         val release = Promise<Nothing, Unit>()
-        val answers = parZip(
-            {
-                parMap(1..CALLERS) {
-                    flights.run("k") {
-                        runs.incrementAndGet()
-                        release.awaitValue()
-                        Either.Right(7)
+        val answers =
+            parZip(
+                {
+                    parMap(1..CALLERS) {
+                        flights.run("k") {
+                            runs.incrementAndGet()
+                            release.awaitValue()
+                            Either.Right(7)
+                        }
                     }
-                }
-            },
-            {
-                // Every caller is parked on the one flight, so none can arrive after it ends and start another.
-                while (flights.waiting("k") < CALLERS) Thread.onSpinWait()
-                release.succeed(Unit)
-            },
-        ) { all, _ -> all }
+                },
+                {
+                    // Every caller is parked on the one flight, so none can arrive after it ends and start another.
+                    while (flights.waiting("k") < CALLERS) Thread.onSpinWait()
+                    release.succeed(Unit)
+                },
+            ) { all, _ ->
+                all
+            }
         answers.toSet() shouldBe setOf(Either.Right(7))
         runs.get() shouldBe 1
     }
@@ -58,7 +61,8 @@ class SingleFlightTest {
                     started.awaitValue()
                     flights.cancelAll()
                 },
-            ) { _, _ -> }
+            ) { _, _ ->
+            }
         }
     }
 
@@ -66,13 +70,17 @@ class SingleFlightTest {
     fun `a waiter that stops waiting does not stop the block for the others`() {
         val flights = SingleFlight<String, String, Int>()
         val release = Promise<Nothing, Unit>()
-        val first = Thread.ofVirtual().start {
-            try {
-                flights.run("k") { release.awaitValue(); Either.Right(1) }
-            } catch (_: InterruptedException) {
-                // This caller gave up; the block is the others' still.
+        val first =
+            Thread.ofVirtual().start {
+                try {
+                    flights.run("k") {
+                        release.awaitValue()
+                        Either.Right(1)
+                    }
+                } catch (_: InterruptedException) {
+                    // This caller gave up; the block is the others' still.
+                }
             }
-        }
         while (flights.inFlight() == 0) Thread.onSpinWait()
         first.interrupt()
         first.join()

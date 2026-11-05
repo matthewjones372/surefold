@@ -22,8 +22,8 @@ sealed class Health {
 internal val runtimeProvided: Set<KType> = setOf(typeOf<HealthRegistry>())
 
 /**
- * The probes of a running graph, asked again whenever something wants to know. A node takes one as a
- * dependency like any other, which is how a route answers `/ready` without being handed the graph.
+ * The probes of a running graph, asked again whenever something wants to know. A node takes one as a dependency like
+ * any other, which is how a route answers `/ready` without being handed the graph.
  */
 class HealthRegistry internal constructor(initial: List<Probe>) {
 

@@ -2,10 +2,10 @@ package dev.surefold.actor
 
 /**
  * Which of a durable producer's commands hold room (spec 0146). Each one kept takes room before it is kept, but a
- * recovered one holds none until room is claimed for it, and there may be more recovered than there is room for.
- * Room is never released while a recovered command waits for some: it is handed on, so a drain cannot take it in
- * between and answer while that command is unconfirmed. Pure: the producer's actor moves the semaphore by what this
- * says, and only room is kept here, never the journal's state.
+ * recovered one holds none until room is claimed for it, and there may be more recovered than there is room for. Room
+ * is never released while a recovered command waits for some: it is handed on, so a drain cannot take it in between and
+ * answer while that command is unconfirmed. Pure: the producer's actor moves the semaphore by what this says, and only
+ * room is kept here, never the journal's state.
  */
 internal data class Holding(val held: Set<Pair<String, Long>> = emptySet()) {
     /** Also holding [to]'s [sequence], which took its room before it was kept. */
@@ -31,7 +31,9 @@ internal data class Holding(val held: Set<Pair<String, Long>> = emptySet()) {
         return Holding(rest.held + waiting) to false
     }
 
-    private fun waiting(outboxes: Outboxes<*>) = outboxes.queues.asSequence()
-        .flatMap { (to, kept) -> kept.asSequence().map { to to it.sequence } }
-        .filter { it !in held }
+    private fun waiting(outboxes: Outboxes<*>) =
+        outboxes.queues
+            .asSequence()
+            .flatMap { (to, kept) -> kept.asSequence().map { to to it.sequence } }
+            .filter { it !in held }
 }

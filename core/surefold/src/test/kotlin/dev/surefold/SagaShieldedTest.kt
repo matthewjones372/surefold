@@ -3,12 +3,12 @@ package dev.surefold
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeInstanceOf
 import dev.surefold.assert.shouldThrow
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 class SagaShieldedTest {
 
@@ -19,22 +19,23 @@ class SagaShieldedTest {
         val finished = Shared(false)
         val ended = Shared<Throwable?>(null)
         val reinterrupted = Shared(false)
-        val saga = Thread.ofVirtual().start {
-            try {
-                saga<Unit>("t-1") {
-                    step("hold", { 1 }) { _, _, _ ->
-                        undoing.countDown()
-                        Thread.sleep(50)
-                        finished.update { true }
+        val saga =
+            Thread.ofVirtual().start {
+                try {
+                    saga<Unit>("t-1") {
+                        step("hold", { 1 }) { _, _, _ ->
+                            undoing.countDown()
+                            Thread.sleep(50)
+                            finished.update { true }
+                        }
+                        started.countDown()
+                        Thread.sleep(10_000)
                     }
-                    started.countDown()
-                    Thread.sleep(10_000)
+                } catch (interrupt: InterruptedException) {
+                    ended.update { interrupt }
+                    reinterrupted.update { Thread.currentThread().isInterrupted }
                 }
-            } catch (interrupt: InterruptedException) {
-                ended.update { interrupt }
-                reinterrupted.update { Thread.currentThread().isInterrupted }
             }
-        }
         started.await(5, TimeUnit.SECONDS)
         saga.interrupt()
         undoing.await(5, TimeUnit.SECONDS)
@@ -93,7 +94,9 @@ class SagaShieldedTest {
                         if (asked.modify { (it + 1) to (it + 1) } < 2) error("status down")
                         Settled.Happened(1)
                     },
-                ) { _, _, _ -> undone.update { true } }
+                ) { _, _, _ ->
+                    undone.update { true }
+                }
             }
         }
         asked.peek() shouldBe 2
@@ -103,13 +106,14 @@ class SagaShieldedTest {
     @Test
     fun `the undo policy's deadline bounds every undo of the saga together`() {
         val undoing = policy("undo") { deadline(600.milliseconds) }
-        val thrown = shouldThrow<NotUndone> {
-            saga<Unit>("t-5", undo = undoing) {
-                step("first", { 1 }) { _, _, _ -> Thread.sleep(400) }
-                step("second", { 2 }) { _, _, _ -> Thread.sleep(400) }
-                error("after")
+        val thrown =
+            shouldThrow<NotUndone> {
+                saga<Unit>("t-5", undo = undoing) {
+                    step("first", { 1 }) { _, _, _ -> Thread.sleep(400) }
+                    step("second", { 2 }) { _, _, _ -> Thread.sleep(400) }
+                    error("after")
+                }
             }
-        }
         thrown.notUndone shouldBe listOf("first")
         thrown.suppressed.single().shouldBeInstanceOf<TimeoutException>()
     }

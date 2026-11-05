@@ -31,8 +31,8 @@ sealed interface Downing {
 }
 
 /**
- * A lock outside the cluster that one holder has at a time, such as a Kubernetes `Lease`. Every node of a side asks
- * for it under the same [holder], its side's lowest address, so it answers true again to the holder it already has.
+ * A lock outside the cluster that one holder has at a time, such as a Kubernetes `Lease`. Every node of a side asks for
+ * it under the same [holder], its side's lowest address, so it answers true again to the holder it already has.
  */
 fun interface Lease {
     fun acquire(holder: String): Boolean

@@ -44,53 +44,59 @@ private data class Put(val pence: Int, val reply: Reply<Int>) : Jar
 /** Answers the node the jar runs on, and what is in it. */
 private data class Count(val reply: Reply<String>) : Jar
 
-private val jarCodec = object : MessageCodec<Jar> {
-    override fun write(message: Jar, out: WireOut) = when (message) {
-        is Put -> {
-            out.int(1)
-            out.int(message.pence)
-            out.reply(message.reply, Codecs.int)
-        }
+private val jarCodec =
+    object : MessageCodec<Jar> {
+        override fun write(message: Jar, out: WireOut) =
+            when (message) {
+                is Put -> {
+                    out.int(1)
+                    out.int(message.pence)
+                    out.reply(message.reply, Codecs.int)
+                }
 
-        is Count -> {
-            out.int(2)
-            out.reply(message.reply, Codecs.string)
-        }
+                is Count -> {
+                    out.int(2)
+                    out.reply(message.reply, Codecs.string)
+                }
+            }
+
+        override fun read(input: WireIn): Jar =
+            when (val tag = input.int()) {
+                1 -> Put(input.int(), input.reply(Codecs.int))
+                2 -> Count(input.reply(Codecs.string))
+                else -> error("no jar message has the tag $tag")
+            }
     }
 
-    override fun read(input: WireIn): Jar = when (val tag = input.int()) {
-        1 -> Put(input.int(), input.reply(Codecs.int))
-        2 -> Count(input.reply(Codecs.string))
-        else -> error("no jar message has the tag $tag")
+private val pence =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = event.toString().toByteArray()
+
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
     }
-}
 
-private val pence = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = event.toString().toByteArray()
+private val total =
+    object : StateCodec<Int> {
+        override fun encode(state: Int): ByteArray = state.toString().toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
-
-private val total = object : StateCodec<Int> {
-    override fun encode(state: Int): ByteArray = state.toString().toByteArray()
-
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
 /** A jar of coins remembered by what was put in it, with a snapshot after every fourth coin. */
-private fun jar(on: String, id: String) = persistent<Jar, Int, Int>(
-    id = PersistenceId("jar", id),
-    empty = 0,
-    codec = pence,
-    snapshots = every(4, total),
-    command = { _, total, command ->
-        when (command) {
-            is Put -> persist(command.pence).then { command.reply(it) }
-            is Count -> none().then { command.reply("$on:$total") }
-        }
-    },
-    event = { total, put -> total + put },
-)
+private fun jar(on: String, id: String) =
+    persistent<Jar, Int, Int>(
+        id = PersistenceId("jar", id),
+        empty = 0,
+        codec = pence,
+        snapshots = every(4, total),
+        command = { _, total, command ->
+            when (command) {
+                is Put -> persist(command.pence).then { command.reply(it) }
+                is Count -> none().then { command.reply("$on:$total") }
+            }
+        },
+        event = { total, put -> total + put },
+    )
 
 private val quick =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
@@ -114,16 +120,17 @@ private class Shop(val name: String, port: Int, seeds: Discovery, journal: Journ
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Pair<Cluster, Sharded<Jar>>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            journal(journal)
-            snapshots(snapshots)
-            val cluster = cluster(node(name, port), seeds, quick)
-            opened.set(cluster to cluster.sharding("jar", jarCodec, passivateAfter = 1.minutes) { jar(name, it) })
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                journal(journal)
+                snapshots(snapshots)
+                val cluster = cluster(node(name, port), seeds, quick)
+                opened.set(cluster to cluster.sharding("jar", jarCodec, passivateAfter = 1.minutes) { jar(name, it) })
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     val cluster: Cluster
         get() {
@@ -156,9 +163,10 @@ object RememberedSuite : Suite() {
             val shops = ports.mapIndexed { i, port -> Shop("s${i + 1}", port, seeds, journal, snapshots) }
             try {
                 shops.forAll { shop ->
-                    val up = shop.cluster.await(1.minutes) { view ->
-                        view.members.count { it.status == Status.Up } == 3
-                    }
+                    val up =
+                        shop.cluster.await(1.minutes) { view ->
+                            view.members.count { it.status == Status.Up } == 3
+                        }
                     withClue("${shop.name} sees 3 Up") { up shouldBe true }
                 }
                 val shard = Placement.shardOf("j-1", Sharding.SHARDS)

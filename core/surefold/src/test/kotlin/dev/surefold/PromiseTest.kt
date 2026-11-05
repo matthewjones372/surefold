@@ -2,9 +2,9 @@ package dev.surefold
 
 import dev.surefold.assert.shouldBe
 import dev.surefold.fail.Either
-import org.junit.jupiter.api.Test
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 private const val WAITERS = 20
 
@@ -40,9 +40,10 @@ class PromiseTest {
         val moving = TestClock()
         val never = Promise<Nothing, Int>()
         val answered = AtomicReference<Any?>("waiting")
-        val waiter = Thread.ofVirtual().start {
-            clock.locally(moving) { answered.set(never.await(within = 10.seconds)) }
-        }
+        val waiter =
+            Thread.ofVirtual().start {
+                clock.locally(moving) { answered.set(never.await(within = 10.seconds)) }
+            }
         while (moving.sleepers() == 0) Thread.onSpinWait()
         moving.adjust(9.seconds)
         answered.get() shouldBe "waiting"
@@ -55,13 +56,14 @@ class PromiseTest {
     fun `a waiter whose thread is interrupted stops waiting`() {
         val never = Promise<Nothing, Int>()
         val ended = AtomicReference<Throwable?>()
-        val waiter = Thread.ofVirtual().start {
-            try {
-                never.await()
-            } catch (interrupted: InterruptedException) {
-                ended.set(interrupted)
+        val waiter =
+            Thread.ofVirtual().start {
+                try {
+                    never.await()
+                } catch (interrupted: InterruptedException) {
+                    ended.set(interrupted)
+                }
             }
-        }
         while (waiter.state != Thread.State.WAITING) Thread.onSpinWait()
         waiter.interrupt()
         waiter.join()

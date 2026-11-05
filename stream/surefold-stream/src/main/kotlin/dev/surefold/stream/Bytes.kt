@@ -11,9 +11,9 @@ import java.nio.charset.CodingErrorAction
 private const val DEFAULT_CHUNK_SIZE = 64 * 1024
 
 /**
- * What [open] gives, in chunks of at most [chunkSize] bytes (spec 0249). It is opened once per run and closed
- * however the run ends. A stop closes it too, since `InputStream.read` ignores an interrupt; an `IOException` is a
- * defect, as from any blocking source.
+ * What [open] gives, in chunks of at most [chunkSize] bytes (spec 0249). It is opened once per run and closed however
+ * the run ends. A stop closes it too, since `InputStream.read` ignores an interrupt; an `IOException` is a defect, as
+ * from any blocking source.
  */
 fun Stream.Companion.read(open: () -> InputStream, chunkSize: Int = DEFAULT_CHUNK_SIZE): Stream<Nothing, ByteChunk> {
     require(chunkSize > 0) { "a read takes at least one byte at a time, and chunkSize $chunkSize was asked for" }
@@ -39,15 +39,16 @@ fun <E> Stream<E, ByteChunk>.runInto(out: OutputStream): Run<E, Long> =
     }
 
 /**
- * Chunks read as UTF-8 text. A character split across two chunks is decoded once both have come, and input that
- * is not UTF-8, or a character the stream ends inside, decodes to U+FFFD, as `decodeToString` does.
+ * Chunks read as UTF-8 text. A character split across two chunks is decoded once both have come, and input that is not
+ * UTF-8, or a character the stream ends inside, decodes to U+FFFD, as `decodeToString` does.
  */
 fun Pipe.Companion.decodeUtf8(): Pipe<Nothing, ByteChunk, String> =
     Pipe.statefulMap<ByteChunk, ByteChunk, String>(
-        ByteChunk::empty,
-        { held, chunk -> decoded(held + chunk, endOfInput = false) },
-        { held -> decoded(held, endOfInput = true).second.ifEmpty { null } },
-    ).filter { it.isNotEmpty() }
+            ByteChunk::empty,
+            { held, chunk -> decoded(held + chunk, endOfInput = false) },
+            { held -> decoded(held, endOfInput = true).second.ifEmpty { null } },
+        )
+        .filter { it.isNotEmpty() }
 
 fun <E, In> Pipe<E, In, ByteChunk>.decodeUtf8(): Pipe<E, In, String> = via(Pipe.decodeUtf8())
 
@@ -61,15 +62,16 @@ fun <E, In> Pipe<E, In, String>.encodeUtf8(): Pipe<E, In, ByteChunk> = via(Pipe.
 fun <E> Stream<E, String>.encodeUtf8(): Stream<E, ByteChunk> = via(Pipe.encodeUtf8())
 
 /**
- * Text as lines, ended by `\n` or `\r\n` however the text was split into strings. The last line needs no ending,
- * and text that ends in one has no empty line after it.
+ * Text as lines, ended by `\n` or `\r\n` however the text was split into strings. The last line needs no ending, and
+ * text that ends in one has no empty line after it.
  */
 fun Pipe.Companion.lines(): Pipe<Nothing, String, String> =
     Pipe.statefulMap<String, String, List<String>>(
-        { "" },
-        { partial, text -> (partial + text).split('\n').let { it.last() to it.dropLast(1).map(::unended) } },
-        { partial -> partial.takeIf { it.isNotEmpty() }?.let(::listOf) },
-    ).mapConcat { it }
+            { "" },
+            { partial, text -> (partial + text).split('\n').let { it.last() to it.dropLast(1).map(::unended) } },
+            { partial -> partial.takeIf { it.isNotEmpty() }?.let(::listOf) },
+        )
+        .mapConcat { it }
 
 fun <E, In> Pipe<E, In, String>.lines(): Pipe<E, In, String> = via(Pipe.lines())
 
@@ -78,13 +80,14 @@ fun <E> Stream<E, String>.lines(): Stream<E, String> = via(Pipe.lines())
 private fun unended(line: String): String = line.removeSuffix("\r")
 
 /**
- * [bytes] decoded as far as they go, and what is left: the start of a character the next chunk will finish. A
- * decoder holds no bytes between calls of its own, so one made for each call carries nothing over.
+ * [bytes] decoded as far as they go, and what is left: the start of a character the next chunk will finish. A decoder
+ * holds no bytes between calls of its own, so one made for each call carries nothing over.
  */
 private fun decoded(bytes: ByteChunk, endOfInput: Boolean): Pair<ByteChunk, String> {
-    val decoder = Charsets.UTF_8.newDecoder()
-        .onMalformedInput(CodingErrorAction.REPLACE)
-        .onUnmappableCharacter(CodingErrorAction.REPLACE)
+    val decoder =
+        Charsets.UTF_8.newDecoder()
+            .onMalformedInput(CodingErrorAction.REPLACE)
+            .onUnmappableCharacter(CodingErrorAction.REPLACE)
     val input = bytes.asReadOnlyBuffer()
     val output = CharBuffer.allocate((bytes.size * decoder.maxCharsPerByte()).toInt() + 1)
     decoder.decode(input, output, endOfInput)
@@ -95,27 +98,29 @@ private fun decoded(bytes: ByteChunk, endOfInput: Boolean): Pair<ByteChunk, Stri
 private const val DEFAULT_MAX_FRAME = 16 shl 20
 
 /** Each frame after its length, a 4-byte big-endian `Int`, as `DataOutputStream.writeInt` writes one. */
-fun Pipe.Companion.framed(): Pipe<Nothing, ByteChunk, ByteChunk> =
-    Pipe.mapConcat { frame -> listOf(lengthOf(frame), frame) }
+fun Pipe.Companion.framed(): Pipe<Nothing, ByteChunk, ByteChunk> = Pipe.mapConcat { frame ->
+    listOf(lengthOf(frame), frame)
+}
 
 fun <E, In> Pipe<E, In, ByteChunk>.framed(): Pipe<E, In, ByteChunk> = via(Pipe.framed())
 
 fun <E> Stream<E, ByteChunk>.framed(): Stream<E, ByteChunk> = via(Pipe.framed())
 
 /**
- * The frames [framed] wrote, one element each, however the bytes were split on the way. A length over [maxSize]
- * is a defect before any of the frame is read, and so is a stream that ends partway through one.
+ * The frames [framed] wrote, one element each, however the bytes were split on the way. A length over [maxSize] is a
+ * defect before any of the frame is read, and so is a stream that ends partway through one.
  */
 fun Pipe.Companion.unframed(maxSize: Int = DEFAULT_MAX_FRAME): Pipe<Nothing, ByteChunk, ByteChunk> {
     require(maxSize >= 0) { "a frame can be empty but no shorter, and maxSize $maxSize was asked for" }
     return Pipe.statefulMap<ByteChunk, Held, List<ByteChunk>>(
-        { Held(emptyList()) },
-        { held, chunk -> (held + chunk).frames(maxSize, emptyList()) },
-        { held ->
-            check(held.size == 0) { "the stream ended partway through a frame, ${held.size} bytes into it" }
-            null
-        },
-    ).mapConcat { it }
+            { Held(emptyList()) },
+            { held, chunk -> (held + chunk).frames(maxSize, emptyList()) },
+            { held ->
+                check(held.size == 0) { "the stream ended partway through a frame, ${held.size} bytes into it" }
+                null
+            },
+        )
+        .mapConcat { it }
 }
 
 fun <E, In> Pipe<E, In, ByteChunk>.unframed(maxSize: Int = DEFAULT_MAX_FRAME): Pipe<E, In, ByteChunk> =
@@ -133,10 +138,12 @@ private class Held(val chunks: List<ByteChunk>) {
 
     operator fun plus(chunk: ByteChunk): Held = if (chunk.isEmpty()) this else Held(chunks + chunk)
 
-    fun joined(): ByteChunk = chunks.singleOrNull() ?: ByteArrayOutputStream(size).let { out ->
-        chunks.forEach { it.writeTo(out) }
-        ByteChunk.from(out.toByteArray())
-    }
+    fun joined(): ByteChunk =
+        chunks.singleOrNull()
+            ?: ByteArrayOutputStream(size).let { out ->
+                chunks.forEach { it.writeTo(out) }
+                ByteChunk.from(out.toByteArray())
+            }
 
     /** The first [n] bytes, joining only the chunks they span: a length split across reads copies four bytes. */
     fun first(n: Int): ByteChunk {

@@ -16,15 +16,16 @@ import kotlin.time.Duration.Companion.milliseconds
 private class SlowPool {
     val opened = AtomicInteger()
 
-    val source: DataSource = Postgres.fresh().let { postgres ->
-        object : DataSource by postgres {
-            override fun getConnection(): Connection {
-                opened.incrementAndGet()
-                Thread.sleep(20)
-                return postgres.connection
+    val source: DataSource =
+        Postgres.fresh().let { postgres ->
+            object : DataSource by postgres {
+                override fun getConnection(): Connection {
+                    opened.incrementAndGet()
+                    Thread.sleep(20)
+                    return postgres.connection
+                }
             }
         }
-    }
 }
 
 /** Spec 0105: the slice table is read by one caller at a time, however many appends want it. */
@@ -42,18 +43,20 @@ object JdbcSliceTableSuite : Suite() {
 
             val go = CountDownLatch(1)
             // Each thread hands back the map it saw, so a thread that saw another map fails the test.
-            val seen = Executors.newThreadPerTaskExecutor(named).use { threads ->
-                val asked = List(1_000) {
-                    threads.submit(
-                        Callable {
-                            go.await()
-                            table.current()
-                        },
-                    )
+            val seen =
+                Executors.newThreadPerTaskExecutor(named).use { threads ->
+                    val asked =
+                        List(1_000) {
+                            threads.submit(
+                                Callable {
+                                    go.await()
+                                    table.current()
+                                },
+                            )
+                        }
+                    go.countDown()
+                    asked
                 }
-                go.countDown()
-                asked
-            }
 
             seen.forAll { it.get() shouldBe first }
             pool.opened.get() shouldBeLessThanOrEqual 2

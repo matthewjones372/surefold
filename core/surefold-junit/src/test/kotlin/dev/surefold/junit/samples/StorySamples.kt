@@ -19,7 +19,7 @@ object StorySuite : SharedSuite<Int>() {
         }
         test("fails two thens") { two ->
             story {
-                Given("two") { }
+                Given("two") {}
                 Then("it is three") { two shouldBe 3 }
                 Then("it is four") { two shouldBe 4 }
             }

@@ -38,25 +38,28 @@ private data class Spend(val pence: Int) : Tab
 /** Answers with the node the tab runs on and what has been spent on it there. */
 private data class Bill(val reply: Reply<String>) : Tab
 
-private val tabCodec = object : MessageCodec<Tab> {
-    override fun write(message: Tab, out: WireOut) = when (message) {
-        is Spend -> {
-            out.int(1)
-            out.int(message.pence)
-        }
+private val tabCodec =
+    object : MessageCodec<Tab> {
+        override fun write(message: Tab, out: WireOut) =
+            when (message) {
+                is Spend -> {
+                    out.int(1)
+                    out.int(message.pence)
+                }
 
-        is Bill -> {
-            out.int(2)
-            out.reply(message.reply, Codecs.string)
-        }
-    }
+                is Bill -> {
+                    out.int(2)
+                    out.reply(message.reply, Codecs.string)
+                }
+            }
 
-    override fun read(input: WireIn): Tab = when (val tag = input.int()) {
-        1 -> Spend(input.int())
-        2 -> Bill(input.reply(Codecs.string))
-        else -> error("no tab message has the tag $tag")
+        override fun read(input: WireIn): Tab =
+            when (val tag = input.int()) {
+                1 -> Spend(input.int())
+                2 -> Bill(input.reply(Codecs.string))
+                else -> error("no tab message has the tag $tag")
+            }
     }
-}
 
 /**
  * How many of each tab run now, across every node of one test's cluster; and whether any ever ran twice at once. Each
@@ -67,17 +70,20 @@ private class TabsRunning {
     val twice = AtomicBoolean(false)
 }
 
-private fun tab(on: String, id: String, running: TabsRunning) = behaviour<Tab, Int>(0) { _, spent, message ->
-    when (message) {
-        is Spend -> become(spent + message.pence)
-        is Bill -> stay().also { message.reply("$on:$spent") }
-    }
-}.onStart {
-    if (running.tabs.computeIfAbsent(id) { AtomicInteger() }.incrementAndGet() > 1) running.twice.set(true)
-}.onSignal { _, _, signal ->
-    if (signal == Signal.Stopping) running.tabs.getValue(id).decrementAndGet()
-    stay()
-}
+private fun tab(on: String, id: String, running: TabsRunning) =
+    behaviour<Tab, Int>(0) { _, spent, message ->
+            when (message) {
+                is Spend -> become(spent + message.pence)
+                is Bill -> stay().also { message.reply("$on:$spent") }
+            }
+        }
+        .onStart {
+            if (running.tabs.computeIfAbsent(id) { AtomicInteger() }.incrementAndGet() > 1) running.twice.set(true)
+        }
+        .onSignal { _, _, signal ->
+            if (signal == Signal.Stopping) running.tabs.getValue(id).decrementAndGet()
+            stay()
+        }
 
 private val brisk =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
@@ -87,15 +93,16 @@ private class Bar(val name: String, port: Int, seeds: Discovery, running: TabsRu
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Pair<Cluster, Sharded<Tab>>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val cluster = cluster(node(name, port), seeds, brisk)
-            val tabs = cluster.sharding("tab", tabCodec, passivateAfter = 1.minutes) { tab(name, it, running) }
-            opened.set(cluster to tabs)
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val cluster = cluster(node(name, port), seeds, brisk)
+                val tabs = cluster.sharding("tab", tabCodec, passivateAfter = 1.minutes) { tab(name, it, running) }
+                opened.set(cluster to tabs)
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     val cluster: Cluster
         get() {
@@ -162,21 +169,25 @@ object ShardingSuite : Suite() {
                 val ids = (1..200).map { "t-$it" }
                 // Tells and asks every tab from the first node for as long as the membership is changing. An ask
                 // already in a tab's mailbox when its shard moves is a dead letter, as it is when a tab passivates.
-                val traffic = Thread.ofVirtual().start {
-                    while (!stop.get()) {
-                        ids.forEach { id ->
-                            tabs.entity(id).tell(Spend(1))
-                            val _ = tabs.entity(id).ask<Tab, String>(3.seconds) { Bill(it) }
+                val traffic =
+                    Thread.ofVirtual().start {
+                        while (!stop.get()) {
+                            ids.forEach { id ->
+                                tabs.entity(id).tell(Spend(1))
+                                val _ = tabs.entity(id).ask<Tab, String>(3.seconds) { Bill(it) }
+                            }
                         }
                     }
-                }
 
                 bars += Bar("n4", ports[3], seeds, running)
                 bars.awaitUp(4)
                 bars[1].cluster.leave()
-                bars.filter { it.name != "n2" }.forAll { bar ->
-                    bar.cluster.await(1.minutes) { view -> view.members.none { it.node.name == "n2" } } shouldBe true
-                }
+                bars
+                    .filter { it.name != "n2" }
+                    .forAll { bar ->
+                        bar.cluster.await(1.minutes) { view -> view.members.none { it.node.name == "n2" } } shouldBe
+                            true
+                    }
                 stop.set(true)
                 traffic.join()
 

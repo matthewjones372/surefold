@@ -15,12 +15,13 @@ fun <R> select(clauses: Select<R>.() -> Unit): R {
     val written = Select<R>().apply(clauses).clauses
     require(written.isNotEmpty()) { "a select needs a clause to wait on" }
     val selection = Selection()
-    val answer = try {
-        entered(written, selection)
-            ?: selection.await { written.forEachIndexed { at, clause -> clause.watch(selection, at) } }
-    } finally {
-        written.forEach { it.leave(selection) }
-    }
+    val answer =
+        try {
+            entered(written, selection)
+                ?: selection.await { written.forEachIndexed { at, clause -> clause.watch(selection, at) } }
+        } finally {
+            written.forEach { it.leave(selection) }
+        }
     if (answer === Interrupted) throw InterruptedException("interrupted while selecting")
     return written[selection.won()].run(answer)
 }
@@ -54,16 +55,21 @@ class Select<R> internal constructor() {
     }
 
     /**
-     * The fork's answer, as [Deferred.await] gives it. Only a fork `async` opened can be selected on: nothing else
-     * says when it ends.
+     * The fork's answer, as [Deferred.await] gives it. Only a fork `async` opened can be selected on: nothing else says
+     * when it ends.
      */
     fun <T> Deferred<T>.onAwait(block: (T) -> R) {
         val fork = requireNotNull(this as? Fork<*, T>) { "only a fork opened by async can be selected on" }
-        clauses += Clause(
-            enter = { selection, at -> if (fork.wakesMe()) Pending else ended(selection, at) },
-            leave = { fork.forgetMe() },
-            watch = { selection, at -> if (fork.hasEnded() && ended(selection, at) !== Lost) selection.deliver(Ended) },
-        ) { block(fork.await()) }
+        clauses +=
+            Clause(
+                enter = { selection, at -> if (fork.wakesMe()) Pending else ended(selection, at) },
+                leave = { fork.forgetMe() },
+                watch = { selection, at ->
+                    if (fork.hasEnded() && ended(selection, at) !== Lost) selection.deliver(Ended)
+                },
+            ) {
+                block(fork.await())
+            }
     }
 
     private fun ended(selection: Selection, at: Int): Any = if (selection.claim(at)) Ended else Lost
@@ -87,8 +93,7 @@ internal class Selection {
     private val lock = ReentrantLock()
     private var winner = OPEN
 
-    @Volatile
-    private var answer: Any = Unanswered
+    @Volatile private var answer: Any = Unanswered
 
     fun won(): Int = lock.withLock { winner }
 
@@ -148,7 +153,11 @@ internal class Selection {
 }
 
 /** How two selections claimed together came out. */
-internal enum class Claim { Both, OursGone, TheirsGone }
+internal enum class Claim {
+    Both,
+    OursGone,
+    TheirsGone,
+}
 
 private val ORDER = AtomicLong()
 private const val OPEN = -1

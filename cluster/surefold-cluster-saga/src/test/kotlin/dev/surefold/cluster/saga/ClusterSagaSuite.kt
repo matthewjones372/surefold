@@ -74,25 +74,26 @@ private class Gate(private val at: String?) {
 /** Over [LIMIT] pence the transfer is refused once the debit is made, so the debit is undone. */
 private const val LIMIT = 1_000L
 
-private fun transfer(bank: Ledger, gate: Gate, node: String) = durableSaga("transfer", Amount, Words, Words) { pence ->
-    val at = now()
-    bank.read.update { it + (node to at) }
-    gate.pass("started", node)
-    step(
-        "debit",
-        Amount,
-        { key -> bank.move(key, -pence) },
-        { key -> bank.find(key) },
-        { key, _, _ ->
-            gate.pass("undoing", node)
-            bank.move(key, pence)
-        },
-    )
-    gate.pass("between", node)
-    if (pence > LIMIT) fail("over the limit")
-    val credited = step("credit", Amount, { key -> bank.move(key, pence) }, { key -> bank.find(key) })
-    "moved $credited"
-}
+private fun transfer(bank: Ledger, gate: Gate, node: String) =
+    durableSaga("transfer", Amount, Words, Words) { pence ->
+        val at = now()
+        bank.read.update { it + (node to at) }
+        gate.pass("started", node)
+        step(
+            "debit",
+            Amount,
+            { key -> bank.move(key, -pence) },
+            { key -> bank.find(key) },
+            { key, _, _ ->
+                gate.pass("undoing", node)
+                bank.move(key, pence)
+            },
+        )
+        gate.pass("between", node)
+        if (pence > LIMIT) fail("over the limit")
+        val credited = step("credit", Amount, { key -> bank.move(key, pence) }, { key -> bank.find(key) })
+        "moved $credited"
+    }
 
 private val calm = Gossiping(probeEvery = 500.milliseconds, ackWithin = 250.milliseconds, formAfter = 1.seconds)
 
@@ -108,7 +109,9 @@ private class Teller(
 ) : AutoCloseable {
     private val done = Promise<Nothing, Unit>()
     private val opened = Promise<Throwable, Pair<Cluster, Sagas<Long, String, String>>>()
-    private val running = surefoldFuture { opening(port, seeds, journal, bank, gate, time) }
+    private val running = surefoldFuture {
+        opening(port, seeds, journal, bank, gate, time)
+    }
         .whenComplete { _, thrown -> thrown?.let(opened::fail) }
 
     private fun opening(port: Int, seeds: Discovery, journal: Journal, bank: Ledger, gate: Gate, time: Clock) {
@@ -123,9 +126,11 @@ private class Teller(
         }
     }
 
-    val cluster: Cluster get() = opened().first
+    val cluster: Cluster
+        get() = opened().first
 
-    val sagas: Sagas<Long, String, String> get() = opened().second
+    val sagas: Sagas<Long, String, String>
+        get() = opened().second
 
     private fun opened() = opened.await().fold({ throw IllegalStateException("$name did not open", it) }, { it })
 
@@ -156,9 +161,12 @@ private fun tellers(bank: Ledger, gate: Gate, time: Clock = clock.get(), test: (
 }
 
 /** What [id] ends as, asked of [teller] until it is no longer running. */
-private fun ending(teller: Teller, id: String): Durable.Outcome<String, String> = eventually(45.seconds) {
-    teller.sagas.await(id, within = 2.seconds).also { check(it != Durable.Outcome.Running) { "$id is still running" } }
-}
+private fun ending(teller: Teller, id: String): Durable.Outcome<String, String> =
+    eventually(45.seconds) {
+        teller.sagas.await(id, within = 2.seconds).also {
+            check(it != Durable.Outcome.Running) { "$id is still running" }
+        }
+    }
 
 /** Where a node is killed, the transfer it runs, and how that ends with no crash at all. */
 private data class Gap(
@@ -171,11 +179,12 @@ private data class Gap(
 private val moved = mapOf("t/debit" to -400L, "t/credit" to 400L)
 private val undone = mapOf("t/debit" to -2_000L, "t/debit/undo" to 2_000L)
 
-private val gaps = listOf(
-    Gap("started", 400, Durable.Outcome.Done("moved 400"), moved),
-    Gap("between", 400, Durable.Outcome.Done("moved 400"), moved),
-    Gap("undoing", 2_000, Durable.Outcome.Refused("over the limit"), undone),
-)
+private val gaps =
+    listOf(
+        Gap("started", 400, Durable.Outcome.Done("moved 400"), moved),
+        Gap("between", 400, Durable.Outcome.Done("moved 400"), moved),
+        Gap("undoing", 2_000, Durable.Outcome.Refused("over the limit"), undone),
+    )
 
 object ClusterSagaSuite : Suite(concurrent = false) {
     init {

@@ -16,15 +16,16 @@ object LimitedSuite : Suite() {
             val dependency = Limit.fixed(3)
             val now = AtomicInteger()
             val most = AtomicInteger()
-            fun reads(): Running<Nothing, Int> = Stream.from(1..100)
-                .mapPar(dependency) { n ->
-                    most.accumulateAndGet(now.incrementAndGet(), ::maxOf)
-                    Thread.sleep(1)
-                    now.decrementAndGet()
-                    n
-                }
-                .runFold(0) { sum, n -> sum + n }
-                .start(Forks())
+            fun reads(): Running<Nothing, Int> =
+                Stream.from(1..100)
+                    .mapPar(dependency) { n ->
+                        most.accumulateAndGet(now.incrementAndGet(), ::maxOf)
+                        Thread.sleep(1)
+                        now.decrementAndGet()
+                        n
+                    }
+                    .runFold(0) { sum, n -> sum + n }
+                    .start(Forks())
 
             val first = reads()
             val second = reads()

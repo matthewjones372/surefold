@@ -10,8 +10,7 @@ import kotlin.concurrent.withLock
  * happens under [lock], so a [close] cannot slip between a put's check of [closed] and its wait for room.
  */
 internal class Pulled<A : Any>(stream: Stream<Nothing, A>, backend: StreamBackend, private val buffer: Int) :
-    Iterator<A>,
-    AutoCloseable {
+    Iterator<A>, AutoCloseable {
 
     private val lock = ReentrantLock()
     private val arrived = lock.newCondition()
@@ -67,11 +66,12 @@ internal class Pulled<A : Any>(stream: Stream<Nothing, A>, backend: StreamBacken
         running.close()
     }
 
-    private fun Exit<Nothing, Unit>.cause(): Throwable? = when (this) {
-        is Exit.Done -> null
-        is Exit.Failed -> error
-        is Exit.Died -> cause
-    }
+    private fun Exit<Nothing, Unit>.cause(): Throwable? =
+        when (this) {
+            is Exit.Done -> null
+            is Exit.Failed -> error
+            is Exit.Died -> cause
+        }
 
     /** A run that ended, with the cause it died of, if it died. */
     private class Ended(val cause: Throwable?)

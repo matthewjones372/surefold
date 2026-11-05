@@ -28,35 +28,40 @@ private data class Transcript(val reply: Reply<List<Int>>) : Line
 private data object Static : Line
 
 /** A call that keeps what is said while it rings, and hears it once answered. */
-private fun phone() = behaviour<Line, Call>(Ringing) { ctx, call, message ->
-    when (call) {
-        Ringing -> when (message) {
-            is Say, is Transcript -> {
-                ctx.stash(message)
-                stay()
-            }
+private fun phone() =
+    behaviour<Line, Call>(Ringing) { ctx, call, message ->
+        when (call) {
+            Ringing ->
+                when (message) {
+                    is Say,
+                    is Transcript -> {
+                        ctx.stash(message)
+                        stay()
+                    }
 
-            PickUp -> {
-                ctx.self.tell(Say(99))
-                ctx.unstashAll()
-                become(Answered())
-            }
+                    PickUp -> {
+                        ctx.self.tell(Say(99))
+                        ctx.unstashAll()
+                        become(Answered())
+                    }
 
-            Static -> error("the line crackled")
-        }
+                    Static -> error("the line crackled")
+                }
 
-        is Answered -> when (message) {
-            is Say -> become(Answered(call.heard + message.n))
+            is Answered ->
+                when (message) {
+                    is Say -> become(Answered(call.heard + message.n))
 
-            is Transcript -> {
-                message.reply(call.heard)
-                stay()
-            }
+                    is Transcript -> {
+                        message.reply(call.heard)
+                        stay()
+                    }
 
-            PickUp, Static -> unhandled()
+                    PickUp,
+                    Static -> unhandled()
+                }
         }
     }
-}
 
 object StashSuite : Suite() {
     init {

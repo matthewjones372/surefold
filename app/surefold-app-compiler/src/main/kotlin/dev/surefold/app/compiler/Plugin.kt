@@ -19,28 +19,29 @@ internal val TEST = CompilerConfigurationKey.create<Boolean>("this compilation i
 /**
  * The one option, which exists so that a build can prove the plugin is loaded at all.
  *
- * Whether a graph is sound is said by a diagnostic; whether anybody is looking is not something a
- * silent plugin can be asked, and "it compiled" is the same answer either way.
+ * Whether a graph is sound is said by a diagnostic; whether anybody is looking is not something a silent plugin can be
+ * asked, and "it compiled" is the same answer either way.
  */
 @OptIn(ExperimentalCompilerApi::class)
 class SurefoldCommandLineProcessor : CommandLineProcessor {
 
     override val pluginId: String = PLUGIN_ID
 
-    override val pluginOptions: Collection<AbstractCliOption> = listOf(
-        CliOption(
-            optionName = "verbose",
-            valueDescription = "true|false",
-            description = "Reports every application the checker found, as a warning.",
-            required = false,
-        ),
-        CliOption(
-            optionName = "test",
-            valueDescription = "true|false",
-            description = "Whether this compilation is tests, where a different set of hand-rolled code is named.",
-            required = false,
-        ),
-    )
+    override val pluginOptions: Collection<AbstractCliOption> =
+        listOf(
+            CliOption(
+                optionName = "verbose",
+                valueDescription = "true|false",
+                description = "Reports every application the checker found, as a warning.",
+                required = false,
+            ),
+            CliOption(
+                optionName = "test",
+                valueDescription = "true|false",
+                description = "Whether this compilation is tests, where a different set of hand-rolled code is named.",
+                required = false,
+            ),
+        )
 
     override fun processOption(option: AbstractCliOption, value: String, configuration: CompilerConfiguration) {
         when (option.optionName) {
@@ -54,8 +55,8 @@ class SurefoldCommandLineProcessor : CommandLineProcessor {
 /**
  * The plugin, which is checkers and nothing else.
  *
- * Nothing is generated and nothing is lowered, so there is no IR extension here — and that is what
- * lets the IDE run the same checkers in the editor, where there is no backend to run.
+ * Nothing is generated and nothing is lowered, so there is no IR extension here — and that is what lets the IDE run the
+ * same checkers in the editor, where there is no backend to run.
  */
 @OptIn(ExperimentalCompilerApi::class)
 class SurefoldCompilerPluginRegistrar : CompilerPluginRegistrar() {

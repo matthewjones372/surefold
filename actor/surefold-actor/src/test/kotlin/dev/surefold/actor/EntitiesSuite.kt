@@ -36,42 +36,46 @@ private fun pup(
     id: String,
     log: ConcurrentLinkedQueue<String>,
     kennel: AtomicReference<ActorRef<Entities<Kennel>>> = AtomicReference(),
-) = behaviour<Kennel, Pair<Int, Boolean>>(0 to false) { _, (grams, recall), message ->
-    when (message) {
-        is Feed -> become(grams + message.grams to recall)
+) =
+    behaviour<Kennel, Pair<Int, Boolean>>(0 to false) { _, (grams, recall), message ->
+            when (message) {
+                is Feed -> become(grams + message.grams to recall)
 
-        is Weight -> {
-            message.reply(id to grams)
-            stay()
-        }
-
-        Recall -> become(grams to true)
-
-        is Busy -> {
-            message.began.countDown()
-            while (message.gate.count > 0) {
-                try {
-                    message.gate.await()
-                } catch (interrupt: InterruptedException) {
-                    message.interrupted.countDown()
+                is Weight -> {
+                    message.reply(id to grams)
+                    stay()
                 }
+
+                Recall -> become(grams to true)
+
+                is Busy -> {
+                    message.began.countDown()
+                    while (message.gate.count > 0) {
+                        try {
+                            message.gate.await()
+                        } catch (interrupt: InterruptedException) {
+                            message.interrupted.countDown()
+                        }
+                    }
+                    stay()
+                }
+            }
+        }
+        .onStart { log += "$id started" }
+        .onSignal { _, (_, recall), signal ->
+            if (signal == Signal.Stopping) {
+                log += "$id stopped"
+                if (recall) kennel.get().entity(id).tell(Feed(1))
             }
             stay()
         }
-    }
-}.onStart { log += "$id started" }.onSignal { _, (_, recall), signal ->
-    if (signal == Signal.Stopping) {
-        log += "$id stopped"
-        if (recall) kennel.get().entity(id).tell(Feed(1))
-    }
-    stay()
-}
 
 /** An entity whose first message holds its step until [open], then keeps every number it is told, in order. */
-private fun held(open: CountDownLatch, heard: MutableList<Int>) = behaviour<Int, Unit>(Unit) { _, _, n ->
-    if (n == 0) open.await() else heard += n
-    stay()
-}
+private fun held(open: CountDownLatch, heard: MutableList<Int>) =
+    behaviour<Int, Unit>(Unit) { _, _, n ->
+        if (n == 0) open.await() else heard += n
+        stay()
+    }
 
 object EntitiesSuite : Suite() {
     init {
@@ -133,26 +137,26 @@ object EntitiesSuite : Suite() {
             val log = ConcurrentLinkedQueue<String>()
             val moving = TestClock()
             val kennel = AtomicReference<ActorRef<Entities<Kennel>>>()
-            val weights = clock.locally(moving) {
-                scope {
-                    val running =
-                        spawn("kennel", entities(passivateAfter = 10.minutes) { id -> pup(id, log, kennel) })
-                    kennel.set(running)
-                    running.entity("rex").tell(Feed(50))
-                    running.entity("bo").tell(Recall)
-                    awaitIdle()
+            val weights =
+                clock.locally(moving) {
+                    scope {
+                        val running =
+                            spawn("kennel", entities(passivateAfter = 10.minutes) { id -> pup(id, log, kennel) })
+                        kennel.set(running)
+                        running.entity("rex").tell(Feed(50))
+                        running.entity("bo").tell(Recall)
+                        awaitIdle()
 
-                    moving.adjust(10.minutes)
-                    awaitIdle()
-                    val passivated = log.filter { it.endsWith("stopped") }.sorted()
-                    val rex = running.entity("rex").ask(1.minutes) { Weight(it) }
-                    val bo = running.entity("bo").ask(1.minutes) { Weight(it) }
-                    Triple(passivated, rex, bo)
+                        moving.adjust(10.minutes)
+                        awaitIdle()
+                        val passivated = log.filter { it.endsWith("stopped") }.sorted()
+                        val rex = running.entity("rex").ask(1.minutes) { Weight(it) }
+                        val bo = running.entity("bo").ask(1.minutes) { Weight(it) }
+                        Triple(passivated, rex, bo)
+                    }
                 }
-            }
 
-            weights shouldBe
-                Triple(listOf("bo stopped", "rex stopped"), ("rex" to 0).right(), ("bo" to 1).right())
+            weights shouldBe Triple(listOf("bo stopped", "rex stopped"), ("rex" to 0).right(), ("bo" to 1).right())
         }
 
         test("on threads, an entity that is still stopping is not started again until it has stopped") {
@@ -163,26 +167,29 @@ object EntitiesSuite : Suite() {
             val interrupted = CountDownLatch(1)
             // The manager makes an entity inside its own step, so "made" is written the moment it decides to start one.
             val made = entities(passivateAfter = 10.minutes) { id -> pup(id, log).also { log += "$id made" } }
-            val seen = clock.locally(moving) {
-                scope {
-                    val running = spawn("kennel", made)
-                    val rex = running.entity("rex")
-                    rex.tell(Busy(began, gate, interrupted))
-                    began.await()
-                    // Once passivation has interrupted rex's busy step, rex is stopping. A message for it now must
-                    // wait, and bo's answer says the manager has already decided what to do with it.
-                    val helper = Thread.ofVirtual().start {
-                        interrupted.await()
-                        rex.tell(Feed(1))
-                        running.entity("bo").ask(1.minutes) { Weight(it) }
-                        gate.countDown()
+            val seen =
+                clock.locally(moving) {
+                    scope {
+                        val running = spawn("kennel", made)
+                        val rex = running.entity("rex")
+                        rex.tell(Busy(began, gate, interrupted))
+                        began.await()
+                        // Once passivation has interrupted rex's busy step, rex is stopping. A message for it now must
+                        // wait, and bo's answer says the manager has already decided what to do with it.
+                        val helper =
+                            Thread.ofVirtual().start {
+                                interrupted.await()
+                                rex.tell(Feed(1))
+                                running.entity("bo").ask(1.minutes) { Weight(it) }
+                                gate.countDown()
+                            }
+                        moving.adjust(10.minutes)
+                        helper.join()
+                        awaitIdle()
+                        log.filter { it.startsWith("rex") && !it.endsWith("started") } to
+                            rex.ask(1.minutes) { Weight(it) }
                     }
-                    moving.adjust(10.minutes)
-                    helper.join()
-                    awaitIdle()
-                    log.filter { it.startsWith("rex") && !it.endsWith("started") } to rex.ask(1.minutes) { Weight(it) }
                 }
-            }
 
             seen shouldBe (listOf("rex made", "rex stopped", "rex made") to ("rex" to 1).right())
         }

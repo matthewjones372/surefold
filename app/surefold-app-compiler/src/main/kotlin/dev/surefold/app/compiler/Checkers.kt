@@ -21,14 +21,17 @@ class SurefoldFirExtensionRegistrar(private val verbose: Boolean, private val te
 internal class SurefoldCheckers(session: FirSession, verbose: Boolean, test: Boolean) :
     FirAdditionalCheckersExtension(session) {
 
-    override val declarationCheckers: DeclarationCheckers = object : DeclarationCheckers() {
-        override val classCheckers: Set<FirClassChecker> = setOf(ApplicationChecker(verbose), ShutdownChecker())
-    }
+    override val declarationCheckers: DeclarationCheckers =
+        object : DeclarationCheckers() {
+            override val classCheckers: Set<FirClassChecker> = setOf(ApplicationChecker(verbose), ShutdownChecker())
+        }
 
-    override val expressionCheckers: ExpressionCheckers = object : ExpressionCheckers() {
-        override val functionCallCheckers: Set<FirFunctionCallChecker> =
-            setOf(HandRolledChecker(test), TransactChecker())
+    override val expressionCheckers: ExpressionCheckers =
+        object : ExpressionCheckers() {
+            override val functionCallCheckers: Set<FirFunctionCallChecker> =
+                setOf(HandRolledChecker(test), TransactChecker())
 
-        override val variableAssignmentCheckers: Set<FirVariableAssignmentChecker> = setOf(TransactAssignmentChecker())
-    }
+            override val variableAssignmentCheckers: Set<FirVariableAssignmentChecker> =
+                setOf(TransactAssignmentChecker())
+        }
 }

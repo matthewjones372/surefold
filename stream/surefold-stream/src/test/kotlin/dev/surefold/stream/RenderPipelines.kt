@@ -20,14 +20,10 @@ internal val chain: Run<Odd, Long> =
         .runFold(0L) { total, n -> total + n }
 
 internal val parallel: Run<Nothing, Long> =
-    Stream.from(ints)
-        .mapPar(8) { it.toLong() * 3 }
-        .runFold(0L) { total, n -> total + n }
+    Stream.from(ints).mapPar(8) { it.toLong() * 3 }.runFold(0L) { total, n -> total + n }
 
 internal val batched: Run<Nothing, Int> =
-    Stream.from(ints)
-        .groupedWithin(100, 1.seconds)
-        .runFold(0) { total, batch -> total + batch.size }
+    Stream.from(ints).groupedWithin(100, 1.seconds).runFold(0) { total, batch -> total + batch.size }
 
 internal val perRequest: Run<Nothing, Long> =
     Stream.of(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)

@@ -34,30 +34,28 @@ private val WATCH_NANOS = TimeUnit.MICROSECONDS.toNanos(50)
 
 /**
  * The virtual threads that run one scope's actors. A woken actor joins a queue, and [parallelism] runners, one per
- * carrier, take actors from it in turn, so a burst of wakes starts a handful of threads rather than one each. A
- * runner that finds nothing spins briefly, then parks until a submit wakes it or a second passes, so an actor whose
- * mailbox empties between messages starts no thread per message (spec 0143). A turn that blocks parks
- * its runner; when every runner is in a turn and the queue stands still, a watcher adds runners, doubling each time
- * it still stands still, up to [cap].
+ * carrier, take actors from it in turn, so a burst of wakes starts a handful of threads rather than one each. A runner
+ * that finds nothing spins briefly, then parks until a submit wakes it or a second passes, so an actor whose mailbox
+ * empties between messages starts no thread per message (spec 0143). A turn that blocks parks its runner; when every
+ * runner is in a turn and the queue stands still, a watcher adds runners, doubling each time it still stands still, up
+ * to [cap].
  */
 internal class Runners(private val parallelism: Int, private val cap: Int) {
     /** One runner, and whether it has an activation in hand; only the runner itself writes it. */
     private class Runner {
         lateinit var thread: Thread
 
-        @Volatile
-        var busy = false
+        @Volatile var busy = false
 
         /** [RUNNING], or [PARKED] and wakeable, or [RETIRED]; a waker claims a parked runner by moving it on. */
         val state = AtomicInteger(RUNNING)
 
         /** On the parked stack, so that each runner is on it at most once. */
-        @Volatile
-        var listed = false
+        @Volatile var listed = false
 
         /**
-         * How long this runner spins before it parks, which only it reads or writes (spec 0144): halved after each
-         * park that outlasted a full spin, and reset to [SPIN_NANOS] by a wake a full spin would have caught.
+         * How long this runner spins before it parks, which only it reads or writes (spec 0144): halved after each park
+         * that outlasted a full spin, and reset to [SPIN_NANOS] by a wake a full spin would have caught.
          */
         var spin = SPIN_NANOS
 
@@ -75,6 +73,7 @@ internal class Runners(private val parallelism: Int, private val cap: Int) {
     private val urgent = ConcurrentLinkedQueue<Activation>()
 
     private fun nothingQueued() = urgent.isEmpty() && ready.isEmpty()
+
     private val active = AtomicInteger()
 
     /** How many runner threads this has started, for the test that says a busy actor does not start one each. */
@@ -101,8 +100,7 @@ internal class Runners(private val parallelism: Int, private val cap: Int) {
     private val quiet = lock.newCondition()
 
     // How many threads wait in awaitIdle, read by a runner each time it finds the queue empty.
-    @Volatile
-    private var awaiting = 0
+    @Volatile private var awaiting = 0
 
     /**
      * Waits until nothing is queued and no runner holds an activation. The queue is read before the runners: an
@@ -217,8 +215,8 @@ internal class Runners(private val parallelism: Int, private val cap: Int) {
 
     /**
      * Whether work arrived while [runner] spun, counted among the spinning. A runner whose spin has halved to nothing
-     * goes straight to parking and touches no shared counter; [dry] still tells a near miss, which gives it a full
-     * spin again (spec 0293).
+     * goes straight to parking and touches no shared counter; [dry] still tells a near miss, which gives it a full spin
+     * again (spec 0293).
      */
     private fun spunInto(runner: Runner, dry: Long): Boolean {
         if (runner.spin == 0L) return false
@@ -263,9 +261,9 @@ internal class Runners(private val parallelism: Int, private val cap: Int) {
     }
 
     /**
-     * While work is queued, keeps [parallelism] runners able to run: those parked in a blocking turn do not count,
-     * and the shortfall is made up with new runners, doubling each tick it lasts, so a burst of blocking actors is
-     * each on a runner of its own within a few ticks. Leaves once the queue is empty.
+     * While work is queued, keeps [parallelism] runners able to run: those parked in a blocking turn do not count, and
+     * the shortfall is made up with new runners, doubling each tick it lasts, so a burst of blocking actors is each on
+     * a runner of its own within a few ticks. Leaves once the queue is empty.
      */
     private fun watcher() {
         var adding = 0

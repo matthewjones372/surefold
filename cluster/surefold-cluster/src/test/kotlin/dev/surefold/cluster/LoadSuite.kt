@@ -31,11 +31,12 @@ import kotlin.time.Duration.Companion.seconds
 /** Asks which node the entity it reaches runs on. */
 internal data class Which(val reply: Reply<String>)
 
-internal val whichCodec = object : MessageCodec<Which> {
-    override fun write(message: Which, out: WireOut) = out.reply(message.reply, Codecs.string)
+internal val whichCodec =
+    object : MessageCodec<Which> {
+        override fun write(message: Which, out: WireOut) = out.reply(message.reply, Codecs.string)
 
-    override fun read(input: WireIn): Which = Which(input.reply(Codecs.string))
-}
+        override fun read(input: WireIn): Which = Which(input.reply(Codecs.string))
+    }
 
 /** Probes calm enough that three nodes busy with entities never miss each other. */
 internal val steady =
@@ -56,8 +57,8 @@ internal fun replyingWith(name: String, id: String) =
 internal fun seedsAt(ports: List<Int>) = Discovery.static(*ports.map { Node("", "127.0.0.1", it) }.toTypedArray())
 
 /**
- * A node on a thread of its own with two kinds whose entities answer its name: "tally", which rebalances as
- * [rebalance] says, and "plain", which does not.
+ * A node on a thread of its own with two kinds whose entities answer its name: "tally", which rebalances as [rebalance]
+ * says, and "plain", which does not.
  */
 internal class LoadNode(
     val name: String,
@@ -69,24 +70,27 @@ internal class LoadNode(
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Triple<Cluster, Sharded<Which>, Sharded<Which>>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val cluster = cluster(node(name, port), seeds, steady)
-            val answer = { id: String -> replyingWith(name, id) }
-            val tally = cluster.sharding("tally", whichCodec, passivateAfter, rebalance = rebalance, entity = answer)
-            val plain = cluster.sharding("plain", whichCodec, passivateAfter, entity = answer)
-            opened.set(Triple(cluster, tally, plain))
-            ready.countDown()
-            done.await()
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val cluster = cluster(node(name, port), seeds, steady)
+                val answer = { id: String -> replyingWith(name, id) }
+                val tally =
+                    cluster.sharding("tally", whichCodec, passivateAfter, rebalance = rebalance, entity = answer)
+                val plain = cluster.sharding("plain", whichCodec, passivateAfter, entity = answer)
+                opened.set(Triple(cluster, tally, plain))
+                ready.countDown()
+                done.await()
+            }
         }
-    }
 
     private fun opened(): Triple<Cluster, Sharded<Which>, Sharded<Which>> {
         ready.await()
         return opened.get()
     }
 
-    val cluster: Cluster get() = opened().first
+    val cluster: Cluster
+        get() = opened().first
 
     fun tally(id: String): String = opened().second.entity(id).ask(1.minutes) { Which(it) }.getOrNull()!!
 
@@ -96,9 +100,10 @@ internal class LoadNode(
     fun plain(id: String): String = opened().third.entity(id).ask(1.minutes) { Which(it) }.getOrNull()!!
 
     /** The entities of [kind] each member says it runs, by the member's name, as this node's gossip has it now. */
-    fun running(kind: String): Map<String, Int> = cluster.view.members.associate { member ->
-        member.node.name to (cluster.balance.loads[member.node]?.get(kind)?.values?.sumOf { it.entities } ?: 0)
-    }
+    fun running(kind: String): Map<String, Int> =
+        cluster.view.members.associate { member ->
+            member.node.name to (cluster.balance.loads[member.node]?.get(kind)?.values?.sumOf { it.entities } ?: 0)
+        }
 
     /** The shards of "tally" the leader has moved, as this node's gossip has it now. */
     fun moved() = cluster.balance.moved["tally"].orEmpty()

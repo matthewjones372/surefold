@@ -43,7 +43,8 @@ class ForkCompilerPluginRegistrar : CompilerPluginRegistrar() {
     override fun ExtensionStorage.registerExtensions(configuration: CompilerConfiguration) {
         // Checkers loaded into a compiler they were not built for would fail out of sight: the build says so instead.
         if (!builtForThisCompiler()) {
-            configuration.get(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY)
+            configuration
+                .get(CommonConfigurationKeys.MESSAGE_COLLECTOR_KEY)
                 ?.report(CompilerMessageSeverity.WARNING, versionMismatch())
             return
         }
@@ -61,14 +62,16 @@ class ForkFirExtensionRegistrar : FirExtensionRegistrar() {
 
 internal class ForkCheckers(session: FirSession) : FirAdditionalCheckersExtension(session) {
 
-    override val declarationCheckers: DeclarationCheckers = object : DeclarationCheckers() {
-        override val propertyCheckers: Set<FirPropertyChecker> = setOf(StoredScopeChecker())
-    }
+    override val declarationCheckers: DeclarationCheckers =
+        object : DeclarationCheckers() {
+            override val propertyCheckers: Set<FirPropertyChecker> = setOf(StoredScopeChecker())
+        }
 
-    override val expressionCheckers: ExpressionCheckers = object : ExpressionCheckers() {
-        override val functionCallCheckers: Set<FirFunctionCallChecker> =
-            setOf(ReturnedScopeChecker(), ForkBoundaryChecker())
+    override val expressionCheckers: ExpressionCheckers =
+        object : ExpressionCheckers() {
+            override val functionCallCheckers: Set<FirFunctionCallChecker> =
+                setOf(ReturnedScopeChecker(), ForkBoundaryChecker())
 
-        override val tryExpressionCheckers: Set<FirTryExpressionChecker> = setOf(EatenFailureChecker())
-    }
+            override val tryExpressionCheckers: Set<FirTryExpressionChecker> = setOf(EatenFailureChecker())
+        }
 }

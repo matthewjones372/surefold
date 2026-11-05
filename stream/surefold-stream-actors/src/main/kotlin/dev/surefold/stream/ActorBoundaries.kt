@@ -14,14 +14,13 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ExecutionException
 
 /**
- * One run's operators that Forks forks for, as children of the run's actor. [ctx] is the run actor's, set by each
- * step before it pulls; a node built anywhere but that step (in a feeder's pull, say) is left to Forks, since only the
- * run's own step may spawn its children.
+ * One run's operators that Forks forks for, as children of the run's actor. [ctx] is the run actor's, set by each step
+ * before it pulls; a node built anywhere but that step (in a feeder's pull, say) is left to Forks, since only the run's
+ * own step may spawn its children.
  */
 internal class ActorBoundaries(private val batch: Int) : Boundaries {
 
-    @Volatile
-    private var stepping: Thread? = null
+    @Volatile private var stepping: Thread? = null
     private lateinit var ctx: Ctx<*>
     private var spawned = 0
 
@@ -52,8 +51,8 @@ internal class ActorBoundaries(private val batch: Int) : Boundaries {
         ctx.spawn("$name-${++spawned}", behaviour, null)
 
     /**
-     * `mapPar(n)` on [Node.MapPar.parallelism] worker actors, each told its elements in turn: at most `n` bodies are
-     * in flight, and their answers come back in the order the elements came.
+     * `mapPar(n)` on [Node.MapPar.parallelism] worker actors, each told its elements in turn: at most `n` bodies are in
+     * flight, and their answers come back in the order the elements came.
      */
     private fun Node.MapPar.workers(up: Pull): Pull {
         val body = guarded("mapPar", at) { a: Any -> attempt { f(a) } }
@@ -73,11 +72,12 @@ internal class ActorBoundaries(private val batch: Int) : Boundaries {
                 }
             }
             window.removeFirstOrNull()?.let { head ->
-                val answer = try {
-                    head.get()
-                } catch (failed: ExecutionException) {
-                    throw failed.cause ?: failed
-                }
+                val answer =
+                    try {
+                        head.get()
+                    } catch (failed: ExecutionException) {
+                        throw failed.cause ?: failed
+                    }
                 answer.fold({ e -> throw DeclaredFailure(e) }, { b -> b })
             }
         }
@@ -99,8 +99,8 @@ internal class ActorBoundaries(private val batch: Int) : Boundaries {
     }
 
     /**
-     * `flatMapMerge(breadth)`: an outer actor pulls the outer stream and starts each inner one as an input actor of
-     * its own, while fewer than `breadth` are running.
+     * `flatMapMerge(breadth)`: an outer actor pulls the outer stream and starts each inner one as an input actor of its
+     * own, while fewer than `breadth` are running.
      */
     private fun Node.FlatMap.fed(breadth: Int, up: Pull, pulled: (Node) -> Pull): Pull {
         val confluence = Inflow(room = MERGED, open = 0, outerDone = false)

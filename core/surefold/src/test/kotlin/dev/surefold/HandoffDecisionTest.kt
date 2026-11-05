@@ -3,9 +3,9 @@ package dev.surefold
 import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldThrow
 import dev.surefold.fail.Either
-import org.junit.jupiter.api.Test
 import java.lang.reflect.InvocationTargetException
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 @OptIn(TurnSeam::class)
 class HandoffDecisionTest {
@@ -189,21 +189,21 @@ private fun interruptedAttempt(
     decision: HandoffDecision<Any>,
     value: Any,
     expected: Any,
-): Triple<Boolean, Boolean, Boolean> =
-    scope {
-        async {
-            val thread = Thread.currentThread()
-            val alreadyInterrupted = thread.isInterrupted
-            try {
-                thread.interrupt()
-                val accepted = decision.tryComplete(value)
-                val same = decision.peek() === expected
-                Triple(accepted, same, thread.isInterrupted)
-            } finally {
-                if (!alreadyInterrupted) Thread.interrupted()
-            }
-        }.await()
+): Triple<Boolean, Boolean, Boolean> = scope {
+    async {
+        val thread = Thread.currentThread()
+        val alreadyInterrupted = thread.isInterrupted
+        try {
+            thread.interrupt()
+            val accepted = decision.tryComplete(value)
+            val same = decision.peek() === expected
+            Triple(accepted, same, thread.isInterrupted)
+        } finally {
+            if (!alreadyInterrupted) Thread.interrupted()
+        }
     }
+        .await()
+}
 
 private class PublishedValue(var number: Int = 0)
 
@@ -234,9 +234,11 @@ private object ThrowingMetrics : Metrics {
 }
 
 private object ThrowingTags : Map<String, String> by emptyMap() {
-    override val entries: Set<Map.Entry<String, String>> get() = throw observerFailed
+    override val entries: Set<Map.Entry<String, String>>
+        get() = throw observerFailed
 
-    override val size: Int get() = throw observerFailed
+    override val size: Int
+        get() = throw observerFailed
 }
 
 @OptIn(TurnSeam::class)

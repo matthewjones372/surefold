@@ -28,11 +28,12 @@ import kotlin.time.Duration.Companion.seconds
 /** Asks a desk which node it runs on. */
 private data class Desk(val reply: Reply<String>)
 
-private val deskCodec = object : MessageCodec<Desk> {
-    override fun write(message: Desk, out: WireOut) = out.reply(message.reply, Codecs.string)
+private val deskCodec =
+    object : MessageCodec<Desk> {
+        override fun write(message: Desk, out: WireOut) = out.reply(message.reply, Codecs.string)
 
-    override fun read(input: WireIn): Desk = Desk(input.reply(Codecs.string))
-}
+        override fun read(input: WireIn): Desk = Desk(input.reply(Codecs.string))
+    }
 
 private val lively =
     Gossiping(probeEvery = 200.milliseconds, ackWithin = 60.milliseconds, formAfter = 1_000.milliseconds)
@@ -42,17 +43,19 @@ private class Office(val name: String, port: Int, seeds: Discovery, tls: Tls) : 
     private val done = CountDownLatch(1)
     private val ready = CountDownLatch(1)
     private val opened = AtomicReference<Pair<Cluster, Sharded<Desk>>>()
-    private val thread = Thread.ofPlatform().start {
-        scope {
-            val cluster = cluster(node(name, port, tls = tls), seeds, lively)
-            val desks = cluster.sharding("desk", deskCodec, passivateAfter = 1.minutes) { _ ->
-                behaviour<Desk, Unit>(Unit) { _, _, where -> stay().also { where.reply(name) } }
+    private val thread =
+        Thread.ofPlatform().start {
+            scope {
+                val cluster = cluster(node(name, port, tls = tls), seeds, lively)
+                val desks =
+                    cluster.sharding("desk", deskCodec, passivateAfter = 1.minutes) { _ ->
+                        behaviour<Desk, Unit>(Unit) { _, _, where -> stay().also { where.reply(name) } }
+                    }
+                opened.set(cluster to desks)
+                ready.countDown()
+                done.await()
             }
-            opened.set(cluster to desks)
-            ready.countDown()
-            done.await()
         }
-    }
 
     val cluster: Cluster
         get() {
@@ -81,9 +84,10 @@ object TlsClusterSuite : Suite() {
             val opened = offices.toMutableList()
             try {
                 offices.forAll { office ->
-                    val up = office.cluster.await(1.minutes) { view ->
-                        view.members.count { it.status == Status.Up } == 3
-                    }
+                    val up =
+                        office.cluster.await(1.minutes) { view ->
+                            view.members.count { it.status == Status.Up } == 3
+                        }
                     withClue("${office.name} sees 3 Up") { up shouldBe true }
                 }
                 val shard = Placement.shardOf("d-7", Sharding.SHARDS)
@@ -93,10 +97,10 @@ object TlsClusterSuite : Suite() {
                     .map { it.desks.entity("d-7").ask<Desk, String>(1.minutes) { reply -> Desk(reply) } }
                     .forAll { answered -> answered.getOrNull() shouldBe owner }
 
-                val stranger = Office("n4", ports[3], seeds, TestCertificates.tls("n4", ca = "other-ca")).also {
-                    opened +=
-                        it
-                }
+                val stranger =
+                    Office("n4", ports[3], seeds, TestCertificates.tls("n4", ca = "other-ca")).also {
+                        opened += it
+                    }
                 // Long enough for a node the cluster trusted to have joined several times over, at this gossip's pace.
                 val joined = stranger.cluster.await(3.seconds) { view -> view.members.size > 1 }
                 withClue("n4, signed by another CA, joined") { joined shouldBe false }

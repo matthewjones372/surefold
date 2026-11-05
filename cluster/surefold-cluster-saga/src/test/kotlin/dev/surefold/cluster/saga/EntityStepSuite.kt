@@ -14,27 +14,31 @@ import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
 
 /** Pays [pence] from `a` into `b`: a credit of `a` first, so an undo has something to take back. */
-private fun payment(accounts: Sharded<Account>) = durableSaga("payment", Says, Says, Says) { pence ->
-    val amount = pence.toLong()
-    entityStep(
-        "top-up",
-        accounts,
-        "a",
-        refused = { "funds" },
-        undo = { Move.Debit(amount) },
-        within = 300.milliseconds,
-    ) { Move.Credit(amount) }
-    entityStep("debit-b", accounts, "b", refused = { "funds" }, within = 300.milliseconds) { Move.Debit(amount) }
-    "paid $amount"
-}
+private fun payment(accounts: Sharded<Account>) =
+    durableSaga("payment", Says, Says, Says) { pence ->
+        val amount = pence.toLong()
+        entityStep(
+            "top-up",
+            accounts,
+            "a",
+            refused = { "funds" },
+            undo = { Move.Debit(amount) },
+            within = 300.milliseconds,
+        ) {
+            Move.Credit(amount)
+        }
+        entityStep("debit-b", accounts, "b", refused = { "funds" }, within = 300.milliseconds) { Move.Debit(amount) }
+        "paid $amount"
+    }
 
 /** One step: a credit of `a`. */
-private fun credit(accounts: Sharded<Account>) = durableSaga("credit", Says, Says, Says) { pence ->
-    entityStep("credit", accounts, "a", refused = { "funds" }, within = 300.milliseconds) {
-        Move.Credit(pence.toLong())
+private fun credit(accounts: Sharded<Account>) =
+    durableSaga("credit", Says, Says, Says) { pence ->
+        entityStep("credit", accounts, "a", refused = { "funds" }, within = 300.milliseconds) {
+            Move.Credit(pence.toLong())
+        }
+        "credited $pence"
     }
-    "credited $pence"
-}
 
 object EntityStepSuite : Suite() {
     init {

@@ -6,9 +6,16 @@ import dev.surefold.junit.shouldBe
 /** Spec 0146: which of a durable producer's commands hold room, with no actor or semaphore. */
 object HoldingSuite : Suite() {
     /** Outboxes recovered from a journal: a and b each keep two commands, and none holds room. */
-    private val recovered = Outboxes<Unit>()
-        .kept("a", 1, Unit).first.kept("a", 2, Unit).first
-        .kept("b", 1, Unit).first.kept("b", 2, Unit).first
+    private val recovered =
+        Outboxes<Unit>()
+            .kept("a", 1, Unit)
+            .first
+            .kept("a", 2, Unit)
+            .first
+            .kept("b", 1, Unit)
+            .first
+            .kept("b", 2, Unit)
+            .first
 
     init {
         test("a claim takes no more than the room there is, the first commands first") {

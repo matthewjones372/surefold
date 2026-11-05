@@ -22,9 +22,9 @@ import org.jetbrains.kotlin.name.Name
 
 /**
  * A catch-all around a call that fails or waits, which neither throws again nor puts the interrupt back (spec 0041).
- * `catch (e: Throwable)` takes `fail`'s own throwable, so a `fail` or `bind` inside never reaches its `attempt`;
- * `catch (e: Exception)` and `catch (e: InterruptedException)` take the interrupt an `await` is stopped with, so the
- * scope that sent it waits on a fork that carries on. `RuntimeException` takes neither, and is not judged.
+ * `catch (e: Throwable)` takes `fail`'s own throwable, so a `fail` or `bind` inside never reaches its `attempt`; `catch
+ * (e: Exception)` and `catch (e: InterruptedException)` take the interrupt an `await` is stopped with, so the scope
+ * that sent it waits on a fork that carries on. `RuntimeException` takes neither, and is not judged.
  */
 internal class EatenFailureChecker : FirTryExpressionChecker(MppCheckerKind.Common) {
 
@@ -33,11 +33,12 @@ internal class EatenFailureChecker : FirTryExpressionChecker(MppCheckerKind.Comm
         val calls = Calls().also { expression.tryBlock.accept(it) }.found
         expression.catches.forEach { caught ->
             val type = caught.parameter.returnTypeRef.coneType.fullyExpandedType().classId
-            val eaten = when (type) {
-                in throwables -> calls.filter { it in failing || it == awaiting }
-                in interrupted -> calls.filter { it == awaiting }
-                else -> emptyList()
-            }
+            val eaten =
+                when (type) {
+                    in throwables -> calls.filter { it in failing || it == awaiting }
+                    in interrupted -> calls.filter { it == awaiting }
+                    else -> emptyList()
+                }
             if (eaten.isEmpty() || caught.handsOn()) return@forEach
             reporter.reportOn(
                 caught.parameter.source,
@@ -95,22 +96,25 @@ private val async = CallableId(ClassId(surefold, Name.identifier("Scope")), Name
 
 private val awaiting = CallableId(ClassId(surefold, Name.identifier("Deferred")), Name.identifier("await"))
 
-private val failing = setOf(
-    CallableId(ClassId(fail, Name.identifier("Fail")), Name.identifier("fail")),
-    CallableId(fail, Name.identifier("bind")),
-)
+private val failing =
+    setOf(
+        CallableId(ClassId(fail, Name.identifier("Fail")), Name.identifier("fail")),
+        CallableId(fail, Name.identifier("bind")),
+    )
 
 private val interrupt =
     CallableId(ClassId(FqName("java.lang"), Name.identifier("Thread")), Name.identifier("interrupt"))
 
 private val nonFatalOrThrow = CallableId(fail, Name.identifier("nonFatalOrThrow"))
 
-private val throwables = setOf(
-    ClassId(FqName("kotlin"), Name.identifier("Throwable")),
-    ClassId(FqName("java.lang"), Name.identifier("Throwable")),
-)
+private val throwables =
+    setOf(
+        ClassId(FqName("kotlin"), Name.identifier("Throwable")),
+        ClassId(FqName("java.lang"), Name.identifier("Throwable")),
+    )
 
-private val interrupted = setOf(
-    ClassId(FqName("java.lang"), Name.identifier("Exception")),
-    ClassId(FqName("java.lang"), Name.identifier("InterruptedException")),
-)
+private val interrupted =
+    setOf(
+        ClassId(FqName("java.lang"), Name.identifier("Exception")),
+        ClassId(FqName("java.lang"), Name.identifier("InterruptedException")),
+    )

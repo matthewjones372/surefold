@@ -11,8 +11,7 @@ tasks.test {
     jvmArgumentProviders.add(
         CommandLineArgumentProvider {
             listOf(
-                "-Dsurefold.cache.runtimeClasspath=" +
-                    mainRuntime.get().joinToString(File.pathSeparator) { it.name },
+                "-Dsurefold.cache.runtimeClasspath=" + mainRuntime.get().joinToString(File.pathSeparator) { it.name },
             )
         },
     )

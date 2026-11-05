@@ -4,7 +4,6 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.withClue
 import dev.surefold.fail.attempt
 import dev.surefold.fail.left
-import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.util.PriorityQueue
 import java.util.concurrent.CancellationException
@@ -12,13 +11,14 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
+import org.junit.jupiter.api.Test
 
 /** A limit on calls into one dependency: a fixed one never lets more in, and an adaptive one finds its level. */
 class LimitTest {
 
     /**
-     * A dependency that serves [capacity] calls at once in [baseNanos]; beyond that, calls queue, and each takes
-     * longer in proportion. Drives [vegas] with one call at the current limit per step, for [steps] steps.
+     * A dependency that serves [capacity] calls at once in [baseNanos]; beyond that, calls queue, and each takes longer
+     * in proportion. Drives [vegas] with one call at the current limit per step, for [steps] steps.
      */
     private fun settle(vegas: Vegas, start: Int, capacity: () -> Int, steps: Int): Int {
         var limit = start
@@ -190,11 +190,13 @@ class LimitTest {
     @Test
     fun `an adaptive limit keeps a dependency with noisy latency busy without queueing much`() {
         val random = Random(SEED)
-        val dependency = Dependency(Vegas(initial = 20, min = 1, max = 5_000), capacity = 400) {
-            // Each call within a quarter of 10 ms either way, and one in a hundred four times as long.
-            val jitter = BASE_NANOS * (0.75 + random.nextDouble() / 2)
-            (if (random.nextInt(100) == 0) 4 * jitter else jitter).toLong()
-        }.start(20)
+        val dependency =
+            Dependency(Vegas(initial = 20, min = 1, max = 5_000), capacity = 400) {
+                    // Each call within a quarter of 10 ms either way, and one in a hundred four times as long.
+                    val jitter = BASE_NANOS * (0.75 + random.nextDouble() / 2)
+                    (if (random.nextInt(100) == 0) 4 * jitter else jitter).toLong()
+                }
+                .start(20)
         dependency.runFor(2 * SECOND)
 
         val (rate, latency) = dependency.measure(5 * SECOND)
@@ -255,9 +257,15 @@ class LimitTest {
         val limit = Limit.fixed(1)
         val inside = CountDownLatch(1)
         val leave = CountDownLatch(1)
-        val first = Thread.ofVirtual().start { limit.withPermit { inside.countDown(); leave.await() } }
+        val first =
+            Thread.ofVirtual().start {
+                limit.withPermit {
+                    inside.countDown()
+                    leave.await()
+                }
+            }
         inside.await()
-        val second = Thread.ofVirtual().start { limit.withPermit { } }
+        val second = Thread.ofVirtual().start { limit.withPermit {} }
 
         withClue("the second call is still waiting") { second.join(Duration.ofMillis(WAIT_MILLIS)) shouldBe false }
         leave.countDown()
@@ -300,7 +308,7 @@ class LimitTest {
     @Test
     fun `an adaptive limit publishes what it allows and what is inside it`() {
         capturingMetrics { captured ->
-            Limit.adaptive("orders-db", initial = 10, max = 100).withPermit { }
+            Limit.adaptive("orders-db", initial = 10, max = 100).withPermit {}
 
             captured.gauge("surefold.limit.current") shouldBe 10.0
             captured.gauge("surefold.limit.in_use") shouldBe 0.0

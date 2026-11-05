@@ -41,52 +41,54 @@ private data object Fuse : Alarm
 private data class Bell(val rung: List<String> = emptyList(), val waiting: Rung? = null)
 
 /** Rings what its timers send, and answers what has rung. */
-private fun alarm() = behaviour<Alarm, Bell>(Bell()) { ctx, bell, message ->
-    when (message) {
-        is Arm -> {
-            ctx.timers.after(message.key, message.delay, Ring(message.note))
-            stay()
-        }
+private fun alarm() =
+    behaviour<Alarm, Bell>(Bell()) { ctx, bell, message ->
+        when (message) {
+            is Arm -> {
+                ctx.timers.after(message.key, message.delay, Ring(message.note))
+                stay()
+            }
 
-        is Disarm -> {
-            ctx.timers.cancel(message.key)
-            stay()
-        }
+            is Disarm -> {
+                ctx.timers.cancel(message.key)
+                stay()
+            }
 
-        is Flicker -> {
-            ctx.timers.after(message.key, Duration.ZERO, Ring("flicker"))
-            ctx.timers.cancel(message.key)
-            stay()
-        }
+            is Flicker -> {
+                ctx.timers.after(message.key, Duration.ZERO, Ring("flicker"))
+                ctx.timers.cancel(message.key)
+                stay()
+            }
 
-        is Swap -> {
-            ctx.timers.after(message.key, Duration.ZERO, Ring("first"))
-            ctx.timers.after(message.key, Duration.ZERO, Ring("second"))
-            stay()
-        }
+            is Swap -> {
+                ctx.timers.after(message.key, Duration.ZERO, Ring("first"))
+                ctx.timers.after(message.key, Duration.ZERO, Ring("second"))
+                stay()
+            }
 
-        is Ring -> {
-            val rung = bell.rung + message.note
-            val waiting = bell.waiting?.takeUnless { rung.size >= it.count }
-            bell.waiting?.takeIf { waiting == null }?.reply?.invoke(rung)
-            become(Bell(rung, waiting))
-        }
+            is Ring -> {
+                val rung = bell.rung + message.note
+                val waiting = bell.waiting?.takeUnless { rung.size >= it.count }
+                bell.waiting?.takeIf { waiting == null }?.reply?.invoke(rung)
+                become(Bell(rung, waiting))
+            }
 
-        is Heard -> {
-            message.reply(bell.rung)
-            stay()
-        }
+            is Heard -> {
+                message.reply(bell.rung)
+                stay()
+            }
 
-        is Rung -> if (bell.rung.size >= message.count) {
-            message.reply(bell.rung)
-            stay()
-        } else {
-            become(bell.copy(waiting = message))
-        }
+            is Rung ->
+                if (bell.rung.size >= message.count) {
+                    message.reply(bell.rung)
+                    stay()
+                } else {
+                    become(bell.copy(waiting = message))
+                }
 
-        Fuse -> error("the alarm blew a fuse")
+            Fuse -> error("the alarm blew a fuse")
+        }
     }
-}
 
 private fun ActorRef<Alarm>.heard() = ask(1.minutes) { Heard(it) }
 
@@ -172,20 +174,21 @@ object TimersSuite : Suite() {
 
         test("on threads, a timer falls due when the scope's clock moves, and a cancelled one never does") {
             val moving = TestClock()
-            val heard = clock.locally(moving) {
-                scope {
-                    val alarm = spawn("alarm", alarm())
-                    alarm.tell(Arm("wake", 5.seconds, "wake"))
-                    alarm.tell(Arm("snooze", 6.seconds, "snooze"))
-                    alarm.tell(Disarm("snooze"))
-                    awaitIdle()
+            val heard =
+                clock.locally(moving) {
+                    scope {
+                        val alarm = spawn("alarm", alarm())
+                        alarm.tell(Arm("wake", 5.seconds, "wake"))
+                        alarm.tell(Arm("snooze", 6.seconds, "snooze"))
+                        alarm.tell(Disarm("snooze"))
+                        awaitIdle()
 
-                    moving.adjust(4.seconds)
-                    val early = alarm.heard()
-                    moving.adjust(1.hours)
-                    early to alarm.heard()
+                        moving.adjust(4.seconds)
+                        val early = alarm.heard()
+                        moving.adjust(1.hours)
+                        early to alarm.heard()
+                    }
                 }
-            }
 
             heard shouldBe (emptyList<String>().right() to listOf("wake").right())
         }

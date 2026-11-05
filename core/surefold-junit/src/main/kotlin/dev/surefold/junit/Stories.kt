@@ -13,8 +13,8 @@ import dev.surefold.test.tellStory
 
 /**
  * surefold-test's `story`, as a suite's test body, titled by default with the test's name. The checks its steps make
- * are recorded as the test's; a step whose checks failed is marked failed and the story goes on, and a step that
- * throws still ends it.
+ * are recorded as the test's; a step whose checks failed is marked failed and the story goes on, and a step that throws
+ * still ends it.
  */
 @OptIn(StorySeam::class)
 fun story(title: String = storyTitle.get() ?: "a story", block: Story.() -> Unit) {

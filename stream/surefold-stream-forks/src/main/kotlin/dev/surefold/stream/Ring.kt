@@ -24,8 +24,7 @@ internal open class RingPadBeforeTail {
 }
 
 internal open class RingTail : RingPadBeforeTail() {
-    @Volatile @JvmField
-    var tail = 0L
+    @Volatile @JvmField var tail = 0L
 
     // The producer's last sight of the consumer's index, kept off the consumer's line for the same reason.
     @JvmField var headSeen = 0L
@@ -49,8 +48,7 @@ internal open class RingPadBeforeHead : RingTail() {
 }
 
 internal open class RingHead : RingPadBeforeHead() {
-    @Volatile @JvmField
-    var head = 0L
+    @Volatile @JvmField var head = 0L
 
     // The consumer's last sight of the producer's index, kept off the producer's line for the same reason.
     @JvmField var tailSeen = 0L
@@ -74,14 +72,13 @@ internal open class RingPadAfterHead : RingHead() {
 }
 
 /**
- * A ring of [capacity] between one producer and one consumer (spec 0172), which wakes either side only when it
- * must: the consumer when the ring stops being empty, the producer once a batch of room has been made.
+ * A ring of [capacity] between one producer and one consumer (spec 0172), which wakes either side only when it must:
+ * the consumer when the ring stops being empty, the producer once a batch of room has been made.
  *
- * Either side yields a few times and then parks the same way: it names itself, fences, and looks once more
- * before parking, so a wake can only be missed if the other side's fence is missing too. The producer fences
- * on every put, since one element may be all the consumer gets for a long time. The consumer fences only where
- * its index crosses a multiple of the batch: a parked producer left the ring full, so the consumer crosses one
- * before it empties.
+ * Either side yields a few times and then parks the same way: it names itself, fences, and looks once more before
+ * parking, so a wake can only be missed if the other side's fence is missing too. The producer fences on every put,
+ * since one element may be all the consumer gets for a long time. The consumer fences only where its index crosses a
+ * multiple of the batch: a parked producer left the ring full, so the consumer crosses one before it empties.
  */
 internal class Ring(private val capacity: Int) : RingPadAfterHead() {
     init {
@@ -112,8 +109,8 @@ internal class Ring(private val capacity: Int) : RingPadAfterHead() {
     }
 
     /**
-     * Waits while the ring is full, for a producer that must know there is room before it makes the element. A
-     * window's room comes only as its bodies finish, so it parks at once rather than [yields] first.
+     * Waits while the ring is full, for a producer that must know there is room before it makes the element. A window's
+     * room comes only as its bodies finish, so it parks at once rather than [yields] first.
      */
     fun awaitRoom(yields: Int = 0) {
         if (Thread.interrupted()) throw InterruptedException()
@@ -144,7 +141,9 @@ internal class Ring(private val capacity: Int) : RingPadAfterHead() {
         if (Thread.interrupted()) throw InterruptedException()
         var yielded = 0
         while (true) {
-            poll()?.let { return it }
+            poll()?.let {
+                return it
+            }
             // A yield lets a producer on the same carrier run, and is far cheaper than a park and an unpark.
             if (yielded++ < YIELDS_BEFORE_PARKING) Thread.yield() else parkUntilNotEmpty()
         }
@@ -155,7 +154,9 @@ internal class Ring(private val capacity: Int) : RingPadAfterHead() {
         if (Thread.interrupted()) throw InterruptedException()
         var yielded = 0
         while (true) {
-            peek()?.let { return it }
+            peek()?.let {
+                return it
+            }
             // A yield lets a producer on the same carrier run, and is far cheaper than a park and an unpark.
             if (yielded++ < YIELDS_BEFORE_PARKING) Thread.yield() else parkUntilNotEmpty()
         }

@@ -1,5 +1,6 @@
 package dev.surefold.app.gradle
 
+import java.io.File
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.plugins.JavaPluginExtension
@@ -8,13 +9,12 @@ import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.Test
 import org.gradle.jvm.toolchain.JavaToolchainService
 import org.gradle.process.CommandLineArgumentProvider
-import java.io.File
 
 /**
  * Applying this is the whole of what an application does to get its graph checked.
  *
- * The check runs the graph rather than reading the source, which is why it sees an actor node and a
- * module assembled in a conditional — and why it is a task rather than a compiler plugin.
+ * The check runs the graph rather than reading the source, which is why it sees an actor node and a module assembled in
+ * a conditional — and why it is a task rather than a compiler plugin.
  */
 class SurefoldWiringPlugin : Plugin<Project> {
 
@@ -67,28 +67,29 @@ class SurefoldWiringPlugin : Plugin<Project> {
         val diagrams = wiring.diagrams
         val failOn = wiring.failOn
 
-        val check = project.tasks.register(TASK, JavaExec::class.java) { exec ->
-            exec.group = "verification"
-            exec.description = "Checks every surefold-app graph in this project, and renders each one."
-            exec.mainClass.set(CHECKER)
-            exec.javaLauncher.set(toolchains.launcherFor(java.toolchain))
-            exec.classpath = main.runtimeClasspath
-            // The report's own bullet is not ASCII, and a forked JVM takes the platform default:
-            // on a CI runner that is not UTF-8 every line of it arrives as a question mark.
-            exec.defaultCharacterEncoding = "UTF-8"
-            exec.inputs.files(main.runtimeClasspath).withPropertyName("runtimeClasspath")
-            exec.outputs.dir(diagrams)
-            exec.argumentProviders.add(
-                CommandLineArgumentProvider {
-                    listOf(
-                        classes.joinToString(File.pathSeparator) { it.absolutePath },
-                        diagrams.get().asFile.absolutePath,
-                        failOn.get(),
-                        sources.joinToString(File.pathSeparator) { it.absolutePath },
-                    )
-                },
-            )
-        }
+        val check =
+            project.tasks.register(TASK, JavaExec::class.java) { exec ->
+                exec.group = "verification"
+                exec.description = "Checks every surefold-app graph in this project, and renders each one."
+                exec.mainClass.set(CHECKER)
+                exec.javaLauncher.set(toolchains.launcherFor(java.toolchain))
+                exec.classpath = main.runtimeClasspath
+                // The report's own bullet is not ASCII, and a forked JVM takes the platform default:
+                // on a CI runner that is not UTF-8 every line of it arrives as a question mark.
+                exec.defaultCharacterEncoding = "UTF-8"
+                exec.inputs.files(main.runtimeClasspath).withPropertyName("runtimeClasspath")
+                exec.outputs.dir(diagrams)
+                exec.argumentProviders.add(
+                    CommandLineArgumentProvider {
+                        listOf(
+                            classes.joinToString(File.pathSeparator) { it.absolutePath },
+                            diagrams.get().asFile.absolutePath,
+                            failOn.get(),
+                            sources.joinToString(File.pathSeparator) { it.absolutePath },
+                        )
+                    },
+                )
+            }
 
         // Finalising `classes` rather than depending on it: `classes` is what the IDE runs when it
         // builds the project, and what a run configuration builds before it starts anything, so the

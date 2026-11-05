@@ -10,9 +10,9 @@ import kotlin.time.Duration
 /**
  * A stream as data: what the operators build and what a backend compiles.
  *
- * Untyped inside, because the element and failure types are [Stream]'s to carry and a node is only
- * ever reached through the stream that typed it. Nothing here names a backend's types: a value only one
- * backend can run is held opaquely, with the [BackendKey] of the backend that can.
+ * Untyped inside, because the element and failure types are [Stream]'s to carry and a node is only ever reached through
+ * the stream that typed it. Nothing here names a backend's types: a value only one backend can run is held opaquely,
+ * with the [BackendKey] of the backend that can.
  */
 @StreamSpi
 sealed interface Node {
@@ -106,6 +106,7 @@ sealed interface Node {
     data class Filter(override val upstream: Node, val predicate: (Any) -> Boolean, val at: String) : Unary {
         override fun on(upstream: Node) = copy(upstream = upstream)
     }
+
     data class FilterNot(override val upstream: Node, val predicate: (Any) -> Boolean, val at: String) : Unary {
         override fun on(upstream: Node) = copy(upstream = upstream)
     }
@@ -194,8 +195,8 @@ sealed interface Node {
     }
 
     /**
-     * [f] answers with a [Stream] rather than its node, so the compiler can reuse the source a stream
-     * built once already has: `flatten` over streams described ahead of time compiles each of them once.
+     * [f] answers with a [Stream] rather than its node, so the compiler can reuse the source a stream built once
+     * already has: `flatten` over streams described ahead of time compiles each of them once.
      */
     data class FlatMap(
         override val upstream: Node,
@@ -243,8 +244,8 @@ sealed interface Node {
 }
 
 /**
- * A pipe's tree with its [Node.Hole] replaced by [onto]: splicing rebuilds the pipe's own nodes and
- * shares everything upstream, so a pipe reused across streams is copied once per splice.
+ * A pipe's tree with its [Node.Hole] replaced by [onto]: splicing rebuilds the pipe's own nodes and shares everything
+ * upstream, so a pipe reused across streams is copied once per splice.
  */
 internal fun Node.spliced(onto: Node): Node =
     when (this) {
@@ -282,102 +283,138 @@ interface Owned {
 /** The operator a node is, by the name a caller wrote: what a refusal, a rendering or a metric calls it. */
 @StreamSpi
 val Node.operator: String
-    get() = when (this) {
-        is Node.Native -> builder
+    get() =
+        when (this) {
+            is Node.Native -> builder
 
-        is Node.Stage -> builder
+            is Node.Stage -> builder
 
-        is Node.Elements -> "Stream.from"
+            is Node.Elements -> "Stream.from"
 
-        is Node.Single -> "Stream.single"
+            is Node.Single -> "Stream.single"
 
-        is Node.Tick -> "Stream.tick"
+            is Node.Tick -> "Stream.tick"
 
-        is Node.FromStage -> "Stream.fromStage"
+            is Node.FromStage -> "Stream.fromStage"
 
-        is Node.Blocking -> "Stream.blocking"
+            is Node.Blocking -> "Stream.blocking"
 
-        is Node.Fail -> "Stream.fail"
+            is Node.Fail -> "Stream.fail"
 
-        Node.Empty -> "Stream.empty"
+            Node.Empty -> "Stream.empty"
 
-        Node.Hole -> "Pipe.identity"
+            Node.Hole -> "Pipe.identity"
 
-        is Node.Merge -> "merge"
+            is Node.Merge -> "merge"
 
-        is Node.Interleave -> "interleave"
+            is Node.Interleave -> "interleave"
 
-        is Node.ZipWith -> "zipWith"
+            is Node.ZipWith -> "zipWith"
 
-        is Node.Prepend -> "prepend"
+            is Node.Prepend -> "prepend"
 
-        is Node.Concat -> "concat"
+            is Node.Concat -> "concat"
 
-        is Node.RestartOnDefect -> "restartOnDefect"
+            is Node.RestartOnDefect -> "restartOnDefect"
 
-        is Node.FlatMap -> if (breadth == null) "flatMapConcat" else "flatMapMerge"
+            is Node.FlatMap -> if (breadth == null) "flatMapConcat" else "flatMapMerge"
 
-        is Node.Conflate -> "conflateWithSeed"
+            is Node.Conflate -> "conflateWithSeed"
 
-        is Node.Fused -> steps.joinToString(prefix = "fused[", postfix = "]") { it.operator }
+            is Node.Fused -> steps.joinToString(prefix = "fused[", postfix = "]") { it.operator }
 
-        is Node.Probed -> "probe"
+            is Node.Probed -> "probe"
 
-        is Node.Map, is Node.MapOrFail, is Node.Filter, is Node.FilterNot, is Node.Take, is Node.Drop,
-        is Node.TakeWhile, is Node.DropWhile, is Node.Grouped, is Node.Sliding, is Node.GroupedWithin,
-        is Node.Scan, is Node.StatefulMap, is Node.MapConcat, is Node.MapAsync, is Node.Either, is Node.Absolve,
-        is Node.CatchAll, is Node.MapError, is Node.OrFailIfEmpty, is Node.MapPar, is Node.Buffer,
-        -> javaClass.simpleName.replaceFirstChar { it.lowercase() }
-    }
+            is Node.Map,
+            is Node.MapOrFail,
+            is Node.Filter,
+            is Node.FilterNot,
+            is Node.Take,
+            is Node.Drop,
+            is Node.TakeWhile,
+            is Node.DropWhile,
+            is Node.Grouped,
+            is Node.Sliding,
+            is Node.GroupedWithin,
+            is Node.Scan,
+            is Node.StatefulMap,
+            is Node.MapConcat,
+            is Node.MapAsync,
+            is Node.Either,
+            is Node.Absolve,
+            is Node.CatchAll,
+            is Node.MapError,
+            is Node.OrFailIfEmpty,
+            is Node.MapPar,
+            is Node.Buffer -> javaClass.simpleName.replaceFirstChar { it.lowercase() }
+        }
 
 /** The caller's line that wrote a node, for the operators that run caller code and so read one. */
 @StreamSpi
 val Node.site: String?
-    get() = when (this) {
-        is Owned -> at
+    get() =
+        when (this) {
+            is Owned -> at
 
-        is Node.Map -> at
+            is Node.Map -> at
 
-        is Node.MapOrFail -> at
+            is Node.MapOrFail -> at
 
-        is Node.Filter -> at
+            is Node.Filter -> at
 
-        is Node.FilterNot -> at
+            is Node.FilterNot -> at
 
-        is Node.TakeWhile -> at
+            is Node.TakeWhile -> at
 
-        is Node.DropWhile -> at
+            is Node.DropWhile -> at
 
-        is Node.Scan -> at
+            is Node.Scan -> at
 
-        is Node.StatefulMap -> at
+            is Node.StatefulMap -> at
 
-        is Node.MapConcat -> at
+            is Node.MapConcat -> at
 
-        is Node.MapAsync -> at
+            is Node.MapAsync -> at
 
-        is Node.Conflate -> at
+            is Node.Conflate -> at
 
-        is Node.Absolve -> at
+            is Node.Absolve -> at
 
-        is Node.MapError -> at
+            is Node.MapError -> at
 
-        is Node.Blocking -> at
+            is Node.Blocking -> at
 
-        is Node.FlatMap -> at
+            is Node.FlatMap -> at
 
-        is Node.MapPar -> at
+            is Node.MapPar -> at
 
-        is Node.ZipWith -> at
+            is Node.ZipWith -> at
 
-        is Node.Fused -> steps.first().at
+            is Node.Fused -> steps.first().at
 
-        is Node.Elements, is Node.Single, is Node.Tick, is Node.FromStage, is Node.Fail, Node.Empty, Node.Hole,
-        is Node.Merge, is Node.Interleave, is Node.Prepend, is Node.Concat, is Node.RestartOnDefect,
-        is Node.Take, is Node.Drop, is Node.Grouped, is Node.Sliding, is Node.GroupedWithin, is Node.Either,
-        is Node.CatchAll, is Node.OrFailIfEmpty, is Node.Probed, is Node.Buffer,
-        -> null
-    }
+            is Node.Elements,
+            is Node.Single,
+            is Node.Tick,
+            is Node.FromStage,
+            is Node.Fail,
+            Node.Empty,
+            Node.Hole,
+            is Node.Merge,
+            is Node.Interleave,
+            is Node.Prepend,
+            is Node.Concat,
+            is Node.RestartOnDefect,
+            is Node.Take,
+            is Node.Drop,
+            is Node.Grouped,
+            is Node.Sliding,
+            is Node.GroupedWithin,
+            is Node.Either,
+            is Node.CatchAll,
+            is Node.OrFailIfEmpty,
+            is Node.Probed,
+            is Node.Buffer -> null
+        }
 
 /** This node reading from its children as [transform] answers them, and itself where none of them changed. */
 @StreamSpi
@@ -397,14 +434,18 @@ fun Node.withChildren(transform: (Node) -> Node): Node =
 
         is Node.RestartOnDefect ->
             transform(upstream).let { up ->
-                if (up ===
-                    upstream
-                ) this else Node.RestartOnDefect(up, step, logger, clock)
+                if (up === upstream) this else Node.RestartOnDefect(up, step, logger, clock)
             }
 
-        is Node.Native, is Node.Elements, is Node.Single, is Node.Tick, is Node.FromStage, is Node.Fail,
-        is Node.Blocking, Node.Empty, Node.Hole,
-        -> this
+        is Node.Native,
+        is Node.Elements,
+        is Node.Single,
+        is Node.Tick,
+        is Node.FromStage,
+        is Node.Fail,
+        is Node.Blocking,
+        Node.Empty,
+        Node.Hole -> this
     }
 
 private fun Node.pair(left: Node, right: Node, transform: (Node) -> Node, build: (Node, Node) -> Node): Node {
@@ -431,11 +472,16 @@ fun Node.children(): List<Node> =
 
         is Node.RestartOnDefect -> listOf(upstream)
 
-        is Node.Native, is Node.Elements, is Node.Single, is Node.Tick, is Node.FromStage, is Node.Fail,
-        is Node.Blocking, Node.Empty, Node.Hole,
-        -> emptyList()
+        is Node.Native,
+        is Node.Elements,
+        is Node.Single,
+        is Node.Tick,
+        is Node.FromStage,
+        is Node.Fail,
+        is Node.Blocking,
+        Node.Empty,
+        Node.Hole -> emptyList()
     }
 
 /** A typed caller function as a node holds it. Erasure makes this a no-op; the stream's types say what comes out. */
-@Suppress("UNCHECKED_CAST")
-internal fun <F> Function<*>.erased(): F = this as F
+@Suppress("UNCHECKED_CAST") internal fun <F> Function<*>.erased(): F = this as F

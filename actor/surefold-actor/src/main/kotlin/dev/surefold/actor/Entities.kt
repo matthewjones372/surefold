@@ -68,8 +68,7 @@ private class EntityBook<M : Any, S, E>(
     private val stopping = HashMap<String, MutableList<Pair<M, Map<String, String>>>>()
 
     // What an entity's full mailbox could not take yet, in order: everything after it waits behind it (spec 0095).
-    @OptIn(PlumbingSeam::class)
-    private val handOn = HandOn<String, M>()
+    @OptIn(PlumbingSeam::class) private val handOn = HandOn<String, M>()
 
     /** Tells the entity [id] [message], starting it if it is not running, and keeping it if it is stopping. */
     fun deliver(ctx: Ctx<Entities<M>>, id: String, message: M) {
@@ -110,8 +109,7 @@ private class EntityBook<M : Any, S, E>(
             ctx.timers.cancel(IdleKey(id))
         }
         // What was kept for an entity that stopped by itself goes to the next one, before anything newer.
-        @OptIn(PlumbingSeam::class)
-        handOn.take(ctx, id) { deliver(ctx, id, it) }
+        @OptIn(PlumbingSeam::class) handOn.take(ctx, id) { deliver(ctx, id, it) }
         stopping.remove(id).orEmpty().forEach { (message, carried) ->
             Carriers.within(carried) { deliver(ctx, id, message) }
         }
@@ -137,8 +135,8 @@ private class EntityBook<M : Any, S, E>(
 
 /**
  * A manager of entities: one actor per id, spawned by [entity] as the manager's child on the id's first message, and
- * stopped once it has had nothing for [passivateAfter]. A message for an entity that is stopping is kept, and starts
- * it again once it has stopped. Talk to one through [entity], whose ref stays good while the entity comes and goes.
+ * stopped once it has had nothing for [passivateAfter]. A message for an entity that is stopping is kept, and starts it
+ * again once it has stopped. Talk to one through [entity], whose ref stays good while the entity comes and goes.
  * [restart] applies to each entity on its own. [onRunning] hears each entity start (+1) and end (-1), and every one
  * still running when the manager stops, for a count of what runs (spec 0081); it runs on the manager's turn. A manager
  * restarted by its own supervision stops its entities without hearing of it, so it keeps a count only when it is
@@ -152,21 +150,21 @@ fun <M : Any, S, E> entities(
 ): Behaviour<Entities<M>, Any?, Nothing> {
     require(passivateAfter.isPositive()) { "passivateAfter must be positive, was $passivateAfter" }
     return behaviour<Entities<M>, Any?>(null) { ctx, state, message ->
-        @Suppress("UNCHECKED_CAST")
-        val book = state as EntityBook<M, S, E>? ?: EntityBook(passivateAfter, restart, onRunning, entity)
-        when (message) {
-            is Deliver -> book.deliver(ctx, message.id, message.message)
-            is Passivate -> book.passivate(ctx, message.id)
-            is Drain -> book.drain(ctx)
+            @Suppress("UNCHECKED_CAST")
+            val book = state as EntityBook<M, S, E>? ?: EntityBook(passivateAfter, restart, onRunning, entity)
+            when (message) {
+                is Deliver -> book.deliver(ctx, message.id, message.message)
+                is Passivate -> book.passivate(ctx, message.id)
+                is Drain -> book.drain(ctx)
+            }
+            if (state == null) become(book) else stay()
         }
-        if (state == null) become(book) else stay()
-    }.onSignal { ctx, state, signal ->
-        @Suppress("UNCHECKED_CAST")
-        val book = state as EntityBook<M, S, E>?
-        if (signal is Signal.Terminated && book != null) book.ended(ctx, signal.ref)
-        if (signal == Signal.Stopping) book?.stopping(ctx)
-        stay()
-    }
+        .onSignal { ctx, state, signal ->
+            @Suppress("UNCHECKED_CAST") val book = state as EntityBook<M, S, E>?
+            if (signal is Signal.Terminated && book != null) book.ended(ctx, signal.ref)
+            if (signal == Signal.Stopping) book?.stopping(ctx)
+            stay()
+        }
 }
 
 /** The entity [id] of these entities, as a ref of its own protocol: good whether or not it is running now. */

@@ -24,17 +24,19 @@ class Shared<T>(initial: T, val name: String? = null) {
     }
 
     /** Changes the value by [change] and answers what [change] answers beside it, as one step, as [update] does. */
-    fun <A> modify(change: (T) -> Pair<T, A>): A = transact(name) {
-        val (next, answer) = change(this@Shared.get())
-        this@Shared.set(next)
-        answer
-    }
+    fun <A> modify(change: (T) -> Pair<T, A>): A =
+        transact(name) {
+            val (next, answer) = change(this@Shared.get())
+            this@Shared.set(next)
+            answer
+        }
 
     /** Parks until a committed value makes [holds] true, and answers it, as [Transaction.waitForChange] parks. */
-    fun awaitUntil(holds: (T) -> Boolean): T = transact(name) {
-        val value = this@Shared.get()
-        if (holds(value)) value else waitForChange()
-    }
+    fun awaitUntil(holds: (T) -> Boolean): T =
+        transact(name) {
+            val value = this@Shared.get()
+            if (holds(value)) value else waitForChange()
+        }
 }
 
 /** Refuses retryable steps before ownership effects can escape them. */
@@ -53,7 +55,9 @@ fun checkNotInTransaction() {
  */
 fun <A> transact(name: String? = null, soloAfter: Int = SOLO_AFTER, block: Transaction.() -> A): A {
     require(soloAfter >= 0) { "A step cannot run alone after $soloAfter lost runs." }
-    running.get()?.let { return it.block() }
+    running.get()?.let {
+        return it.block()
+    }
     val (step, answer) = untilCommitted(name ?: UNNAMED, soloAfter, block)
     // Outside the step, so an effect that calls transact starts a step of its own; and after the run is counted
     // committed, so an effect that throws does not count it failed.
@@ -154,10 +158,8 @@ class Transaction internal constructor(private var solo: Any?) {
 
     fun <T> Shared<T>.get(): T {
         // Only a set on this same Shared put it there, so it is a T.
-        @Suppress("UNCHECKED_CAST")
-        if (this in writes) return writes[this] as T
-        @Suppress("UNCHECKED_CAST")
-        val seen = reads.getOrPut(this) { consistent(this) } as Versioned<T>
+        @Suppress("UNCHECKED_CAST") if (this in writes) return writes[this] as T
+        @Suppress("UNCHECKED_CAST") val seen = reads.getOrPut(this) { consistent(this) } as Versioned<T>
         return seen.value
     }
 
@@ -243,7 +245,10 @@ class Transaction internal constructor(private var solo: Any?) {
             val seen = shared.word.read()
             if (seen.version <= readAt.n) return seen
             val now = commits.read()
-            lostTo()?.let { lose(it); throw Conflict }
+            lostTo()?.let {
+                lose(it)
+                throw Conflict
+            }
             readAt = now
         }
     }
@@ -263,7 +268,10 @@ class Transaction internal constructor(private var solo: Any?) {
                 writes.keys.forEach { shared -> shared.waiters.forEach(Waiting::unpark) }
                 return true
             }
-            lostTo()?.let { lose(it); return false }
+            lostTo()?.let {
+                lose(it)
+                return false
+            }
             // Lost to nothing it read, so another step runs alone: try again once that step is done.
             if (solo == null) Solo.awaitFree()
         }

@@ -8,12 +8,12 @@ import dev.surefold.junit.samples.Meeting
 import dev.surefold.junit.samples.MeetingSuite
 import dev.surefold.junit.samples.OtherMeetingSuite
 import dev.surefold.junit.samples.Turns
+import java.util.concurrent.CountDownLatch
 import org.junit.jupiter.api.Test
 import org.junit.platform.engine.TestExecutionResult
 import org.junit.platform.engine.discovery.DiscoverySelectors.selectClass
 import org.junit.platform.testkit.engine.EngineExecutionResults
 import org.junit.platform.testkit.engine.EngineTestKit
-import java.util.concurrent.CountDownLatch
 
 /** Suites run side by side up to surefold.junit.suites.limit, one at a time by default, and an isolated one alone. */
 class SideBySideTest {
@@ -27,7 +27,9 @@ class SideBySideTest {
     private fun turns(limit: String?): List<String> {
         Turns.seen.clear()
         run(limit, FirstTurnSuite::class.java, IsolatedTurnSuite::class.java, LastTurnSuite::class.java)
-            .testEvents().succeeded().count() shouldBe 3L
+            .testEvents()
+            .succeeded()
+            .count() shouldBe 3L
         return Turns.seen.toList()
     }
 

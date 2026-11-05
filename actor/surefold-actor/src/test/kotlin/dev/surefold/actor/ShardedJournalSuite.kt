@@ -16,16 +16,18 @@ object ShardedJournalSuite : Suite() {
     init {
         test("murmur3 answers the reference values, so a slice never moves") {
             mapOf(
-                "" to 0,
-                "a" to 1009084850,
-                "ab" to -1681926305,
-                "abc" to -1277324294,
-                "abcd" to 1139631978,
-                "hello" to 613153351,
-                "account|acc-1" to 1232564952,
-                "transfer|7f3c0e2a-1b4d-4c55-9e0e-1f2a3b4c5d6e" to -1796319154,
-                "The quick brown fox jumps over the lazy dog" to 776992547,
-            ).entries.forEach { (text, hash) -> withClue(text) { murmur3(text.toByteArray()) shouldBe hash } }
+                    "" to 0,
+                    "a" to 1009084850,
+                    "ab" to -1681926305,
+                    "abc" to -1277324294,
+                    "abcd" to 1139631978,
+                    "hello" to 613153351,
+                    "account|acc-1" to 1232564952,
+                    "transfer|7f3c0e2a-1b4d-4c55-9e0e-1f2a3b4c5d6e" to -1796319154,
+                    "The quick brown fox jumps over the lazy dog" to 776992547,
+                )
+                .entries
+                .forEach { (text, hash) -> withClue(text) { murmur3(text.toByteArray()) shouldBe hash } }
         }
 
         test("an id's events are written to one database, and read back from it") {
@@ -71,11 +73,13 @@ object ShardedJournalSuite : Suite() {
             val stores = listOf("db-a" to InMemorySnapshots(), "db-b" to InMemorySnapshots())
             val journal = ShardedJournal(two())
             val snapshots = ShardedSnapshots(stores)
-            (1..50).map { PersistenceId("account", "acc-$it") }.forEach { id ->
-                snapshots.save(id, 3, byteArrayOf(3))
-                snapshots.latest(id)?.sequence shouldBe 3
-                stores.single { it.first == journal.database(id) }.second.latest(id)?.sequence shouldBe 3
-            }
+            (1..50)
+                .map { PersistenceId("account", "acc-$it") }
+                .forEach { id ->
+                    snapshots.save(id, 3, byteArrayOf(3))
+                    snapshots.latest(id)?.sequence shouldBe 3
+                    stores.single { it.first == journal.database(id) }.second.latest(id)?.sequence shouldBe 3
+                }
         }
 
         test("pruning deletes in the id's own database") {
@@ -112,21 +116,23 @@ object ShardedJournalSuite : Suite() {
         test("an append refused for a slice given away goes to its new owner, or is unavailable while it moves") {
             val a = InMemoryJournal()
             val b = InMemoryJournal()
-            val refusing = object : Journal by a {
-                override fun append(id: PersistenceId, expected: Long, events: List<ByteArray>) =
-                    throw SliceElsewhere(Slices.of(id))
-            }
+            val refusing =
+                object : Journal by a {
+                    override fun append(id: PersistenceId, expected: Long, events: List<ByteArray>) =
+                        throw SliceElsewhere(Slices.of(id))
+                }
             val before = SliceMap.even(listOf("db-a", "db-b"))
             var after = before
-            val table = object : SliceTable {
-                // A node that has not yet read the new version, until it is refused.
-                override fun current() = before
+            val table =
+                object : SliceTable {
+                    // A node that has not yet read the new version, until it is refused.
+                    override fun current() = before
 
-                override fun refresh() = after
-            }
+                    override fun refresh() = after
+                }
             val journal = ShardedJournal(listOf("db-a" to refusing, "db-b" to b), table)
-            val id = (1..100).map { PersistenceId("account", "acc-$it") }
-                .first { before.owner(Slices.of(it)) == "db-a" }
+            val id =
+                (1..100).map { PersistenceId("account", "acc-$it") }.first { before.owner(Slices.of(it)) == "db-a" }
 
             shouldThrow<JournalUnavailable> { journal.append(id, 0, listOf(byteArrayOf(1))) }
             after = before.moving(0..1023, "db-b")
@@ -141,8 +147,7 @@ object ShardedJournalSuite : Suite() {
                 slices shouldContainExactly (0 until Slices.COUNT).toList()
                 ids.forEach { id ->
                     withClue("$id of $n") {
-                        Slices.of(id) shouldBeInRange
-                            Slices.partition(Slices.partitionOf(id, n), n)
+                        Slices.of(id) shouldBeInRange Slices.partition(Slices.partitionOf(id, n), n)
                     }
                 }
             }

@@ -18,11 +18,12 @@ import dev.surefold.scope
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.atomic.AtomicInteger
 
-private val cents = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = "$event".toByteArray()
+private val cents =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = "$event".toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
 private class Counted(private val kept: Journal) : Journal by kept {
     val appends = AtomicInteger()
@@ -38,14 +39,16 @@ object BatchedAppendSuite : Suite() {
             val id = PersistenceId("merchant", "m-1")
             val journal = Counted(JdbcJournal(Postgres.fresh()))
             val opened = CountDownLatch(1)
-            val merchant = persistent<Int, Int, Int>(
-                id = id,
-                empty = 0,
-                codec = cents,
-                command = { _, _, paid -> persist(paid) },
-                event = { sum, paid -> sum + paid },
-                batch = 64,
-            ).onStart { opened.await() }
+            val merchant =
+                persistent<Int, Int, Int>(
+                        id = id,
+                        empty = 0,
+                        codec = cents,
+                        command = { _, _, paid -> persist(paid) },
+                        event = { sum, paid -> sum + paid },
+                        batch = 64,
+                    )
+                    .onStart { opened.await() }
 
             scope {
                 journal(journal)

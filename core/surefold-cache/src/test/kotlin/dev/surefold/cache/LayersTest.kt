@@ -4,20 +4,19 @@ import dev.surefold.TestClock
 import dev.surefold.assert.shouldBe
 import dev.surefold.clock
 import dev.surefold.fail.Either
-import org.junit.jupiter.api.Test
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 /** A store every instance shares, faked in memory: it can be told to fail, and it records what reached it. */
 private class Shared<V> : Layer<String, V> {
     val held = ConcurrentHashMap<String, Stored<V>>()
     val removed = mutableListOf<String>()
 
-    @Volatile
-    var down = false
+    @Volatile var down = false
 
     override fun read(key: String): Stored<V>? = up { held[key] }
 

@@ -10,9 +10,8 @@ import dev.surefold.fail.nonEmptyListOf
 import dev.surefold.fail.toNonEmptyListOrNull
 
 /**
- * Runs both branches in order on the calling thread and keeps every failure: a fail ends only its own
- * branch, so both run and their errors answer together, in branch order. A throw is not kept; it ends
- * the call where it happens.
+ * Runs both branches in order on the calling thread and keeps every failure: a fail ends only its own branch, so both
+ * run and their errors answer together, in branch order. A throw is not kept; it ends the call where it happens.
  */
 fun <E, A, B, C> Fail<NonEmptyList<E>>.zipOrAccumulate(
     fa: FailAll<E>.() -> A,
@@ -129,7 +128,12 @@ fun <E, A, B, C, D, F, G, H> Fail<NonEmptyList<E>>.zipOrAccumulate(
     val f = branch(ff)
     failEvery(a, b, c, d, e, f)
     return transform(
-        a.settled(), b.settled(), c.settled(), d.settled(), e.settled(), f.settled(),
+        a.settled(),
+        b.settled(),
+        c.settled(),
+        d.settled(),
+        e.settled(),
+        f.settled(),
     )
 }
 
@@ -165,7 +169,13 @@ fun <E, A, B, C, D, F, G, H, I> Fail<NonEmptyList<E>>.zipOrAccumulate(
     val g = branch(fg)
     failEvery(a, b, c, d, e, f, g)
     return transform(
-        a.settled(), b.settled(), c.settled(), d.settled(), e.settled(), f.settled(), g.settled(),
+        a.settled(),
+        b.settled(),
+        c.settled(),
+        d.settled(),
+        e.settled(),
+        f.settled(),
+        g.settled(),
     )
 }
 
@@ -204,7 +214,14 @@ fun <E, A, B, C, D, F, G, H, I, J> Fail<NonEmptyList<E>>.zipOrAccumulate(
     val h = branch(fh)
     failEvery(a, b, c, d, e, f, g, h)
     return transform(
-        a.settled(), b.settled(), c.settled(), d.settled(), e.settled(), f.settled(), g.settled(), h.settled(),
+        a.settled(),
+        b.settled(),
+        c.settled(),
+        d.settled(),
+        e.settled(),
+        f.settled(),
+        g.settled(),
+        h.settled(),
     )
 }
 
@@ -246,8 +263,15 @@ fun <E, A, B, C, D, F, G, H, I, J, K> Fail<NonEmptyList<E>>.zipOrAccumulate(
     val i = branch(fi)
     failEvery(a, b, c, d, e, f, g, h, i)
     return transform(
-        a.settled(), b.settled(), c.settled(), d.settled(), e.settled(),
-        f.settled(), g.settled(), h.settled(), i.settled(),
+        a.settled(),
+        b.settled(),
+        c.settled(),
+        d.settled(),
+        e.settled(),
+        f.settled(),
+        g.settled(),
+        h.settled(),
+        i.settled(),
     )
 }
 
@@ -267,8 +291,8 @@ fun <E, A, B, C, D, F, G, H, I, J, K> Fail<E>.zipOrAccumulate(
 ): K = combined(combine) { zipOrAccumulate(fa, fb, fc, fd, fe, ff, fg, fh, fi, transform) }
 
 /**
- * Runs [transform] on each element in order on the calling thread and keeps every failure: a fail ends only
- * its own element, so every element runs and their errors answer together, in the input's order.
+ * Runs [transform] on each element in order on the calling thread and keeps every failure: a fail ends only its own
+ * element, so every element runs and their errors answer together, in the input's order.
  */
 fun <E, A, B> Fail<NonEmptyList<E>>.mapOrAccumulate(iterable: Iterable<A>, transform: FailAll<E>.(A) -> B): List<B> {
     val results = iterable.map { element -> branch { transform(element) } }

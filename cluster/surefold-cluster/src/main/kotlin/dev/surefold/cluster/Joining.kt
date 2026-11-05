@@ -13,8 +13,8 @@ class Joining(val discovery: Discovery, val downing: Downing, private val releas
 }
 
 /**
- * A way to join that config names: `join = kubernetes` finds the [Joins] whose [name] is `kubernetes` on the
- * classpath, so the module choosing it need not depend on every backend.
+ * A way to join that config names: `join = kubernetes` finds the [Joins] whose [name] is `kubernetes` on the classpath,
+ * so the module choosing it need not depend on every backend.
  */
 interface Joins {
     val name: String
@@ -23,11 +23,12 @@ interface Joins {
 
     companion object {
         // Each backend's module, so a name nobody registered says what to add.
-        private val modules = mapOf(
-            "kubernetes" to "surefold-cluster-kubernetes",
-            "ecs" to "surefold-cluster-aws",
-            "cloudmap" to "surefold-cluster-aws",
-        )
+        private val modules =
+            mapOf(
+                "kubernetes" to "surefold-cluster-kubernetes",
+                "ecs" to "surefold-cluster-aws",
+                "cloudmap" to "surefold-cluster-aws",
+            )
 
         /** Every way to join on the classpath, by name. */
         fun available(): Map<String, Joins> =
@@ -36,10 +37,12 @@ interface Joins {
         /** The joining [name] builds from [options]; a name not on the classpath is refused, naming its module. */
         fun named(name: String, options: JoinOptions): Joining {
             val found = available()
-            val joins = found[name] ?: throw IllegalArgumentException(
-                modules[name]?.let { "join = $name needs $it on the classpath" }
-                    ?: "join = $name is none of ${found.keys.sorted()}",
-            )
+            val joins =
+                found[name]
+                    ?: throw IllegalArgumentException(
+                        modules[name]?.let { "join = $name needs $it on the classpath" }
+                            ?: "join = $name is none of ${found.keys.sorted()}",
+                    )
             return joins.joining(options)
         }
     }
@@ -58,26 +61,29 @@ class JoinOptions(
 ) {
     fun string(key: String): String = stringOrNull(key) ?: throw IllegalArgumentException("${path(key)} is missing")
 
-    fun stringOrNull(key: String): String? = when (val value = values[key]) {
-        null -> null
-        is String, is Number -> value.toString()
-        else -> throw IllegalArgumentException("${path(key)} is not a string")
-    }
+    fun stringOrNull(key: String): String? =
+        when (val value = values[key]) {
+            null -> null
+            is String,
+            is Number -> value.toString()
+            else -> throw IllegalArgumentException("${path(key)} is not a string")
+        }
 
     fun int(key: String, default: Int): Int =
         stringOrNull(key)?.let { it.toIntOrNull() ?: throw IllegalArgumentException("${path(key)} is not a number") }
             ?: default
 
-    fun strings(key: String): List<String> = when (val value = values[key]) {
-        is List<*> -> value.map { it.toString() }
+    fun strings(key: String): List<String> =
+        when (val value = values[key]) {
+            is List<*> -> value.map { it.toString() }
 
-        // `-Dpath.seeds.0=…` system properties arrive as an object keyed by index, which HOCON reads as a list.
-        is Map<*, *> -> numbered(key, value)
+            // `-Dpath.seeds.0=…` system properties arrive as an object keyed by index, which HOCON reads as a list.
+            is Map<*, *> -> numbered(key, value)
 
-        null -> throw IllegalArgumentException("${path(key)} is missing")
+            null -> throw IllegalArgumentException("${path(key)} is missing")
 
-        else -> throw IllegalArgumentException("${path(key)} is not a list")
-    }
+            else -> throw IllegalArgumentException("${path(key)} is not a list")
+        }
 
     private fun numbered(key: String, value: Map<*, *>): List<String> {
         val indexed = value.entries.associate { (index, item) -> index.toString().toIntOrNull() to item.toString() }
@@ -86,11 +92,12 @@ class JoinOptions(
     }
 
     /** A section of `name = value` pairs, as a label selector is written. */
-    fun labels(key: String): Map<String, String> = when (val value = values[key]) {
-        is Map<*, *> -> value.entries.associate { (name, label) -> name.toString() to label.toString() }
-        null -> throw IllegalArgumentException("${path(key)} is missing")
-        else -> throw IllegalArgumentException("${path(key)} is not a section")
-    }
+    fun labels(key: String): Map<String, String> =
+        when (val value = values[key]) {
+            is Map<*, *> -> value.entries.associate { (name, label) -> name.toString() to label.toString() }
+            null -> throw IllegalArgumentException("${path(key)} is missing")
+            else -> throw IllegalArgumentException("${path(key)} is not a section")
+        }
 
     private fun path(key: String) = if (at.isEmpty()) key else "$at.$key"
 }
@@ -113,10 +120,11 @@ class StaticJoins : Joins {
 class DnsJoins : Joins {
     override val name = "dns"
 
-    override fun joining(options: JoinOptions): Joining = Joining(
-        Discovery.dns(options.string("name"), options.int("port", options.port)),
-        Downing.keepMajority(options.stableAfter),
-    )
+    override fun joining(options: JoinOptions): Joining =
+        Joining(
+            Discovery.dns(options.string("name"), options.int("port", options.port)),
+            Downing.keepMajority(options.stableAfter),
+        )
 }
 
 /** The targets and ports of a DNS name's SRV records. */

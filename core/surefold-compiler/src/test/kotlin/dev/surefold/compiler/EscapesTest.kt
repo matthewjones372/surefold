@@ -5,7 +5,8 @@ import dev.surefold.assert.withClue
 import org.jetbrains.kotlin.cli.common.ExitCode
 import org.junit.jupiter.api.Test
 
-private const val IMPORTS = """
+private const val IMPORTS =
+    """
 import dev.surefold.Channel
 import dev.surefold.Deferred
 import dev.surefold.channel
@@ -35,13 +36,14 @@ class EscapesTest {
 
     @Test
     fun `a channel or Deferred held in what a typed scope answers is an error`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             $IMPORTS
             fun rows() = attempt<Nothing, Channel<Int>> { scope { channel(1) } }
             fun both() = scope { 1 to listOf(async { 2 }) }
             """,
-        )
+            )
 
         withClue(compiled.messages.joinToString("\n")) {
             compiled.surefold.size shouldBe 2
@@ -51,8 +53,9 @@ class EscapesTest {
 
     @Test
     fun `a Deferred in a property is an error, and in a local is not`() {
-        val compiled = compile(
-            """
+        val compiled =
+            compile(
+                """
             $IMPORTS
             class Pending { var load: Deferred<Int>? = null }
             lateinit var rows: Channel<Int>
@@ -61,7 +64,7 @@ class EscapesTest {
                 load.await()
             }
             """,
-        )
+            )
 
         withClue(compiled.messages.joinToString("\n")) {
             compiled.surefold.size shouldBe 2

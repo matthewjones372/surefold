@@ -44,19 +44,19 @@ private val SETTLE = 1.seconds
  * `surefold/journal/jdbc/postgres.sql`; the service's changelog includes it, and nothing here creates it.
  *
  * Of two writers for one id, the table's primary key decides: an append inserts its first event only if the one it
- * expects to follow is there, and two that both expect it collide on the key, so exactly one commits. A database
- * that cannot answer throws its [SQLException].
+ * expects to follow is there, and two that both expect it collide on the key, so exactly one commits. A database that
+ * cannot answer throws its [SQLException].
  *
  * Each row carries its id's slice (spec 0105), and an append for a slice listed in `surefold_journal_fenced`, one this
  * database has given to another, is refused in the append's own statement with [SliceElsewhere].
  *
  * It is a [JournalFeed] too (spec 0075), its offsets the table's `ordering`. An append takes its `ordering` when it
- * inserts and is seen when it commits, so a smaller one can commit after a larger one is read: the feed answers
- * nothing past a missing `ordering` until it fills, or until it is known never to: then it is taken for an append
- * that never committed and passed, with a warning. On Postgres that is once every transaction running when the gap
- * was first seen has ended (spec 0100), so an append whose writer is slow to commit, however slow, is waited for,
- * and one rolled back is passed within a second; [longestAppend] bounds the wait for a writer that never ends. On a
- * database without transaction snapshots it is once the gap has been missing for [gapTimeout].
+ * inserts and is seen when it commits, so a smaller one can commit after a larger one is read: the feed answers nothing
+ * past a missing `ordering` until it fills, or until it is known never to: then it is taken for an append that never
+ * committed and passed, with a warning. On Postgres that is once every transaction running when the gap was first seen
+ * has ended (spec 0100), so an append whose writer is slow to commit, however slow, is waited for, and one rolled back
+ * is passed within a second; [longestAppend] bounds the wait for a writer that never ends. On a database without
+ * transaction snapshots it is once the gap has been missing for [gapTimeout].
  *
  * With [groupCommit] (spec 0108), appends from many ids share a transaction and one commit, each under a savepoint of
  * its own, so each still answers as it would have alone; without it, every append is a transaction of its own.
@@ -66,10 +66,7 @@ class JdbcJournal(
     private val gapTimeout: Duration = 10.seconds,
     private val longestAppend: Duration = 10.minutes,
     groupCommit: GroupCommit? = null,
-) :
-    Journal,
-    SlicedFeed,
-    JournalPruning {
+) : Journal, SlicedFeed, JournalPruning {
 
     private val time = clock.get()
 
@@ -89,8 +86,7 @@ class JdbcJournal(
     private val gaps = ConcurrentHashMap<Long, Gap>()
 
     // Whether the database has transaction snapshots to read, asked once.
-    @Volatile
-    private var snapshots: Boolean? = null
+    @Volatile private var snapshots: Boolean? = null
 
     /** The `ordering`s missing for longer than [gapTimeout], which the feed reads past. */
     private val passed = ConcurrentHashMap.newKeySet<Long>()
@@ -116,16 +112,17 @@ class JdbcJournal(
         dataSource.connection.use { connection ->
             val (id, expected, events) = Triple(append.id, append.expected, append.events)
             connection.autoCommit = false
-            val appended = try {
-                connection.insert(append)
-            } catch (failed: SQLException) {
-                connection.rollback()
-                if (failed.sqlState != DUPLICATE_KEY) throw failed
-                false
-            } catch (elsewhere: SliceElsewhere) {
-                connection.rollback()
-                throw elsewhere
-            }
+            val appended =
+                try {
+                    connection.insert(append)
+                } catch (failed: SQLException) {
+                    connection.rollback()
+                    if (failed.sqlState != DUPLICATE_KEY) throw failed
+                    false
+                } catch (elsewhere: SliceElsewhere) {
+                    connection.rollback()
+                    throw elsewhere
+                }
             if (appended) {
                 connection.commit()
                 (expected + events.size).right()
@@ -136,22 +133,24 @@ class JdbcJournal(
         }
 
     @Suppress("MagicNumber") // column indices
-    override fun read(id: PersistenceId, from: Long): List<StoredEvent> = dataSource.connection.use { connection ->
-        connection.statement(
-            "select seq_nr, bytes, metadata::text from surefold_journal where kind = ? and id = ? and seq_nr >= ? " +
-                "order by seq_nr",
-            id.kind,
-            id.id,
-            from,
-        ) { select ->
-            select.executeQuery().use { rows ->
-                generateSequence {
-                    if (!rows.next()) return@generateSequence null
-                    StoredEvent(rows.getLong(1), rows.getBytes(2), Metadata.read(rows.getString(3)))
-                }.toList()
+    override fun read(id: PersistenceId, from: Long): List<StoredEvent> =
+        dataSource.connection.use { connection ->
+            connection.statement(
+                "select seq_nr, bytes, metadata::text from surefold_journal " +
+                    "where kind = ? and id = ? and seq_nr >= ? order by seq_nr",
+                id.kind,
+                id.id,
+                from,
+            ) { select ->
+                select.executeQuery().use { rows ->
+                    generateSequence {
+                        if (!rows.next()) return@generateSequence null
+                        StoredEvent(rows.getLong(1), rows.getBytes(2), Metadata.read(rows.getString(3)))
+                    }
+                        .toList()
+                }
             }
         }
-    }
 
     override fun after(kind: String, offset: Long, limit: Int): List<FeedEvent> = upToMark(kind, null, offset, limit)
 
@@ -176,24 +175,28 @@ class JdbcJournal(
                     offset,
                     mark,
                     limit,
-                ) { it.events(kind) }
+                ) {
+                    it.events(kind)
+                }
             }
         }
     }
 
     @Suppress("MagicNumber") // column indices
-    private fun PreparedStatement.events(kind: String): List<FeedEvent> = executeQuery().use { rows ->
-        generateSequence {
-            if (!rows.next()) return@generateSequence null
-            FeedEvent(
-                rows.getLong(1),
-                PersistenceId(kind, rows.getString(2)),
-                rows.getLong(3),
-                rows.getBytes(4),
-                Metadata.read(rows.getString(5)),
-            )
-        }.toList()
-    }
+    private fun PreparedStatement.events(kind: String): List<FeedEvent> =
+        executeQuery().use { rows ->
+            generateSequence {
+                if (!rows.next()) return@generateSequence null
+                FeedEvent(
+                    rows.getLong(1),
+                    PersistenceId(kind, rows.getString(2)),
+                    rows.getLong(3),
+                    rows.getBytes(4),
+                    Metadata.read(rows.getString(5)),
+                )
+            }
+                .toList()
+        }
 
     /**
      * The watermark above [offset] (spec 0106): the highest `ordering` through which every row after [offset] is either
@@ -222,24 +225,25 @@ class JdbcJournal(
 
     /**
      * The highest ordering from [from] up to at most [bound] through which nothing can still appear: each ordering is
-     * present, or pruned, or a gap already passed, or one the gap rule of spec 0100 passes now. Every gap in a batch
-     * is looked at, not only the first that holds: each gap's wait starts when it is first seen, so gaps seen together
+     * present, or pruned, or a gap already passed, or one the gap rule of spec 0100 passes now. Every gap in a batch is
+     * looked at, not only the first that holds: each gap's wait starts when it is first seen, so gaps seen together
      * pass together, not one gapTimeout after another.
      */
     private fun Connection.settle(from: Long, bound: Long): Long {
         var at = from
         repeat(WALK_BATCHES) {
-            val present = statement(
-                "select ordering from surefold_journal where ordering > ? and ordering <= ? order by ordering " +
-                    "fetch first ? rows only",
-                at,
-                bound,
-                WALK_BATCH,
-            ) { select ->
-                select.executeQuery().use { rows ->
-                    generateSequence { if (rows.next()) rows.getLong(1) else null }.toList()
+            val present =
+                statement(
+                    "select ordering from surefold_journal where ordering > ? and ordering <= ? order by ordering " +
+                        "fetch first ? rows only",
+                    at,
+                    bound,
+                    WALK_BATCH,
+                ) { select ->
+                    select.executeQuery().use { rows ->
+                        generateSequence { if (rows.next()) rows.getLong(1) else null }.toList()
+                    }
                 }
-            }
             if (present.isEmpty()) return at
             // Read after the rows: a deletion commits its rows' removal and its span together, so a row missing here
             // was either never committed or is inside a span this reads.
@@ -255,8 +259,10 @@ class JdbcJournal(
     private inner class Walk(from: Long, pruned: List<LongRange>, horizon: () -> Horizon?) {
         var through = from
             private set
+
         var held = false
             private set
+
         private var previous = from
         private val spans = ArrayDeque(pruned)
         private val now by lazy { time.now() }
@@ -305,16 +311,17 @@ class JdbcJournal(
     }
 
     /** The spans deleted rows left between [after] and [upTo]. */
-    private fun Connection.pruned(after: Long, upTo: Long): List<LongRange> = statement(
-        "select from_ordering, to_ordering from surefold_journal_pruned where to_ordering > ? and from_ordering < ? " +
-            "order by from_ordering",
-        after,
-        upTo,
-    ) { select ->
-        select.executeQuery().use { rows ->
-            generateSequence { if (rows.next()) rows.getLong(1)..rows.getLong(2) else null }.toList()
+    private fun Connection.pruned(after: Long, upTo: Long): List<LongRange> =
+        statement(
+            "select from_ordering, to_ordering from surefold_journal_pruned " +
+                "where to_ordering > ? and from_ordering < ? order by from_ordering",
+            after,
+            upTo,
+        ) { select ->
+            select.executeQuery().use { rows ->
+                generateSequence { if (rows.next()) rows.getLong(1)..rows.getLong(2) else null }.toList()
+            }
         }
-    }
 
     /**
      * Deletes [id]'s events up to [sequence], never its newest, and records the orderings the deleted rows spanned in
@@ -335,31 +342,33 @@ class JdbcJournal(
     }
 
     /** The last sequence number of [id] whose ordering is at most [ordering], or 0 when there is none. */
-    private fun Connection.readTo(id: PersistenceId, ordering: Long): Long = statement(
-        "select coalesce(max(seq_nr), 0) from surefold_journal where kind = ? and id = ? and ordering <= ?",
-        id.kind,
-        id.id,
-        ordering,
-    ) { select ->
-        select.executeQuery().use { rows ->
-            rows.next()
-            rows.getLong(1)
-        }
-    }
-
-    private fun Connection.prune(id: PersistenceId, upTo: Long) {
-        val span = statement(
-            "select min(ordering), max(ordering) from surefold_journal where kind = ? and id = ? and seq_nr <= ?",
+    private fun Connection.readTo(id: PersistenceId, ordering: Long): Long =
+        statement(
+            "select coalesce(max(seq_nr), 0) from surefold_journal where kind = ? and id = ? and ordering <= ?",
             id.kind,
             id.id,
-            upTo,
+            ordering,
         ) { select ->
             select.executeQuery().use { rows ->
                 rows.next()
-                val first = rows.getLong(1)
-                if (rows.wasNull()) null else first to rows.getLong(2)
+                rows.getLong(1)
             }
-        } ?: return
+        }
+
+    private fun Connection.prune(id: PersistenceId, upTo: Long) {
+        val span =
+            statement(
+                "select min(ordering), max(ordering) from surefold_journal where kind = ? and id = ? and seq_nr <= ?",
+                id.kind,
+                id.id,
+                upTo,
+            ) { select ->
+                select.executeQuery().use { rows ->
+                    rows.next()
+                    val first = rows.getLong(1)
+                    if (rows.wasNull()) null else first to rows.getLong(2)
+                }
+            } ?: return
         statement("delete from surefold_journal where kind = ? and id = ? and seq_nr <= ?", id.kind, id.id, upTo) {
             it.executeUpdate()
         }
@@ -377,11 +386,12 @@ class JdbcJournal(
      * first seen, or by one that had not yet been given its id (a moment, which [SETTLE] covers): once the oldest
      * running transaction is newer than every one then, nothing can fill it.
      */
-    private fun holds(gap: Gap, waited: Duration, horizon: Horizon?): Boolean = when {
-        horizon == null || gap.xmax == null -> waited < gapTimeout
-        waited < SETTLE -> true
-        else -> horizon.xmin < gap.xmax && waited < longestAppend
-    }
+    private fun holds(gap: Gap, waited: Duration, horizon: Horizon?): Boolean =
+        when {
+            horizon == null || gap.xmax == null -> waited < gapTimeout
+            waited < SETTLE -> true
+            else -> horizon.xmin < gap.xmax && waited < longestAppend
+        }
 
     /** The running transactions' horizon, on a database that has one; null on any other. */
     private fun Connection.horizon(): Horizon? {
@@ -398,35 +408,48 @@ class JdbcJournal(
     }
 
     /**
-     * Inserts [events] after [expected], the first only if the event it follows is there: whether they all went in.
-     * A writer ahead of the journal inserts nothing, and one behind it collides on the key.
+     * Inserts [events] after [expected], the first only if the event it follows is there: whether they all went in. A
+     * writer ahead of the journal inserts nothing, and one behind it collides on the key.
      */
 
     /**
-     * A group's appends (spec 0108), in one statement batch: one round trip for them all. Each inserts every one of
-     * its events, or none: none when its expected sequence is not the last, answered as a conflict, or when its slice
-     * is fenced. A duplicate key, two writers racing for one id, throws for the whole group, which the committer then
+     * A group's appends (spec 0108), in one statement batch: one round trip for them all. Each inserts every one of its
+     * events, or none: none when its expected sequence is not the last, answered as a conflict, or when its slice is
+     * fenced. A duplicate key, two writers racing for one id, throws for the whole group, which the committer then
      * makes one append at a time.
      */
     private fun Connection.appendAll(appends: List<Append>): List<Result<Either<JournalConflict, Long>>> {
         val written = appends.withIndex().filter { (_, append) -> append.events.isNotEmpty() }
-        val counts = if (written.isEmpty()) IntArray(0) else prepareStatement(
-            "insert into surefold_journal (kind, id, seq_nr, bytes, slice, metadata) " +
-                "select ?, ?, ? + event.n, event.bytes, ?, cast(? as jsonb) " +
-                "from unnest(?::bytea[]) with ordinality as event(bytes, n) " +
-                "where (? = 0 or exists (select 1 from surefold_journal where kind = ? and id = ? and seq_nr = ?)) " +
-                "and not exists (select 1 from surefold_journal_fenced where slice = ?)",
-        ).use { insert ->
-            written.forEach { (_, append) ->
-                val slice = Slices.of(append.id)
-                insert.row(
-                    append.id.kind, append.id.id, append.expected, slice, append.metadata,
-                    createArrayOf("bytea", append.events.toTypedArray()),
-                    append.expected, append.id.kind, append.id.id, append.expected, slice,
-                )
-            }
-            insert.executeBatch()
-        }
+        val counts =
+            if (written.isEmpty()) IntArray(0)
+            else
+                prepareStatement(
+                        "insert into surefold_journal (kind, id, seq_nr, bytes, slice, metadata) " +
+                            "select ?, ?, ? + event.n, event.bytes, ?, cast(? as jsonb) " +
+                            "from unnest(?::bytea[]) with ordinality as event(bytes, n) " +
+                            "where (? = 0 or exists (select 1 from surefold_journal " +
+                            "where kind = ? and id = ? and seq_nr = ?)) " +
+                            "and not exists (select 1 from surefold_journal_fenced where slice = ?)",
+                    )
+                    .use { insert ->
+                        written.forEach { (_, append) ->
+                            val slice = Slices.of(append.id)
+                            insert.row(
+                                append.id.kind,
+                                append.id.id,
+                                append.expected,
+                                slice,
+                                append.metadata,
+                                createArrayOf("bytea", append.events.toTypedArray()),
+                                append.expected,
+                                append.id.kind,
+                                append.id.id,
+                                append.expected,
+                                slice,
+                            )
+                        }
+                        insert.executeBatch()
+                    }
         val inserted = written.map { it.index }.zip(counts.toList()).toMap()
         return appends.mapIndexed { at, append ->
             val count = inserted[at]
@@ -447,23 +470,27 @@ class JdbcJournal(
         val (id, expected, events) = Triple(append.id, append.expected, append.events)
         if (events.isEmpty()) return last(id) == expected
         val slice = Slices.of(id)
-        val first = statement(
-            "insert into surefold_journal (kind, id, seq_nr, bytes, slice, metadata) " +
-                "select ?, ?, ?, ?, ?, cast(? as jsonb) from (values (1)) " +
-                "where (? = 0 or exists (select 1 from surefold_journal where kind = ? and id = ? and seq_nr = ?)) " +
-                "and not exists (select 1 from surefold_journal_fenced where slice = ?)",
-            id.kind,
-            id.id,
-            expected + 1,
-            events.first(),
-            slice,
-            append.metadata,
-            expected,
-            id.kind,
-            id.id,
-            expected,
-            slice,
-        ) { it.executeUpdate() }
+        val first =
+            statement(
+                "insert into surefold_journal (kind, id, seq_nr, bytes, slice, metadata) " +
+                    "select ?, ?, ?, ?, ?, cast(? as jsonb) from (values (1)) " +
+                    "where (? = 0 or exists (select 1 from surefold_journal " +
+                    "where kind = ? and id = ? and seq_nr = ?)) " +
+                    "and not exists (select 1 from surefold_journal_fenced where slice = ?)",
+                id.kind,
+                id.id,
+                expected + 1,
+                events.first(),
+                slice,
+                append.metadata,
+                expected,
+                id.kind,
+                id.id,
+                expected,
+                slice,
+            ) {
+                it.executeUpdate()
+            }
         if (first == 0) {
             if (fenced(slice)) throw SliceElsewhere(slice)
             return false
@@ -478,7 +505,9 @@ class JdbcJournal(
                 bytes,
                 slice,
                 append.metadata,
-            ) { it.executeUpdate() }
+            ) {
+                it.executeUpdate()
+            }
         }
         return true
     }
@@ -489,16 +518,17 @@ class JdbcJournal(
             select.executeQuery().use { rows -> rows.next() }
         }
 
-    private fun Connection.last(id: PersistenceId): Long = statement(
-        "select coalesce(max(seq_nr), 0) from surefold_journal where kind = ? and id = ?",
-        id.kind,
-        id.id,
-    ) { select ->
-        select.executeQuery().use { rows ->
-            rows.next()
-            rows.getLong(1)
+    private fun Connection.last(id: PersistenceId): Long =
+        statement(
+            "select coalesce(max(seq_nr), 0) from surefold_journal where kind = ? and id = ?",
+            id.kind,
+            id.id,
+        ) { select ->
+            select.executeQuery().use { rows ->
+                rows.next()
+                rows.getLong(1)
+            }
         }
-    }
 }
 
 /** How many orderings the watermark reads at a time, and how many times a call goes on before answering. */

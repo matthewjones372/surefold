@@ -10,15 +10,14 @@ fun <E, In, Out : Any, S : Any> Pipe<E, In, Out>.scan(zero: S, f: (S, Out) -> S)
 fun <E, A : Any, S : Any> Stream<E, A>.scan(zero: S, f: (S, A) -> S): Stream<E, S> = via(Pipe.scan(zero, f))
 
 /**
- * State carried across elements, as a Kotlin [Pair] of what to carry on with and what to emit.
- * [onComplete] is the one last element the state may still owe, or null where it owes none.
+ * State carried across elements, as a Kotlin [Pair] of what to carry on with and what to emit. [onComplete] is the one
+ * last element the state may still owe, or null where it owes none.
  */
 fun <A : Any, S, B : Any> Pipe.Companion.statefulMap(
     create: () -> S,
     f: (S, A) -> Pair<S, B>,
     onComplete: (S) -> B? = { null },
-): Pipe<Nothing, A, B> =
-    Pipe(Node.StatefulMap(Node.Hole, create, f.erased(), onComplete.erased(), buildSite()))
+): Pipe<Nothing, A, B> = Pipe(Node.StatefulMap(Node.Hole, create, f.erased(), onComplete.erased(), buildSite()))
 
 fun <E, In, Out : Any, S, B : Any> Pipe<E, In, Out>.statefulMap(
     create: () -> S,

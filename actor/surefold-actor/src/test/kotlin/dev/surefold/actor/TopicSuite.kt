@@ -15,9 +15,10 @@ import java.util.concurrent.TimeUnit
 private typealias HeardByName = ConcurrentHashMap<String, ConcurrentLinkedQueue<Int>>
 
 object TopicSuite : Suite() {
-    private fun listener(heard: HeardByName, name: String) = behaviour<Int, Unit>(Unit) { _, _, n ->
-        stay().also { heard.computeIfAbsent(name) { ConcurrentLinkedQueue() } += n }
-    }
+    private fun listener(heard: HeardByName, name: String) =
+        behaviour<Int, Unit>(Unit) { _, _, n ->
+            stay().also { heard.computeIfAbsent(name) { ConcurrentLinkedQueue() } += n }
+        }
 
     /** A sharded entity, a singleton or a group: a ref that is not an actor here and cannot be watched. */
     private class Elsewhere(val heard: ConcurrentLinkedQueue<Int>) : ActorRef<Int> {
@@ -111,16 +112,15 @@ object TopicSuite : Suite() {
             scope {
                 onDeadLetter(letters::add)
                 val prices = topic<Int>("prices")
-                val slow = spawn(
-                    "slow",
-                    behaviour<Int, Unit>(Unit) { _, _, n ->
-                        stay().also {
-                            if (n ==
-                                0
-                            ) open.await() else stalled += n
-                        }
-                    },
-                )
+                val slow =
+                    spawn(
+                        "slow",
+                        behaviour<Int, Unit>(Unit) { _, _, n ->
+                            stay().also {
+                                if (n == 0) open.await() else stalled += n
+                            }
+                        },
+                    )
                 prices.subscribe(slow)
                 val caughtUp = CountDownLatch(KEEP_AT_MOST + 1)
                 prices.subscribe(

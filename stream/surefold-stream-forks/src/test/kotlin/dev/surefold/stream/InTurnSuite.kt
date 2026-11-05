@@ -98,13 +98,14 @@ object InTurnSuite : Suite() {
             val reading = InTurn(Array(2) { Ring(2) })
             // A bare thread, so it can be interrupted; it hands back what it threw, and the test checks it.
             val threw = CompletableFuture<Throwable>()
-            val reader = Thread.ofVirtual().start {
-                try {
-                    val _ = reading.next()
-                } catch (interrupted: InterruptedException) {
-                    threw.complete(interrupted)
+            val reader =
+                Thread.ofVirtual().start {
+                    try {
+                        val _ = reading.next()
+                    } catch (interrupted: InterruptedException) {
+                        threw.complete(interrupted)
+                    }
                 }
-            }
             waitUntilParked(reader)
 
             reader.interrupt()

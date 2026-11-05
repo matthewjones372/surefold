@@ -31,11 +31,12 @@ object ProtocolSuite : Suite() {
         }
 
         test("a function, a var and a plain class are each named") {
-            protocolFaults<Broken>() shouldContainExactlyInAnyOrder listOf(
-                "Later.then holds a function",
-                "Counter.count is a var",
-                "Opaque is not a data class or an object",
-            )
+            protocolFaults<Broken>() shouldContainExactlyInAnyOrder
+                listOf(
+                    "Later.then holds a function",
+                    "Counter.count is a var",
+                    "Opaque is not a data class or an object",
+                )
         }
     }
 }

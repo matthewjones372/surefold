@@ -17,11 +17,11 @@ import java.util.concurrent.Semaphore
 import java.util.concurrent.locks.LockSupport
 
 /**
- * What a run has to let go of when it ends, however it ends: the bodies still in flight and the forks
- * still filling a buffer. Released in reverse, on the thread that ran the loop, before the exit completes.
+ * What a run has to let go of when it ends, however it ends: the bodies still in flight and the forks still filling a
+ * buffer. Released in reverse, on the thread that ran the loop, before the exit completes.
  *
- * [on] is where the run starts every thread it starts for itself, so that whoever gave the backend its
- * executor sees them all, and [clock] is the time its pulls with time in them read.
+ * [on] is where the run starts every thread it starts for itself, so that whoever gave the backend its executor sees
+ * them all, and [clock] is the time its pulls with time in them read.
  */
 internal class Releases(val on: Executor, val clock: Clock) {
 
@@ -33,22 +33,27 @@ internal class Releases(val on: Executor, val clock: Clock) {
     fun add(release: () -> Unit) = synchronized(each) { each.addFirst(release) }
 
     /**
-     * Lets go of everything, each on its own: one that throws does not stop the rest, and what it threw
-     * rides on the first. A stop's interrupt is spent by then, so no wait here is cut short by it.
+     * Lets go of everything, each on its own: one that throws does not stop the rest, and what it threw rides on the
+     * first. A stop's interrupt is spent by then, so no wait here is cut short by it.
      */
     // The catch is as wide as a release: whatever one threw, the others still run.
     @Suppress("TooGenericExceptionCaught")
     fun releaseAll() {
         Thread.interrupted()
-        val failures = synchronized(each) { each.toList().also { each.clear() } }.mapNotNull { release ->
-            try {
-                release()
-                null
-            } catch (thrown: Throwable) {
-                thrown
-            }
+        val failures =
+            synchronized(each) { each.toList().also { each.clear() } }
+                .mapNotNull { release ->
+                    try {
+                        release()
+                        null
+                    } catch (thrown: Throwable) {
+                        thrown
+                    }
+                }
+        failures.firstOrNull()?.let { first ->
+            failures.drop(1).forEach(first::addSuppressed)
+            throw first
         }
-        failures.firstOrNull()?.let { first -> failures.drop(1).forEach(first::addSuppressed); throw first }
     }
 }
 
@@ -58,8 +63,8 @@ internal class Releases(val on: Executor, val clock: Clock) {
  * One object rather than a future, a latch and a lock around them (spec 0178), since a window makes one for every
  * element. Whatever waits for the body (the pull in [await], the run in [cancel], an action left by [whenDone]) is
  * pushed onto [state], and the body, once stopped, swaps in [STOPPED] and wakes or runs everything it took. A waiter
- * pushes itself and then parks only while [state] is not [STOPPED], and the push and the swap are atomic on the
- * one field, so either the body's swap takes the waiter or the waiter sees [STOPPED]: no wake can fall between.
+ * pushes itself and then parks only while [state] is not [STOPPED], and the push and the swap are atomic on the one
+ * field, so either the body's swap takes the waiter or the waiter sees [STOPPED]: no wake can fall between.
  */
 // The catch is as wide as a body: whatever it threw is the answer the pull loop rethrows.
 @Suppress("TooGenericExceptionCaught")
@@ -67,9 +72,7 @@ internal class InFlight<T>(on: Executor, private val body: () -> T) : Runnable {
 
     // null, the newest of a chain of [Waiting], or [STOPPED] once the answer below is set. Written only through
     // [STATE], which detekt cannot see.
-    @Suppress("VarCouldBeVal")
-    @Volatile
-    private var state: Any? = null
+    @Suppress("VarCouldBeVal") @Volatile private var state: Any? = null
     private var answer: T? = null
     private var thrown: Throwable? = null
 
@@ -118,8 +121,8 @@ internal class InFlight<T>(on: Executor, private val body: () -> T) : Runnable {
     }
 
     /**
-     * Interrupts the body if it is running, stops it running if it has not started, and waits for it to
-     * have stopped, whatever interrupts the wait: a fork is let go of only once it is gone.
+     * Interrupts the body if it is running, stops it running if it has not started, and waits for it to have stopped,
+     * whatever interrupts the wait: a fork is let go of only once it is gone.
      */
     fun cancel() {
         synchronized(this) {
@@ -161,18 +164,16 @@ internal class InFlight<T>(on: Executor, private val body: () -> T) : Runnable {
 
     private companion object {
         val STOPPED = Any()
-        val STATE: VarHandle =
-            MethodHandles.lookup().findVarHandle(InFlight::class.java, "state", Any::class.java)
+        val STATE: VarHandle = MethodHandles.lookup().findVarHandle(InFlight::class.java, "state", Any::class.java)
     }
 }
 
 /**
- * Up to [Node.MapPar.parallelism] bodies at once, each on the node's executor (the run's, where the node
- * was left with the default), answered in the order the elements came. Upstream is on a fork of its own,
- * which starts each body as its element arrives, so a body that is done is passed on even while upstream
- * waits for the next element: a source that blocks, a Kafka consumer on a quiet topic among them, waits for
- * as long as it is quiet. The fork and the bodies are let go of when the run ends, and a failure the window
- * answers with interrupts the bodies behind it.
+ * Up to [Node.MapPar.parallelism] bodies at once, each on the node's executor (the run's, where the node was left with
+ * the default), answered in the order the elements came. Upstream is on a fork of its own, which starts each body as
+ * its element arrives, so a body that is done is passed on even while upstream waits for the next element: a source
+ * that blocks, a Kafka consumer on a quiet topic among them, waits for as long as it is quiet. The fork and the bodies
+ * are let go of when the run ends, and a failure the window answers with interrupts the bodies behind it.
  */
 // The catch is as wide as a body's, and rethrows what it caught once the window behind it is let go of.
 @Suppress("TooGenericExceptionCaught")
@@ -182,9 +183,10 @@ internal fun Node.MapPar.window(): Pull {
     val up = upstream.pull()
     val executor = ctx.releases?.executorFor(on) ?: on
     val started = Ring(parallelism)
-    val fork = InFlight(ctx.releases?.on ?: VirtualThreads) {
-        feed(up, started) { a -> InFlight(executor) { body(a) } }
-    }
+    val fork =
+        InFlight(ctx.releases?.on ?: VirtualThreads) {
+            feed(up, started) { a -> InFlight(executor) { body(a) } }
+        }
     // The fork first, so nothing is started behind the bodies being let go of.
     val cancelAll = {
         fork.cancel()
@@ -200,26 +202,31 @@ internal fun Node.MapPar.window(): Pull {
             is Fed.Threw -> throw next.thrown.also { ended = true }
 
             else -> {
-                @Suppress("UNCHECKED_CAST")
-                val head = next as InFlight<Either<Any?, Any>>
-                val answer = try {
-                    head.await()
-                } catch (thrown: Throwable) {
-                    // The head is still in the ring, so it is let go of with the rest.
-                    cancelAll()
-                    throw thrown
-                }
+                @Suppress("UNCHECKED_CAST") val head = next as InFlight<Either<Any?, Any>>
+                val answer =
+                    try {
+                        head.await()
+                    } catch (thrown: Throwable) {
+                        // The head is still in the ring, so it is let go of with the rest.
+                        cancelAll()
+                        throw thrown
+                    }
                 started.poll()
-                answer.fold({ e -> cancelAll(); throw DeclaredFailure(e) }, { b -> b })
+                answer.fold(
+                    { e ->
+                        cancelAll()
+                        throw DeclaredFailure(e)
+                    },
+                    { b -> b },
+                )
             }
         }
     }
 }
 
 /**
- * As [window], but each body is passed on as soon as it is done (spec 0170): a body puts itself in [Arrivals]
- * for the pull once it ends, so a slow body holds back only itself. [running] is what a failure or the run's
- * end lets go of.
+ * As [window], but each body is passed on as soon as it is done (spec 0170): a body puts itself in [Arrivals] for the
+ * pull once it ends, so a slow body holds back only itself. [running] is what a failure or the run's end lets go of.
  */
 // The catch is as wide as a body's, and rethrows what it caught once the window behind it is let go of.
 @Suppress("TooGenericExceptionCaught")
@@ -230,13 +237,14 @@ internal fun Node.MapPar.unorderedWindow(): Pull {
     val executor = ctx.releases?.executorFor(on) ?: on
     val arrivals = Arrivals(parallelism)
     val running = ConcurrentHashMap.newKeySet<InFlight<*>>()
-    val fork = InFlight(ctx.releases?.on ?: VirtualThreads) {
-        feedUnordered(up, arrivals) { a ->
-            val flight = InFlight(executor) { body(a) }
-            running.add(flight)
-            flight.whenDone { arrivals.arrive(flight) }
+    val fork =
+        InFlight(ctx.releases?.on ?: VirtualThreads) {
+            feedUnordered(up, arrivals) { a ->
+                val flight = InFlight(executor) { body(a) }
+                running.add(flight)
+                flight.whenDone { arrivals.arrive(flight) }
+            }
         }
-    }
     // The fork first, so nothing is started behind the bodies being let go of.
     val cancelAll = {
         fork.cancel()
@@ -252,26 +260,32 @@ internal fun Node.MapPar.unorderedWindow(): Pull {
             is Fed.Threw -> throw next.thrown.also { ended = true }
 
             else -> {
-                @Suppress("UNCHECKED_CAST")
-                val done = next as InFlight<Either<Any?, Any>>
+                @Suppress("UNCHECKED_CAST") val done = next as InFlight<Either<Any?, Any>>
                 running.remove(done)
-                val answer = try {
-                    done.await()
-                } catch (thrown: Throwable) {
-                    cancelAll()
-                    throw thrown
-                }
+                val answer =
+                    try {
+                        done.await()
+                    } catch (thrown: Throwable) {
+                        cancelAll()
+                        throw thrown
+                    }
                 arrivals.released()
-                answer.fold({ e -> cancelAll(); throw DeclaredFailure(e) }, { b -> b })
+                answer.fold(
+                    { e ->
+                        cancelAll()
+                        throw DeclaredFailure(e)
+                    },
+                    { b -> b },
+                )
             }
         }
     }
 }
 
 /**
- * As [window], but each body is passed on as soon as it is done and every earlier element with its key has
- * been: [released] queues the bodies in the order the pull takes them. A key's tail leaves [tails] once it
- * is released while still the newest for its key, so the map holds only keys with a body not yet passed on.
+ * As [window], but each body is passed on as soon as it is done and every earlier element with its key has been:
+ * [released] queues the bodies in the order the pull takes them. A key's tail leaves [tails] once it is released while
+ * still the newest for its key, so the map holds only keys with a body not yet passed on.
  */
 // The catch is as wide as a body's, and rethrows what it caught once the window behind it is let go of.
 @Suppress("TooGenericExceptionCaught")
@@ -285,25 +299,26 @@ internal fun Node.MapPar.keyedWindow(key: (Any) -> Any): Pull {
     val released = LinkedBlockingQueue<Any>()
     val running = ConcurrentHashMap.newKeySet<InFlight<*>>()
     val tails = ConcurrentHashMap<Any, CompletableFuture<Unit>>()
-    val fork = InFlight(ctx.releases?.on ?: VirtualThreads) {
-        keyedFeed(up, room, released, tails) { a ->
-            val k = keyOf(a)
-            val behind = tails[k] ?: CompletableFuture.completedFuture(Unit)
-            // Started before it is the key's tail: a body the executor refuses leaves no tail nothing completes.
-            val flight = InFlight(executor) { body(a) }
-            running.add(flight)
-            val passed = CompletableFuture<Unit>()
-            tails[k] = passed
-            flight.whenDone {
-                behind.whenComplete { _, _ ->
-                    running.remove(flight)
-                    released.offer(flight)
-                    passed.complete(Unit)
-                    tails.remove(k, passed)
+    val fork =
+        InFlight(ctx.releases?.on ?: VirtualThreads) {
+            keyedFeed(up, room, released, tails) { a ->
+                val k = keyOf(a)
+                val behind = tails[k] ?: CompletableFuture.completedFuture(Unit)
+                // Started before it is the key's tail: a body the executor refuses leaves no tail nothing completes.
+                val flight = InFlight(executor) { body(a) }
+                running.add(flight)
+                val passed = CompletableFuture<Unit>()
+                tails[k] = passed
+                flight.whenDone {
+                    behind.whenComplete { _, _ ->
+                        running.remove(flight)
+                        released.offer(flight)
+                        passed.complete(Unit)
+                        tails.remove(k, passed)
+                    }
                 }
             }
         }
-    }
     // The fork first, so nothing is started behind the bodies being let go of.
     val cancelAll = {
         fork.cancel()
@@ -320,22 +335,29 @@ internal fun Node.MapPar.keyedWindow(key: (Any) -> Any): Pull {
 
             else -> {
                 @Suppress("UNCHECKED_CAST")
-                val answer = try {
-                    (next as InFlight<Either<Any?, Any>>).await()
-                } catch (thrown: Throwable) {
-                    cancelAll()
-                    throw thrown
-                }
+                val answer =
+                    try {
+                        (next as InFlight<Either<Any?, Any>>).await()
+                    } catch (thrown: Throwable) {
+                        cancelAll()
+                        throw thrown
+                    }
                 room.release()
-                answer.fold({ e -> cancelAll(); throw DeclaredFailure(e) }, { b -> b })
+                answer.fold(
+                    { e ->
+                        cancelAll()
+                        throw DeclaredFailure(e)
+                    },
+                    { b -> b },
+                )
             }
         }
     }
 }
 
 /**
- * Upstream's elements, each started by [start] once there is [room] for it, then how upstream ended, marked
- * only once every key's last body has been released, so that nothing started is passed on after it.
+ * Upstream's elements, each started by [start] once there is [room] for it, then how upstream ended, marked only once
+ * every key's last body has been released, so that nothing started is passed on after it.
  */
 // The catch is as wide as a pipeline: whatever upstream threw is the pull's to throw, after what came first.
 @Suppress("TooGenericExceptionCaught")
@@ -347,17 +369,18 @@ private fun keyedFeed(
     start: (Any) -> Unit,
 ) {
     try {
-        val ended = try {
-            while (true) {
-                room.acquire()
-                start(up.next() ?: break)
+        val ended =
+            try {
+                while (true) {
+                    room.acquire()
+                    start(up.next() ?: break)
+                }
+                Fed.Done
+            } catch (stopped: InterruptedException) {
+                throw stopped
+            } catch (thrown: Throwable) {
+                Fed.Threw(thrown)
             }
-            Fed.Done
-        } catch (stopped: InterruptedException) {
-            throw stopped
-        } catch (thrown: Throwable) {
-            Fed.Threw(thrown)
-        }
         tails.values.forEach { it.get() }
         released.offer(ended)
     } catch (_: InterruptedException) {

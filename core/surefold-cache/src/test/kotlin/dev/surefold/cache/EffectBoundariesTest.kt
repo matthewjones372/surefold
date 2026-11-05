@@ -16,14 +16,14 @@ import dev.surefold.fail.Either
 import dev.surefold.metrics
 import dev.surefold.surefoldFuture
 import dev.surefold.test.eventually
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.Timeout
 import java.time.Instant
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 
 @Timeout(20)
 class EffectBoundariesTest {
@@ -34,30 +34,31 @@ class EffectBoundariesTest {
         val remove = BoundaryGate()
         layer.writing = { key -> if (key == "a") write.pause() }
         layer.removing = { remove.pause() }
-        Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) { Either.Right(1) }.use { cache ->
-            val first = surefoldFuture { cache.get("a") }
-            write.entered.awaitValue(3.seconds) shouldBe Unit
-            val middleRunner = Promise<Nothing, Thread>()
-            val middle = surefoldFuture {
-                middleRunner.succeed(Thread.currentThread())
-                cache.invalidate(Invalidation.All)
+        Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) { Either.Right(1) }
+            .use { cache ->
+                val first = surefoldFuture { cache.get("a") }
+                write.entered.awaitValue(3.seconds) shouldBe Unit
+                val middleRunner = Promise<Nothing, Thread>()
+                val middle = surefoldFuture {
+                    middleRunner.succeed(Thread.currentThread())
+                    cache.invalidate(Invalidation.All)
+                }
+                boundaryParked(middleRunner.awaitValue())
+                val last = surefoldFuture { cache.get("b") }
+                try {
+                    layer.reads.peek() shouldBe listOf("a")
+                    write.release.succeed(Unit)
+                    remove.entered.awaitValue(3.seconds) shouldBe Unit
+                    layer.reads.peek() shouldBe listOf("a")
+                } finally {
+                    write.release.succeed(Unit)
+                    remove.release.succeed(Unit)
+                    first.get(3, TimeUnit.SECONDS)
+                    middle.get(3, TimeUnit.SECONDS)
+                }
+                last.get(3, TimeUnit.SECONDS) shouldBe Either.Right(1)
+                layer.held.peek().keys shouldBe setOf("b")
             }
-            boundaryParked(middleRunner.awaitValue())
-            val last = surefoldFuture { cache.get("b") }
-            try {
-                layer.reads.peek() shouldBe listOf("a")
-                write.release.succeed(Unit)
-                remove.entered.awaitValue(3.seconds) shouldBe Unit
-                layer.reads.peek() shouldBe listOf("a")
-            } finally {
-                write.release.succeed(Unit)
-                remove.release.succeed(Unit)
-                first.get(3, TimeUnit.SECONDS)
-                middle.get(3, TimeUnit.SECONDS)
-            }
-            last.get(3, TimeUnit.SECONDS) shouldBe Either.Right(1)
-            layer.held.peek().keys shouldBe setOf("b")
-        }
     }
 
     @Test
@@ -65,19 +66,20 @@ class EffectBoundariesTest {
         val layer = BoundaryLayer()
         val write = BoundaryGate()
         layer.writing = { write.pause() }
-        Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) { Either.Right(1) }.use { cache ->
-            val getting = surefoldFuture { cache.get("b") }
-            try {
-                write.entered.awaitValue(3.seconds) shouldBe Unit
-                surefoldFuture { cache.invalidate(Invalidation.Key("a")) }.get(3, TimeUnit.SECONDS)
-            } finally {
-                write.release.succeed(Unit)
+        Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) { Either.Right(1) }
+            .use { cache ->
+                val getting = surefoldFuture { cache.get("b") }
+                try {
+                    write.entered.awaitValue(3.seconds) shouldBe Unit
+                    surefoldFuture { cache.invalidate(Invalidation.Key("a")) }.get(3, TimeUnit.SECONDS)
+                } finally {
+                    write.release.succeed(Unit)
+                }
+                getting.get(3, TimeUnit.SECONDS) shouldBe Either.Right(1)
+                layer.held.peek().keys shouldBe setOf("b")
+                cache.get("b") shouldBe Either.Right(1)
+                cache.stats().loads shouldBe 1
             }
-            getting.get(3, TimeUnit.SECONDS) shouldBe Either.Right(1)
-            layer.held.peek().keys shouldBe setOf("b")
-            cache.get("b") shouldBe Either.Right(1)
-            cache.stats().loads shouldBe 1
-        }
     }
 
     @Test
@@ -86,11 +88,16 @@ class EffectBoundariesTest {
             val moving = TestClock()
             val layer = BoundaryLayer()
             val marker = IllegalStateException("background admission defect")
-            val cache = clock.locally(moving) {
-                Cache<String, Nothing, Int>(
-                    { 1.minutes }, layers = listOf(layer), refreshing = Schedule.spaced(10.seconds),
-                ) { Either.Right(1) }
-            }
+            val cache =
+                clock.locally(moving) {
+                    Cache<String, Nothing, Int>(
+                        { 1.minutes },
+                        layers = listOf(layer),
+                        refreshing = Schedule.spaced(10.seconds),
+                    ) {
+                        Either.Right(1)
+                    }
+                }
             cache.use {
                 metrics.locally(EffectMetrics("surefold.cache.backgrounds", marker, histogram)) {
                     shouldThrow<IllegalStateException> { cache.get("a") } shouldBe marker
@@ -111,16 +118,17 @@ class EffectBoundariesTest {
         val marker = IllegalStateException("metrics defect")
         val body = Shared(0, "layer-body")
         layer.removing = { body.update { it + 1 } }
-        Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) { Either.Right(1) }.use { cache ->
-            cache.get("a")
-            metrics.locally(EffectMetrics("promise", marker)) { cache.invalidate(Invalidation.Key("a")) }
-            body.peek() shouldBe 1
-            metrics.locally(EffectMetrics("layer-body", marker)) { cache.invalidate(Invalidation.Key("b")) }
-            body.peek() shouldBe 2
-            cache.stats().layerFailures shouldBe 1
-            surefoldFuture { cache.invalidate(Invalidation.All) }.get(3, TimeUnit.SECONDS)
-            body.peek() shouldBe 3
-        }
+        Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(layer)) { Either.Right(1) }
+            .use { cache ->
+                cache.get("a")
+                metrics.locally(EffectMetrics("promise", marker)) { cache.invalidate(Invalidation.Key("a")) }
+                body.peek() shouldBe 1
+                metrics.locally(EffectMetrics("layer-body", marker)) { cache.invalidate(Invalidation.Key("b")) }
+                body.peek() shouldBe 2
+                cache.stats().layerFailures shouldBe 1
+                surefoldFuture { cache.invalidate(Invalidation.All) }.get(3, TimeUnit.SECONDS)
+                body.peek() shouldBe 3
+            }
     }
 
     @Test
@@ -128,14 +136,15 @@ class EffectBoundariesTest {
         val entered = Shared(false)
         val decisions = Shared(0)
         lateinit var cache: Cache<String, Nothing, Int>
-        val schedule = Schedule.spaced<Either<Nothing, Int>>(10.seconds).doWhile { _, _ ->
-            decisions.update { it + 1 }
-            if (entered.modify { true to !it }) {
-                cache.get("b") shouldBe Either.Right(1)
-                cache.invalidate(Invalidation.Key("a"))
+        val schedule =
+            Schedule.spaced<Either<Nothing, Int>>(10.seconds).doWhile { _, _ ->
+                decisions.update { it + 1 }
+                if (entered.modify { true to !it }) {
+                    cache.get("b") shouldBe Either.Right(1)
+                    cache.invalidate(Invalidation.Key("a"))
+                }
+                true
             }
-            true
-        }
         cache = clock.locally(TestClock()) { Cache({ 1.minutes }, refreshing = schedule) { Either.Right(1) } }
         cache.use {
             cache.get("a") shouldBe Either.Right(1)
@@ -151,18 +160,19 @@ class EffectBoundariesTest {
         val last = BoundaryLayer()
         val write = BoundaryGate()
         first.writing = { write.pause() }
-        Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(first, last)) { Either.Right(1) }.use { cache ->
-            val getting = surefoldFuture { cache.get("a") }
-            try {
-                write.entered.awaitValue(3.seconds) shouldBe Unit
-                cache.invalidate(Invalidation.Key("b"))
-            } finally {
-                write.release.succeed(Unit)
+        Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(first, last)) { Either.Right(1) }
+            .use { cache ->
+                val getting = surefoldFuture { cache.get("a") }
+                try {
+                    write.entered.awaitValue(3.seconds) shouldBe Unit
+                    cache.invalidate(Invalidation.Key("b"))
+                } finally {
+                    write.release.succeed(Unit)
+                }
+                getting.get(3, TimeUnit.SECONDS) shouldBe Either.Right(1)
+                first.held.peek().keys shouldBe setOf("a")
+                last.held.peek() shouldBe emptyMap()
             }
-            getting.get(3, TimeUnit.SECONDS) shouldBe Either.Right(1)
-            first.held.peek().keys shouldBe setOf("a")
-            last.held.peek() shouldBe emptyMap()
-        }
     }
 
     @Test
@@ -171,9 +181,14 @@ class EffectBoundariesTest {
         val last = BoundaryLayer()
         val write = BoundaryGate()
         first.writing = { write.resist() }
-        val cache = Cache<String, Nothing, Int>(
-            { 1.minutes }, layers = listOf(first, last), refreshing = Schedule.spaced(10.seconds),
-        ) { Either.Right(1) }
+        val cache =
+            Cache<String, Nothing, Int>(
+                { 1.minutes },
+                layers = listOf(first, last),
+                refreshing = Schedule.spaced(10.seconds),
+            ) {
+                Either.Right(1)
+            }
         val getting = surefoldFuture { cache.get("a") }
         try {
             write.entered.awaitValue(3.seconds) shouldBe Unit
@@ -194,10 +209,17 @@ class EffectBoundariesTest {
         val layer = BoundaryLayer()
         val gone = Promise<Nothing, Unit>()
         lateinit var cache: Cache<String, Nothing, Int>
-        cache = Cache({ 1.minutes }, layers = listOf(layer), onEvict = { _, _ ->
-            cache.close()
-            gone.succeed(Unit)
-        }) { Either.Right(1) }
+        cache =
+            Cache(
+                { 1.minutes },
+                layers = listOf(layer),
+                onEvict = { _, _ ->
+                    cache.close()
+                    gone.succeed(Unit)
+                },
+            ) {
+                Either.Right(1)
+            }
         try {
             cache.get("a")
             cache.refresh("a")
@@ -235,9 +257,10 @@ class EffectBoundariesTest {
     @Test
     fun `a released memory reservation retains callback lifetime ownership through ordinary close`() {
         val notification = BoundaryGate()
-        val cache = Cache<String, Nothing, Int>({ 1.minutes }, onEvict = { _, _ -> notification.pause() }) {
-            Either.Right(1)
-        }
+        val cache =
+            Cache<String, Nothing, Int>({ 1.minutes }, onEvict = { _, _ -> notification.pause() }) {
+                Either.Right(1)
+            }
         cache.get("a")
         val invalidating = surefoldFuture { cache.invalidate(Invalidation.All) }
         notification.entered.awaitValue(3.seconds) shouldBe Unit
@@ -260,10 +283,11 @@ class EffectBoundariesTest {
     @Test
     fun `ordinary close during a schedule decision refuses its later installation`() {
         val deciding = BoundaryGate()
-        val schedule = Schedule.spaced<Either<Nothing, Int>>(10.seconds).doWhile { _, _ ->
-            deciding.resist()
-            true
-        }
+        val schedule =
+            Schedule.spaced<Either<Nothing, Int>>(10.seconds).doWhile { _, _ ->
+                deciding.resist()
+                true
+            }
         val cache = Cache<String, Nothing, Int>({ 1.minutes }, refreshing = schedule) { Either.Right(1) }
         val getting = surefoldFuture { cache.get("a") }
         try {
@@ -288,17 +312,24 @@ class EffectBoundariesTest {
             order.update { it + "far" }
             error("far unavailable")
         }
-        Cache<String, Nothing, Int>({ 1.minutes }, layers = listOf(near, far), onEvict = { _, _ ->
-            order.update { it + "memory" }
-        }) { Either.Right(1) }.use { cache ->
-            cache.get("a")
-            cache.invalidate(Invalidation.Key("a"))
-            order.peek() shouldBe listOf("far", "near", "memory")
-            cache.stats().size shouldBe 0
-            cache.stats().layerFailures shouldBe 1
-            near.held.peek() shouldBe emptyMap()
-            far.held.peek().keys shouldBe setOf("a")
-        }
+        Cache<String, Nothing, Int>(
+                { 1.minutes },
+                layers = listOf(near, far),
+                onEvict = { _, _ ->
+                    order.update { it + "memory" }
+                },
+            ) {
+                Either.Right(1)
+            }
+            .use { cache ->
+                cache.get("a")
+                cache.invalidate(Invalidation.Key("a"))
+                order.peek() shouldBe listOf("far", "near", "memory")
+                cache.stats().size shouldBe 0
+                cache.stats().layerFailures shouldBe 1
+                near.held.peek() shouldBe emptyMap()
+                far.held.peek().keys shouldBe setOf("a")
+            }
     }
 
     @Test
@@ -309,11 +340,18 @@ class EffectBoundariesTest {
         val once = Shared(false)
         far.held.update { mapOf("a" to Stored(1, Instant.EPOCH, Instant.EPOCH.plusSeconds(10))) }
         lateinit var cache: Cache<String, Nothing, Int>
-        cache = clock.locally(moving) {
-            Cache({ 1.minutes }, layers = listOf(near, far), onEvict = { _, _ ->
-                if (once.modify { true to !it }) cache.invalidate(Invalidation.All)
-            }) { Either.Right(3) }
-        }
+        cache =
+            clock.locally(moving) {
+                Cache(
+                    { 1.minutes },
+                    layers = listOf(near, far),
+                    onEvict = { _, _ ->
+                        if (once.modify { true to !it }) cache.invalidate(Invalidation.All)
+                    },
+                ) {
+                    Either.Right(3)
+                }
+            }
         cache.use {
             cache.get("a") shouldBe Either.Right(1)
             moving.adjust(20.seconds)
@@ -395,9 +433,10 @@ private class EffectMetrics(
     }
 }
 
-private fun boundaryParked(thread: Thread) = eventually(3.seconds) {
-    (thread.state == Thread.State.WAITING || !thread.isAlive) shouldBe true
-}
+private fun boundaryParked(thread: Thread) =
+    eventually(3.seconds) {
+        (thread.state == Thread.State.WAITING || !thread.isAlive) shouldBe true
+    }
 
 private fun ownedEffects(cache: Cache<*, *, *>): List<Pair<Promise<*, *>, Promise<*, *>>> {
     val admission = effectField(cache, "admission") as ReentrantLock

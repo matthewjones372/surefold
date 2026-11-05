@@ -36,33 +36,35 @@ private data object Fade : Switch
 
 private data object Shimmer : Switch
 
-private fun lamp(log: AtomicReference<List<String>>) = behaviour<Switch, Bulb>(Off) { ctx, bulb, message ->
-    when (message) {
-        On -> ctx.become(Lit(1)) {
-            after(5.seconds, Fade)
-            every(2.seconds, Shimmer)
-        }
+private fun lamp(log: AtomicReference<List<String>>) =
+    behaviour<Switch, Bulb>(Off) { ctx, bulb, message ->
+        when (message) {
+            On ->
+                ctx.become(Lit(1)) {
+                    after(5.seconds, Fade)
+                    every(2.seconds, Shimmer)
+                }
 
-        Brighter -> if (bulb is Lit) become(bulb.copy(brightness = bulb.brightness + 1)) else unhandled()
+            Brighter -> if (bulb is Lit) become(bulb.copy(brightness = bulb.brightness + 1)) else unhandled()
 
-        Flip -> become(Off)
+            Flip -> become(Off)
 
-        Stray -> {
-            ctx.become(Lit(9)) { after(1.seconds, Fade) }
-            stay()
-        }
+            Stray -> {
+                ctx.become(Lit(9)) { after(1.seconds, Fade) }
+                stay()
+            }
 
-        Fade -> {
-            log.updateAndGet { it + "fade" }
-            stay()
-        }
+            Fade -> {
+                log.updateAndGet { it + "fade" }
+                stay()
+            }
 
-        Shimmer -> {
-            log.updateAndGet { it + "shimmer" }
-            stay()
+            Shimmer -> {
+                log.updateAndGet { it + "shimmer" }
+                stay()
+            }
         }
     }
-}
 
 /** What a test's lamp did, fresh for each test: the suite's tests share one object, and run at once. */
 private fun freshLog() = AtomicReference<List<String>>(emptyList())

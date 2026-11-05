@@ -36,9 +36,9 @@ interface SagaScope<E> {
 
     /**
      * Runs [action] with the key `"$id/$name"` and records [undo] against what it returned. Should the saga fail,
-     * [undo] is handed the key `"$id/$name/undo"`, that value and why. A declared fail means the action did not
-     * happen; anything else it throws leaves it unknown, and [check], asked with the same key, settles it. Without
-     * an answer the saga is unsettled, and undoes nothing.
+     * [undo] is handed the key `"$id/$name/undo"`, that value and why. A declared fail means the action did not happen;
+     * anything else it throws leaves it unknown, and [check], asked with the same key, settles it. Without an answer
+     * the saga is unsettled, and undoes nothing.
      */
     fun <A> step(
         name: String,
@@ -49,8 +49,8 @@ interface SagaScope<E> {
 }
 
 /**
- * A saga whose undos did not all succeed: each step named in [notUndone] may still be done. When [unsettled] names
- * a step whose outcome nobody could settle, no undo ran at all.
+ * A saga whose undos did not all succeed: each step named in [notUndone] may still be done. When [unsettled] names a
+ * step whose outcome nobody could settle, no undo ran at all.
  */
 class NotUndone(
     val saga: String,
@@ -64,21 +64,22 @@ fun <A> saga(id: String, name: String = "unnamed", undo: Policy? = null, block: 
     Unraisable.saga(id, name, undo, block)
 
 /**
- * Runs [block] as the saga [id], undoing its finished steps, newest first, if it ends any way but returning; the
- * ending then carries on, unless an undo failed, when the saga throws [NotUndone] instead. Undos and checks run on
- * a virtual thread of their own, which an interrupt of this one does not reach, each through [undo]; its deadline,
- * if it has one, bounds all of them together. Steps may be taken from `parZip` and `parMap` branches; undos then run
- * in the reverse of the order their actions returned. [name], not [id], tags the saga's metrics.
+ * Runs [block] as the saga [id], undoing its finished steps, newest first, if it ends any way but returning; the ending
+ * then carries on, unless an undo failed, when the saga throws [NotUndone] instead. Undos and checks run on a virtual
+ * thread of their own, which an interrupt of this one does not reach, each through [undo]; its deadline, if it has one,
+ * bounds all of them together. Steps may be taken from `parZip` and `parMap` branches; undos then run in the reverse of
+ * the order their actions returned. [name], not [id], tags the saga's metrics.
  */
 fun <E, A> Fail<E>.saga(id: String, name: String = "unnamed", undo: Policy? = null, block: SagaScope<E>.() -> A): A {
     val steps = Steps<E>(id, name, root(), Undoing(undo))
-    val value = try {
-        steps.block()
-    } catch (t: Throwable) {
-        val ending = steps.undoAll(steps.why(t), t)
-        runs(name, if (ending is NotUndone) "not-undone" else "undone")
-        throw ending
-    }
+    val value =
+        try {
+            steps.block()
+        } catch (t: Throwable) {
+            val ending = steps.undoAll(steps.why(t), t)
+            runs(name, if (ending is NotUndone) "not-undone" else "undone")
+            throw ending
+        }
     runs(name, "done")
     return value
 }
@@ -86,11 +87,12 @@ fun <E, A> Fail<E>.saga(id: String, name: String = "unnamed", undo: Policy? = nu
 private fun runs(saga: String, outcome: String) =
     counter("surefold.saga.runs", "saga" to saga, "outcome" to outcome).increment()
 
-private fun causeOf(why: Undo<*>): Throwable? = when (why) {
-    is Undo.Failed -> null
-    is Undo.Threw -> why.failure
-    is Undo.Cancelled -> why.interrupt
-}
+private fun causeOf(why: Undo<*>): Throwable? =
+    when (why) {
+        is Undo.Failed -> null
+        is Undo.Threw -> why.failure
+        is Undo.Cancelled -> why.interrupt
+    }
 
 private class Done<E, A>(val name: String, val value: A, val undo: (String, A, Undo<E>) -> Unit)
 
@@ -142,8 +144,7 @@ private class ShieldedEnd<A> {
     }
 
     // Read only after the thread that wrote it was joined.
-    @Suppress("UNCHECKED_CAST")
-    fun answer(): A = thrown?.let { throw it } ?: value as A
+    @Suppress("UNCHECKED_CAST") fun answer(): A = thrown?.let { throw it } ?: value as A
 }
 
 private class Steps<E>(
@@ -185,35 +186,35 @@ private class Steps<E>(
         check: ((String) -> Settled<A>)?,
         undo: (String, A, Undo<E>) -> Unit,
     ) {
-        val answer = if (check == null) {
-            record(Unsettled(name, null))
-            "none"
-        } else {
-            try {
-                when (val settled = undoing.run { check(key) }) {
-                    is Settled.Happened -> "happened".also { record(Done(name, settled.value, undo)) }
-                    Settled.DidNot -> "did-not"
+        val answer =
+            if (check == null) {
+                record(Unsettled(name, null))
+                "none"
+            } else {
+                try {
+                    when (val settled = undoing.run { check(key) }) {
+                        is Settled.Happened -> "happened".also { record(Done(name, settled.value, undo)) }
+                        Settled.DidNot -> "did-not"
+                    }
+                } catch (t: Throwable) {
+                    "none".also { record(Unsettled(name, t)) }
                 }
-            } catch (t: Throwable) {
-                "none".also { record(Unsettled(name, t)) }
             }
-        }
         counter("surefold.saga.checks", "saga" to saga, "answer" to answer).increment()
     }
 
     // A fail is declared whichever attempt it leaves through, a fork's own included: the step did not happen.
     private fun declared(t: Throwable): Boolean = t is Failed
 
-    fun why(t: Throwable): Undo<E> = when {
-        // Only a fail on this saga's own attempt carries an E; one into an outer attempt is, here, just a throw.
-        t is Failed && t.scope === root ->
-            @Suppress("UNCHECKED_CAST")
-            Undo.Failed(t.error as E)
+    fun why(t: Throwable): Undo<E> =
+        when {
+            // Only a fail on this saga's own attempt carries an E; one into an outer attempt is, here, just a throw.
+            t is Failed && t.scope === root -> @Suppress("UNCHECKED_CAST") Undo.Failed(t.error as E)
 
-        t is InterruptedException -> Undo.Cancelled(t)
+            t is InterruptedException -> Undo.Cancelled(t)
 
-        else -> Undo.Threw(t)
-    }
+            else -> Undo.Threw(t)
+        }
 
     /**
      * Every undo runs, newest first, whatever the ones before it did. With a step unsettled none does: undoing the

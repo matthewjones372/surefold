@@ -7,29 +7,32 @@ import dev.surefold.junit.shouldThrow
 
 private val ledgerOf = PersistenceId("ledger", "l-1")
 
-private val entry = object : EventCodec<Int> {
-    override fun encode(event: Int): ByteArray = event.toString().toByteArray()
+private val entry =
+    object : EventCodec<Int> {
+        override fun encode(event: Int): ByteArray = event.toString().toByteArray()
 
-    override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
-}
+        override fun decode(bytes: ByteArray): Int = String(bytes).toInt()
+    }
 
-private val sum = object : StateCodec<Long> {
-    override fun encode(state: Long): ByteArray = state.toString().toByteArray()
+private val sum =
+    object : StateCodec<Long> {
+        override fun encode(state: Long): ByteArray = state.toString().toByteArray()
 
-    override fun decode(bytes: ByteArray): Long = String(bytes).toLong()
-}
+        override fun decode(bytes: ByteArray): Long = String(bytes).toLong()
+    }
 
 /** Adds [amount] to the ledger, as one event. */
 private data class Post(val amount: Int)
 
-private fun ledger(prune: Prune) = persistent<Post, Int, Long>(
-    id = ledgerOf,
-    empty = 0,
-    codec = entry,
-    snapshots = every(100, sum, prune = prune),
-    command = { _, _, post -> persist(post.amount) },
-    event = { total, amount -> total + amount },
-)
+private fun ledger(prune: Prune) =
+    persistent<Post, Int, Long>(
+        id = ledgerOf,
+        empty = 0,
+        codec = entry,
+        snapshots = every(100, sum, prune = prune),
+        command = { _, _, post -> persist(post.amount) },
+        event = { total, amount -> total + amount },
+    )
 
 private fun Journal.kept() = read(ledgerOf).map { it.sequence }
 
@@ -61,12 +64,13 @@ object PruneSuite : Suite() {
 
         test("a snapshot that fails to save deletes nothing") {
             val journal = InMemoryJournal()
-            val broken = object : SnapshotStore {
-                override fun save(id: PersistenceId, sequence: Long, bytes: ByteArray) =
-                    error("the snapshot store is down")
+            val broken =
+                object : SnapshotStore {
+                    override fun save(id: PersistenceId, sequence: Long, bytes: ByteArray) =
+                        error("the snapshot store is down")
 
-                override fun latest(id: PersistenceId): Snapshot? = null
-            }
+                    override fun latest(id: PersistenceId): Snapshot? = null
+                }
             testActors(journal = journal, snapshots = broken) {
                 val book = spawn("ledger", ledger(prune = Prune.always))
                 (1..250).forEach { book.send(Post(it)) }

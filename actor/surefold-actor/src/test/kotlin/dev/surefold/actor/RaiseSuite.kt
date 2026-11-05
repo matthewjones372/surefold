@@ -27,25 +27,26 @@ private data class Count(val reply: Reply<Int>) : Till
 private data object Explode : Till
 
 /** Stock that raises [OutOfStock] rather than going below zero, and answers a failed `Try` without failing. */
-private fun till(stock: Int) = behaviour<Till, Int, OutOfStock>(stock) { _, left, message ->
-    when (message) {
-        is Sell -> if (message.count > left) fail(OutOfStock) else become(left - message.count)
+private fun till(stock: Int) =
+    behaviour<Till, Int, OutOfStock>(stock) { _, left, message ->
+        when (message) {
+            is Sell -> if (message.count > left) fail(OutOfStock) else become(left - message.count)
 
-        is Settle -> become(left - message.owed.bind())
+            is Settle -> become(left - message.owed.bind())
 
-        is Try -> {
-            val attempt = attempt { if (message.count > left) fail(OutOfStock) else left - message.count }
-            become(attempt.getOrNull() ?: left)
+            is Try -> {
+                val attempt = attempt { if (message.count > left) fail(OutOfStock) else left - message.count }
+                become(attempt.getOrNull() ?: left)
+            }
+
+            is Count -> {
+                message.reply(left)
+                stay()
+            }
+
+            Explode -> error("the till caught fire")
         }
-
-        is Count -> {
-            message.reply(left)
-            stay()
-        }
-
-        Explode -> error("the till caught fire")
     }
-}
 
 object RaiseSuite : Suite() {
     init {

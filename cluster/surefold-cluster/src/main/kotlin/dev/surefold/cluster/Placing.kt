@@ -14,8 +14,8 @@ import dev.surefold.actor.remote.Node
 
 /**
  * What a region runs its shards with: which member owns a shard, what runs one here, and how a message reaches what
- * runs it. [eager] starts a shard's host as soon as the shard is free here, rather than on its first message.
- * [target] is what a message for an id is told to, through its host.
+ * runs it. [eager] starts a shard's host as soon as the shard is free here, rather than on its first message. [target]
+ * is what a message for an id is told to, through its host.
  */
 internal class Hosting<M : Any, H : Any>(
     val eager: Boolean,
@@ -40,14 +40,14 @@ private object DrainKey
 private object AskAgainKey
 
 /**
- * One region's work: each message to the entity here, or to the region of the node that owns its shard; and the
- * handoff that keeps an entity from running on two nodes at once.
+ * One region's work: each message to the entity here, or to the region of the node that owns its shard; and the handoff
+ * that keeps an entity from running on two nodes at once.
  *
- * A node that wins a shard asks every other member that could hold it, `Up` or `Leaving`, to release it, and runs
- * none of the shard until each has, or has left the view. A member releases a shard only once it neither runs any of
- * it nor believes it owns it, so two nodes whose views disagree both wait until the views agree. What arrives for a
- * shard meanwhile is kept, up to a bound. The ask is repeated while any member has yet to answer it: a member whose
- * region did not exist yet when it was asked drops the ask, and would otherwise never answer.
+ * A node that wins a shard asks every other member that could hold it, `Up` or `Leaving`, to release it, and runs none
+ * of the shard until each has, or has left the view. A member releases a shard only once it neither runs any of it nor
+ * believes it owns it, so two nodes whose views disagree both wait until the views agree. What arrives for a shard
+ * meanwhile is kept, up to a bound. The ask is repeated while any member has yet to answer it: a member whose region
+ * did not exist yet when it was asked drops the ask, and would otherwise never answer.
  */
 internal class Placing<M : Any, H : Any>(
     private val cluster: Cluster,
@@ -74,8 +74,7 @@ internal class Placing<M : Any, H : Any>(
     private var asking = false
 
     // What a busy host could not take yet, per entity id and in order (spec 0095).
-    @OptIn(PlumbingSeam::class)
-    private val handOn = HandOn<String, M>()
+    @OptIn(PlumbingSeam::class) private val handOn = HandOn<String, M>()
 
     fun step(ctx: Ctx<Region<M>>, step: Region<M>) {
         handle(ctx, step)
@@ -87,34 +86,36 @@ internal class Placing<M : Any, H : Any>(
         meters.buffered.set(kept.size.toDouble())
     }
 
-    private fun handle(ctx: Ctx<Region<M>>, step: Region<M>) = when (step) {
-        // Another cluster reaches these entities only when this one accepts it (spec 0103).
-        is Region.Envelope ->
-            if (step.from == null || step.from in cluster.federatedFrom) route(ctx, step) else refuse(step)
+    private fun handle(ctx: Ctx<Region<M>>, step: Region<M>) =
+        when (step) {
+            // Another cluster reaches these entities only when this one accepts it (spec 0103).
+            is Region.Envelope ->
+                if (step.from == null || step.from in cluster.federatedFrom) route(ctx, step) else refuse(step)
 
-        is Region.Viewed -> {
-            moved = step.moved
-            viewed(ctx, step.view)
+            is Region.Viewed -> {
+                moved = step.moved
+                viewed(ctx, step.view)
+            }
+
+            is Region.Release -> if (outsider(step.sender)) refuse(step) else asked(step.shard, by = step.from)
+
+            is Region.Released ->
+                if (outsider(step.sender)) {
+                    refuse(step)
+                } else {
+                    awaiting[step.shard]?.remove(step.by)
+                    startIfFree(ctx, step.shard)
+                }
+
+            is Region.Retry -> retry(ctx)
+
+            is Region.Drain -> drain(ctx)
+
+            is Region.AskAgain -> askAgain(ctx)
+
+            // Taken before this step, in the region's behaviour.
+            is Region.Look -> Unit
         }
-
-        is Region.Release -> if (outsider(step.sender)) refuse(step) else asked(step.shard, by = step.from)
-
-        is Region.Released -> if (outsider(step.sender)) {
-            refuse(step)
-        } else {
-            awaiting[step.shard]?.remove(step.by)
-            startIfFree(ctx, step.shard)
-        }
-
-        is Region.Retry -> retry(ctx)
-
-        is Region.Drain -> drain(ctx)
-
-        is Region.AskAgain -> askAgain(ctx)
-
-        // Taken before this step, in the region's behaviour.
-        is Region.Look -> Unit
-    }
 
     /** A shard's manager has stopped, and every entity of the shard with it. */
     fun ended(ctx: Ctx<Region<M>>, ref: ActorRef<*>) {
@@ -160,8 +161,11 @@ internal class Placing<M : Any, H : Any>(
         view = next
         ready.filterNot(::mine).forEach { letGo(ctx, it) }
         awaiting.keys.removeAll { !mine(it) }
-        val holders = next.members.filter { it.status == Status.Up || it.status == Status.Leaving }
-            .map { it.node }.filterTo(mutableSetOf()) { it != self }
+        val holders =
+            next.members
+                .filter { it.status == Status.Up || it.status == Status.Leaving }
+                .map { it.node }
+                .filterTo(mutableSetOf()) { it != self }
         for (shard in 0 until shards) {
             if (mine(shard) && shard !in ready && shard !in awaiting) win(shard, holders)
         }
@@ -216,15 +220,16 @@ internal class Placing<M : Any, H : Any>(
     }
 
     /** The region is stopping: what it kept for busy hosts is lost with it. */
-    @OptIn(PlumbingSeam::class)
-    fun stopping(ctx: Ctx<Region<M>>) = handOn.drop(ctx, DeadLetter.Why.Stopped)
+    @OptIn(PlumbingSeam::class) fun stopping(ctx: Ctx<Region<M>>) = handOn.drop(ctx, DeadLetter.Why.Stopped)
 
     private fun letGo(ctx: Ctx<Region<M>>, shard: Int) {
         // What was kept for the shard's entities goes wherever the shard is now, in order, with the next retry.
         @OptIn(PlumbingSeam::class)
-        handOn.keys.filter { Placement.shardOf(it, shards) == shard }.forEach { id ->
-            handOn.take(ctx, id) { keep(Region.Envelope(id, 0, it)) }
-        }
+        handOn.keys
+            .filter { Placement.shardOf(it, shards) == shard }
+            .forEach { id ->
+                handOn.take(ctx, id) { keep(Region.Envelope(id, 0, it)) }
+            }
         ready -= shard
         hosted.remove(shard)?.let { manager ->
             stopping[manager] = shard

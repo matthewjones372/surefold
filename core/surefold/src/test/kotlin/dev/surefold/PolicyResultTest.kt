@@ -10,13 +10,13 @@ import dev.surefold.fail.Either
 import dev.surefold.fail.Fail
 import dev.surefold.fail.Failed
 import dev.surefold.fail.attempt
-import org.junit.jupiter.api.Test
 import java.util.concurrent.CancellationException
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.time.Duration.Companion.ZERO
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
+import org.junit.jupiter.api.Test
 
 private class Transport : RuntimeException("transport")
 
@@ -52,8 +52,10 @@ class PolicyResultTest {
         breaker.state.shouldBeInstanceOf<CircuitBreaker.State.Open>()
 
         val calls = AtomicInteger()
-        partner.guardResult { Either.Right(calls.incrementAndGet()) }
-            .shouldBeLeft().shouldBeInstanceOf<Rejected.CircuitOpen>()
+        partner
+            .guardResult { Either.Right(calls.incrementAndGet()) }
+            .shouldBeLeft()
+            .shouldBeInstanceOf<Rejected.CircuitOpen>()
         withClue("an open breaker does not make the call") { calls.get() shouldBe 0 }
     }
 
@@ -128,9 +130,11 @@ class PolicyResultTest {
         val attempts = AtomicInteger()
         val partner = policy("partner") { retry(Schedule.recurs(5)) }
 
-        partner.guardResult {
-            if (attempts.incrementAndGet() < 3) Either.Left(Transport()) else Either.Right("charged")
-        }.shouldBeRight() shouldBe "charged"
+        partner
+            .guardResult {
+                if (attempts.incrementAndGet() < 3) Either.Left(Transport()) else Either.Right("charged")
+            }
+            .shouldBeRight() shouldBe "charged"
         attempts.get() shouldBe 3
     }
 
@@ -140,7 +144,11 @@ class PolicyResultTest {
         val refusal = Refusal()
         val partner = policy("partner") { retry(Schedule.recurs(3)) }
 
-        partner.guardResult(transportOnly) { attempts.incrementAndGet(); Either.Left(refusal) }
+        partner
+            .guardResult(transportOnly) {
+                attempts.incrementAndGet()
+                Either.Left(refusal)
+            }
             .shouldBeLeft() shouldBe refusal
         attempts.get() shouldBe 1
     }
@@ -149,9 +157,21 @@ class PolicyResultTest {
     fun `the selector is asked once an attempt`() {
         val asked = AtomicInteger()
         val limit = Limit.adaptive("partner", initial = 100)
-        val partner = policy("partner") { retry(Schedule.recurs(1)); guard(breaker(maxFailures = 5)); guard(limit) }
+        val partner =
+            policy("partner") {
+                retry(Schedule.recurs(1))
+                guard(breaker(maxFailures = 5))
+                guard(limit)
+            }
 
-        partner.guardResult({ asked.incrementAndGet(); true }) { Either.Left(Transport()) }
+        partner.guardResult(
+            {
+                asked.incrementAndGet()
+                true
+            },
+        ) {
+            Either.Left(Transport())
+        }
         asked.get() shouldBe 2
     }
 
@@ -160,10 +180,19 @@ class PolicyResultTest {
         val time = JumpingClock(forksWait = true)
         val attempts = AtomicInteger()
         val failure = Transport()
-        val partner = policy("partner") { deadline(1.seconds); retry(Schedule.spaced(400.milliseconds)) }
+        val partner =
+            policy("partner") {
+                deadline(1.seconds)
+                retry(Schedule.spaced(400.milliseconds))
+            }
 
         clock.locally(time) {
-            partner.guardResult { attempts.incrementAndGet(); Either.Left(failure) }.shouldBeLeft() shouldBe failure
+            partner
+                .guardResult {
+                    attempts.incrementAndGet()
+                    Either.Left(failure)
+                }
+                .shouldBeLeft() shouldBe failure
         }
         attempts.get() shouldBe 3
         time.elapsed() shouldBe 800.milliseconds
@@ -173,15 +202,21 @@ class PolicyResultTest {
     fun `an attempt timeout is retried and answered whatever the selector says`() {
         val time = JumpingClock(forksWait = false)
         val calls = AtomicInteger()
-        val partner = policy("partner") {
-            deadline(1.seconds)
-            retry(Schedule.spaced(100.milliseconds))
-            attemptTimeout(300.milliseconds)
-        }
+        val partner =
+            policy("partner") {
+                deadline(1.seconds)
+                retry(Schedule.spaced(100.milliseconds))
+                attemptTimeout(300.milliseconds)
+            }
 
         clock.locally(time) {
-            partner.guardResult({ false }) { calls.incrementAndGet(); Either.Right(Sleeper().body()) }
-                .shouldBeLeft().shouldBeInstanceOf<TimeoutException>()
+            partner
+                .guardResult({ false }) {
+                    calls.incrementAndGet()
+                    Either.Right(Sleeper().body())
+                }
+                .shouldBeLeft()
+                .shouldBeInstanceOf<TimeoutException>()
         }
         calls.get() shouldBe 3
         time.elapsed() shouldBe 1.seconds
@@ -192,9 +227,18 @@ class PolicyResultTest {
         val breaker = breaker(maxFailures = 2)
         val attempts = AtomicInteger()
         val thrown = Transport()
-        val partner = policy("partner") { retry(Schedule.recurs(1)); guard(breaker) }
+        val partner =
+            policy("partner") {
+                retry(Schedule.recurs(1))
+                guard(breaker)
+            }
 
-        partner.guardResult<Int>({ false }) { attempts.incrementAndGet(); throw thrown }.shouldBeLeft() shouldBe thrown
+        partner
+            .guardResult<Int>({ false }) {
+                attempts.incrementAndGet()
+                throw thrown
+            }
+            .shouldBeLeft() shouldBe thrown
         withClue("retried and counted though the selector picks nothing") {
             attempts.get() shouldBe 2
             breaker.state.shouldBeInstanceOf<CircuitBreaker.State.Open>()
@@ -204,10 +248,19 @@ class PolicyResultTest {
     @Test
     fun `a retry outside the breaker stops making calls once lefts open it`() {
         val calls = AtomicInteger()
-        val partner = policy("partner") { retry(Schedule.recurs(5)); guard(breaker(maxFailures = 2)) }
+        val partner =
+            policy("partner") {
+                retry(Schedule.recurs(5))
+                guard(breaker(maxFailures = 2))
+            }
 
-        partner.guardResult { calls.incrementAndGet(); Either.Left(Transport()) }
-            .shouldBeLeft().shouldBeInstanceOf<Rejected.CircuitOpen>()
+        partner
+            .guardResult {
+                calls.incrementAndGet()
+                Either.Left(Transport())
+            }
+            .shouldBeLeft()
+            .shouldBeInstanceOf<Rejected.CircuitOpen>()
         calls.get() shouldBe 2
     }
 
@@ -215,13 +268,14 @@ class PolicyResultTest {
     fun `a guard's refusal is answered on the left whatever the selector says and its body does not run`() {
         val refusal = Rejected.RateLimited("partner", 2.seconds)
         val calls = AtomicInteger()
-        val partner = policy("partner") {
-            guard(
-                object : Guard {
-                    override fun <E, A> Fail<E>.guard(block: Fail<E>.() -> A): A = throw refusal
-                },
-            )
-        }
+        val partner =
+            policy("partner") {
+                guard(
+                    object : Guard {
+                        override fun <E, A> Fail<E>.guard(block: Fail<E>.() -> A): A = throw refusal
+                    },
+                )
+            }
 
         partner.guardResult({ false }) { Either.Right(calls.incrementAndGet()) }.shouldBeLeft() shouldBe refusal
         calls.get() shouldBe 0
@@ -231,7 +285,11 @@ class PolicyResultTest {
     fun `a bulkhead refusal still gives the rate token back`() {
         val limiter = RateLimiter("partner", 1, 1.seconds)
         val bulkhead = Bulkhead("partner", 1)
-        val partner = policy("partner") { guard(limiter); guard(bulkhead) }
+        val partner =
+            policy("partner") {
+                guard(limiter)
+                guard(bulkhead)
+            }
 
         bulkhead.acquire(ZERO) shouldBe true
         partner.guardResult { Either.Right(42) }.shouldBeLeft().shouldBeInstanceOf<Rejected.BulkheadFull>()
@@ -279,8 +337,10 @@ class PolicyResultTest {
         partner.guardResult { Either.Left(Transport()) }
 
         capturingMetrics { measured ->
-            partner.guardResult { Either.Left(Rejected.BulkheadFull("inner")) }
-                .shouldBeLeft().shouldBeInstanceOf<Rejected.BulkheadFull>()
+            partner
+                .guardResult { Either.Left(Rejected.BulkheadFull("inner")) }
+                .shouldBeLeft()
+                .shouldBeInstanceOf<Rejected.BulkheadFull>()
             measured.tags("surefold.policy.calls") shouldBe
                 mapOf("policy" to "partner", "outcome" to "rejected", "refused_by" to "bulkhead")
         }
@@ -294,9 +354,17 @@ class PolicyResultTest {
         val breaker = breaker(maxFailures = 2)
         val calls = AtomicInteger()
         val broken = IllegalStateException("selector")
-        val partner = policy("partner") { retry(Schedule.recurs(1)); guard(breaker) }
+        val partner =
+            policy("partner") {
+                retry(Schedule.recurs(1))
+                guard(breaker)
+            }
 
-        partner.guardResult({ throw broken }) { calls.incrementAndGet(); Either.Left(Transport()) }
+        partner
+            .guardResult({ throw broken }) {
+                calls.incrementAndGet()
+                Either.Left(Transport())
+            }
             .shouldBeLeft() shouldBe broken
         withClue("retried, counted and answered on the left") {
             calls.get() shouldBe 2
@@ -308,12 +376,19 @@ class PolicyResultTest {
     fun `a foreign fail returned on the left goes up uncounted and unretried`() {
         val breaker = breaker(maxFailures = 1)
         val calls = AtomicInteger()
-        val partner = policy("partner") { retry(Schedule.recurs(2)); guard(breaker) }
+        val partner =
+            policy("partner") {
+                retry(Schedule.recurs(2))
+                guard(breaker)
+            }
 
         capturingMetrics { measured ->
             attempt<String, Int> {
                 val outside = this
-                partner.guardResult<Int> { calls.incrementAndGet(); Either.Left(Failed("outside", outside)) }
+                partner.guardResult<Int> {
+                    calls.incrementAndGet()
+                    Either.Left(Failed("outside", outside))
+                }
                 42
             } shouldBe Either.Left("outside")
             measured.counter("surefold.policy.calls") shouldBe 0.0
@@ -326,10 +401,20 @@ class PolicyResultTest {
     fun `fatal interrupt cancellation and foreign fail values go up uncounted and unretried`() {
         val breaker = breaker(maxFailures = 1)
         val calls = AtomicInteger()
-        val partner = policy("partner") { retry(Schedule.recurs(2)); guard(breaker) }
+        val partner =
+            policy("partner") {
+                retry(Schedule.recurs(2))
+                guard(breaker)
+            }
 
         for (stop in listOf(InterruptedException("stop"), CancellationException("stop"), LinkageError("stop"))) {
-            val thrown = shouldThrow<Throwable> { partner.guardResult { calls.incrementAndGet(); Either.Left(stop) } }
+            val thrown =
+                shouldThrow<Throwable> {
+                    partner.guardResult {
+                        calls.incrementAndGet()
+                        Either.Left(stop)
+                    }
+                }
             thrown shouldBe stop
         }
         attempt<String, Int> {

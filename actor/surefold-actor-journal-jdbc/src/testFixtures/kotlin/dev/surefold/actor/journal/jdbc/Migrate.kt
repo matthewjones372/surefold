@@ -1,12 +1,12 @@
 package dev.surefold.actor.journal.jdbc
 
+import java.util.concurrent.locks.ReentrantLock
+import javax.sql.DataSource
+import kotlin.concurrent.withLock
 import liquibase.Liquibase
 import liquibase.database.DatabaseFactory
 import liquibase.database.jvm.JdbcConnection
 import liquibase.resource.ClassLoaderResourceAccessor
-import java.util.concurrent.locks.ReentrantLock
-import javax.sql.DataSource
-import kotlin.concurrent.withLock
 
 // Liquibase keeps its lock services in one registry for the JVM, so two updates at once, even on different
 // databases, can leave one database's changelog lock taken for good and the next update waiting on it. Tests run at

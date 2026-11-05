@@ -7,10 +7,10 @@ import org.opentest4j.AssertionFailedError
 /** Checks made by throwing, as Playwright's and pelican's are. */
 object HoldsSuite : Suite() {
     init {
-        test("holds when the block returns") { holds { } }
+        test("holds when the block returns") { holds {} }
         test("fails once for each block that throws an assertion") {
             holds { throw AssertionError("the golden file differs") }
-            holds { }
+            holds {}
             holds { throw AssertionError("the stub file differs") }
         }
         test("keeps what an assertion expected and found") {

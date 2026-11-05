@@ -14,13 +14,12 @@ import kotlin.reflect.KType
  * }
  * ```
  *
- * A service has no `run`: the default parks until the process is asked to stop, and the graph's release then
- * stops the root (spec 0135). A job overrides `run` with its work, and the graph is released when it returns.
+ * A service has no `run`: the default parks until the process is asked to stop, and the graph's release then stops the
+ * root (spec 0135). A job overrides `run` with its work, and the graph is released when it returns.
  *
- * The root is named once. A type parameter is erased at a *use* site, which is why `single` and the
- * rest are inline functions — but a type argument written into a *subclass declaration* is kept in
- * the class file, and that is what this reads. Jackson's `TypeReference` and Guice's `TypeLiteral`
- * are the same trick.
+ * The root is named once. A type parameter is erased at a *use* site, which is why `single` and the rest are inline
+ * functions — but a type argument written into a *subclass declaration* is kept in the class file, and that is what
+ * this reads. Jackson's `TypeReference` and Guice's `TypeLiteral` are the same trick.
  */
 abstract class SurefoldApp<A : Any> {
 
@@ -36,46 +35,48 @@ abstract class SurefoldApp<A : Any> {
 /** [runApp] for an application that declares its own root, so `main` is the leaving and nothing else. */
 fun <A : Any> runApp(app: SurefoldApp<A>): ExitCode = leaving { shutdown ->
     app.module.use(app.root) { built ->
-        @Suppress("UNCHECKED_CAST")
-        with(app) { appScope(shutdown).run(built as A) }
+        @Suppress("UNCHECKED_CAST") with(app) { appScope(shutdown).run(built as A) }
     }
 }
 
 /**
  * The class the subclass wrote between the angle brackets, matched to the key the graph holds.
  *
- * Matched rather than constructed: building a `KType` from a `java.lang.reflect.Type` needs
- * kotlin-reflect, and the graph already holds the key this is looking for.
+ * Matched rather than constructed: building a `KType` from a `java.lang.reflect.Type` needs kotlin-reflect, and the
+ * graph already holds the key this is looking for.
  */
 private fun rootOf(app: Class<*>, module: Module): KType {
-    val declared = declaredRoot(app)
-        ?: error("${app.simpleName} must name its root: object App : SurefoldApp<Thing>()")
+    val declared = declaredRoot(app) ?: error("${app.simpleName} must name its root: object App : SurefoldApp<Thing>()")
     val matching = module.nodes.keys.filter { key -> (key.classifier as? KClass<*>)?.java == declared }
     return when (matching.size) {
         1 -> matching.single()
 
-        0 -> error(
-            "${app.simpleName} starts from ${declared.simpleName}, and its graph builds no such node",
-        )
+        0 ->
+            error(
+                "${app.simpleName} starts from ${declared.simpleName}, and its graph builds no such node",
+            )
 
-        else -> error(
-            "${app.simpleName} starts from ${declared.simpleName}, and its graph builds " +
-                "${matching.size} of them: ${matching.joinToString { labelOf(it) }}",
-        )
+        else ->
+            error(
+                "${app.simpleName} starts from ${declared.simpleName}, and its graph builds " +
+                    "${matching.size} of them: ${matching.joinToString { labelOf(it) }}",
+            )
     }
 }
 
-private tailrec fun declaredRoot(type: Class<*>?): Class<*>? = when {
-    type == null -> null
+private tailrec fun declaredRoot(type: Class<*>?): Class<*>? =
+    when {
+        type == null -> null
 
-    type.superclass == SurefoldApp::class.java ->
-        (type.genericSuperclass as? ParameterizedType)?.actualTypeArguments?.firstOrNull()?.erased()
+        type.superclass == SurefoldApp::class.java ->
+            (type.genericSuperclass as? ParameterizedType)?.actualTypeArguments?.firstOrNull()?.erased()
 
-    else -> declaredRoot(type.superclass)
-}
+        else -> declaredRoot(type.superclass)
+    }
 
-private fun Type.erased(): Class<*>? = when (this) {
-    is Class<*> -> this
-    is ParameterizedType -> rawType as? Class<*>
-    else -> null
-}
+private fun Type.erased(): Class<*>? =
+    when (this) {
+        is Class<*> -> this
+        is ParameterizedType -> rawType as? Class<*>
+        else -> null
+    }

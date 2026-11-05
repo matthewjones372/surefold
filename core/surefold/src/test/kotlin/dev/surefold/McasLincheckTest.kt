@@ -1,5 +1,6 @@
 package dev.surefold
 
+import java.util.concurrent.TimeUnit
 import org.jetbrains.lincheck.datastructures.IntGen
 import org.jetbrains.lincheck.datastructures.ModelCheckingOptions
 import org.jetbrains.lincheck.datastructures.Operation
@@ -7,7 +8,6 @@ import org.jetbrains.lincheck.datastructures.Param
 import org.jetbrains.lincheck.datastructures.StressOptions
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.Timeout
-import java.util.concurrent.TimeUnit
 
 private const val VALUES = 3
 
@@ -28,17 +28,13 @@ class McasLincheckTest {
     private fun swap(vararg changes: Triple<Int, Int, Int>): Boolean =
         swapAll(changes.map { (word, expected, desired) -> Change(words[word], values[expected], values[desired]) })
 
-    @Operation
-    fun read0() = read(0)
+    @Operation fun read0() = read(0)
 
-    @Operation
-    fun read1() = read(1)
+    @Operation fun read1() = read(1)
 
-    @Operation
-    fun read2() = read(2)
+    @Operation fun read2() = read(2)
 
-    @Operation
-    fun swap0(@Param(name = "value") e: Int, @Param(name = "value") d: Int) = swap(Triple(0, e, d))
+    @Operation fun swap0(@Param(name = "value") e: Int, @Param(name = "value") d: Int) = swap(Triple(0, e, d))
 
     @Operation
     fun swap01(
@@ -77,10 +73,5 @@ class McasLincheckTest {
 
     @Test
     fun `four threads under stress are linearizable`() =
-        StressOptions()
-            .threads(4)
-            .actorsPerThread(2)
-            .iterations(20)
-            .invocationsPerIteration(1_000)
-            .check(this::class)
+        StressOptions().threads(4).actorsPerThread(2).iterations(20).invocationsPerIteration(1_000).check(this::class)
 }

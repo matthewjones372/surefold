@@ -1,8 +1,8 @@
 package dev.surefold.fail
 
 /**
- * The scope [accumulate] opens: a [record]ed error is kept and the block carries on, while a [fail] keeps its
- * error too but ends the block. Every kept error fails the enclosing scope together once the block is over.
+ * The scope [accumulate] opens: a [record]ed error is kept and the block carries on, while a [fail] keeps its error too
+ * but ends the block. Every kept error fails the enclosing scope together once the block is over.
  */
 interface Accumulating<in E> : FailAll<E> {
     /** Keeps [error] and carries on. */
@@ -10,16 +10,17 @@ interface Accumulating<in E> : FailAll<E> {
 }
 
 /**
- * Runs [block], keeping every error it records or fails with; answers its value if it kept none, and fails
- * this scope with all of them, in the order they came, if it kept any.
+ * Runs [block], keeping every error it records or fails with; answers its value if it kept none, and fails this scope
+ * with all of them, in the order they came, if it kept any.
  */
 fun <E, A> Fail<NonEmptyList<E>>.accumulate(block: Accumulating<E>.() -> A): A {
     var collector: Collector<E>? = null
-    val outcome = try {
-        attempt { Collector(this, block.javaClass.name).also { collector = it }.block() }
-    } finally {
-        collector?.close()
-    }
+    val outcome =
+        try {
+            attempt { Collector(this, block.javaClass.name).also { collector = it }.block() }
+        } finally {
+            collector?.close()
+        }
     val recorded = checkNotNull(collector).recorded
     return outcome.fold({ fail(it) }, { value -> recorded.toNonEmptyListOrNull()?.let { fail(it) } ?: value })
 }
@@ -31,17 +32,18 @@ inline fun <E> ensureOrAccumulate(condition: Boolean, error: () -> E) {
 
 /** The value on the right, or null once the error on the left has been recorded. */
 context(scope: Accumulating<E>)
-fun <E, A> Either<E, A>.bindOrAccumulate(): A? = fold(
-    {
-        scope.record(it)
-        null
-    },
-    { it },
-)
+fun <E, A> Either<E, A>.bindOrAccumulate(): A? =
+    fold(
+        {
+            scope.record(it)
+            null
+        },
+        { it },
+    )
 
 /**
- * Keeps errors for one [accumulate] block. Like an attempt, it records only while the block runs and only on the
- * thread that opened it; a fail goes out through [ending], with the errors recorded before it.
+ * Keeps errors for one [accumulate] block. Like an attempt, it records only while the block runs and only on the thread
+ * that opened it; a fail goes out through [ending], with the errors recorded before it.
  */
 private class Collector<E>(private val ending: Fail<NonEmptyList<E>>, private val openedIn: String) : Accumulating<E> {
 
@@ -49,10 +51,10 @@ private class Collector<E>(private val ending: Fail<NonEmptyList<E>>, private va
 
     private val kept = mutableListOf<E>()
 
-    @Volatile
-    private var closed = false
+    @Volatile private var closed = false
 
-    val recorded: List<E> get() = kept
+    val recorded: List<E>
+        get() = kept
 
     override fun record(error: E) {
         check(!closed) { "an accumulate block opened in $openedIn was recorded into after its block had returned" }

@@ -4,13 +4,13 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldBeEmpty
 import dev.surefold.assert.shouldContainExactly
 import dev.surefold.assert.withClue
-import org.junit.jupiter.api.Test
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import org.junit.jupiter.api.Test
 
 /**
- * What every [JournalFeed] does, as tests a feed's own test class inherits: it answers [journal], an empty journal
- * that is its own feed, and runs these unchanged.
+ * What every [JournalFeed] does, as tests a feed's own test class inherits: it answers [journal], an empty journal that
+ * is its own feed, and runs these unchanged.
  */
 abstract class FeedContract<J> where J : Journal, J : JournalFeed {
 
@@ -80,9 +80,10 @@ abstract class FeedContract<J> where J : Journal, J : JournalFeed {
                     if (finished && read.isEmpty()) break
                 }
             }
-            val appends = (1..writers).map { writer ->
-                threads.submit { for (n in 1..each) journal.put("order", "o-$writer", "e$n") }
-            }
+            val appends =
+                (1..writers).map { writer ->
+                    threads.submit { for (n in 1..each) journal.put("order", "o-$writer", "e$n") }
+                }
             appends.forEach { it.get() }
             done.set(true)
             follower.get()

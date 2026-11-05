@@ -20,17 +20,19 @@ object WaitSuite : Suite() {
         }
         test("gives up on a value, answering the last try's") {
             val reads = AtomicInteger(0)
-            val read: Int = eventually(50.milliseconds, every = 10.milliseconds) {
-                reads.incrementAndGet().also { it shouldBe 0 }
-            }
+            val read: Int =
+                eventually(50.milliseconds, every = 10.milliseconds) {
+                    reads.incrementAndGet().also { it shouldBe 0 }
+                }
             read shouldBe reads.get()
             read shouldBe 0
         }
         test("gives up as a story's step, and the story goes on") {
             story {
-                val stage = Then("it is adopted").eventually(50.milliseconds, every = 10.milliseconds) {
-                    "Adopting".also { it shouldBe "Adopted" }
-                }
+                val stage =
+                    Then("it is adopted").eventually(50.milliseconds, every = 10.milliseconds) {
+                        "Adopting".also { it shouldBe "Adopted" }
+                    }
                 And("the last read is answered") { stage shouldBe "Adopting" }
             }
         }

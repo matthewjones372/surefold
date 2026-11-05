@@ -10,10 +10,9 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * One [R] for a whole run of the `surefold` engine, lent to at most [permits] tests at once (spec 0253). Declared as
- * an `object`, it is acquired the first time a test uses it and released after the run's last suite.
- * A test that [lease]s it already holds a permit, so it must not also call [use]: with one permit left, it would wait
- * for itself.
+ * One [R] for a whole run of the `surefold` engine, lent to at most [permits] tests at once (spec 0253). Declared as an
+ * `object`, it is acquired the first time a test uses it and released after the run's last suite. A test that [lease]s
+ * it already holds a permit, so it must not also call [use]: with one permit left, it would wait for itself.
  */
 abstract class Guarded<R>(val permits: Int) {
     init {
@@ -79,10 +78,11 @@ internal class GuardedRun private constructor() : ResourceScope {
     companion object {
         @Volatile private var open: GuardedRun? = null
 
-        fun current(guard: Guarded<*>): GuardedRun = checkNotNull(open) {
-            "${guard.javaClass.simpleName} was used outside a run of the surefold engine, which acquires and " +
-                "releases it"
-        }
+        fun current(guard: Guarded<*>): GuardedRun =
+            checkNotNull(open) {
+                "${guard.javaClass.simpleName} was used outside a run of the surefold engine, which acquires and " +
+                    "releases it"
+            }
 
         /** Runs [block] with a run open, then releases what it acquired, as a resource scope releases. */
         fun opened(block: (GuardedRun) -> Unit) = resourceScope {

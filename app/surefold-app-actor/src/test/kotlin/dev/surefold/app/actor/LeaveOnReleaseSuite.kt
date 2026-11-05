@@ -36,22 +36,25 @@ object LeaveOnReleaseSuite : Suite() {
             val heard = ConcurrentLinkedQueue<MemberEvent>()
             val bothUp = CountDownLatch(2)
             val removed = CountDownLatch(1)
-            val stays = Thread.ofPlatform().start {
-                scope {
-                    val cluster = cluster(node("stays", ports[0]), seeds, quick)
-                    val listener = spawn(
-                        "listener",
-                        behaviour<MemberEvent, Unit>(Unit) { _, _, event ->
-                            heard += event
-                            if (event is MemberEvent.Up) bothUp.countDown()
-                            if (event is MemberEvent.Removed && event.member.node.name == "app") removed.countDown()
-                            stay()
-                        },
-                    )
-                    cluster.subscribe(listener)
-                    removed.await(1, TimeUnit.MINUTES)
+            val stays =
+                Thread.ofPlatform().start {
+                    scope {
+                        val cluster = cluster(node("stays", ports[0]), seeds, quick)
+                        val listener =
+                            spawn(
+                                "listener",
+                                behaviour<MemberEvent, Unit>(Unit) { _, _, event ->
+                                    heard += event
+                                    if (event is MemberEvent.Up) bothUp.countDown()
+                                    if (event is MemberEvent.Removed && event.member.node.name == "app")
+                                        removed.countDown()
+                                    stay()
+                                },
+                            )
+                        cluster.subscribe(listener)
+                        removed.await(1, TimeUnit.MINUTES)
+                    }
                 }
-            }
 
             val module =
                 actors() + single { actors: Actors -> actors.within { cluster(node("app", ports[1]), seeds, quick) } }

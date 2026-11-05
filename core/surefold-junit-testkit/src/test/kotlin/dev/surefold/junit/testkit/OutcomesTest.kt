@@ -27,21 +27,24 @@ class OutcomesTest {
     fun `a miss names an expected pass that failed with its failure, and a pass that was not named`() {
         val miss = shouldThrow<AssertionFailedError> { events.shouldHaveSucceeded("passes", "fails a check") }
 
-        miss.message shouldBe """
+        miss.message shouldBe
+            """
             expected exactly these tests to have succeeded: [fails a check, passes]
             but:
               "fails a check" failed: fails a check: 1 of 1 expectations failed
               "also passes" succeeded too, and was not named
-        """.trimIndent()
+            """
+                .trimIndent()
         miss.expected.value shouldBe listOf("fails a check", "passes")
         miss.actual.value shouldBe listOf("also passes", "passes")
     }
 
     @Test
     fun `a miss says when a named test was skipped or did not run`() {
-        val miss = shouldThrow<AssertionFailedError> {
-            events.shouldHaveFailed("throws", "fails a check", "is skipped", "nope")
-        }
+        val miss =
+            shouldThrow<AssertionFailedError> {
+                events.shouldHaveFailed("throws", "fails a check", "is skipped", "nope")
+            }
 
         miss.message shouldContain "\"is skipped\" was skipped: not yet"
         miss.message shouldContain "\"nope\" did not run"
@@ -64,10 +67,11 @@ class OutcomesTest {
 
     @Test
     fun `failures answers what each failed test threw, by name`() {
-        events.failures().mapValues { (_, thrown) -> thrown::class } shouldBe mapOf(
-            "fails a check" to AssertionFailedError::class,
-            "throws" to IllegalStateException::class,
-        )
+        events.failures().mapValues { (_, thrown) -> thrown::class } shouldBe
+            mapOf(
+                "fails a check" to AssertionFailedError::class,
+                "throws" to IllegalStateException::class,
+            )
     }
 
     @Test
@@ -80,11 +84,13 @@ class OutcomesTest {
     fun `a miss names a test skipped for another reason, with the reason it gave`() {
         val miss = shouldThrow<AssertionFailedError> { events shouldHaveSkipped mapOf("is skipped" to "no Docker") }
 
-        miss.message shouldBe """
+        miss.message shouldBe
+            """
             expected exactly these tests to have been skipped, for these reasons: {is skipped=no Docker}
             but:
               "is skipped" was skipped for "not yet", not "no Docker"
-        """.trimIndent()
+            """
+                .trimIndent()
         miss.expected.value shouldBe mapOf("is skipped" to "no Docker")
         miss.actual.value shouldBe mapOf("is skipped" to "not yet")
     }
@@ -99,12 +105,13 @@ class OutcomesTest {
 
     @Test
     fun `tags answers each test's tags by name, and an empty set for a test with none`() {
-        events.started().tags() shouldBe mapOf(
-            "passes" to setOf("fast"),
-            "also passes" to emptySet(),
-            "fails a check" to emptySet(),
-            "throws" to emptySet(),
-        )
+        events.started().tags() shouldBe
+            mapOf(
+                "passes" to setOf("fast"),
+                "also passes" to emptySet(),
+                "fails a check" to emptySet(),
+                "throws" to emptySet(),
+            )
     }
 
     @Test

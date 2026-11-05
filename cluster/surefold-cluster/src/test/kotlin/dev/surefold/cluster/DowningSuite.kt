@@ -64,9 +64,10 @@ object DowningSuite : Suite() {
             val _ = net.until(steps = 10) { false }
             net.rejoin(5, listOf(1, 2, 3, 4))
 
-            val anyDowned = net.until(steps = 60) {
-                (1..5).any { v -> net.view(v).members.any { it.status == Status.Down } }
-            }
+            val anyDowned =
+                net.until(steps = 60) {
+                    (1..5).any { v -> net.view(v).members.any { it.status == Status.Down } }
+                }
             anyDowned shouldBe false
             (1..5).forAll { net.view(it).up().size shouldBe 5 }
         }

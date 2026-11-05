@@ -40,7 +40,7 @@ private class TaggedMetrics : Metrics {
         }
     }
 
-    override fun histogram(name: String, tags: Map<String, String>): Histogram = Histogram { }
+    override fun histogram(name: String, tags: Map<String, String>): Histogram = Histogram {}
 
     fun counter(name: String, vararg tags: Pair<String, String>): Double = counters[name to tags.toMap()]?.sum() ?: 0.0
 
@@ -67,26 +67,27 @@ object RemoteMetricsSuite : Suite() {
             val heard = CountDownLatch(10)
             val listening = CountDownLatch(1)
             val done = CountDownLatch(1)
-            val other = Thread.ofPlatform().start {
-                metrics.locally(there) {
-                    scope {
-                        val node = node("there", therePort)
-                        node.expose(
-                            spawn(
-                                "echo",
-                                behaviour<String, Unit>(Unit) { _, _, _ ->
-                                    stay().also {
-                                        heard.countDown()
-                                    }
-                                },
-                            ),
-                            Codecs.string,
-                        )
-                        listening.countDown()
-                        done.await()
+            val other =
+                Thread.ofPlatform().start {
+                    metrics.locally(there) {
+                        scope {
+                            val node = node("there", therePort)
+                            node.expose(
+                                spawn(
+                                    "echo",
+                                    behaviour<String, Unit>(Unit) { _, _, _ ->
+                                        stay().also {
+                                            heard.countDown()
+                                        }
+                                    },
+                                ),
+                                Codecs.string,
+                            )
+                            listening.countDown()
+                            done.await()
+                        }
                     }
                 }
-            }
             listening.await()
             val dropped = CountDownLatch(3)
 

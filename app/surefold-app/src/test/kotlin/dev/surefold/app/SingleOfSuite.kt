@@ -35,9 +35,7 @@ object SingleOfSuite : Suite() {
         }
 
         test("boundTo keys a node as the interface everything else asks for") {
-            val app = singleOf(::Wiring) + singleOf(::Socket) +
-                singleOf(::Reader).boundTo<Reads>() +
-                singleOf(::Whole)
+            val app = singleOf(::Wiring) + singleOf(::Socket) + singleOf(::Reader).boundTo<Reads>() + singleOf(::Whole)
 
             testApp(app) { whole: Whole -> whole.reads.read() } shouldBe "read"
         }
@@ -54,21 +52,27 @@ object SingleOfSuite : Suite() {
         }
 
         test("a probe follows the key it was asked of") {
-            val app = singleOf(::Wiring) + singleOf(::Socket) +
-                singleOf(::Reader)
-                    .probe("reader", timeout = kotlin.time.Duration.parse("2s")) { reads: Reader ->
-                        reads.read() == "read"
-                    }
-                    .boundTo<Reads>() +
-                singleOf(::Whole)
+            val app =
+                singleOf(::Wiring) +
+                    singleOf(::Socket) +
+                    singleOf(::Reader)
+                        .probe("reader", timeout = kotlin.time.Duration.parse("2s")) { reads: Reader ->
+                            reads.read() == "read"
+                        }
+                        .boundTo<Reads>() +
+                    singleOf(::Whole)
 
             testApp(app) { whole: Whole -> whole.reads.read() } shouldBe "read"
         }
 
         test("re-keying a module of several nodes is refused, and says how many") {
-            shouldThrow<IllegalArgumentException>({
-                (singleOf(::Wiring) + singleOf(::Socket)).boundTo<Reads>()
-            }) { failure -> failure.message.orEmpty() shouldContain "holds 2" }
+            shouldThrow<IllegalArgumentException>(
+                {
+                    (singleOf(::Wiring) + singleOf(::Socket)).boundTo<Reads>()
+                },
+            ) { failure ->
+                failure.message.orEmpty() shouldContain "holds 2"
+            }
         }
 
         test("a constructor that takes nothing needs its type argument") {
@@ -104,8 +108,12 @@ object SingleOfReleaseSuite : Suite() {
 
         test("it is given back when a later node refuses") {
             val taken = java.util.concurrent.atomic.AtomicReference<Borrowed>()
-            val app = singleOf(::Borrowed, Borrowed::hand) +
-                single { borrowed: Borrowed -> taken.set(borrowed); "kept" }
+            val app =
+                singleOf(::Borrowed, Borrowed::hand) +
+                    single { borrowed: Borrowed ->
+                        taken.set(borrowed)
+                        "kept"
+                    }
 
             app.use { _: String -> }.getOrNull().shouldNotBeNull()
 

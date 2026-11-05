@@ -8,13 +8,16 @@ package dev.surefold
 internal class SmallMap private constructor(private val pairs: Array<Entry>) : AbstractMap<String, String>() {
 
     /** Built once with the map, so a line that iterates it allocates nothing more than the iterator. */
-    override val entries: Set<Map.Entry<String, String>> = object : AbstractSet<Map.Entry<String, String>>() {
-        override val size: Int get() = pairs.size
+    override val entries: Set<Map.Entry<String, String>> =
+        object : AbstractSet<Map.Entry<String, String>>() {
+            override val size: Int
+                get() = pairs.size
 
-        override fun iterator(): Iterator<Map.Entry<String, String>> = pairs.iterator()
-    }
+            override fun iterator(): Iterator<Map.Entry<String, String>> = pairs.iterator()
+        }
 
-    override val size: Int get() = pairs.size
+    override val size: Int
+        get() = pairs.size
 
     override fun get(key: String): String? = pairs.firstOrNull { it.key == key }?.value
 

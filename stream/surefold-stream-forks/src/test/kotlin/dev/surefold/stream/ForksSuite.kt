@@ -49,24 +49,33 @@ object ForksSuite : Suite() {
         ) {
             val given = LinkedBlockingQueue<Int>(listOf(1, 2))
             val done = -1
-            val exit = Stream.blocking(
-                open = { given },
-                next = { queue -> queue.take().takeIf { it != done } },
-                wake = { queue -> queue.put(done) },
-                close = { },
-            )
-                .groupedWithin(3, 50.milliseconds)
-                // The first window can only close on time, with upstream blocked; what follows fills a group of three.
-                .map { group -> group.also { if (it == listOf(1, 2)) given.addAll(listOf(3, 4, 5, done)) } }
-                .runCollect()
-                .run(Forks()).toCompletableFuture().get(10, TimeUnit.SECONDS)
+            val exit =
+                Stream.blocking(
+                        open = { given },
+                        next = { queue -> queue.take().takeIf { it != done } },
+                        wake = { queue -> queue.put(done) },
+                        close = {},
+                    )
+                    .groupedWithin(3, 50.milliseconds)
+                    // The first window can only close on time, with upstream blocked; what follows fills a group of
+                    // three.
+                    .map { group -> group.also { if (it == listOf(1, 2)) given.addAll(listOf(3, 4, 5, done)) } }
+                    .runCollect()
+                    .run(Forks())
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS)
 
             exit shouldBe Exit.Done(listOf(listOf(1, 2), listOf(3, 4, 5)))
         }
 
         test("on real time, groupedWithin hands on every element in order, a group at a time") {
-            val exit = Stream.from(1..10_000).groupedWithin(100, 1.minutes).runCollect()
-                .run(Forks()).toCompletableFuture().get(10, TimeUnit.SECONDS)
+            val exit =
+                Stream.from(1..10_000)
+                    .groupedWithin(100, 1.minutes)
+                    .runCollect()
+                    .run(Forks())
+                    .toCompletableFuture()
+                    .get(10, TimeUnit.SECONDS)
 
             exit.shouldBeInstanceOf<Exit.Done<List<List<Int>>>> { done ->
                 val groups = done.value
@@ -112,9 +121,15 @@ object ForksSuite : Suite() {
 
         test("a defect ends the run Died, naming the operator, the element and the line that wrote it") {
             val lines = ConcurrentLinkedQueue<LogLine>()
-            val exit = logger.locally(Logger { lines += it }) {
-                Stream.of(1, 2).map { n -> check(n < 2) { "too big" }; n }.collected()
-            }
+            val exit =
+                logger.locally(Logger { lines += it }) {
+                    Stream.of(1, 2)
+                        .map { n ->
+                            check(n < 2) { "too big" }
+                            n
+                        }
+                        .collected()
+                }
 
             exit.shouldBeInstanceOf<Exit.Died> { died ->
                 died.cause.shouldBeInstanceOf<IllegalStateException>()
@@ -126,12 +141,29 @@ object ForksSuite : Suite() {
         test("in a fused run a defect names the step that threw, its element and its line") {
             val fused = Stream.of(1, 2, 3).map { it + 1 }
 
-            val steps = listOf(
-                "map" to fused.map { n -> check(n < 3) { "too big" }; n },
-                "filter" to fused.filter { n -> check(n < 3) { "too big" }; true },
-                "filterNot" to fused.filterNot { n -> check(n < 3) { "too big" }; false },
-                "mapOrFail" to fused.mapOrFail { n -> check(n < 3) { "too big" }; n },
-            )
+            val steps =
+                listOf(
+                    "map" to
+                        fused.map { n ->
+                            check(n < 3) { "too big" }
+                            n
+                        },
+                    "filter" to
+                        fused.filter { n ->
+                            check(n < 3) { "too big" }
+                            true
+                        },
+                    "filterNot" to
+                        fused.filterNot { n ->
+                            check(n < 3) { "too big" }
+                            false
+                        },
+                    "mapOrFail" to
+                        fused.mapOrFail { n ->
+                            check(n < 3) { "too big" }
+                            n
+                        },
+                )
 
             steps.forAll { (operator, stream) ->
                 withClue(operator) {
@@ -144,10 +176,19 @@ object ForksSuite : Suite() {
         }
 
         test("in a fused run a raise ends the run Failed, and a filter keeps what it is asked to") {
-            val kept = Stream.of(1, 2, 3, 4, 5, 6).map { it * 3 }.filter { it % 2 == 0 }.filterNot { it == 12 }
-                .map { it + 1 }.collected()
-            val raised = Stream.of(1, 2, 3).map { it * 2 }.mapOrFail { if (it == 4) fail(Odd(it)) else it }
-                .map { it + 1 }.collected()
+            val kept =
+                Stream.of(1, 2, 3, 4, 5, 6)
+                    .map { it * 3 }
+                    .filter { it % 2 == 0 }
+                    .filterNot { it == 12 }
+                    .map { it + 1 }
+                    .collected()
+            val raised =
+                Stream.of(1, 2, 3)
+                    .map { it * 2 }
+                    .mapOrFail { if (it == 4) fail(Odd(it)) else it }
+                    .map { it + 1 }
+                    .collected()
 
             kept shouldBe Exit.Done(listOf(7, 19))
             raised shouldBe Exit.Failed(Odd(4))
@@ -189,8 +230,7 @@ object ForksSuite : Suite() {
             Stream.of(1, 2, 3)
                 .statefulMap({ 0 }, { seen, n -> (seen + 1) to "$n@$seen" }, { seen -> "end@$seen" })
                 .collected() shouldBe Exit.Done(listOf("1@0", "2@1", "3@2", "end@3"))
-            Stream.of(1, 2, 3).mapConcat { n -> List(n) { n } }.collected() shouldBe
-                Exit.Done(listOf(1, 2, 2, 3, 3, 3))
+            Stream.of(1, 2, 3).mapConcat { n -> List(n) { n } }.collected() shouldBe Exit.Done(listOf(1, 2, 2, 3, 3, 3))
         }
 
         test("the failure operators replace, recover and name as Pekko's do") {
@@ -207,7 +247,9 @@ object ForksSuite : Suite() {
             Stream.of(1, 2).concat(Stream.of(3)).collected() shouldBe Exit.Done(listOf(1, 2, 3))
             Stream.of(3).prepend(Stream.of(1, 2)).collected() shouldBe Exit.Done(listOf(1, 2, 3))
             Stream.of(1, 2, 3).zip(Stream.of("a", "b")).collected() shouldBe Exit.Done(listOf(1 to "a", 2 to "b"))
-            Stream.of(1, 2, 3).flatMapConcat { n -> Stream.from(List(n) { n }) }.collected()
+            Stream.of(1, 2, 3)
+                .flatMapConcat { n -> Stream.from(List(n) { n }) }
+                .collected()
                 .shouldBeInstanceOf<Exit.Done<List<Int>>> { done ->
                     done.value shouldContainExactly listOf(1, 2, 2, 3, 3, 3)
                 }
@@ -229,14 +271,15 @@ object ForksSuite : Suite() {
             val running = AtomicInteger()
             val most = AtomicInteger()
 
-            val exit = Stream.from(1..40)
-                .mapPar(8) { n ->
-                    most.accumulateAndGet(running.incrementAndGet(), ::maxOf)
-                    Thread.sleep((41 - n).toLong() % 7)
-                    running.decrementAndGet()
-                    n * 10
-                }
-                .collected()
+            val exit =
+                Stream.from(1..40)
+                    .mapPar(8) { n ->
+                        most.accumulateAndGet(running.incrementAndGet(), ::maxOf)
+                        Thread.sleep((41 - n).toLong() % 7)
+                        running.decrementAndGet()
+                        n * 10
+                    }
+                    .collected()
 
             exit shouldBe Exit.Done((1..40).map { it * 10 })
             withClue("at most eight at once, and more than one, or it was not parallel") {
@@ -247,21 +290,22 @@ object ForksSuite : Suite() {
         test("a raise in one mapPar body ends the run Failed, and interrupts the bodies still running") {
             val interrupted = AtomicInteger()
 
-            val exit = Stream.from(1..8)
-                .mapPar<Odd, Int, Int>(8) { n ->
-                    if (n == 1) {
-                        Thread.sleep(50)
-                        fail(Odd(n))
+            val exit =
+                Stream.from(1..8)
+                    .mapPar<Odd, Int, Int>(8) { n ->
+                        if (n == 1) {
+                            Thread.sleep(50)
+                            fail(Odd(n))
+                        }
+                        try {
+                            Thread.sleep(60_000)
+                        } catch (stopped: InterruptedException) {
+                            interrupted.incrementAndGet()
+                            throw stopped
+                        }
+                        n
                     }
-                    try {
-                        Thread.sleep(60_000)
-                    } catch (stopped: InterruptedException) {
-                        interrupted.incrementAndGet()
-                        throw stopped
-                    }
-                    n
-                }
-                .collected()
+                    .collected()
 
             exit shouldBe Exit.Failed(Odd(1))
             withClue("the seven still sleeping were interrupted, and had stopped before the exit completed") {
@@ -272,18 +316,19 @@ object ForksSuite : Suite() {
         test("take after mapPar ends the run, and no body is left running behind it") {
             val running = AtomicInteger()
 
-            val exit = Stream.from(naturals)
-                .mapPar(4) { n ->
-                    running.incrementAndGet()
-                    try {
-                        if (n > 3) Thread.sleep(60_000)
-                    } finally {
-                        running.decrementAndGet()
+            val exit =
+                Stream.from(naturals)
+                    .mapPar(4) { n ->
+                        running.incrementAndGet()
+                        try {
+                            if (n > 3) Thread.sleep(60_000)
+                        } finally {
+                            running.decrementAndGet()
+                        }
+                        n
                     }
-                    n
-                }
-                .take(3)
-                .collected()
+                    .take(3)
+                    .collected()
 
             // 1 and 3 share a key and keep their order; 2 has its own, and may pass either.
             exit.shouldBeInstanceOf<Exit.Done<List<Int>>> { done ->
@@ -295,7 +340,13 @@ object ForksSuite : Suite() {
         }
 
         test("a mapPar body that throws is the defect the run dies with, naming mapPar") {
-            val exit = Stream.of(1, 2).mapPar(2) { n -> check(n != 2) { "two" }; n }.collected()
+            val exit =
+                Stream.of(1, 2)
+                    .mapPar(2) { n ->
+                        check(n != 2) { "two" }
+                        n
+                    }
+                    .collected()
 
             exit.shouldBeInstanceOf<Exit.Died> { died ->
                 val messages = (listOf(died.cause) + died.cause.suppressed).joinToString { it.message.orEmpty() }
@@ -310,13 +361,14 @@ object ForksSuite : Suite() {
         test("under mapParKeyed a slow element on one key does not hold back another key's results") {
             val arrived = ConcurrentLinkedQueue<Int>()
 
-            val exit = Stream.from(0..9)
-                .mapParKeyed(8, key = { it % 2 }) { n ->
-                    if (n == 0) Thread.sleep(SLOW_MILLIS)
-                    n
-                }
-                .map { n -> n.also(arrived::add) }
-                .collected()
+            val exit =
+                Stream.from(0..9)
+                    .mapParKeyed(8, key = { it % 2 }) { n ->
+                        if (n == 0) Thread.sleep(SLOW_MILLIS)
+                        n
+                    }
+                    .map { n -> n.also(arrived::add) }
+                    .collected()
 
             exit.shouldBeInstanceOf<Exit.Done<List<Int>>> { done -> done.value.sorted() shouldBe (0..9).toList() }
             withClue("every odd result arrived ahead of the even one that slept, in order: $arrived") {
@@ -329,12 +381,13 @@ object ForksSuite : Suite() {
             val random = Random(SEED)
             val delays = List(400) { random.nextLong(3) }
 
-            val exit = Stream.from(0 until 400)
-                .mapParKeyed(16, key = { it % 7 }) { n ->
-                    Thread.sleep(delays[n])
-                    n
-                }
-                .collected()
+            val exit =
+                Stream.from(0 until 400)
+                    .mapParKeyed(16, key = { it % 7 }) { n ->
+                        Thread.sleep(delays[n])
+                        n
+                    }
+                    .collected()
 
             exit.shouldBeInstanceOf<Exit.Done<List<Int>>> { done ->
                 val results = done.value
@@ -348,28 +401,35 @@ object ForksSuite : Suite() {
         ) {
             val interrupted = AtomicInteger()
 
-            val exit = Stream.from(1..8)
-                .mapParKeyed<Odd, Int, Int>(8, key = { it }) { n ->
-                    if (n == 1) {
-                        Thread.sleep(50)
-                        fail(Odd(n))
+            val exit =
+                Stream.from(1..8)
+                    .mapParKeyed<Odd, Int, Int>(8, key = { it }) { n ->
+                        if (n == 1) {
+                            Thread.sleep(50)
+                            fail(Odd(n))
+                        }
+                        try {
+                            Thread.sleep(60_000)
+                        } catch (stopped: InterruptedException) {
+                            interrupted.incrementAndGet()
+                            throw stopped
+                        }
+                        n
                     }
-                    try {
-                        Thread.sleep(60_000)
-                    } catch (stopped: InterruptedException) {
-                        interrupted.incrementAndGet()
-                        throw stopped
-                    }
-                    n
-                }
-                .collected()
+                    .collected()
 
             exit shouldBe Exit.Failed(Odd(1))
             interrupted.get() shouldBe 7
         }
 
         test("a mapParKeyed body that throws is the defect the run dies with, naming mapPar") {
-            val exit = Stream.of(1, 2).mapParKeyed(2, key = { it }) { n -> check(n != 2) { "two" }; n }.collected()
+            val exit =
+                Stream.of(1, 2)
+                    .mapParKeyed(2, key = { it }) { n ->
+                        check(n != 2) { "two" }
+                        n
+                    }
+                    .collected()
 
             exit.shouldBeInstanceOf<Exit.Died> { died ->
                 val messages = (listOf(died.cause) + died.cause.suppressed).joinToString { it.message.orEmpty() }
@@ -381,7 +441,17 @@ object ForksSuite : Suite() {
             "under mapParKeyed a key that throws is the defect the run dies with, after what came before it",
         ) {
             val exit =
-                Stream.of(1, 2, 3).mapParKeyed(2, key = { n -> check(n != 3) { "no key" }; n }) { it }.collected()
+                Stream.of(1, 2, 3)
+                    .mapParKeyed(
+                        2,
+                        key = { n ->
+                            check(n != 3) { "no key" }
+                            n
+                        },
+                    ) {
+                        it
+                    }
+                    .collected()
 
             exit.shouldBeInstanceOf<Exit.Died> { died ->
                 val messages = (listOf(died.cause) + died.cause.suppressed).joinToString { it.message.orEmpty() }
@@ -392,18 +462,19 @@ object ForksSuite : Suite() {
         test("take after mapParKeyed ends the run, and no body is left running behind it") {
             val running = AtomicInteger()
 
-            val exit = Stream.from(naturals)
-                .mapParKeyed(4, key = { it % 2 }) { n ->
-                    running.incrementAndGet()
-                    try {
-                        if (n > 3) Thread.sleep(60_000)
-                    } finally {
-                        running.decrementAndGet()
+            val exit =
+                Stream.from(naturals)
+                    .mapParKeyed(4, key = { it % 2 }) { n ->
+                        running.incrementAndGet()
+                        try {
+                            if (n > 3) Thread.sleep(60_000)
+                        } finally {
+                            running.decrementAndGet()
+                        }
+                        n
                     }
-                    n
-                }
-                .take(3)
-                .collected()
+                    .take(3)
+                    .collected()
 
             // 1 and 3 share a key and keep their order; 2 has its own, and may pass either.
             exit.shouldBeInstanceOf<Exit.Done<List<Int>>> { done ->
@@ -419,12 +490,19 @@ object ForksSuite : Suite() {
             val most = AtomicInteger()
             val delayed = CompletableFuture.delayedExecutor(2, TimeUnit.MILLISECONDS)
 
-            val exit = Stream.from(1..30)
-                .mapAsync(3) { n ->
-                    most.accumulateAndGet(inFlight.incrementAndGet(), ::maxOf)
-                    CompletableFuture.supplyAsync({ inFlight.decrementAndGet(); n }, delayed)
-                }
-                .collected()
+            val exit =
+                Stream.from(1..30)
+                    .mapAsync(3) { n ->
+                        most.accumulateAndGet(inFlight.incrementAndGet(), ::maxOf)
+                        CompletableFuture.supplyAsync(
+                            {
+                                inFlight.decrementAndGet()
+                                n
+                            },
+                            delayed,
+                        )
+                    }
+                    .collected()
 
             exit shouldBe Exit.Done((1..30).toList())
             withClue("at most three stages at once, and more than one") { (most.get() in 2..3) shouldBe true }
@@ -442,13 +520,14 @@ object ForksSuite : Suite() {
         }
 
         test("groupedWithin on Forks closes a window on real time while upstream is slow") {
-            val exit = Stream.from(1..6)
-                .map { n ->
-                    Thread.sleep(30)
-                    n
-                }
-                .groupedWithin(100, 70.milliseconds)
-                .collected()
+            val exit =
+                Stream.from(1..6)
+                    .map { n ->
+                        Thread.sleep(30)
+                        n
+                    }
+                    .groupedWithin(100, 70.milliseconds)
+                    .collected()
 
             exit.shouldBeInstanceOf<Exit.Done<List<List<Int>>>> { done ->
                 val groups = done.value
@@ -463,13 +542,14 @@ object ForksSuite : Suite() {
             val attempts = AtomicInteger()
             val started = System.nanoTime()
 
-            val exit = Stream.of(1, 2)
-                .map { n ->
-                    check(!(n == 2 && attempts.incrementAndGet() == 1)) { "first time" }
-                    n
-                }
-                .restartOnDefect(dev.surefold.Schedule.spaced(50.milliseconds))
-                .collected()
+            val exit =
+                Stream.of(1, 2)
+                    .map { n ->
+                        check(!(n == 2 && attempts.incrementAndGet() == 1)) { "first time" }
+                        n
+                    }
+                    .restartOnDefect(dev.surefold.Schedule.spaced(50.milliseconds))
+                    .collected()
 
             val waited = System.nanoTime() - started
             exit shouldBe Exit.Done(listOf(1, 1, 2))

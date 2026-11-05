@@ -22,7 +22,9 @@ import org.junit.platform.testkit.engine.Events
 class GuardedTest {
 
     private fun run(vararg suites: Class<*>): Events =
-        EngineTestKit.engine("surefold").selectors(*suites.map { selectClass(it) }.toTypedArray()).execute()
+        EngineTestKit.engine("surefold")
+            .selectors(*suites.map { selectClass(it) }.toTypedArray())
+            .execute()
             .testEvents()
 
     @Test
@@ -54,16 +56,18 @@ class GuardedTest {
 
     @Test
     fun `a guard used outside a run of the engine says so`() {
-        shouldThrow<IllegalStateException> { CountedGuard.use { } }.message.orEmpty() shouldContain
+        shouldThrow<IllegalStateException> { CountedGuard.use {} }.message.orEmpty() shouldContain
             "CountedGuard was used outside a run of the surefold engine"
     }
 
     @Test
     fun `a guard needs at least one permit`() {
         shouldThrow<IllegalArgumentException> {
-            object : Guarded<Unit>(permits = 0) {
-                override val resource = resource { }
+                object : Guarded<Unit>(permits = 0) {
+                    override val resource = resource {}
+                }
             }
-        }.message.orEmpty() shouldContain "has 0 permits; a guard needs at least one"
+            .message
+            .orEmpty() shouldContain "has 0 permits; a guard needs at least one"
     }
 }

@@ -49,7 +49,9 @@ object AgentDocsSuite : Suite() {
 
 /** The module names a page lists, one `- \`name\`:` line each under its "## Modules" heading. */
 internal fun modulesIn(page: String): Set<String> =
-    page.substringAfter("## Modules").substringBefore("\n## ")
+    page
+        .substringAfter("## Modules")
+        .substringBefore("\n## ")
         .lines()
         .mapNotNull { line -> Regex("""^- `([a-z0-9-]+)`""").find(line)?.groupValues?.get(1) }
         .toSet()
