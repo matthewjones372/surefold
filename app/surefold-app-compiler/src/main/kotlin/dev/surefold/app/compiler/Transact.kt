@@ -41,7 +41,8 @@ internal class TransactChecker : FirFunctionCallChecker(MppCheckerKind.Common) {
                 called == peek -> "${named(symbol, called)} reads outside the step; read it with get()"
 
                 called == tell ->
-                    "${named(symbol, called)} runs again each time the step does; once the step commits, tell it with " +
+                    "${named(symbol, called)} runs again each time the step does; once the step commits, " +
+                        "tell it with " +
                         "tellAfterCommit(ref, message)"
 
                 called in surefoldEffects || called in printed ->

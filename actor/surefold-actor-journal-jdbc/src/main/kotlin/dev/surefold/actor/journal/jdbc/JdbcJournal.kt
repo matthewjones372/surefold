@@ -136,8 +136,8 @@ class JdbcJournal(
     override fun read(id: PersistenceId, from: Long): List<StoredEvent> =
         dataSource.connection.use { connection ->
             connection.statement(
-                "select seq_nr, bytes, metadata::text from surefold_journal where kind = ? and id = ? and seq_nr >= ? " +
-                    "order by seq_nr",
+                "select seq_nr, bytes, metadata::text from surefold_journal " +
+                    "where kind = ? and id = ? and seq_nr >= ? order by seq_nr",
                 id.kind,
                 id.id,
                 from,
@@ -313,8 +313,8 @@ class JdbcJournal(
     /** The spans deleted rows left between [after] and [upTo]. */
     private fun Connection.pruned(after: Long, upTo: Long): List<LongRange> =
         statement(
-            "select from_ordering, to_ordering from surefold_journal_pruned where to_ordering > ? and from_ordering < ? " +
-                "order by from_ordering",
+            "select from_ordering, to_ordering from surefold_journal_pruned " +
+                "where to_ordering > ? and from_ordering < ? order by from_ordering",
             after,
             upTo,
         ) { select ->
@@ -427,7 +427,8 @@ class JdbcJournal(
                         "insert into surefold_journal (kind, id, seq_nr, bytes, slice, metadata) " +
                             "select ?, ?, ? + event.n, event.bytes, ?, cast(? as jsonb) " +
                             "from unnest(?::bytea[]) with ordinality as event(bytes, n) " +
-                            "where (? = 0 or exists (select 1 from surefold_journal where kind = ? and id = ? and seq_nr = ?)) " +
+                            "where (? = 0 or exists (select 1 from surefold_journal " +
+                            "where kind = ? and id = ? and seq_nr = ?)) " +
                             "and not exists (select 1 from surefold_journal_fenced where slice = ?)",
                     )
                     .use { insert ->
@@ -473,7 +474,8 @@ class JdbcJournal(
             statement(
                 "insert into surefold_journal (kind, id, seq_nr, bytes, slice, metadata) " +
                     "select ?, ?, ?, ?, ?, cast(? as jsonb) from (values (1)) " +
-                    "where (? = 0 or exists (select 1 from surefold_journal where kind = ? and id = ? and seq_nr = ?)) " +
+                    "where (? = 0 or exists (select 1 from surefold_journal " +
+                    "where kind = ? and id = ? and seq_nr = ?)) " +
                     "and not exists (select 1 from surefold_journal_fenced where slice = ?)",
                 id.kind,
                 id.id,

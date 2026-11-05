@@ -941,7 +941,15 @@ import dev.surefold.transact
 
 val free = Shared(10)
 
-fun hold(log: Logger, line: LogLine, sold: Counter, left: Gauge, sizes: Histogram, orders: ActorRef<String>, events: Hub<String>) =
+fun hold(
+    log: Logger,
+    line: LogLine,
+    sold: Counter,
+    left: Gauge,
+    sizes: Histogram,
+    orders: ActorRef<String>,
+    events: Hub<String>,
+) =
     transact {
         free.update { it - 1 }
         logInfo("held one")

@@ -123,12 +123,14 @@ private object Renderers : BaseDiagnosticRendererFactory() {
             map.put(
                 SurefoldDiagnostics.SUREFOLD_SLEEP_IN_TEST,
                 // MessageFormat: a single quote opens a quoted run, so an apostrophe is written twice.
-                "surefold: {0} waits a fixed time; wait for the condition with surefold-test''s eventually(within) instead",
+                "surefold: {0} waits a fixed time; wait for the condition with " +
+                    "surefold-test''s eventually(within) instead",
                 CommonRenderers.STRING,
             )
             map.put(
                 SurefoldDiagnostics.SUREFOLD_SCHEDULER_BY_HAND,
-                "surefold: {0} schedules work by hand; run it as Stream.tick(every) started on the graph''s StreamBackend",
+                "surefold: {0} schedules work by hand; run it as " +
+                    "Stream.tick(every) started on the graph''s StreamBackend",
                 CommonRenderers.STRING,
             )
             map.put(

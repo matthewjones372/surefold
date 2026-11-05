@@ -258,7 +258,8 @@ internal constructor(
                             log.log(
                                 LogLine(
                                     LogLevel.Warn,
-                                    "surefold-actor-remote: ${message.peer} cannot watch ${message.actor}: $unwatchable",
+                                    "surefold-actor-remote: ${message.peer} cannot watch " +
+                                        "${message.actor}: $unwatchable",
                                     time.now(),
                                     unwatchable,
                                     origin = RemoteNode::class.java.name,

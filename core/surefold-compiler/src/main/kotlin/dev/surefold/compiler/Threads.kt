@@ -44,7 +44,8 @@ internal class ForkBoundaryChecker : FirFunctionCallChecker(MppCheckerKind.Commo
                     reporter.reportOn(
                         source,
                         ForkDiagnostics.AWAIT_ACROSS_FORK,
-                        "${crossing.method} on ${crossing.name}, a Deferred from outside this async block, joins a fork " +
+                        "${crossing.method} on ${crossing.name}, a Deferred from outside this async block, " +
+                            "joins a fork " +
                             "this thread does not own; await ${crossing.name} in the scope's own block and pass the " +
                             "value in, or open this fork after ${crossing.name}.await()",
                         context,

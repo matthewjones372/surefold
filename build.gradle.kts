@@ -103,9 +103,11 @@ val moduleDescriptions =
         "surefold-actor" to
             "An actor as a value and a step, on virtual threads: no actor system, and tests that never wait.",
         "surefold-actor-journal-jdbc" to
-            "surefold-actor's journal and snapshots on JDBC: events every node reaches, two writers settled by the key.",
+            "surefold-actor's journal and snapshots on JDBC: events every node reaches, " +
+                "two writers settled by the key.",
         "surefold-actor-projection" to
-            "surefold-actor's journal as a surefold Stream: a read model follows one kind, and resumes where it left off.",
+            "surefold-actor's journal as a surefold Stream: a read model follows one kind, " +
+                "and resumes where it left off.",
         "surefold-actor-remote" to
             "surefold-actor across nodes: codecs you own, and one TCP connection per pair of nodes.",
         "surefold-cluster" to
