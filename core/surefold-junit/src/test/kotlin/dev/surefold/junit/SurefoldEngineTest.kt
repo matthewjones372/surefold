@@ -209,6 +209,7 @@ class SurefoldEngineTest {
             "RecordedSuite",
             "SequentialSuite",
             "SharedEachSuite",
+            "SpinningPastTimeoutSuite",
             "StorySuite",
             "Surefold",
             "TaggedSuite",

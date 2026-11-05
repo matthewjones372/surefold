@@ -4,6 +4,7 @@ import dev.surefold.assert.shouldBe
 import dev.surefold.assert.shouldContain
 import dev.surefold.assert.withClue
 import dev.surefold.junit.samples.ParkedPastTimeoutSuite
+import dev.surefold.junit.samples.SpinningPastTimeoutSuite
 import dev.surefold.junit.testkit.failureOf
 import dev.surefold.junit.testkit.shouldHaveFailed
 import org.junit.jupiter.api.Test
@@ -50,6 +51,27 @@ class ThreadDumpTest {
         }
         withClue("the dump was taken while the test was still asleep, before the interrupt woke it") {
             printed shouldContain "ParkedPastTimeoutSuite.sleptOnUntilInterrupted"
+        }
+    }
+
+    @Test
+    fun `a test that spins without yielding still fails at its timeout, the spinning frame in the dump`() {
+        // testOnOneCarrier runs this with one carrier, where a virtual watchdog would never get to run (spec 0310).
+        val test = "spins without yielding and outlives its timeout"
+        lateinit var failure: Throwable
+
+        val printed = stderrOf {
+            val events = EngineTestKit.engine("surefold")
+                .selectors(selectClass(SpinningPastTimeoutSuite::class.java))
+                .execute()
+                .testEvents()
+            events shouldHaveFailed listOf(test)
+            failure = events.failureOf(test)
+        }
+
+        failure.message shouldBe "no answer within 200ms"
+        withClue("the dump was taken while the test still spun") {
+            printed shouldContain "SpinningPastTimeoutSuite.spinsUntilInterrupted"
         }
     }
 

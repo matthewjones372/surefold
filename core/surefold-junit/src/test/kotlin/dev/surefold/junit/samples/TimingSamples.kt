@@ -77,3 +77,19 @@ object ParkedPastTimeoutSuite : Suite() {
     /** The test's own wait: in the dump only if it was taken before the interrupt. */
     private fun sleptOnUntilInterrupted() = Thread.sleep(1.minutes.inWholeMilliseconds)
 }
+
+/** Spec 0310: a test that spins without ever yielding its carrier, and outlives its timeout. */
+object SpinningPastTimeoutSuite : Suite() {
+    init {
+        test("spins without yielding and outlives its timeout", timeout(200.milliseconds)) {
+            spinsUntilInterrupted()
+            expect(true)
+        }
+    }
+
+    /** Never parks or yields: on one carrier, nothing else virtual runs until the interrupt ends it. */
+    private fun spinsUntilInterrupted() {
+        while (!Thread.interrupted()) Thread.onSpinWait()
+        throw InterruptedException("interrupted while spinning")
+    }
+}

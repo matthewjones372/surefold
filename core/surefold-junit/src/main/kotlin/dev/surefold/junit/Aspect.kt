@@ -1,13 +1,9 @@
 package dev.surefold.junit
 
 import dev.surefold.Schedule
-import dev.surefold.clock
-import dev.surefold.fail.fold
-import dev.surefold.raceN
 import dev.surefold.retry
 import dev.surefold.retryOrElse
 import org.junit.platform.engine.TestTag
-import java.util.concurrent.TimeoutException
 import kotlin.time.Duration
 
 /** Runs the test it is handed, and may publish a key and value to the test's report. */
@@ -95,15 +91,8 @@ fun nonFlaky(runs: Int): Aspect {
 /**
  * Fails the test if it runs longer than [duration], interrupting it; the failure names [duration]. Before the
  * interrupt, every thread's stack goes to stderr, while the test's threads are still where they hung (spec 0308).
+ * The watchdog is a platform thread, so a test that never yields its carrier still times out (spec 0310).
  * A test or suite that gives its own timeout is not also held to the build's default, `surefold.junit.timeout.default`.
  */
 fun timeout(duration: Duration): Aspect =
-    Aspect(
-        arounds = listOf { _, test ->
-            raceN(test) {
-                clock.get().sleep(duration)
-                ThreadDump.toStderr("a test timed out after $duration")
-            }.fold({ }, { throw TimeoutException("no answer within $duration") })
-        },
-        timed = true,
-    )
+    Aspect(arounds = listOf { _, test -> withinTimeout(duration, test) }, timed = true)
