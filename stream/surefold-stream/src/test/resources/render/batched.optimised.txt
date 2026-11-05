@@ -1,3 +1,3 @@
 Stream.from
 groupedWithin(100, 1s)
-runFold                 RenderPipelines.kt:30
+runFold                 RenderPipelines.kt:26

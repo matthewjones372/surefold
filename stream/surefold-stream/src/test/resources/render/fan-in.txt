@@ -1,10 +1,10 @@
-zipWith of       RenderPipelines.kt:42
+zipWith of       RenderPipelines.kt:38
 ├ merge of
 │ ├ Stream.from
-│ │ map          RenderPipelines.kt:40
+│ │ map          RenderPipelines.kt:36
 │ └ Stream.from
-│   filter       RenderPipelines.kt:41
+│   filter       RenderPipelines.kt:37
 │   take(1)
 └ Stream.from
-map              RenderPipelines.kt:43
+map              RenderPipelines.kt:39
 runCollect
